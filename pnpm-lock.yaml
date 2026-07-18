@@ -9,59 +9,59 @@ importers:
   .:
     devDependencies:
       prettier:
-        specifier: ^3.0.0
+        specifier: 3.9.5
         version: 3.9.5
       turbo:
-        specifier: ^2.5.0
+        specifier: 2.10.5
         version: 2.10.5
       typescript:
-        specifier: ~5.8.0
+        specifier: 5.8.3
         version: 5.8.3
 
   packages/permissions:
     devDependencies:
       '@types/node':
-        specifier: ^26.1.1
+        specifier: 26.1.1
         version: 26.1.1
       '@vitest/coverage-v8':
-        specifier: ^3.0.0
+        specifier: 3.2.7
         version: 3.2.7(vitest@3.2.7(@types/node@26.1.1)(tsx@4.23.1))
       typescript:
-        specifier: ~5.8.0
+        specifier: 5.8.3
         version: 5.8.3
       vitest:
-        specifier: ^3.0.0
+        specifier: 3.2.7
         version: 3.2.7(@types/node@26.1.1)(tsx@4.23.1)
 
   packages/schema:
     dependencies:
       drizzle-orm:
-        specifier: ^0.44.0
+        specifier: 0.44.7
         version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
       zod:
-        specifier: ^3.24.0
+        specifier: 3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^26.1.1
+        specifier: 26.1.1
         version: 26.1.1
       '@types/pg':
-        specifier: ^8.20.0
+        specifier: 8.20.0
         version: 8.20.0
       '@wellkept/permissions':
         specifier: workspace:*
         version: link:../permissions
       drizzle-kit:
-        specifier: ^0.31.0
+        specifier: 0.31.10
         version: 0.31.10
       pg:
-        specifier: ^8.22.0
+        specifier: 8.22.0
         version: 8.22.0
       typescript:
-        specifier: ~5.8.0
+        specifier: 5.8.3
         version: 5.8.3
       vitest:
-        specifier: ^3.0.0
+        specifier: 3.2.7
         version: 3.2.7(@types/node@26.1.1)(tsx@4.23.1)
 
   services/worker:
@@ -73,11 +73,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/schema
       bullmq:
-        specifier: ^5.0.0
+        specifier: 5.80.8
         version: 5.80.8
     devDependencies:
       typescript:
-        specifier: ~5.8.0
+        specifier: 5.8.3
         version: 5.8.3
 
 packages:

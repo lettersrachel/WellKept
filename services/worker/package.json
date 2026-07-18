@@ -2,7 +2,15 @@
   "name": "@wellkept/worker",
   "version": "0.1.0",
   "type": "module",
-  "scripts": { "typecheck": "tsc --noEmit" },
-  "dependencies": { "bullmq": "^5.0.0", "@wellkept/schema": "workspace:*", "@wellkept/permissions": "workspace:*" },
-  "devDependencies": { "typescript": "~5.8.0" }
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bullmq": "5.80.8",
+    "@wellkept/schema": "workspace:*",
+    "@wellkept/permissions": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
 }
