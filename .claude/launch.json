@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wellkept-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/lettersrachel/dev/wellkept && PATH=\"$HOME/.local/bin:$PATH\" pnpm --filter @wellkept/web dev"
+      ],
+      "port": 3001
+    }
+  ]
+}
