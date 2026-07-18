@@ -54,6 +54,10 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   }, [transport, refreshQueueStatus]);
 
   useEffect(() => {
+    // Offline shell: lets /visit itself load after a reload with no network.
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/wk-sw.js").catch(() => {});
+    }
     flowRef.current = createCloseFlow({ householdId, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
     setState(flowRef.current.state);
 
