@@ -44,10 +44,6 @@ jobs:
         run: corepack enable
       - name: Install (frozen lockfile — pin-refresh is the law)
         run: pnpm install --frozen-lockfile
-      - name: Typecheck
-        run: pnpm typecheck
-      - name: Test (permissions gate at 100% or this fails)
-        run: pnpm test
       - name: Migrate against a real PostgreSQL 16
         run: pnpm --filter @wellkept/schema db:migrate
       - name: Seed the 258-field fixture and verify the vault rule holds in the database
@@ -67,3 +63,7 @@ jobs:
             })().catch((e) => { console.error(e); process.exit(1); });
           "
         working-directory: packages/schema
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test (permissions gate at 100% or this fails)
+        run: pnpm test

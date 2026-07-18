@@ -17,7 +17,12 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { hh, principal } = await getHouseholdAndPrincipal();
+  // The masthead is best-effort: a build-time prerender (e.g. the 404 page)
+  // or a down database must never take the shell with it. Fail closed to
+  // the signed-out chrome; the pages themselves still guard access.
+  const { hh, principal } = await getHouseholdAndPrincipal().catch(
+    () => ({ hh: null, principal: null }) as const,
+  );
   return (
     <html lang="en">
       <body>
