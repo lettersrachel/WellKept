@@ -8,6 +8,8 @@ import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
 import { emitFieldChange } from "./field-events";
+import { vaultWrite } from "./vault";
+import { isClientEditable } from "./client-allowlist";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -48,6 +50,7 @@ export async function proposeEdit(formData: FormData) {
   if (principal?.role !== "client") return;
   // The client can only propose on fields the client can see. Policy, not UI.
   if (readDecision("client", f.sensitivity) !== "visible") return;
+  if (!isClientEditable(f.name)) return; // REQ-022 allowlist, fail closed
   await db.insert(clientEdit).values({
     id: randomUUID(),
     householdId: f.householdId,
@@ -107,4 +110,32 @@ export async function reviewEdit(formData: FormData) {
     .where(eq(clientEdit.id, editId));
   revalidatePath("/oversight");
   revalidatePath("/playbook");
+}
+
+/**
+ * REQ-013: store an s3 value in the encrypted vault. corporate_admin only
+ * (the HM capture path is the mobile app's later sprint). The plaintext
+ * goes ONLY through @wellkept/vault sealing — playbook_field stays empty
+ * and the audit row carries a hash, never the value.
+ */
+export async function setVaultValue(formData: FormData) {
+  const fieldId = String(formData.get("fieldId") ?? "");
+  const value = String(formData.get("vaultValue") ?? "").trim();
+  if (!fieldId || !value) return;
+  const rows = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
+  const f = rows[0];
+  if (!f || f.sensitivity !== "s3") return; // the vault accepts s3 only
+  const principal = await getPrincipal(f.householdId);
+  if (principal?.role !== "corporate_admin") return; // fail closed
+  await vaultWrite(f.householdId, fieldId, value);
+  await db.insert(auditEvent).values({
+    id: randomUUID(),
+    householdId: f.householdId,
+    actorUser: principal.userId,
+    actorRole: principal.role,
+    kind: "vault_write",
+    fieldId,
+    newValueHash: sha256(value),
+  });
+  revalidatePath("/oversight");
 }

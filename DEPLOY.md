@@ -38,6 +38,7 @@ Project settings:
 | `REDIS_URL` | the Upstash `rediss://` URL |
 | `AUTH_SECRET` | `openssl rand -hex 32` — the app REFUSES to boot production on the dev secret |
 | `RESEND_API_KEY` | from Resend — production sign-in THROWS without it (a silent unsent link is a lockout) |
+| `WK_KMS_KEY` | `openssl rand -base64 32` — vault KEK; production refuses to boot the vault without it |
 | `AUTH_EMAIL_FROM` | `Well Kept <signin@yourdomain.com>` (the domain you verified in Resend) |
 
 Then point your domain (e.g. `app.wellkept.com`) at the Vercel project.

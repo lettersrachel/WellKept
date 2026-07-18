@@ -5,6 +5,7 @@ import { playbookField, auditEvent, household } from "@wellkept/schema";
 import { revealS3, type AuditEntry } from "@wellkept/permissions";
 import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
+import { vaultOpen } from "@/lib/vault";
 
 /**
  * REQ-034 / REQ-005: the s3 reveal. The principal comes from the Auth.js
@@ -54,9 +55,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, reason: "audit write failed: reveal refused" }, { status: 500 });
   }
 
+  // The value comes from the encrypted vault (REQ-013), decrypted only
+  // after the permission decision and only after the audit row committed.
+  // No vault item yet -> the vault-pending placeholder.
+  const vaultValue = await vaultOpen(f.id);
   return NextResponse.json({
     ok: true,
-    value: result.value || "vault-pending", // ADR-001 guardrail 2
+    value: vaultValue ?? "vault-pending",
     expiresInSeconds: result.expiresInSeconds,
   });
 }

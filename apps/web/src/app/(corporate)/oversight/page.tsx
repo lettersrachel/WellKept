@@ -5,7 +5,8 @@ import { filterFields } from "@wellkept/permissions";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems } from "@/lib/data";
-import { setStatusTag, reviewEdit } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue } from "@/lib/actions";
+import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "./RevealButton";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function Oversight() {
   const signals = commands.filter((c) => c.type === "signal.route");
   const visible = filterFields(role, all);
   const fieldName = new Map(all.map((f) => [f.id, f.name]));
+  const vaulted = await vaultHasValue(all.filter((f) => f.sensitivity === "s3").map((f) => f.id));
   const pendingEdits = edits.filter((e) => e.status === "pending");
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
   const unconfirmed = all.filter((f) => !f.confirmed).length;
@@ -217,7 +219,21 @@ export default async function Oversight() {
                 </span>
                 <div className={`fval${f.value || f.sensitivity === "s3" ? "" : " unasked"}`}>
                   {f.sensitivity === "s3" ? (
-                    <RevealButton fieldId={String(f.id)} />
+                    <>
+                      <RevealButton fieldId={String(f.id)} />
+                      {role === "corporate_admin" && (
+                        <details style={{ marginTop: 6 }}>
+                          <summary className="prov" style={{ cursor: "pointer" }}>
+                            {vaulted.has(String(f.id)) ? "Replace vault value" : "Set vault value (encrypted)"}
+                          </summary>
+                          <form action={setVaultValue} className="row" style={{ marginTop: 6 }}>
+                            <input type="hidden" name="fieldId" value={String(f.id)} />
+                            <input name="vaultValue" placeholder="Sealed with the household key; never stored in plain text" style={{ flex: 1 }} />
+                            <button className="act subtle">Seal</button>
+                          </form>
+                        </details>
+                      )}
+                    </>
                   ) : f.value ? (
                     String(f.value)
                   ) : (

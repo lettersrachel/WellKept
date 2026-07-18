@@ -3,6 +3,7 @@ import { SECTION_NAMES } from "@wellkept/schema";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
+import { isClientEditable } from "@/lib/client-allowlist";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,7 @@ function ClientField({
       <div className="fval">{String(f.value)}</div>
       {pending ? (
         <div className="prov">Your suggested update is with your house manager.</div>
-      ) : (
+      ) : !isClientEditable(String(f.name)) ? null : (
         <details>
           <summary className="prov" style={{ cursor: "pointer" }}>
             Suggest an update
