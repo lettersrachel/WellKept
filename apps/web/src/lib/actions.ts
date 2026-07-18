@@ -7,6 +7,7 @@ import { household, playbookField, clientEdit, auditEvent } from "@wellkept/sche
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
+import { emitFieldChange } from "./field-events";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -90,6 +91,15 @@ export async function reviewEdit(formData: FormData) {
       oldValueHash: sha256(f.value),
       newValueHash: sha256(edit.proposedValue),
       detail: { via: "client_edit_approval", editId },
+    });
+    // The write emits the trigger-engine event (WK-DEV-004 S3).
+    await emitFieldChange({
+      householdId: f.householdId,
+      fieldId: f.id,
+      fieldName: f.name,
+      section: f.section,
+      newValue: edit.proposedValue,
+      changedAt: new Date().toISOString(),
     });
   }
   await db.update(clientEdit)

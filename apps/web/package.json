@@ -11,15 +11,16 @@
   "dependencies": {
     "@auth/core": "0.34.3",
     "@auth/drizzle-adapter": "1.11.2",
+    "@wellkept/close-flow": "workspace:*",
+    "@wellkept/offline-queue": "workspace:*",
     "@wellkept/permissions": "workspace:*",
     "@wellkept/schema": "workspace:*",
+    "bullmq": "5.80.8",
     "drizzle-orm": "0.44.7",
     "next": "15.5.20",
     "pg": "8.22.0",
     "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "@wellkept/close-flow": "workspace:*",
-    "@wellkept/offline-queue": "workspace:*"
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
     "@types/node": "26.1.1",

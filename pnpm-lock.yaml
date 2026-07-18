@@ -38,6 +38,9 @@ importers:
       '@wellkept/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      bullmq:
+        specifier: 5.80.8
+        version: 5.80.8
       drizzle-orm:
         specifier: 0.44.7
         version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
