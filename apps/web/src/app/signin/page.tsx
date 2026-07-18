@@ -18,8 +18,9 @@ export default async function SignIn({
         </p>
       </form>
       <div className="note">
-        Sign-in is by emailed link only; there are no passwords to phish. In development the link
-        appears at /dev/last-email instead of your inbox.
+        Sign-in is by emailed link only; there are no passwords to phish.
+        {process.env.NODE_ENV !== "production" &&
+          " In development the link appears at /dev/last-email instead of your inbox."}
       </div>
     </div>
   );

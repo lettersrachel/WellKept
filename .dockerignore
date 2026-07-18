@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.next
+**/.next
+**/dist
+.git
+.expo
+**/.expo
+apps/hm-mobile
+apps/web
+tooling
+docs
+*.md

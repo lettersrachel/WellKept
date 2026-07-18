@@ -60,7 +60,13 @@ async function sendMagicLink({ identifier, url }: { identifier: string; url: str
     sent.push({ identifier, url, sentAt: new Date().toISOString() });
   }
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) {
+    // In production a silently-unsent link is a lockout, not a fallback.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("RESEND_API_KEY is not set: no way to deliver sign-in links in production");
+    }
+    return;
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -74,6 +80,17 @@ async function sendMagicLink({ identifier, url }: { identifier: string; url: str
   if (!res.ok) {
     throw new Error(`magic-link email failed: ${res.status} ${await res.text().catch(() => "")}`);
   }
+}
+
+const DEV_SECRET = "dev-only-secret-do-not-use-in-production-000000";
+
+function resolveSecret(): string {
+  const secret = process.env.AUTH_SECRET ?? DEV_SECRET;
+  if (process.env.NODE_ENV === "production" && secret === DEV_SECRET) {
+    // Refuse to run production sessions on the published dev secret.
+    throw new Error("AUTH_SECRET must be set in production (openssl rand -hex 32)");
+  }
+  return secret;
 }
 
 export function getAuthConfig(): AuthConfig {
@@ -93,7 +110,7 @@ export function getAuthConfig(): AuthConfig {
         } as never,
       ],
       session: { strategy: "database" },
-      secret: process.env.AUTH_SECRET ?? "dev-only-secret-do-not-use-in-production-000000",
+      secret: resolveSecret(),
       trustHost: true,
     };
   }
