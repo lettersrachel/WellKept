@@ -31,6 +31,23 @@ export async function getPendingEdits(householdId: string) {
     .orderBy(asc(clientEdit.createdAt));
 }
 
+export async function getOpenDots(householdId: string) {
+  const { dot } = await import("@wellkept/schema");
+  return db.select().from(dot)
+    .where(eq(dot.householdId, householdId))
+    .orderBy(asc(dot.heardAt));
+}
+
+/** Unfired pack items, soonest first — the anticipation surface (REQ-052). */
+export async function getUpcomingPackItems(householdId: string, limit = 8) {
+  const { promptPackItem } = await import("@wellkept/schema");
+  const { isNull, and } = await import("drizzle-orm");
+  const rows = await db.select().from(promptPackItem)
+    .where(and(eq(promptPackItem.householdId, householdId), isNull(promptPackItem.firedAt)))
+    .orderBy(asc(promptPackItem.fireAt));
+  return rows.slice(0, limit);
+}
+
 export async function getRecentAudit(householdId: string, limit = 12) {
   const rows = await db
     .select()

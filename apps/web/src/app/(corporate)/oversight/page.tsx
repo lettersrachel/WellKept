@@ -4,7 +4,7 @@ import { visitCommand } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
-import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit } from "@/lib/data";
+import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems } from "@/lib/data";
 import { setStatusTag, reviewEdit } from "@/lib/actions";
 import { RevealButton } from "./RevealButton";
 
@@ -20,11 +20,13 @@ export default async function Oversight() {
   if (!CORPORATE_ROLES.has(principal.role)) redirect("/");
   const role = principal.role;
 
-  const [all, edits, audit, commands] = await Promise.all([
+  const [all, edits, audit, commands, dots, packItems] = await Promise.all([
     getFields(hh.id),
     getPendingEdits(hh.id),
     getRecentAudit(hh.id),
     db.select().from(visitCommand).where(eq(visitCommand.householdId, hh.id)),
+    getOpenDots(hh.id),
+    getUpcomingPackItems(hh.id, 10),
   ]);
   const visits = commands.filter((c) => c.type === "visit.submit" && c.status === "applied");
   const conflicts = commands.filter((c) => c.status === "conflict");
@@ -98,6 +100,42 @@ export default async function Oversight() {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div className="card">
+        <h2>Anticipation engine (REQ-050: packs are scheduled instances)</h2>
+        {packItems.length === 0 ? (
+          <div className="note">No scheduled prompts. Field changes on bound fields generate them.</div>
+        ) : (
+          <table className="panel">
+            <thead>
+              <tr>
+                <th>Fires</th>
+                <th>Pack</th>
+                <th>Prompt</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {packItems.map((i) => (
+                <tr key={i.id}>
+                  <td>{i.fireAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</td>
+                  <td>{i.packName}</td>
+                  <td>{i.itemText.slice(0, 70)}{i.itemText.length > 70 ? "…" : ""}</td>
+                  <td>{i.suppressedByTag ? "HELD" : "scheduled"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {dots.length > 0 && (
+          <>
+            <div className="eyebrow">Open dots (feed future gestures, REQ-046)</div>
+            {dots.map((d) => (
+              <div key={d.id} className="prov" style={{ fontStyle: "italic" }}>&ldquo;{d.verbatim}&rdquo;</div>
+            ))}
+          </>
+        )}
       </div>
 
       {signals.length > 0 && (

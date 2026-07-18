@@ -113,7 +113,9 @@ if (!existing.length) {
   console.log("prior visit report seeded");
 }
 
-// Neutral status tag for a fresh demo.
+// Neutral status tag for a fresh demo; releasing holds mirrors the worker's
+// tag-change behavior (this script writes the DB directly, bypassing the queue).
 await db.update(household).set({ statusTag: "STEADY", updatedAt: new Date() }).where(eq(household.id, householdId));
-console.log("status tag -> STEADY");
+await pool.query("UPDATE prompt_pack_item SET suppressed_by_tag=false WHERE fired_at IS NULL");
+console.log("status tag -> STEADY, holds released");
 await pool.end();

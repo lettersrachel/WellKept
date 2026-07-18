@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
-import { getHouseholdAndPrincipal, getFields } from "@/lib/data";
+import { getHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems } from "@/lib/data";
 import { VisitWizard } from "./VisitWizard";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +20,19 @@ export default async function VisitPage() {
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
 
-  const fields = filterFields(principal.role, await getFields(hh.id), {
+  const [allFields, dots, packItems] = await Promise.all([
+    getFields(hh.id),
+    getOpenDots(hh.id),
+    getUpcomingPackItems(hh.id),
+  ]);
+  const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
   });
   const flagged = fields.filter((f) => f.flag && f.flag !== "none");
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
+  const radar = packItems.filter((i) => !i.suppressedByTag);
+  const fmtDay = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -52,6 +60,38 @@ export default async function VisitPage() {
             {f.value ? <div className="fval">{String(f.value)}</div> : null}
           </div>
         ))
+      )}
+
+      <div className="eyebrow">Coming up — the anticipation engine</div>
+      {lifeEvent ? (
+        <div className="card" style={{ border: "1px dashed var(--grey)", background: "var(--cream)" }}>
+          <div className="note">Held. LIFE-EVENT pauses every prompt; nothing is deleted.</div>
+        </div>
+      ) : radar.length === 0 ? (
+        <div className="note">Nothing scheduled in the window.</div>
+      ) : (
+        radar.map((i) => (
+          <div key={i.id} className="card" style={{ background: "#F3EAD2", marginBottom: 8 }}>
+            <div style={{ fontSize: 15, color: "var(--green)" }}>{i.itemText}</div>
+            <div className="prov">
+              {i.packName} · fires {fmtDay(i.fireAt)}
+            </div>
+          </div>
+        ))
+      )}
+
+      <div className="eyebrow">Open dots</div>
+      {dots.length === 0 ? (
+        <div className="note">No open dots.</div>
+      ) : (
+        <div className="card">
+          {dots.map((d) => (
+            <div key={d.id} className="field">
+              <span className="fval" style={{ fontStyle: "italic" }}>&ldquo;{d.verbatim}&rdquo;</span>
+              <div className="prov">heard {fmtDay(d.heardAt)} · never client-visible</div>
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="eyebrow">Proposal window</div>
