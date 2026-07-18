@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Well Kept HM",
+    "slug": "wellkept-hm",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#1C3D2E"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.wellkept.hm"
+    },
+    "android": {
+      "package": "com.wellkept.hm"
+    }
+  }
+}
