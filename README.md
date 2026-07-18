@@ -1,5 +1,5 @@
 # wellkept
-The Well Kept platform monorepo. Built per WK-DEV-000..005 and WK-APP-001/002/003.
+Well Kept Home Operations Management — the platform monorepo. Built per WK-DEV-000..005 and WK-APP-001/002/003.
 Governing decision: docs/adr/001-build-timing.md (build now; paper remains the
 pilot's system of record; see docs/PARALLEL_PILOT_PROTOCOL.md).
 
