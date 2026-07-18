@@ -1,0 +1,69 @@
+# Permanent gates (WK-DEV-005 S6 / ADR-001 guardrail 4). Two of the five
+# acceptance tests run here on every push:
+#   - the payload test: @wellkept/permissions' suite includes
+#     assertClientPayloadSafe over the real 258-field seed, and the package
+#     fails the build below 100% line/branch/function/statement coverage
+#   - fixture parity: the schema vocabulary suite pins zod, pg enums, and
+#     the permission core to one shared vocabulary
+# The airplane test (offline close-flow) is browser-driven and remains a
+# manual release blocker until a Playwright job lands; suppression and
+# founder-walkthrough gates likewise.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wellkept
+          POSTGRES_PASSWORD: wellkept_dev
+          POSTGRES_DB: wellkept
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wellkept -d wellkept"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Enable corepack pnpm
+        run: corepack enable
+      - name: Install (frozen lockfile — pin-refresh is the law)
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test (permissions gate at 100% or this fails)
+        run: pnpm test
+      - name: Migrate against a real PostgreSQL 16
+        run: pnpm --filter @wellkept/schema db:migrate
+      - name: Seed the 258-field fixture and verify the vault rule holds in the database
+        run: |
+          pnpm --filter @wellkept/schema db:seed
+          node -e "
+            const pg = require('pg');
+            (async () => {
+              const c = new pg.Client('postgresql://wellkept:wellkept_dev@localhost:5432/wellkept');
+              await c.connect();
+              const fields = await c.query('SELECT count(*)::int AS n FROM playbook_field');
+              const leaks = await c.query(\"SELECT count(*)::int AS n FROM playbook_field WHERE sensitivity='s3' AND value <> ''\");
+              await c.end();
+              if (fields.rows[0].n !== 258) throw new Error('expected 258 seeded fields, got ' + fields.rows[0].n);
+              if (leaks.rows[0].n !== 0) throw new Error('SEVERE: s3 values present in playbook_field');
+              console.log('seed fixture: 258 fields, vault rule holds');
+            })().catch((e) => { console.error(e); process.exit(1); });
+          "
+        working-directory: packages/schema
