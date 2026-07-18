@@ -1,4 +1,5 @@
 import { filterFields, assertClientPayloadSafe, type FieldRecord } from "@wellkept/permissions";
+import { SECTION_NAMES } from "@wellkept/schema";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
@@ -133,8 +134,15 @@ export default async function ClientPlaybook() {
             entries appear here as they&apos;re confirmed.
           </div>
         ) : (
-          rest.map((f) => (
-            <ClientField key={String(f.id)} f={f} pending={pendingByField.has(String(f.id))} />
+          [...new Set(rest.map((f) => f.section as number))].sort((a, b) => a - b).map((sec) => (
+            <div key={sec}>
+              <div className="eyebrow">{SECTION_NAMES[sec] ?? `Section ${sec}`}</div>
+              {rest
+                .filter((f) => f.section === sec)
+                .map((f) => (
+                  <ClientField key={String(f.id)} f={f} pending={pendingByField.has(String(f.id))} />
+                ))}
+            </div>
           ))
         )}
         {uncapturedCount > 0 && (

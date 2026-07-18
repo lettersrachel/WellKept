@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { visitCommand } from "@wellkept/schema";
+import { visitCommand, SECTION_NAMES } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -200,7 +200,7 @@ export default async function Oversight() {
         {[...sections.entries()].map(([sec, fields]) => (
           <details key={sec} className="section" open={fields.some((f) => f.sensitivity === "s3")}>
             <summary>
-              Section {sec} <span className="pill">{fields.length}</span>
+              S{sec} · {SECTION_NAMES[sec] ?? "—"} <span className="pill">{fields.length}</span>
             </summary>
             {fields.map((f) => (
               <div key={String(f.id)} className={`field ${f.flag && f.flag !== "none" ? f.flag : ""}`}>

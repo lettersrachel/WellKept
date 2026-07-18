@@ -55,8 +55,18 @@ export function VisitWizard({ householdId }: { householdId: string }) {
 
   useEffect(() => {
     // Offline shell: lets /visit itself load after a reload with no network.
+    // Production only — in dev, Turbopack chunk names collide across server
+    // restarts, and a cache-first SW serves stale chunks (client exceptions,
+    // hydration mismatches). Dev actively cleans up any old registration.
     if ("serviceWorker" in navigator) {
-      void navigator.serviceWorker.register("/wk-sw.js").catch(() => {});
+      if (process.env.NODE_ENV === "production") {
+        void navigator.serviceWorker.register("/wk-sw.js").catch(() => {});
+      } else {
+        void navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => void r.unregister()));
+        if ("caches" in window) {
+          void caches.keys().then((keys) => keys.forEach((k) => void caches.delete(k)));
+        }
+      }
     }
     flowRef.current = createCloseFlow({ householdId, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
     setState(flowRef.current.state);

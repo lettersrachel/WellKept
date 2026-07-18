@@ -28,3 +28,17 @@ export type FieldFlag = z.infer<typeof fieldFlagSchema>;
 
 /** N/A-confirmed is a VALUE, not an empty field (WK-DEV-005 S2). */
 export const NA_CONFIRMED = "N/A-confirmed" as const;
+
+/** The 24 fixed sections (REQ-011: never deleted, never renumbered).
+ * Canonical names from WK-PLAY-001 via the verified export tool. */
+export const SECTION_NAMES: Record<number, string> = {
+  1: "Critical Flags & Household Summary", 2: "The Household's People & Rhythm",
+  3: "Children", 4: "Pets & Animals", 5: "Residents, Staff & Regular Visitors",
+  6: "The Property", 7: "Access & Vehicles", 8: "Privacy & Boundaries",
+  9: "Safety & Emergency Readiness", 10: "Systems", 11: "Appliances & Equipment",
+  12: "Kitchen & Food", 13: "Care of Fine Things", 14: "Laundry & Linens",
+  15: "Supplies & Consumables", 16: "Rooms & Zone Standards", 17: "The Visit",
+  18: "Patterns & Observations", 19: "Seasons & Travel", 20: "Vendors & Services",
+  21: "Occasions, Traditions & Hospitality", 22: "Scope & Communication",
+  23: "Anticipation & The Horizon", 24: "Governance",
+};
