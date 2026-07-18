@@ -46,9 +46,38 @@ export function getAdapter(): Adapter {
   return g.wkAdapter;
 }
 
+/**
+ * The mail seam. With RESEND_API_KEY set, magic links go out through
+ * Resend's HTTP API (no SDK needed) from AUTH_EMAIL_FROM; a non-2xx
+ * response throws, so Auth.js surfaces the failure instead of silently
+ * "sending" nothing. Without the key (dev, CI), links are recorded and
+ * surfaced at /dev/last-email. Both paths record in non-production so the
+ * dev page stays useful even while testing a real provider.
+ */
+async function sendMagicLink({ identifier, url }: { identifier: string; url: string }) {
+  const sent = getSentLinks();
+  if (process.env.NODE_ENV !== "production" || !process.env.RESEND_API_KEY) {
+    sent.push({ identifier, url, sentAt: new Date().toISOString() });
+  }
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>",
+      to: [identifier],
+      subject: "Your Well Kept sign-in link",
+      html: `<p>Sign in to Well Kept:</p><p><a href="${url}">Open your household</a></p><p>This link expires in 24 hours and works once. If you didn't request it, ignore this email.</p>`,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`magic-link email failed: ${res.status} ${await res.text().catch(() => "")}`);
+  }
+}
+
 export function getAuthConfig(): AuthConfig {
   if (!g.wkAuthConfig) {
-    const sent = getSentLinks();
     g.wkAuthConfig = {
       adapter: getAdapter(),
       basePath: "/api/auth",
@@ -58,12 +87,9 @@ export function getAuthConfig(): AuthConfig {
           type: "email",
           name: "Email",
           maxAge: 24 * 60 * 60,
-          async sendVerificationRequest({ identifier, url }: { identifier: string; url: string }) {
-            sent.push({ identifier, url, sentAt: new Date().toISOString() });
-          },
+          sendVerificationRequest: sendMagicLink,
         // The provider shape Auth.js expects for a custom email transport is
-        // wider than what a link-recorder needs; the cast is the seam where a
-        // real mail provider drops in.
+        // wider than what this transport needs; the cast covers the gap.
         } as never,
       ],
       session: { strategy: "database" },
