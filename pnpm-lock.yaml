@@ -151,10 +151,25 @@ importers:
       bullmq:
         specifier: 5.80.8
         version: 5.80.8
+      drizzle-orm:
+        specifier: 0.44.7
+        version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
+      pg:
+        specifier: 8.22.0
+        version: 8.22.0
     devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      '@types/pg':
+        specifier: 8.20.0
+        version: 8.20.0
       typescript:
         specifier: 5.8.3
         version: 5.8.3
+      vitest:
+        specifier: 3.2.7
+        version: 3.2.7(@types/node@26.1.1)(tsx@4.23.1)
 
 packages:
 

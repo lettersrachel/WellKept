@@ -3,14 +3,22 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "WK_WORKER_MAIN=1 node src/index.ts",
+    "seed:rules": "node src/seed-rules.ts"
   },
   "dependencies": {
     "bullmq": "5.80.8",
     "@wellkept/schema": "workspace:*",
-    "@wellkept/permissions": "workspace:*"
+    "@wellkept/permissions": "workspace:*",
+    "drizzle-orm": "0.44.7",
+    "pg": "8.22.0"
   },
   "devDependencies": {
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "vitest": "3.2.7",
+    "@types/node": "26.1.1",
+    "@types/pg": "8.20.0"
   }
 }
