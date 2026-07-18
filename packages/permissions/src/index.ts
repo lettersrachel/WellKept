@@ -73,7 +73,7 @@ export function filterFields(role: string, fields: FieldRecord[], opts: PermOpts
   if (!Array.isArray(fields)) return [];
   const out = [];
   for (const f of fields) {
-    const d = readDecision(role, f && f.sensitivity, opts);
+    const d = readDecision(role, (f && f.sensitivity) ?? "", opts); // "" fails closed
     if (d === "denied") continue;
     if (d === "reveal_only") {
       out.push({ ...f, value: null, vault: true });
@@ -132,7 +132,7 @@ export function assertClientPayloadSafe(payloadFields: FieldRecord[]): true {
     throw new Error("payload must be an array of fields");
   }
   for (const f of payloadFields) {
-    if (!f || !SENSITIVITIES.includes(f.sensitivity)) {
+    if (!f || !SENSITIVITIES.includes(f.sensitivity ?? "")) {
       throw new Error(`unknown sensitivity in client payload: ${f && f.sensitivity}`);
     }
     if (f.sensitivity !== "s1") {
