@@ -5,7 +5,10 @@
   "main": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "node src/load-seed.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.0",
@@ -13,8 +16,10 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/pg": "^8.20.0",
     "@wellkept/permissions": "workspace:*",
     "drizzle-kit": "^0.31.0",
+    "pg": "^8.22.0",
     "typescript": "~5.8.0",
     "vitest": "^3.0.0"
   }

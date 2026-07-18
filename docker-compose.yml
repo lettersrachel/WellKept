@@ -1,0 +1,31 @@
+# Local dev env (WK-DEV-003): PG 16 + Redis 7. `docker compose up -d`.
+# Dev-only credentials; staging/prod come from managed services, never this file.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: wellkept
+      POSTGRES_PASSWORD: wellkept_dev
+      POSTGRES_DB: wellkept
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wellkept -d wellkept"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
