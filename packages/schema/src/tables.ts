@@ -4,6 +4,7 @@
 // Source of truth for the field shape: WK-PLAY-001 via WK-APP-003 S1.
 import {
   pgTable, uuid, text, integer, boolean, timestamp, jsonb, index, pgEnum,
+  primaryKey, uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const sensitivityEnum = pgEnum("sensitivity", ["s1", "s2", "s3"]);
@@ -14,6 +15,10 @@ export const fieldFlagEnum = pgEnum("field_flag", ["none", "CRITICAL", "CAUTION"
 export const tierEnum = pgEnum("tier", ["essential", "family_ops", "concierge"]);
 export const statusTagEnum = pgEnum("status_tag", [
   "ONBOARDING-90", "STEADY", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW", "CHAMPION",
+]);
+export const roleEnum = pgEnum("role", [
+  "client", "house_manager", "backup_hm",
+  "corporate_ops", "corporate_admin", "cfo_readonly",
 ]);
 
 const stamps = {
@@ -168,3 +173,60 @@ export const movableObservance = pgTable("movable_observance", {
   year: integer("year").notNull(),
   date: timestamp("date", { withTimezone: true }).notNull(),
 });
+
+// ---------------------------------------------------------------------------
+// Auth (ported from the July 12 foundation repo's proven Auth.js integration).
+// Auth.js manages auth_user/account/session/verification_token through
+// @auth/drizzle-adapter (database sessions: revocable by deleting the row;
+// the Email provider supports nothing else anyway). Text ids here are Auth.js
+// convention; everything domain-side stays uuid.
+// ---------------------------------------------------------------------------
+
+export const authUser = pgTable("auth_user", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("email_verified", { withTimezone: true }),
+  image: text("image"),
+});
+
+export const authAccount = pgTable("auth_account", {
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  refreshToken: text("refresh_token"),
+  accessToken: text("access_token"),
+  expiresAt: integer("expires_at"),
+  tokenType: text("token_type"),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  sessionState: text("session_state"),
+}, (t) => [primaryKey({ columns: [t.provider, t.providerAccountId] })]);
+
+export const authSession = pgTable("auth_session", {
+  sessionToken: text("session_token").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { withTimezone: true }).notNull(),
+});
+
+export const authVerificationToken = pgTable("auth_verification_token", {
+  identifier: text("identifier").notNull(),
+  token: text("token").notNull(),
+  expires: timestamp("expires", { withTimezone: true }).notNull(),
+}, (t) => [primaryKey({ columns: [t.identifier, t.token] })]);
+
+// Maps an authenticated user to the single role they hold at a given
+// household (unique on user x household). The role ALWAYS comes from this
+// server-side table, never from anything the client supplies; a routing
+// householdId only selects which row to read. Multiple rows per user across
+// households is how backup HMs and corporate coverage work; there is no
+// "sees every household" wildcard.
+export const householdRoleAssignment = pgTable("household_role_assignment", {
+  id: uuid("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => household.id, { onDelete: "cascade" }),
+  role: roleEnum("role").notNull(),
+  ndaApproved: boolean("nda_approved").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("household_role_assignment_user_household_unique").on(t.userId, t.householdId)]);

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { playbookField, auditEvent } from "@wellkept/schema";
+import { playbookField, auditEvent, household } from "@wellkept/schema";
 import { revealS3, type AuditEntry } from "@wellkept/permissions";
 import { db } from "@/lib/db";
-import { getRole, DEMO_USERS } from "@/lib/session";
+import { getPrincipal } from "@/lib/session";
 
 /**
- * REQ-034 / REQ-005: the s3 reveal. The decision comes from the permission
- * core; the audit row is written BEFORE the value leaves the server, and a
- * failed audit write aborts the reveal ("no sink, no reveal" carried through
- * to the database). Until sprint 5+10 (ADR-001 guardrail 2), s3 rows hold no
- * real values; the endpoint returns the vault-pending placeholder.
+ * REQ-034 / REQ-005: the s3 reveal. The principal comes from the Auth.js
+ * session + household_role_assignment (never the client), the decision from
+ * the permission core, and the audit row is written BEFORE the value leaves
+ * the server — a failed audit write aborts the reveal. Until sprint 5+10
+ * (ADR-001 guardrail 2) s3 rows hold no real values; the endpoint returns
+ * the vault-pending placeholder. NDA households flow through opts.ndaMode.
  */
 export async function POST(req: NextRequest) {
-  const role = await getRole();
   const { fieldId } = (await req.json().catch(() => ({}))) as { fieldId?: string };
   if (!fieldId) return NextResponse.json({ ok: false, reason: "missing fieldId" }, { status: 400 });
 
@@ -22,11 +22,19 @@ export async function POST(req: NextRequest) {
   const f = rows[0];
   if (!f) return NextResponse.json({ ok: false, reason: "unknown field" }, { status: 404 });
 
+  const principal = await getPrincipal(f.householdId);
+  if (!principal) return NextResponse.json({ ok: false, reason: "not authenticated" }, { status: 403 });
+
+  // REQ-006: NDA households tighten s3 for backup HMs until familiarization.
+  const [hh] = await db.select().from(household).where(eq(household.id, f.householdId));
+  const ndaMode = Boolean(hh?.isNda) && !principal.ndaApproved;
+
   const entries: AuditEntry[] = [];
   const result = revealS3(
-    { role, user: DEMO_USERS[role].id, householdId: f.householdId },
+    { role: principal.role, user: principal.userId, householdId: f.householdId },
     { id: f.id, name: f.name, sensitivity: f.sensitivity, value: f.value },
     (e) => entries.push(e),
+    { ndaMode },
   );
   if (!result.ok) return NextResponse.json(result, { status: 403 });
 
@@ -35,7 +43,7 @@ export async function POST(req: NextRequest) {
     await db.insert(auditEvent).values({
       id: randomUUID(),
       householdId: f.householdId,
-      actorUser: entry.user,
+      actorUser: principal.userId,
       actorRole: entry.role,
       kind: entry.kind === "corporate_view" ? "s3_corporate_view" : "s3_reveal",
       fieldId: f.id,

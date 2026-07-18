@@ -1,7 +1,6 @@
 import { filterFields, assertClientPayloadSafe } from "@wellkept/permissions";
 import { redirect } from "next/navigation";
-import { getRole } from "@/lib/session";
-import { getHousehold, getFields, getPendingEdits } from "@/lib/data";
+import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +12,10 @@ export const dynamic = "force-dynamic";
  * (US-05) throws before render if anything above s1 survives.
  */
 export default async function ClientPlaybook() {
-  const role = await getRole();
-  if (role !== "client") redirect("/oversight");
-  const hh = await getHousehold();
+  const { hh, principal } = await getHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
+  if (!principal) redirect("/signin");
+  if (principal.role !== "client") redirect("/");
 
   const all = await getFields(hh.id);
   const visible = filterFields("client", all);

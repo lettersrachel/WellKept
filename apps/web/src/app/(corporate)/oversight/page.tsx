@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
-import { getRole } from "@/lib/session";
-import { getHousehold, getFields, getPendingEdits, getRecentAudit } from "@/lib/data";
+import { CORPORATE_ROLES } from "@/lib/session";
+import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit } from "@/lib/data";
 import { setStatusTag, reviewEdit } from "@/lib/actions";
 import { RevealButton } from "./RevealButton";
 
@@ -11,10 +11,11 @@ const TAGS = ["STEADY", "ONBOARDING-90", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW"
 
 /** Corporate oversight (REQ-041..046): full record, fully audited. */
 export default async function Oversight() {
-  const role = await getRole();
-  if (role !== "corporate_admin") redirect("/playbook");
-  const hh = await getHousehold();
+  const { hh, principal } = await getHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
+  if (!principal) redirect("/signin");
+  if (!CORPORATE_ROLES.has(principal.role)) redirect("/");
+  const role = principal.role;
 
   const [all, edits, audit] = await Promise.all([
     getFields(hh.id),

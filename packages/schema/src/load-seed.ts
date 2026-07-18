@@ -5,9 +5,11 @@
  * idempotent, matching the importer's UUID-preservation rule); never deletes.
  */
 import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import pg from "pg";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { household, playbookField } from "./tables.ts";
+import { household, playbookField, authUser, householdRoleAssignment } from "./tables.ts";
 
 interface SeedField {
   id: string; section: number; name: string; value: string;
@@ -63,4 +65,22 @@ for (const f of seed.fields) {
   n++;
 }
 console.log(`seeded household "${seed.household.name}" (${seed.household.id}): ${n} playbook_field rows upserted`);
+
+// Demo identities (magic-link sign-in; links surface at /dev/last-email).
+// Role comes from household_role_assignment, never from the client.
+const DEMO_ACCOUNTS = [
+  { email: "lisa@fernbrook.demo", name: "Lisa (client demo)", role: "client" as const },
+  { email: "rachel@wellkept.demo", name: "Rachel (corporate demo)", role: "corporate_admin" as const },
+  { email: "jordan@wellkept.demo", name: "Jordan (HM demo)", role: "house_manager" as const },
+];
+for (const acct of DEMO_ACCOUNTS) {
+  const userId = randomUUID();
+  await db.insert(authUser).values({ id: userId, email: acct.email, name: acct.name })
+    .onConflictDoNothing({ target: authUser.email });
+  const [user] = await db.select().from(authUser).where(eq(authUser.email, acct.email));
+  await db.insert(householdRoleAssignment).values({
+    id: randomUUID(), userId: user!.id, householdId: seed.household.id, role: acct.role,
+  }).onConflictDoNothing();
+  console.log(`  demo account ${acct.email} -> ${acct.role}`);
+}
 await pool.end();

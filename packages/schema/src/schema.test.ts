@@ -9,6 +9,7 @@ import {
   sensitivitySchema, roleSchema, tierSchema, statusTagSchema,
   provenanceSchema, fieldFlagSchema, NA_CONFIRMED,
   sensitivityEnum, provenanceEnum, fieldFlagEnum, tierEnum, statusTagEnum,
+  roleEnum, householdRoleAssignment,
   household, playbookField, vaultItem, auditEvent, visit,
 } from "./index";
 import { ROLES, SENSITIVITIES } from "@wellkept/permissions";
@@ -24,6 +25,12 @@ test("zod and pg enums agree on every shared vocabulary", () => {
 test("permissions core vocabulary matches the schema enums", () => {
   assert.deepEqual([...ROLES], roleSchema.options);
   assert.deepEqual([...SENSITIVITIES], sensitivitySchema.options);
+  assert.deepEqual([...ROLES], [...roleEnum.enumValues]);
+});
+
+test("role assignments key on user x household and carry the NDA gate", () => {
+  assert.ok("userId" in householdRoleAssignment && "householdId" in householdRoleAssignment);
+  assert.ok("ndaApproved" in householdRoleAssignment); // REQ-006 feeds permissions ndaMode
 });
 
 test("sensitivity parse fails closed on unknown markers", () => {

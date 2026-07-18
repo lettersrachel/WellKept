@@ -7,6 +7,14 @@ export async function getHousehold() {
   return rows[0] ?? null;
 }
 
+/** Pilot phase runs one household; pages resolve it plus the caller's principal. */
+export async function getHouseholdAndPrincipal() {
+  const { getPrincipal } = await import("./session");
+  const hh = await getHousehold();
+  if (!hh) return { hh: null, principal: null } as const;
+  return { hh, principal: await getPrincipal(hh.id) } as const;
+}
+
 export async function getFields(householdId: string) {
   return db
     .select()
