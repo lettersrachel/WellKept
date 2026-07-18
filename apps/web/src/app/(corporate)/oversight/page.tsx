@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
+import { and, eq } from "drizzle-orm";
+import { visitCommand } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { CORPORATE_ROLES } from "@/lib/session";
+import { db } from "@/lib/db";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit } from "@/lib/data";
 import { setStatusTag, reviewEdit } from "@/lib/actions";
 import { RevealButton } from "./RevealButton";
@@ -17,11 +20,15 @@ export default async function Oversight() {
   if (!CORPORATE_ROLES.has(principal.role)) redirect("/");
   const role = principal.role;
 
-  const [all, edits, audit] = await Promise.all([
+  const [all, edits, audit, commands] = await Promise.all([
     getFields(hh.id),
     getPendingEdits(hh.id),
     getRecentAudit(hh.id),
+    db.select().from(visitCommand).where(eq(visitCommand.householdId, hh.id)),
   ]);
+  const visits = commands.filter((c) => c.type === "visit.submit" && c.status === "applied");
+  const conflicts = commands.filter((c) => c.status === "conflict");
+  const signals = commands.filter((c) => c.type === "signal.route");
   const visible = filterFields(role, all);
   const fieldName = new Map(all.map((f) => [f.id, f.name]));
   const pendingEdits = edits.filter((e) => e.status === "pending");
@@ -79,12 +86,50 @@ export default async function Oversight() {
               <td>{pendingEdits.length} pending review</td>
             </tr>
             <tr>
+              <td>Visits</td>
+              <td>
+                {visits.length} applied · {conflicts.length} conflict(s) ·{" "}
+                {signals.length} life-change signal(s)
+              </td>
+            </tr>
+            <tr>
               <td>Tier</td>
               <td>{hh.tier}</td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      {signals.length > 0 && (
+        <div className="card">
+          <h2>Life-change signals (same-day routing, never a proposal)</h2>
+          {signals.map((s) => (
+            <div key={s.id} className="field CRITICAL">
+              <span className="fname">Signal from visit {(s.payload as { visitId?: string }).visitId?.slice(0, 8)}</span>
+              <div className="prov">received {s.receivedAt.toISOString().replace("T", " ").slice(0, 19)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {conflicts.length > 0 && (
+        <div className="card">
+          <h2>Visit sync conflicts (stored, never dropped)</h2>
+          <div className="note">
+            Last-write-wins kept the first applied visit; these arrived later for the same day and
+            are held here for review. The HM was never blocked.
+          </div>
+          {conflicts.map((c) => (
+            <div key={c.id} className="field CAUTION">
+              <span className="fname">{c.type} · {c.reason}</span>
+              <div className="fval sans" style={{ fontSize: 13 }}>
+                {((c.payload as { report?: string[] }).report ?? []).join(" ")}
+              </div>
+              <div className="prov">received {c.receivedAt.toISOString().replace("T", " ").slice(0, 19)}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {pendingEdits.length > 0 && (
         <div className="card">

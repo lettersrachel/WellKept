@@ -9,5 +9,5 @@ export default async function Home() {
   if (!principal) redirect("/signin");
   if (principal.role === "client") redirect("/playbook");
   if (CORPORATE_ROLES.has(principal.role)) redirect("/oversight");
-  redirect("/field-roles");
+  redirect("/visit"); // field roles: briefing + close flow
 }

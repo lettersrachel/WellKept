@@ -230,3 +230,21 @@ export const householdRoleAssignment = pgTable("household_role_assignment", {
   ndaApproved: boolean("nda_approved").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("household_role_assignment_user_household_unique").on(t.userId, t.householdId)]);
+
+// One row per command from @wellkept/close-flow's submit() (visit.submit,
+// dot.create, signal.route), drained by @wellkept/offline-queue. id IS the
+// command's idempotencyKey: redelivery (a device retrying after a flaky
+// reconnect) is a plain insert conflict — a safe no-op, not a domain
+// conflict. A domain conflict (status='conflict') is a second, distinct
+// visit.submit for a household that already has one applied the same day;
+// stored, never dropped, so corporate can review (last-write-wins per
+// REQ-032). Ported from the July 12 foundation repo.
+export const visitCommand = pgTable("visit_command", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(), // visit.submit | dot.create | signal.route
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  payload: jsonb("payload").notNull(),
+  status: text("status").notNull(), // applied | conflict
+  reason: text("reason"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("visit_command_household_received_idx").on(t.householdId, t.receivedAt)]);

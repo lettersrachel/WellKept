@@ -2,6 +2,36 @@ import { filterFields, assertClientPayloadSafe } from "@wellkept/permissions";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
+import { latestAppliedVisit } from "@/lib/visit-command-store";
+
+/**
+ * REQ-032: what the client receives from a visit is exactly the three
+ * sentences and the photo count. Dots, signals, zone notes, and changes
+ * stay internal — they are simply never selected into this component.
+ */
+async function VisitReportCard({ householdId }: { householdId: string }) {
+  const latest = await latestAppliedVisit(householdId);
+  if (!latest) {
+    return (
+      <div className="card">
+        <h2>This week&apos;s visit</h2>
+        <div className="note">No visit report yet. During the pilot, your printed report remains the record.</div>
+      </div>
+    );
+  }
+  const payload = latest.payload as { report?: string[]; photoIds?: string[]; hours?: { endedAt?: string } };
+  return (
+    <div className="card">
+      <h2>This week&apos;s visit</h2>
+      {(payload.report ?? []).map((sentence, i) => (
+        <div key={i} className="fval" style={{ lineHeight: 1.6 }}>{sentence}</div>
+      ))}
+      <div className="prov">
+        {(payload.photoIds ?? []).length} photo(s) attached · photo-supported report
+      </div>
+    </div>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -89,13 +119,7 @@ export default async function ClientPlaybook() {
           </details>
         ))}
       </div>
-      <div className="card">
-        <h2>This week&apos;s visit</h2>
-        <div className="note">
-          Visit reports arrive here when the house-manager app ships (sprints 3–5). During the
-          pilot, your printed report remains the record.
-        </div>
-      </div>
+      <VisitReportCard householdId={hh.id} />
     </>
   );
 }

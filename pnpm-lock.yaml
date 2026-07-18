@@ -26,6 +26,12 @@ importers:
       '@auth/drizzle-adapter':
         specifier: 1.11.2
         version: 1.11.2
+      '@wellkept/close-flow':
+        specifier: workspace:*
+        version: link:../../packages/close-flow
+      '@wellkept/offline-queue':
+        specifier: workspace:*
+        version: link:../../packages/offline-queue
       '@wellkept/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
@@ -63,6 +69,30 @@ importers:
       typescript:
         specifier: 5.8.3
         version: 5.8.3
+
+  packages/close-flow:
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: 3.2.7
+        version: 3.2.7(@types/node@26.1.1)(tsx@4.23.1)
+
+  packages/offline-queue:
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: 3.2.7
+        version: 3.2.7(@types/node@26.1.1)(tsx@4.23.1)
 
   packages/permissions:
     devDependencies:
