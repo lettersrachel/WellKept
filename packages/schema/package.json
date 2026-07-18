@@ -8,7 +8,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "node src/load-seed.ts"
+    "db:seed": "node src/load-seed.ts",
+    "db:demo": "node src/demo-content.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.44.7",
