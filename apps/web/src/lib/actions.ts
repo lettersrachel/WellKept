@@ -7,7 +7,7 @@ import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
-import { emitFieldChange } from "./field-events";
+import { emitFieldChange, outboxFieldEvent } from "./field-events";
 import { vaultWrite } from "./vault";
 import { isClientEditable } from "./client-allowlist";
 
@@ -76,35 +76,24 @@ export async function reviewEdit(formData: FormData) {
     const frows = await db.select().from(playbookField).where(eq(playbookField.id, edit.fieldId));
     const f = frows[0];
     if (!f) return;
-    await db.update(playbookField)
-      .set({
-        value: edit.proposedValue,
-        provenance: "client_written",
-        provenanceDate: new Date(),
-        confirmed: true,
-        updatedAt: new Date(),
-      })
-      .where(eq(playbookField.id, f.id));
-    await db.insert(auditEvent).values({
-      id: randomUUID(),
-      householdId: edit.householdId,
-      actorUser: principal.userId,
-      actorRole: principal.role,
-      kind: "field_write",
-      fieldId: f.id,
-      oldValueHash: sha256(f.value),
-      newValueHash: sha256(edit.proposedValue),
-      detail: { via: "client_edit_approval", editId },
+    const event = {
+      householdId: f.householdId, fieldId: f.id, fieldName: f.name,
+      section: f.section, newValue: edit.proposedValue, changedAt: new Date().toISOString(),
+    };
+    // Field write + audit + outbox event commit atomically (durable trigger
+    // delivery); the immediate inline pass runs after the transaction.
+    await db.transaction(async (tx) => {
+      await tx.update(playbookField)
+        .set({ value: edit.proposedValue, provenance: "client_written", provenanceDate: new Date(), confirmed: true, updatedAt: new Date() })
+        .where(eq(playbookField.id, f.id));
+      await tx.insert(auditEvent).values({
+        id: randomUUID(), householdId: edit.householdId, actorUser: principal.userId, actorRole: principal.role,
+        kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(edit.proposedValue),
+        detail: { via: "client_edit_approval", editId },
+      });
+      await outboxFieldEvent(tx, event);
     });
-    // The write emits the trigger-engine event (WK-DEV-004 S3).
-    await emitFieldChange({
-      householdId: f.householdId,
-      fieldId: f.id,
-      fieldName: f.name,
-      section: f.section,
-      newValue: edit.proposedValue,
-      changedAt: new Date().toISOString(),
-    });
+    await emitFieldChange(event);
   }
   await db.update(clientEdit)
     .set({ status: decision, reviewedBy: principal.userId, reviewedAt: new Date(), updatedAt: new Date() })
@@ -297,19 +286,23 @@ export async function promoteDot(formData: FormData) {
   if (!f || f.householdId !== d.householdId) return;
   if (f.sensitivity === "s3") return; // s3 goes through the vault, never a dot merge
 
-  await db.update(playbookField)
-    .set({ value, provenance: "observed", provenanceDate: new Date(), confirmed: true, updatedAt: new Date() })
-    .where(eq(playbookField.id, f.id));
-  await db.update(dot).set({ promotedFieldId: f.id, updatedAt: new Date() }).where(eq(dot.id, dotId));
-  await db.insert(auditEvent).values({
-    id: randomUUID(), householdId: d.householdId, actorUser: actor.userId, actorRole: actor.role,
-    kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(value),
-    detail: { via: "dot_promotion", dotId },
+  const event = {
+    householdId: d.householdId, fieldId: f.id, fieldName: f.name,
+    section: f.section, newValue: value, changedAt: new Date().toISOString(),
+  };
+  await db.transaction(async (tx) => {
+    await tx.update(playbookField)
+      .set({ value, provenance: "observed", provenanceDate: new Date(), confirmed: true, updatedAt: new Date() })
+      .where(eq(playbookField.id, f.id));
+    await tx.update(dot).set({ promotedFieldId: f.id, updatedAt: new Date() }).where(eq(dot.id, dotId));
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId: d.householdId, actorUser: actor.userId, actorRole: actor.role,
+      kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(value),
+      detail: { via: "dot_promotion", dotId },
+    });
+    await outboxFieldEvent(tx, event);
   });
-  await emitFieldChange({
-    householdId: d.householdId, fieldId: f.id, fieldName: f.name, section: f.section,
-    newValue: value, changedAt: new Date().toISOString(),
-  });
+  await emitFieldChange(event);
   revalidatePath(`/oversight/${d.householdId}`);
 }
 

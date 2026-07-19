@@ -9,7 +9,7 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem } from "@wellkept/schema";
-import { runTriggerPass, runRegistrySweep, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import { runTriggerPass, runRegistrySweep, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 
 const connection = {
   url: process.env.REDIS_URL ?? "redis://localhost:6379",
@@ -59,6 +59,7 @@ export function createWorker() {
       if (job.name === "tag-change") return handleTagChange(job.data as TagChangeEvent);
       if (job.name === "registry-sweep") return runRegistrySweep(db);
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
+      if (job.name === "drain-outbox") return drainFieldOutbox(db);
       return handleEvent(job.data as FieldChangeEvent);
     },
     { connection },
@@ -72,12 +73,13 @@ export async function ensureSweepScheduled() {
   const queue = createFieldEventsQueue();
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
   await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
+  await queue.upsertJobScheduler("drain-outbox", { every: 120000 }, { name: "drain-outbox" });
   await queue.close();
 }
 
 if (process.env.WK_WORKER_MAIN === "1") {
   const worker = createWorker();
-  void ensureSweepScheduled().then(() => console.log("[worker] daily sweep (09:00 UTC) + weekly fleet digest (Mon 13:00 UTC) scheduled"));
+  void ensureSweepScheduled().then(() => console.log("[worker] scheduled: daily sweep, weekly digest, outbox drain (2m)"));
   worker.on("completed", (job, result) => {
     const label = job.name === "tag-change"
       ? `tag->${(job.data as TagChangeEvent).to}`

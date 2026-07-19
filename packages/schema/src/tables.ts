@@ -272,3 +272,22 @@ export const registryEntry = pgTable("registry_entry", {
   index("registry_entry_household_idx").on(t.householdId),
   index("registry_entry_household_kind_idx").on(t.householdId, t.kind),
 ]);
+
+// Transactional outbox for field-change events (durable trigger delivery).
+// Written in the SAME transaction as the playbook_field write, so a field
+// change and its trigger event commit atomically or not at all — no change
+// can silently fail to generate its prompts. The worker drains unprocessed
+// rows and runs the trigger pass (deterministic ids make it idempotent with
+// the inline pass). processedAt stamps completion; attempts bounds retries.
+export const fieldEventOutbox = pgTable("field_event_outbox", {
+  id: uuid("id").primaryKey(),
+  householdId: uuid("household_id").notNull(),
+  fieldId: uuid("field_id").notNull(),
+  fieldName: text("field_name").notNull(),
+  section: integer("section").notNull(),
+  newValue: text("new_value").notNull(),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("field_event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);

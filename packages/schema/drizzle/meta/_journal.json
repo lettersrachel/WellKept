@@ -29,6 +29,13 @@
       "when": 1784453695365,
       "tag": "0003_registries",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784479378301,
+      "tag": "0004_field_event_outbox",
+      "breakpoints": true
     }
   ]
 }

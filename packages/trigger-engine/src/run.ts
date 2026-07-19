@@ -74,3 +74,37 @@ export async function runRegistrySweep(db: any, opts: { householdId?: string; no
   }
   return { households: households.length, emitted };
 }
+
+/**
+ * Drain the transactional field-event outbox (durable trigger delivery).
+ * Claims a batch of unprocessed rows, runs the trigger pass for each
+ * (idempotent via deterministic ids), and stamps processed_at. Bounded
+ * retries via the attempts column. Runs anywhere, any number of times.
+ */
+export async function drainFieldOutbox(db: any, opts: { batch?: number; maxAttempts?: number } = {}) {
+  const { fieldEventOutbox } = await import("@wellkept/schema");
+  const { isNull, and, lt, asc } = await import("drizzle-orm");
+  const batch = opts.batch ?? 100;
+  const maxAttempts = opts.maxAttempts ?? 10;
+
+  const pending = await db.select().from(fieldEventOutbox)
+    .where(and(isNull(fieldEventOutbox.processedAt), lt(fieldEventOutbox.attempts, maxAttempts)))
+    .orderBy(asc(fieldEventOutbox.createdAt))
+    .limit(batch);
+
+  let processed = 0;
+  for (const row of pending) {
+    try {
+      await runTriggerPass(db, {
+        householdId: row.householdId, fieldId: row.fieldId, fieldName: row.fieldName,
+        section: row.section, newValue: row.newValue, changedAt: new Date(row.changedAt).toISOString(),
+      });
+      await db.update(fieldEventOutbox).set({ processedAt: new Date() }).where(eq(fieldEventOutbox.id, row.id));
+      processed += 1;
+    } catch (err) {
+      await db.update(fieldEventOutbox).set({ attempts: row.attempts + 1 }).where(eq(fieldEventOutbox.id, row.id));
+      console.error(`[outbox] row ${row.id} failed (attempt ${row.attempts + 1}):`, err instanceof Error ? err.message : err);
+    }
+  }
+  return { pending: pending.length, processed };
+}
