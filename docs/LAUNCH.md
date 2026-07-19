@@ -62,10 +62,12 @@ enforced, vault encryption, rate limits, audited reveals. What's missing: an
 
 ## 2. Operational readiness — before it's load-bearing
 
-### 2.1 Error & uptime monitoring 🤖🧑 ⬜ (needs a Sentry account)
-Failures currently only surface in logs. Get a free Sentry account, send me the
-DSN, and I'll wire it into the web app + worker (~30 min) so you're alerted when
-something breaks in the field.
+### 2.1 Error monitoring 🤖 ✅
+Sentry captures server + worker errors (never household data — error + job
+label only). Live on Vercel and Railway; verified by throwing a real error in
+production and confirming capture. Watch it at sentry.io.
+*(Uptime pings — a lightweight "is the site up" check — are still worth adding;
+Sentry Crons or an external pinger against `/api/health`.)*
 
 ### 2.2 Confirm paid tiers won't sleep 🧑 ⬜
 Free tiers can throttle or pause mid-visit. Confirm billing on: **Neon**,
