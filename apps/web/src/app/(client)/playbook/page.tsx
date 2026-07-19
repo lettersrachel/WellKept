@@ -5,10 +5,50 @@ import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data
 import { proposeEdit } from "@/lib/actions";
 import { isClientEditable } from "@/lib/client-allowlist";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { getRegistries } from "@/lib/data";
+import { getRegistries, getStewardship } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * REQ-024: the trust ceremony. What Well Kept holds for this household — by
+ * CATEGORY, never a value — how many items are secured in the vault, and
+ * when anything secured was last accessed. The client's window into their
+ * own stewardship.
+ */
+async function StewardshipCard({ householdId }: { householdId: string }) {
+  const s = await getStewardship(householdId);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+  return (
+    <div className="card">
+      <h2>What we hold for you</h2>
+      <div className="note">
+        Everything Well Kept keeps about your household, by category. Your working details and every
+        secured item stay behind the protections the app enforces — shown here as counts, never
+        printed.
+      </div>
+      <div className="row" style={{ gap: 10, flexWrap: "wrap", margin: "6px 0 12px" }}>
+        <span className="pill">{s.totalConfirmed} confirmed of {s.totalHeld} entries</span>
+        <span className="pill">{s.sections.length} categories</span>
+        <span className="pill">
+          {s.vaultCount} secured item{s.vaultCount === 1 ? "" : "s"} in the vault
+        </span>
+      </div>
+      <div className="prov" style={{ marginBottom: 10 }}>
+        {s.lastVaultAccess
+          ? `Your secured items were last accessed on ${fmt(s.lastVaultAccess)} — every access is logged.`
+          : "Nothing secured has ever been accessed. Every future access will be logged."}
+      </div>
+      {s.sections.map((sec) => (
+        <div key={sec.section} className="field" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <span className="fname" style={{ fontWeight: "normal" }}>{SECTION_NAMES[sec.section] ?? `Section ${sec.section}`}</span>
+          <span className="prov" style={{ whiteSpace: "nowrap" }}>{sec.confirmed}/{sec.held} confirmed</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * REQ-032: what the client receives from a visit is exactly the three
@@ -184,6 +224,8 @@ export default async function ClientPlaybook({
           </div>
         )}
       </div>
+
+      <StewardshipCard householdId={hh.id} />
     </>
   );
 }

@@ -1,6 +1,8 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { household, playbookField, auditEvent, clientEdit } from "@wellkept/schema";
 import { db } from "./db";
+
+const sqlCount = () => sql<number>`count(*)::int`;
 
 export async function getHousehold() {
   const rows = await db.select().from(household).limit(1);
@@ -137,4 +139,32 @@ export async function getHouseholdMembers(householdId: string) {
     .innerJoin(authUser, eq(authUser.id, householdRoleAssignment.userId))
     .where(eq(householdRoleAssignment.householdId, householdId))
     .orderBy(asc(householdRoleAssignment.role));
+}
+
+/** REQ-024: the client's data-stewardship summary — what CATEGORIES are
+ * held (never values), how many items are secured in the vault, and when
+ * anything secured was last accessed. The trust ceremony. */
+export async function getStewardship(householdId: string) {
+  const { playbookField, vaultItem, auditEvent } = await import("@wellkept/schema");
+  const { and, inArray, desc } = await import("drizzle-orm");
+  const fields = await db.select({ section: playbookField.section, sensitivity: playbookField.sensitivity, confirmed: playbookField.confirmed })
+    .from(playbookField).where(eq(playbookField.householdId, householdId));
+  const bySection = new Map<number, { held: number; confirmed: number }>();
+  for (const f of fields) {
+    const s = bySection.get(f.section) ?? { held: 0, confirmed: 0 };
+    s.held += 1; if (f.confirmed) s.confirmed += 1;
+    bySection.set(f.section, s);
+  }
+  const [vault] = await db.select({ n: sqlCount() }).from(vaultItem).where(eq(vaultItem.householdId, householdId));
+  const lastAccess = await db.select({ at: auditEvent.createdAt, kind: auditEvent.kind })
+    .from(auditEvent)
+    .where(and(eq(auditEvent.householdId, householdId), inArray(auditEvent.kind, ["s3_reveal", "s3_corporate_view"])))
+    .orderBy(desc(auditEvent.createdAt)).limit(1);
+  return {
+    sections: [...bySection.entries()].map(([section, v]) => ({ section, ...v })).sort((a, b) => a.section - b.section),
+    totalHeld: fields.length,
+    totalConfirmed: fields.filter((f) => f.confirmed).length,
+    vaultCount: Number(vault?.n ?? 0),
+    lastVaultAccess: lastAccess[0]?.at ?? null,
+  };
 }
