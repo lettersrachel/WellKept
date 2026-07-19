@@ -16,6 +16,7 @@ import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "./src/visit-sync";
 import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
+import { fetchBriefing, type Briefing } from "./src/briefing";
 
 const C = { green: "#1C3D2E", gold: "#B08D2A", cream: "#F7F3E8", sage: "#E4EDE4", ink: "#26241F", brick: "#8C2F22", grey: "#6B6B6B" };
 
@@ -175,6 +176,18 @@ function CloseFlowScreen({
   const [zone, setZone] = useState("none");
   const [lifeChange, setLifeChange] = useState(false);
   const [report, setReport] = useState(["", "", ""]);
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [briefingStale, setBriefingStale] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    void fetchBriefing(API_URL, token, household.id).then(({ briefing: b, stale }) => {
+      if (!live) return;
+      setBriefing(b);
+      setBriefingStale(stale);
+    });
+    return () => { live = false; };
+  }, [household.id, token]);
 
   const transport = useCallback(async (item: QueueItem) => {
     if (!API_URL) throw new Error("no API configured; staying queued");
@@ -251,6 +264,8 @@ function CloseFlowScreen({
           </View>
         ) : (
           <>
+            <BriefingView briefing={briefing} stale={briefingStale} />
+
             <View style={s.card}>
               <Text style={s.h2}>Confirm today&apos;s tasks</Text>
               {REQUIRED_TASKS.map((t) => {
@@ -339,6 +354,93 @@ function CloseFlowScreen({
   );
 }
 
+function flagColor(flag: string): string {
+  if (flag === "CRITICAL") return C.brick;
+  if (flag === "CAUTION") return C.gold;
+  if (flag === "DELIGHT") return C.green;
+  return C.grey;
+}
+
+function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: boolean }) {
+  if (!briefing) {
+    return (
+      <View style={s.card}>
+        <Text style={s.h2}>Briefing</Text>
+        <Text style={s.note}>{stale ? "Offline — no saved briefing for this home yet. Connect once to load it." : "Loading the live record…"}</Text>
+      </View>
+    );
+  }
+  const { flags, changed, specials, radar, dots, household } = briefing;
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return (
+    <View style={s.card}>
+      <View style={s.row}>
+        <Text style={s.h2}>Briefing</Text>
+        {stale ? <Text style={s.staleBadge}>cached</Text> : null}
+      </View>
+      {household.lifeEvent ? <Text style={[s.note, { color: C.gold }]}>LIFE-EVENT — prompts held; care continues, asks stop.</Text> : null}
+
+      <Text style={s.briefLabel}>Flags first</Text>
+      {flags.length === 0 ? <Text style={s.note}>No flags on this record.</Text> : flags.map((f, i) => (
+        <View key={i} style={[s.flagRow, { borderLeftColor: flagColor(f.flag) }]}>
+          <Text style={[s.flagTag, { color: flagColor(f.flag) }]}>{f.flag}</Text>
+          <Text style={s.briefName}>{f.name.split(":")[0]}</Text>
+          {f.value ? <Text style={s.briefVal}>{f.value}</Text> : null}
+        </View>
+      ))}
+
+      {changed.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Changed since last visit</Text>
+          {changed.map((d, i) => (
+            <View key={i} style={s.briefItem}>
+              <Text style={s.briefName}>{d.name}</Text>
+              <Text style={s.briefVal}>{d.value}</Text>
+              <Text style={s.prov}>updated {fmt(d.updatedAt)} · {d.provenance}</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {specials.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Today&apos;s specials</Text>
+          {specials.map((sp, i) => (
+            <View key={i} style={[s.briefItem, { backgroundColor: C.sage, borderRadius: 6, padding: 8 }]}>
+              <Text style={s.briefVal}>{sp.text}</Text>
+              <Text style={s.prov}>{sp.packName} · due today</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {radar.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Coming up</Text>
+          {radar.map((r, i) => (
+            <View key={i} style={s.briefItem}>
+              <Text style={s.briefVal}>{r.text}</Text>
+              <Text style={s.prov}>{r.packName} · {fmt(r.fireAt)}</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {dots.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Open dots (never client-visible)</Text>
+          {dots.map((d, i) => (
+            <View key={i} style={s.briefItem}>
+              <Text style={[s.briefVal, { fontStyle: "italic" }]}>&ldquo;{d.verbatim}&rdquo;</Text>
+              <Text style={s.prov}>heard {fmt(d.heardAt)}</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.cream },
   centered: { alignItems: "center", justifyContent: "center" },
@@ -368,4 +470,12 @@ const s = StyleSheet.create({
   linkBtn: { alignItems: "center", padding: 12 },
   linkText: { color: C.grey, fontSize: 13, textDecorationLine: "underline" },
   error: { color: C.brick, fontSize: 13, marginTop: 8 },
+  staleBadge: { fontSize: 10, color: C.grey, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  briefLabel: { fontSize: 11, color: C.gold, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 12, marginBottom: 4 },
+  flagRow: { borderLeftWidth: 3, paddingLeft: 8, paddingVertical: 4, marginBottom: 6 },
+  flagTag: { fontSize: 10, fontWeight: "700", letterSpacing: 1 },
+  briefItem: { paddingVertical: 4, marginBottom: 4 },
+  briefName: { fontSize: 13, color: C.ink, fontWeight: "600" },
+  briefVal: { fontSize: 13, color: C.ink, marginTop: 1 },
+  prov: { fontSize: 11, color: C.grey, fontStyle: "italic", marginTop: 1 },
 });
