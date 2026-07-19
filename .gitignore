@@ -13,3 +13,4 @@ coverage/
 .production-secrets
 .upstash-connection
 .vercel-env
+.vercel

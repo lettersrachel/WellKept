@@ -9,7 +9,14 @@ export default async function SignIn({
   return (
     <div className="card" style={{ maxWidth: 460, margin: "60px auto" }}>
       <h2>Sign in to Well Kept</h2>
-      {error && <div className="banner">Enter your email address to receive a link.</div>}
+      {error === "send-failed" ? (
+        <div className="banner">
+          The sign-in email could not be sent — the mail provider is not configured or rejected
+          the address. Contact your administrator.
+        </div>
+      ) : error ? (
+        <div className="banner">Enter your email address to receive a link.</div>
+      ) : null}
       <form action="/signin/action" method="post">
         <label htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required placeholder="you@example.com" />

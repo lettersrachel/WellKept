@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     .find((line) => line.includes("csrf-token"))
     ?.split(";")[0];
 
-  await Auth(
+  const signinResponse = await Auth(
     new Request(new URL("/api/auth/signin/email", request.url), {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded", cookie: csrfCookie ?? "" },
@@ -33,5 +33,11 @@ export async function POST(request: Request) {
     authConfig,
   );
 
+  // Auth.js reports a failed send as a redirect to its error page; surface
+  // it instead of promising an email that never left (a silent lockout).
+  const location = signinResponse.headers.get("location") ?? "";
+  if (location.includes("error=")) {
+    return Response.redirect(new URL("/signin?error=send-failed", request.url), 303);
+  }
   return Response.redirect(new URL("/verify-request", request.url), 303);
 }
