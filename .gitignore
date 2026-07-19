@@ -11,3 +11,5 @@ coverage/
 .neon-connection
 .neon-connection-pooled
 .production-secrets
+.upstash-connection
+.vercel-env
