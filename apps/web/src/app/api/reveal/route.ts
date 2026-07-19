@@ -6,6 +6,7 @@ import { revealS3, type AuditEntry } from "@wellkept/permissions";
 import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
 import { vaultOpen } from "@/lib/vault";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * REQ-034 / REQ-005: the s3 reveal. The principal comes from the Auth.js
@@ -25,6 +26,14 @@ export async function POST(req: NextRequest) {
 
   const principal = await getPrincipal(f.householdId);
   if (!principal) return NextResponse.json({ ok: false, reason: "not authenticated" }, { status: 403 });
+
+  // Hardening: a vault reveal is the highest-value action in the system.
+  // Cap it per user (bulk exfiltration guard) even for authorized roles —
+  // 40/hour is far above any legitimate in-context reveal rhythm. Every
+  // attempt is still individually audited below.
+  if (!(await rateLimit(`reveal:${principal.userId}`, 40, 3600))) {
+    return NextResponse.json({ ok: false, reason: "reveal rate limit reached" }, { status: 429 });
+  }
 
   // REQ-006: NDA households tighten s3 for backup HMs until familiarization.
   const [hh] = await db.select().from(household).where(eq(household.id, f.householdId));

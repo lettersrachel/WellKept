@@ -1,0 +1,12 @@
+{
+  "name": "@wellkept/security-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "probe": "node authz-probe.mjs"
+  },
+  "dependencies": {
+    "pg": "8.22.0"
+  }
+}
