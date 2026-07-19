@@ -4,8 +4,8 @@ import { visitCommand, SECTION_NAMES } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
-import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue } from "@/lib/actions";
+import { getHouseholdAndPrincipal, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture } from "@/lib/actions";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "./RevealButton";
 
@@ -29,6 +29,10 @@ export default async function Oversight() {
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id, 10),
   ]);
+  const [gestures, strangerTests] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id)]);
+  const pendingGestures = gestures.filter((g) => !g.executedAt);
+  const quietLog = gestures.filter((g) => g.executedAt);
+  const lastStranger = strangerTests[strangerTests.length - 1];
   const visits = commands.filter((c) => c.type === "visit.submit" && c.status === "applied");
   const conflicts = commands.filter((c) => c.status === "conflict");
   const signals = commands.filter((c) => c.type === "signal.route");
@@ -97,6 +101,14 @@ export default async function Oversight() {
               </td>
             </tr>
             <tr>
+              <td>Stranger Test</td>
+              <td>
+                {lastStranger
+                  ? `${lastStranger.passed ? "PASSED" : "FRICTION"} · ${lastStranger.createdAt.toISOString().slice(0, 10)}`
+                  : "never run"}
+              </td>
+            </tr>
+            <tr>
               <td>Tier</td>
               <td>{hh.tier}</td>
             </tr>
@@ -134,11 +146,85 @@ export default async function Oversight() {
           <>
             <div className="eyebrow">Open dots (feed future gestures, REQ-046)</div>
             {dots.map((d) => (
-              <div key={d.id} className="prov" style={{ fontStyle: "italic" }}>&ldquo;{d.verbatim}&rdquo;</div>
+              <div key={d.id} className="field">
+                <span className="fval" style={{ fontStyle: "italic" }}>&ldquo;{d.verbatim}&rdquo;</span>
+                <details>
+                  <summary className="prov" style={{ cursor: "pointer" }}>Queue a gesture from this dot</summary>
+                  <form action={queueGesture} className="row" style={{ marginTop: 6 }}>
+                    <input type="hidden" name="householdId" value={hh.id} />
+                    <input type="hidden" name="dotId" value={d.id} />
+                    <input name="idea" placeholder="The gesture idea" style={{ flex: 1 }} />
+                    <button className="act subtle">Queue</button>
+                  </form>
+                </details>
+              </div>
             ))}
           </>
         )}
       </div>
+
+      <div className="card">
+        <h2>Gesture queue (REQ-042: two gates, then quiet)</h2>
+        <div className="note">
+          Cultural fit first, HM notified second, executed third — the order is enforced in the
+          action layer, not the buttons.
+        </div>
+        {pendingGestures.length === 0 ? (
+          <div className="note">Nothing queued. Queue one from a dot above.</div>
+        ) : (
+          pendingGestures.map((g) => (
+            <div key={g.id} className="field">
+              <span className="fname">{g.idea}</span>
+              <div className="prov">from {g.triggerSource}</div>
+              <div className="row" style={{ marginTop: 6, justifyContent: "flex-start", gap: 6 }}>
+                {!g.culturalFitChecked ? (
+                  <form action={gestureGate}>
+                    <input type="hidden" name="gestureId" value={g.id} />
+                    <button className="act subtle" name="gate" value="cultural_fit">Gate 1: cultural fit ✓</button>
+                  </form>
+                ) : !g.hmNotified ? (
+                  <form action={gestureGate}>
+                    <input type="hidden" name="gestureId" value={g.id} />
+                    <button className="act subtle" name="gate" value="hm_notified">Gate 2: HM notified ✓</button>
+                  </form>
+                ) : (
+                  <form action={executeGesture} className="row" style={{ gap: 6 }}>
+                    <input type="hidden" name="gestureId" value={g.id} />
+                    <input name="costDollars" className="inline" placeholder="$" style={{ width: 70 }} />
+                    <button className="act">Executed — to the quiet log</button>
+                  </form>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        {quietLog.length > 0 && (
+          <>
+            <div className="eyebrow">Quiet log (never announced)</div>
+            {quietLog.map((g) => (
+              <div key={g.id} className="prov">
+                {g.idea} · executed {g.executedAt!.toISOString().slice(0, 10)}
+                {g.costCents != null ? ` · $${(g.costCents / 100).toFixed(2)}` : ""}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {strangerTests.length > 0 && (
+        <div className="card">
+          <h2>Stranger Test records (REQ-033)</h2>
+          {strangerTests.map((t) => (
+            <div key={t.id} className={`field ${t.passed ? "" : "CAUTION"}`}>
+              <span className="fname">{t.passed ? "PASSED" : "Friction found"}</span>
+              <div className="fval sans" style={{ fontSize: 13 }}>
+                {(t.frictionNotes as string[]).join(" · ") || "ran clean from the record alone"}
+              </div>
+              <div className="prov">{t.createdAt.toISOString().slice(0, 10)}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {signals.length > 0 && (
         <div className="card">
@@ -251,30 +337,29 @@ export default async function Oversight() {
       </div>
 
       <div className="card">
-        <h2>Audit trail (REQ-005, append-only)</h2>
+        <h2>Change log (REQ-015 · Section 24 · append-only per REQ-005)</h2>
         {audit.length === 0 ? (
           <div className="note">No events yet. Reveals, tag changes, and merges land here.</div>
         ) : (
-          <table className="panel">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Kind</th>
-                <th>Role</th>
-                <th>Field</th>
-              </tr>
-            </thead>
-            <tbody>
-              {audit.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.createdAt.toISOString().replace("T", " ").slice(0, 19)}</td>
-                  <td>{a.kind}</td>
-                  <td>{a.actorRole}</td>
-                  <td>{(a.fieldId && fieldName.get(a.fieldId)) ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          audit.map((a) => {
+            const field = (a.fieldId && fieldName.get(a.fieldId)?.split(":")[0]) ?? null;
+            const when = a.createdAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+            const sentence =
+              a.kind === "field_write" ? `merged a client update into “${field}”` :
+              a.kind === "vault_write" ? `sealed a new vault value for “${field}”` :
+              a.kind === "s3_corporate_view" ? `viewed the secured value of “${field}”` :
+              a.kind === "s3_reveal" ? `revealed “${field}” in context` :
+              a.kind === "tag_change" ? `set the status tag ${(a.detail as { from?: string; to?: string })?.from ?? "?"} → ${(a.detail as { to?: string })?.to ?? "?"}` :
+              a.kind;
+            return (
+              <div key={a.id} className="field">
+                <span className="fval sans" style={{ fontSize: 13 }}>
+                  <strong>{a.actorRole.replace("_", " ")}</strong> {sentence}
+                </span>
+                <div className="prov">{when}</div>
+              </div>
+            );
+          })
         )}
       </div>
     </>

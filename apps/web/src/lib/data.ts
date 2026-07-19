@@ -56,3 +56,27 @@ export async function getRecentAudit(householdId: string, limit = 12) {
     .orderBy(asc(auditEvent.createdAt));
   return rows.slice(-limit).reverse();
 }
+
+/** REQ-030 deltas: fields that changed since the last applied visit. */
+export async function getDeltasSince(householdId: string, since: Date | null) {
+  const { playbookField } = await import("@wellkept/schema");
+  const { and, gt } = await import("drizzle-orm");
+  const cutoff = since ?? new Date(Date.now() - 7 * 24 * 3600_000);
+  return db.select().from(playbookField)
+    .where(and(eq(playbookField.householdId, householdId), gt(playbookField.updatedAt, cutoff)))
+    .orderBy(asc(playbookField.updatedAt));
+}
+
+export async function getStrangerTests(householdId: string) {
+  const { strangerTest } = await import("@wellkept/schema");
+  return db.select().from(strangerTest)
+    .where(eq(strangerTest.householdId, householdId))
+    .orderBy(asc(strangerTest.createdAt));
+}
+
+export async function getGestures(householdId: string) {
+  const { gesture } = await import("@wellkept/schema");
+  return db.select().from(gesture)
+    .where(eq(gesture.householdId, householdId))
+    .orderBy(asc(gesture.createdAt));
+}

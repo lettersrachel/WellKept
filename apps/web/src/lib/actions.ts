@@ -3,7 +3,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -137,5 +137,77 @@ export async function setVaultValue(formData: FormData) {
     fieldId,
     newValueHash: sha256(value),
   });
+  revalidatePath("/oversight");
+}
+
+/**
+ * REQ-033: stranger mode. A backup HM's friction notes route to the
+ * record as a Stranger Test row — the household's legibility to a
+ * stranger is a measured, logged property, not a vibe.
+ */
+export async function logStrangerTest(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const notesRaw = String(formData.get("frictionNotes") ?? "").trim();
+  const passed = formData.get("passed") === "yes";
+  if (!householdId) return;
+  const principal = await getPrincipal(householdId);
+  if (!principal || (principal.role !== "backup_hm" && principal.role !== "house_manager")) return;
+  if (!passed && !notesRaw) return; // a failed test needs the friction named
+  await db.insert(strangerTest).values({
+    id: randomUUID(),
+    householdId,
+    coveredBy: principal.userId,
+    frictionNotes: notesRaw ? notesRaw.split("\n").filter(Boolean) : [],
+    passed,
+  });
+  revalidatePath("/visit");
+  revalidatePath("/oversight");
+}
+
+/** REQ-042 gate order is policy, not UI: queue -> cultural fit -> HM notified -> execute. */
+export async function queueGesture(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const idea = String(formData.get("idea") ?? "").trim();
+  const sourceDotId = String(formData.get("dotId") ?? "");
+  if (!householdId || !idea) return;
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") return;
+  await db.insert(gesture).values({
+    id: randomUUID(),
+    householdId,
+    triggerSource: sourceDotId ? `dot:${sourceDotId}` : "corporate",
+    idea,
+  });
+  revalidatePath("/oversight");
+}
+
+export async function gestureGate(formData: FormData) {
+  const gestureId = String(formData.get("gestureId") ?? "");
+  const gate = String(formData.get("gate") ?? "");
+  if (!gestureId || (gate !== "cultural_fit" && gate !== "hm_notified")) return;
+  const [g] = await db.select().from(gesture).where(eq(gesture.id, gestureId));
+  if (!g || g.executedAt) return;
+  const principal = await getPrincipal(g.householdId);
+  if (principal?.role !== "corporate_admin") return;
+  // HM notification only after cultural fit passed (the gate ORDER is the rule)
+  if (gate === "hm_notified" && !g.culturalFitChecked) return;
+  await db.update(gesture)
+    .set(gate === "cultural_fit" ? { culturalFitChecked: true, updatedAt: new Date() } : { hmNotified: true, updatedAt: new Date() })
+    .where(eq(gesture.id, gestureId));
+  revalidatePath("/oversight");
+}
+
+export async function executeGesture(formData: FormData) {
+  const gestureId = String(formData.get("gestureId") ?? "");
+  const costCents = Math.round(Number(formData.get("costDollars") ?? 0) * 100);
+  if (!gestureId) return;
+  const [g] = await db.select().from(gesture).where(eq(gesture.id, gestureId));
+  if (!g || g.executedAt) return;
+  const principal = await getPrincipal(g.householdId);
+  if (principal?.role !== "corporate_admin") return;
+  if (!g.culturalFitChecked || !g.hmNotified) return; // both gates or nothing
+  await db.update(gesture)
+    .set({ executedAt: new Date(), costCents: Number.isFinite(costCents) ? costCents : null, updatedAt: new Date() })
+    .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
 }
