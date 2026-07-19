@@ -51,6 +51,9 @@ export async function setStatusTag(formData: FormData) {
       await db.insert(notification).values(
         hms.map((h) => ({ id: randomUUID(), userId: h.userId, householdId, kind: `tag:${tag}`, title, body })),
       );
+      // Best-effort lock-screen push to any installed PWAs (no-op without VAPID).
+      const { sendPushToUser } = await import("./push");
+      await Promise.all(hms.map((h) => sendPushToUser(h.userId, { title, body, url: "/visit" }).catch(() => {})));
     }
   }
   revalidatePath("/oversight");

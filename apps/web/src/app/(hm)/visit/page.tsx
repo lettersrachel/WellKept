@@ -5,6 +5,7 @@ import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { logStrangerTest } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
+import { PushRegister } from "./PushRegister";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,7 @@ export default async function VisitPage() {
       )}
 
       <VisitAlerts />
+      <PushRegister />
 
       <div className="eyebrow">Flags first</div>
       {flagged.length === 0 ? (

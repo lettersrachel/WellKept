@@ -26,6 +26,34 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Web push: show the alert on the lock screen, and focus/open the app on tap.
+self.addEventListener("push", (event) => {
+  let data = { title: "Well Kept", body: "", url: "/visit" };
+  try { data = { ...data, ...(event.data ? event.data.json() : {}) }; } catch (e) {}
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: data.url || "/visit" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/visit";
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of all) {
+        if (client.url.includes(target) && "focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    })(),
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;

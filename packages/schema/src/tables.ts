@@ -276,6 +276,18 @@ export const notification = pgTable("notification", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("notification_user_idx").on(t.userId, t.readAt)]);
 
+// Web-push subscriptions (installed-PWA lock-screen notifications). One row per
+// browser/device endpoint; the keys encrypt the push payload. Dead endpoints
+// (410/404 on send) are pruned by the sender.
+export const pushSubscription = pgTable("push_subscription", {
+  id: uuid("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("push_subscription_user_idx").on(t.userId)]);
+
 // Native-app device pairing. A signed-in, MFA-cleared staff member generates a
 // short-lived code on the web; the Expo app exchanges it for a real session.
 // Only the code HASH is stored; the row is single-use (consumedAt) and expires
