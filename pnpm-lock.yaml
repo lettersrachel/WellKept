@@ -131,6 +131,18 @@ importers:
         specifier: 3.2.7
         version: 3.2.7(@types/node@26.1.1)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
+  packages/mail:
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: 3.2.7
+        version: 3.2.7(@types/node@26.1.1)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+
   packages/offline-queue:
     devDependencies:
       '@types/node':
@@ -222,6 +234,9 @@ importers:
 
   services/worker:
     dependencies:
+      '@wellkept/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       '@wellkept/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions

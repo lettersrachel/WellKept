@@ -10,6 +10,7 @@ COPY services/worker/package.json services/worker/
 COPY packages/schema/package.json packages/schema/
 COPY packages/permissions/package.json packages/permissions/
 COPY packages/trigger-engine/package.json packages/trigger-engine/
+COPY packages/mail/package.json packages/mail/
 RUN pnpm install --frozen-lockfile --filter @wellkept/worker...
 
 # Source (Node 24 runs the TS directly; no build step).
@@ -17,6 +18,7 @@ COPY tsconfig.base.json ./
 COPY packages/schema packages/schema
 COPY packages/permissions packages/permissions
 COPY packages/trigger-engine packages/trigger-engine
+COPY packages/mail packages/mail
 COPY services/worker services/worker
 
 ENV NODE_ENV=production WK_WORKER_MAIN=1

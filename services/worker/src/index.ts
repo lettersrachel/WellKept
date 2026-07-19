@@ -58,6 +58,7 @@ export function createWorker() {
     async (job) => {
       if (job.name === "tag-change") return handleTagChange(job.data as TagChangeEvent);
       if (job.name === "registry-sweep") return runRegistrySweep(db);
+      if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       return handleEvent(job.data as FieldChangeEvent);
     },
     { connection },
@@ -70,12 +71,13 @@ export function createWorker() {
 export async function ensureSweepScheduled() {
   const queue = createFieldEventsQueue();
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
+  await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
   await queue.close();
 }
 
 if (process.env.WK_WORKER_MAIN === "1") {
   const worker = createWorker();
-  void ensureSweepScheduled().then(() => console.log("[worker] daily registry sweep scheduled (09:00 UTC)"));
+  void ensureSweepScheduled().then(() => console.log("[worker] daily sweep (09:00 UTC) + weekly fleet digest (Mon 13:00 UTC) scheduled"));
   worker.on("completed", (job, result) => {
     const label = job.name === "tag-change"
       ? `tag->${(job.data as TagChangeEvent).to}`
