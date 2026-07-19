@@ -6,8 +6,8 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture } from "@/lib/actions";
-import { getRegistries } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole } from "@/lib/actions";
+import { getRegistries, getHouseholdMembers } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -33,7 +33,9 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id, 10),
   ]);
-  const [gestures, strangerTests] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id)]);
+  const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
+  const isAdmin = role === "corporate_admin";
+  const ROLE_OPTIONS = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
   const pendingGestures = gestures.filter((g) => !g.executedAt);
   const quietLog = gestures.filter((g) => g.executedAt);
   const lastStranger = strangerTests[strangerTests.length - 1];
@@ -118,6 +120,56 @@ export default async function Oversight({ params }: { params: Promise<{ househol
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div className="card">
+        <h2>People &amp; access (REQ-002)</h2>
+        <div className="note">
+          One role per person per household; no fleet-wide wildcard (REQ-001). Assigning an email
+          that has never signed in creates the account — they get in with a magic link.
+        </div>
+        <table className="panel">
+          <thead>
+            <tr><th>Email</th><th>Role</th><th>NDA</th>{isAdmin && <th></th>}</tr>
+          </thead>
+          <tbody>
+            {members.map((m) => (
+              <tr key={m.id}>
+                <td>{m.email}</td>
+                <td>{m.role.replace("_", " ")}</td>
+                <td>{m.ndaApproved ? "approved" : "—"}</td>
+                {isAdmin && (
+                  <td>
+                    {m.userId === principal.userId ? (
+                      <span className="prov">you</span>
+                    ) : (
+                      <form action={revokeRole}>
+                        <input type="hidden" name="assignmentId" value={m.id} />
+                        <input type="hidden" name="householdId" value={hh.id} />
+                        <button className="act subtle danger">Revoke</button>
+                      </form>
+                    )}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {isAdmin && (
+          <form action={assignRole} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <input name="email" type="email" placeholder="person@example.com" required style={{ flex: 2, marginTop: 0 }} />
+            <select name="role" defaultValue="client" className="inline">
+              {ROLE_OPTIONS.map((r) => (
+                <option key={r} value={r}>{r.replace("_", " ")}</option>
+              ))}
+            </select>
+            <label className="sans" style={{ fontWeight: "normal", fontSize: 12, display: "flex", alignItems: "center", gap: 4, marginTop: 0 }}>
+              <input type="checkbox" name="ndaApproved" style={{ width: "auto", marginTop: 0 }} /> NDA
+            </label>
+            <button className="act">Assign</button>
+          </form>
+        )}
       </div>
 
       <RegistryCard entries={await getRegistries(hh.id, role)} showSensitivity />

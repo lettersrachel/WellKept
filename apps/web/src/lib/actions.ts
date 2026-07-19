@@ -2,7 +2,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
@@ -217,4 +217,62 @@ export async function executeGesture(formData: FormData) {
     .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${g.householdId}`);
+}
+
+/**
+ * REQ-002/006: corporate provisioning. corporate_admin assigns a person
+ * (by email — created if new) a single role at one household, optionally
+ * NDA-approved. No wildcard grants (REQ-001): one row per person per
+ * household. Self-service for the founder — replaces the SQL-insert path.
+ */
+export async function assignRole(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = String(formData.get("role") ?? "");
+  const ndaApproved = formData.get("ndaApproved") === "on";
+  const VALID_ROLES = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
+  if (!householdId || !email || !VALID_ROLES.includes(role)) return;
+  const actor = await getPrincipal(householdId);
+  if (actor?.role !== "corporate_admin") return; // only admins provision
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+
+  const { authUser, householdRoleAssignment } = await import("@wellkept/schema");
+  await db.insert(authUser).values({ id: randomUUID(), email, name: null }).onConflictDoNothing({ target: authUser.email });
+  const [user] = await db.select().from(authUser).where(eq(authUser.email, email));
+  if (!user) return;
+  // One role per (user, household): update in place if the row exists.
+  const existing = await db.select().from(householdRoleAssignment)
+    .where(and(eq(householdRoleAssignment.userId, user.id), eq(householdRoleAssignment.householdId, householdId)));
+  if (existing[0]) {
+    await db.update(householdRoleAssignment)
+      .set({ role: role as typeof existing[0]["role"], ndaApproved, createdAt: new Date() })
+      .where(eq(householdRoleAssignment.id, existing[0].id));
+  } else {
+    await db.insert(householdRoleAssignment).values({
+      id: randomUUID(), userId: user.id, householdId, role: role as "client", ndaApproved,
+    });
+  }
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
+    kind: "role_assigned", detail: { email, role, ndaApproved },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}
+
+export async function revokeRole(formData: FormData) {
+  const assignmentId = String(formData.get("assignmentId") ?? "");
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!assignmentId || !householdId) return;
+  const actor = await getPrincipal(householdId);
+  if (actor?.role !== "corporate_admin") return;
+  const { householdRoleAssignment } = await import("@wellkept/schema");
+  const [row] = await db.select().from(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
+  if (!row || row.householdId !== householdId) return;
+  if (row.userId === actor.userId) return; // never revoke your own admin here (lockout guard)
+  await db.delete(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
+    kind: "role_revoked", detail: { assignmentId },
+  });
+  revalidatePath(`/oversight/${householdId}`);
 }

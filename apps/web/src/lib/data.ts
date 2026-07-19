@@ -120,3 +120,20 @@ export async function getRegistries(householdId: string, role: string) {
     .orderBy(asc(registryEntry.kind), asc(registryEntry.label));
   return rows.filter((r) => readDecision(role, r.sensitivity) !== "denied");
 }
+
+/** People assigned to a household (provisioning surface, REQ-002). */
+export async function getHouseholdMembers(householdId: string) {
+  const { householdRoleAssignment, authUser } = await import("@wellkept/schema");
+  return db.select({
+    id: householdRoleAssignment.id,
+    email: authUser.email,
+    name: authUser.name,
+    role: householdRoleAssignment.role,
+    ndaApproved: householdRoleAssignment.ndaApproved,
+    userId: authUser.id,
+  })
+    .from(householdRoleAssignment)
+    .innerJoin(authUser, eq(authUser.id, householdRoleAssignment.userId))
+    .where(eq(householdRoleAssignment.householdId, householdId))
+    .orderBy(asc(householdRoleAssignment.role));
+}
