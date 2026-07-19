@@ -62,8 +62,9 @@ export async function getPendingEdits(householdId: string) {
 
 export async function getOpenDots(householdId: string) {
   const { dot } = await import("@wellkept/schema");
+  const { isNull, and } = await import("drizzle-orm");
   return db.select().from(dot)
-    .where(eq(dot.householdId, householdId))
+    .where(and(eq(dot.householdId, householdId), isNull(dot.promotedFieldId)))
     .orderBy(asc(dot.heardAt));
 }
 

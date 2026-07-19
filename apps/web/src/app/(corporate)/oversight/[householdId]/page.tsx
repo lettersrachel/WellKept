@@ -6,7 +6,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -45,6 +45,8 @@ export default async function Oversight({ params }: { params: Promise<{ househol
   const visible = filterFields(role, all);
   const fieldName = new Map(all.map((f) => [f.id, f.name]));
   const vaulted = await vaultHasValue(all.filter((f) => f.sensitivity === "s3").map((f) => f.id));
+  // Dots promote into any non-vault field (s3 goes through the vault).
+  const promotableFields = all.filter((f) => f.sensitivity !== "s3");
   const pendingEdits = edits.filter((e) => e.status === "pending");
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
   const unconfirmed = all.filter((f) => !f.confirmed).length;
@@ -143,11 +145,18 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                     {m.userId === principal.userId ? (
                       <span className="prov">you</span>
                     ) : (
-                      <form action={revokeRole}>
-                        <input type="hidden" name="assignmentId" value={m.id} />
-                        <input type="hidden" name="householdId" value={hh.id} />
-                        <button className="act subtle danger">Revoke</button>
-                      </form>
+                      <span className="row" style={{ gap: 6, justifyContent: "flex-end" }}>
+                        <form action={forceSignOut}>
+                          <input type="hidden" name="userId" value={m.userId} />
+                          <input type="hidden" name="householdId" value={hh.id} />
+                          <button className="act subtle" title="Delete all their active sessions">Sign out</button>
+                        </form>
+                        <form action={revokeRole}>
+                          <input type="hidden" name="assignmentId" value={m.id} />
+                          <input type="hidden" name="householdId" value={hh.id} />
+                          <button className="act subtle danger">Revoke</button>
+                        </form>
+                      </span>
                     )}
                   </td>
                 )}
@@ -213,6 +222,24 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                     <input type="hidden" name="dotId" value={d.id} />
                     <input name="idea" placeholder="The gesture idea" style={{ flex: 1 }} />
                     <button className="act subtle">Queue</button>
+                  </form>
+                </details>
+                <details>
+                  <summary className="prov" style={{ cursor: "pointer" }}>Promote to a field (REQ-046)</summary>
+                  <form action={promoteDot} style={{ marginTop: 6 }}>
+                    <input type="hidden" name="dotId" value={d.id} />
+                    <select name="fieldId" className="inline" required defaultValue="">
+                      <option value="" disabled>Which field does this inform?</option>
+                      {promotableFields.map((f) => (
+                        <option key={String(f.id)} value={String(f.id)}>
+                          S{String(f.section)} · {(String(f.name).split(":")[0] ?? "").slice(0, 44)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="row" style={{ marginTop: 6 }}>
+                      <input name="value" defaultValue={d.verbatim} style={{ flex: 1 }} />
+                      <button className="act subtle">Promote &amp; fire triggers</button>
+                    </div>
                   </form>
                 </details>
               </div>

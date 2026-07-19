@@ -276,3 +276,61 @@ export async function revokeRole(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
 }
+
+/**
+ * REQ-046: dot triage. Corporate promotes an observed dot into a real
+ * field update — the value merges onto a chosen field, the dot is marked
+ * promoted (drops off the open list), and the field write emits a
+ * trigger-engine event, so a promotion can cascade into scheduled prompts.
+ */
+export async function promoteDot(formData: FormData) {
+  const dotId = String(formData.get("dotId") ?? "");
+  const fieldId = String(formData.get("fieldId") ?? "");
+  const value = String(formData.get("value") ?? "").trim();
+  if (!dotId || !fieldId || !value) return;
+  const { dot, playbookField } = await import("@wellkept/schema");
+  const [d] = await db.select().from(dot).where(eq(dot.id, dotId));
+  if (!d || d.promotedFieldId) return;
+  const actor = await getPrincipal(d.householdId);
+  if (actor?.role !== "corporate_admin") return;
+  const [f] = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
+  if (!f || f.householdId !== d.householdId) return;
+  if (f.sensitivity === "s3") return; // s3 goes through the vault, never a dot merge
+
+  await db.update(playbookField)
+    .set({ value, provenance: "observed", provenanceDate: new Date(), confirmed: true, updatedAt: new Date() })
+    .where(eq(playbookField.id, f.id));
+  await db.update(dot).set({ promotedFieldId: f.id, updatedAt: new Date() }).where(eq(dot.id, dotId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: d.householdId, actorUser: actor.userId, actorRole: actor.role,
+    kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(value),
+    detail: { via: "dot_promotion", dotId },
+  });
+  await emitFieldChange({
+    householdId: d.householdId, fieldId: f.id, fieldName: f.name, section: f.section,
+    newValue: value, changedAt: new Date().toISOString(),
+  });
+  revalidatePath(`/oversight/${d.householdId}`);
+}
+
+/**
+ * REQ-003: session revocation. corporate_admin force-signs-out a person —
+ * deletes every active session for that user (offboarding, or a suspected
+ * compromise). Distinct from revokeRole (which removes access rights but
+ * leaves a live session valid until expiry).
+ */
+export async function forceSignOut(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const targetUserId = String(formData.get("userId") ?? "");
+  if (!householdId || !targetUserId) return;
+  const actor = await getPrincipal(householdId);
+  if (actor?.role !== "corporate_admin") return;
+  if (targetUserId === actor.userId) return; // don't sign yourself out here
+  const { authSession } = await import("@wellkept/schema");
+  const killed = await db.delete(authSession).where(eq(authSession.userId, targetUserId)).returning({ t: authSession.sessionToken });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
+    kind: "sessions_revoked", detail: { targetUserId, count: killed.length },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}
