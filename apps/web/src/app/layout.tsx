@@ -1,10 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getHouseholdAndPrincipal } from "@/lib/data";
+import { ServiceWorker } from "./ServiceWorker";
 
 export const metadata: Metadata = {
   title: "Well Kept",
   description: "One household record, three permission-filtered projections.",
+  // Installable PWA: "Add to Home Screen" gives an app icon + full-screen launch.
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Well Kept", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#1C3D2E",
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -26,6 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body>
+        <ServiceWorker />
         <header className="masthead">
           <h1>WELL KEPT{hh && principal ? <> &nbsp;|&nbsp; {hh.name}</> : null}</h1>
           {principal ? (
