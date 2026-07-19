@@ -67,3 +67,5 @@ jobs:
         run: pnpm typecheck
       - name: Test (permissions gate at 100% or this fails)
         run: pnpm test
+      - name: Dependency audit (fails on high/critical advisories)
+        run: pnpm audit --audit-level=high

@@ -12,7 +12,7 @@
     "bullmq": "5.80.8",
     "@wellkept/schema": "workspace:*",
     "@wellkept/permissions": "workspace:*",
-    "drizzle-orm": "0.44.7",
+    "drizzle-orm": "0.45.2",
     "pg": "8.22.0",
     "@wellkept/trigger-engine": "workspace:*"
   },
