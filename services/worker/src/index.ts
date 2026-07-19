@@ -63,6 +63,29 @@ async function handleTagChange({ householdId, to }: TagChangeEvent) {
   return { [hold ? "held" : "released"]: changed.length };
 }
 
+/**
+ * Uptime check (launch §2.1): the worker runs continuously on Railway, so it
+ * can ping the web app's health endpoint from OUTSIDE Vercel — a genuine
+ * external check that catches a total outage, not just a degraded dependency.
+ * A failure pages via Sentry (already wired). HEALTH_URL defaults to prod.
+ */
+async function handleUptimeCheck() {
+  const url = process.env.HEALTH_URL ?? "https://wellkept-orcin.vercel.app/api/health";
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) {
+      Sentry.captureMessage(`uptime: ${url} returned ${res.status}`, "error");
+      console.error(`[worker] uptime FAIL ${res.status} ${url}`);
+      return { url, status: res.status, ok: false };
+    }
+    return { url, status: res.status, ok: true };
+  } catch (err) {
+    Sentry.captureMessage(`uptime: ${url} unreachable — ${err instanceof Error ? err.message : String(err)}`, "error");
+    console.error(`[worker] uptime UNREACHABLE ${url}`);
+    return { url, ok: false };
+  }
+}
+
 // Started as a service (`pnpm --filter @wellkept/worker start`); importable
 // for tests without side effects via createWorker().
 export function createWorker() {
@@ -73,6 +96,7 @@ export function createWorker() {
       if (job.name === "registry-sweep") return runRegistrySweep(db);
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
+      if (job.name === "uptime-check") return handleUptimeCheck();
       return handleEvent(job.data as FieldChangeEvent);
     },
     { connection },
@@ -87,12 +111,13 @@ export async function ensureSweepScheduled() {
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
   await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
   await queue.upsertJobScheduler("drain-outbox", { every: 120000 }, { name: "drain-outbox" });
+  await queue.upsertJobScheduler("uptime-check", { every: 300000 }, { name: "uptime-check" });
   await queue.close();
 }
 
 if (process.env.WK_WORKER_MAIN === "1") {
   const worker = createWorker();
-  void ensureSweepScheduled().then(() => console.log("[worker] scheduled: daily sweep, weekly digest, outbox drain (2m)"));
+  void ensureSweepScheduled().then(() => console.log("[worker] scheduled: daily sweep, weekly digest, outbox drain (2m), uptime check (5m)"));
   worker.on("completed", (job, result) => {
     const label = job.name === "tag-change"
       ? `tag->${(job.data as TagChangeEvent).to}`
