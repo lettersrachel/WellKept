@@ -4,6 +4,7 @@ import { getHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems,
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { logStrangerTest } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
+import { VisitAlerts } from "./VisitAlerts";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,8 @@ export default async function VisitPage() {
           </div>
         </>
       )}
+
+      <VisitAlerts />
 
       <div className="eyebrow">Flags first</div>
       {flagged.length === 0 ? (

@@ -74,8 +74,12 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   await hours.locator('input[type="datetime-local"]').nth(1).fill("2026-07-20T12:30");
   await hours.getByRole("button", { name: "Save hours" }).click();
 
-  // Photo (file input → the flow logs name:size).
-  await page.locator('input[type=file]').setInputFiles({ name: "after.jpg", mimeType: "image/jpeg", buffer: Buffer.from("x") });
+  // Photo: a real 1x1 PNG (the wizard now downscales it on a canvas before
+  // upload, so it must be a valid image — a stray byte won't decode). Offline
+  // here, so the upload is deferred; capturing still satisfies the flow.
+  const onePx = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  await page.locator('input[type=file]').setInputFiles({ name: "after.png", mimeType: "image/png", buffer: onePx });
+  await expect(page.getByText(/1 photo\(s\) added/)).toBeVisible({ timeout: 10_000 });
 
   // Changes noticed.
   const changes = page.locator('div.card', { hasText: "Changes noticed" });

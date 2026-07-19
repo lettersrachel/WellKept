@@ -31,6 +31,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const [zonePhoto, setZonePhoto] = useState("");
   const [reportSentences, setReportSentences] = useState(["", "", ""]);
   const [lifeChange, setLifeChange] = useState<boolean | null>(null);
+  const [photos, setPhotos] = useState<{ photoId: string; preview: string; base64: string; uploaded: boolean }[]>([]);
 
   const transport = useCallback(async (item: QueueItem) => {
     const response = await fetch("/api/visit-commands", {
@@ -101,8 +102,71 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     }
   }
 
+  // Downscale + compress in the browser via a canvas (data URLs only, so the
+  // enforcing CSP's img-src 'self' data: is satisfied — no blob: URLs).
+  async function shrink(file: File): Promise<{ base64: string; dataUrl: string }> {
+    const src: string = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const max = 1600;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+        resolve({ dataUrl, base64: dataUrl.split(",")[1] ?? "" });
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  async function uploadOne(photoId: string, base64: string): Promise<boolean> {
+    try {
+      const res = await fetch("/api/mobile/upload", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ householdId, photoId, contentType: "image/jpeg", base64 }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function addPhotoFile(file: File) {
+    try {
+      const { base64, dataUrl } = await shrink(file);
+      if (!base64) return;
+      const photoId = crypto.randomUUID();
+      run((f) => f.addPhoto(photoId));
+      setPhotos((prev) => [...prev, { photoId, preview: dataUrl, base64, uploaded: false }]);
+      if (await uploadOne(photoId, base64)) {
+        setPhotos((prev) => prev.map((p) => (p.photoId === photoId ? { ...p, uploaded: true } : p)));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function retryPhotoUploads() {
+    for (const p of photos.filter((x) => !x.uploaded)) {
+      if (await uploadOne(p.photoId, p.base64)) {
+        setPhotos((prev) => prev.map((x) => (x.photoId === p.photoId ? { ...x, uploaded: true } : x)));
+      }
+    }
+  }
+
   async function handleSubmit() {
     try {
+      await retryPhotoUploads();
       const commands = flowRef.current!.submit();
       setState(flowRef.current!.state);
       for (const command of commands) await syncRef.current!.enqueueAndPersist(command);
@@ -195,15 +259,28 @@ export function VisitWizard({ householdId }: { householdId: string }) {
 
           <div className="card">
             <h2>Photos</h2>
-            <div className="note">Photos share only through the platform, never personal devices&apos; rolls (SOP-019).</div>
+            <div className="note">Photos share only through the platform, never personal devices&apos; rolls (SOP-019). Uploaded on capture; if offline they upload on sync.</div>
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) run((f) => f.addPhoto(`${file.name}:${file.size}`));
+                if (file) void addPhotoFile(file);
+                e.target.value = "";
               }}
             />
+            {photos.length > 0 && (
+              <div className="row" style={{ flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                {photos.map((p) => (
+                  <span key={p.photoId} style={{ position: "relative", display: "inline-block" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.preview} alt="visit photo" width={72} height={72} style={{ objectFit: "cover", borderRadius: 6, border: "1px solid #e2e0d8", opacity: p.uploaded ? 1 : 0.6 }} />
+                    {!p.uploaded && <span style={{ position: "absolute", bottom: 2, left: 2, right: 2, fontSize: 9, color: "#fff", background: "rgba(140,47,34,0.85)", textAlign: "center", borderRadius: 3 }}>pending</span>}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="prov">{state.photoIds.length} photo(s) added.</div>
           </div>
 
@@ -288,7 +365,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
         <div className="fval">
           {queueStatus.pending} command(s) queued{online ? "" : " — will send once back online"}.
         </div>
-        <p><button className="act subtle" type="button" onClick={() => void attemptSync()}>Sync now</button></p>
+        <p><button className="act subtle" type="button" onClick={() => void (async () => { await retryPhotoUploads(); await attemptSync(); })()}>Sync now</button></p>
         {queueStatus.conflicts.length > 0 && (
           <div className="banner" role="alert">
             {queueStatus.conflicts.map((c) => (
