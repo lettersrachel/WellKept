@@ -11,23 +11,11 @@ data-safety and operational gates for going live with real people.
 
 ## 1. Data-safety gates — before ANY real household data
 
-### 1.1 Custody the master key 🧑 ⬜ — **do this first**
-`WK_KMS_KEY` encrypts everything in the vault. Lose it and every secured value
-is **unrecoverable**. It currently lives only as a Vercel env var.
-
-- The value is in `.production-secrets` (repo root, git-ignored, `chmod 600`),
-  on the `WK_KMS_KEY=` line — it's the ~44-character string *after* the `=`,
-  not the name.
-- Copy **that string** into your password manager (1Password / Bitwarden), in an
-  entry named "Well Kept — WK_KMS_KEY (master vault key)".
-- While you're there, also save the `AUTH_SECRET=` string from the same file
-  (less critical — losing it just logs everyone out — but cheap to keep).
-- After it's safely in the manager, tell me and I'll shred the local
-  `.production-secrets` / `.vercel-env` files.
-
-> Only `WK_KMS_KEY` is truly irrecoverable. The database URL, Resend key,
-> Upstash and Railway creds can all be regenerated from their dashboards — you
-> don't need to hand-save those.
+### 1.1 Custody the master key 🧑 ✅ DONE
+`WK_KMS_KEY` (and `AUTH_SECRET`) are saved in your password manager; the local
+plaintext files (`.production-secrets`, `.vercel-env`) were shredded. The key
+now lives only in Vercel (running the app) + your manager (safe backup) — so a
+lost laptop no longer risks the vault.
 
 ### 1.2 Confirm backups & know the restore path 🧑 ⏳
 Neon keeps point-in-time-recovery history, but the window depends on your plan
