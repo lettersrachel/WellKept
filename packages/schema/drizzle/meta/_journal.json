@@ -50,6 +50,13 @@
       "when": 1784482595062,
       "tag": "0006_backup_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784486352301,
+      "tag": "0007_device_pairing",
+      "breakpoints": true
     }
   ]
 }

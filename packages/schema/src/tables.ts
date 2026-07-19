@@ -261,6 +261,20 @@ export const userBackupCode = pgTable("user_backup_code", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("user_backup_code_user_idx").on(t.userId)]);
 
+// Native-app device pairing. A signed-in, MFA-cleared staff member generates a
+// short-lived code on the web; the Expo app exchanges it for a real session.
+// Only the code HASH is stored; the row is single-use (consumedAt) and expires
+// fast. This is how the phone gets a session without re-implementing magic-link
+// + TOTP on the device — the human already proved both on the web to mint it.
+export const devicePairing = pgTable("device_pairing", {
+  id: uuid("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("device_pairing_code_idx").on(t.codeHash)]);
+
 // One row per command from @wellkept/close-flow's submit() (visit.submit,
 // dot.create, signal.route), drained by @wellkept/offline-queue. id IS the
 // command's idempotencyKey: redelivery (a device retrying after a flaky

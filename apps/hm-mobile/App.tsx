@@ -1,28 +1,25 @@
 /**
- * Well Kept HM app (sprints 3-5 native shell). The domain is the SAME
- * verified packages the web wizard uses — @wellkept/close-flow and
- * @wellkept/offline-queue — with AsyncStorage persistence and a fetch
- * transport to /api/visit-commands.
+ * Well Kept HM app (native shell). The domain is the SAME verified packages the
+ * web wizard uses — @wellkept/close-flow and @wellkept/offline-queue — with
+ * AsyncStorage persistence and a fetch transport to /api/visit-commands.
  *
- * Dev bridge until mobile auth lands (a device-code or deep-link session
- * exchange, its own sprint): set EXPO_PUBLIC_API_URL to the dev server and
- * EXPO_PUBLIC_SESSION_COOKIE to a signed-in HM's authjs.session-token
- * cookie. Without them the app runs fully offline: capture works, queue
- * persists, sync waits.
+ * Auth is real now: the phone holds a keychain session (src/session) obtained
+ * by pairing against the web /link-device screen (device-code exchange). No
+ * network? Capture still works, the queue persists, and sync waits. On first
+ * launch (or after sign-out) the pairing screen shows instead.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View,
+  ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View,
 } from "react-native";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "./src/visit-sync";
+import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
 
 const C = { green: "#1C3D2E", gold: "#B08D2A", cream: "#F7F3E8", sage: "#E4EDE4", ink: "#26241F", brick: "#8C2F22", grey: "#6B6B6B" };
 
-const HOUSEHOLD_ID = process.env.EXPO_PUBLIC_HOUSEHOLD_ID ?? "7ed45b9b-aec3-4393-b0a9-19de059a3645";
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
-const SESSION_COOKIE = process.env.EXPO_PUBLIC_SESSION_COOKIE ?? "";
 
 const REQUIRED_TASKS = [
   { id: "kitchen", label: "Kitchen reset to zone standard" },
@@ -32,6 +29,141 @@ const REQUIRED_TASKS = [
 ];
 
 export default function App() {
+  const [booting, setBooting] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [household, setHousehold] = useState<Household | null>(null);
+
+  useEffect(() => {
+    void loadSession().then((s) => {
+      setSession(s);
+      if (s && s.households.length === 1) setHousehold(s.households[0]!);
+      setBooting(false);
+    });
+  }, []);
+
+  async function signOut() {
+    await clearSession();
+    setSession(null);
+    setHousehold(null);
+  }
+
+  if (booting) {
+    return (
+      <SafeAreaView style={[s.root, s.centered]}>
+        <ActivityIndicator color={C.green} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!session) {
+    return <PairingScreen onPaired={(s) => { setSession(s); if (s.households.length === 1) setHousehold(s.households[0]!); }} />;
+  }
+
+  if (session.households.length === 0) {
+    return (
+      <SafeAreaView style={s.root}>
+        <Masthead subtitle="HOUSE MANAGER" />
+        <View style={s.card}>
+          <Text style={s.h2}>No household assignments</Text>
+          <Text style={s.note}>This account isn&apos;t assigned to any household as a house manager yet. Ask corporate to add you, then sign in again.</Text>
+          <Pressable style={s.chip} onPress={() => void signOut()}><Text style={s.chipText}>Sign out</Text></Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!household) {
+    return (
+      <SafeAreaView style={s.root}>
+        <Masthead subtitle="CHOOSE A HOUSEHOLD" />
+        <ScrollView contentContainerStyle={s.scroll}>
+          <View style={s.card}>
+            <Text style={s.h2}>Which visit?</Text>
+            {session.households.map((h) => (
+              <Pressable key={h.id} style={s.pickRow} onPress={() => setHousehold(h)}>
+                <Text style={s.body}>{h.name}</Text>
+                <Text style={s.note}>{h.role.replace("_", " ")}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={s.linkBtn} onPress={() => void signOut()}><Text style={s.linkText}>Sign out</Text></Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <CloseFlowScreen
+      key={household.id}
+      token={session.token}
+      household={household}
+      canSwitch={session.households.length > 1}
+      onSwitch={() => setHousehold(null)}
+      onSignOut={() => void signOut()}
+    />
+  );
+}
+
+function Masthead({ subtitle }: { subtitle: string }) {
+  return (
+    <View style={s.masthead}>
+      <Text style={s.mastheadEyebrow}>{subtitle}</Text>
+      <Text style={s.mastheadTitle}>WELL KEPT</Text>
+    </View>
+  );
+}
+
+function PairingScreen({ onPaired }: { onPaired: (s: Session) => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      onPaired(await pairDevice(API_URL, code));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={s.root}>
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Masthead subtitle="PAIR THIS DEVICE" />
+        <View style={s.card}>
+          <Text style={s.h2}>Connect your phone</Text>
+          <Text style={s.note}>
+            On a computer or browser, sign in to Well Kept and open <Text style={{ fontWeight: "700" }}>Link your phone</Text>.
+            Enter the code it shows below.
+          </Text>
+          <TextInput
+            style={[s.input, s.codeInput]}
+            value={code}
+            onChangeText={setCode}
+            placeholder="abcd-efgh"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!busy}
+          />
+          {error ? <Text style={s.error}>{error}</Text> : null}
+          <Pressable style={[s.submit, (busy || code.trim().length < 8) && s.submitDisabled]} disabled={busy || code.trim().length < 8} onPress={() => void submit()}>
+            <Text style={s.submitText}>{busy ? "Pairing…" : "Pair device"}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function CloseFlowScreen({
+  token, household, canSwitch, onSwitch, onSignOut,
+}: {
+  token: string; household: Household; canSwitch: boolean; onSwitch: () => void; onSignOut: () => void;
+}) {
   const flowRef = useRef<CloseFlow | null>(null);
   const syncRef = useRef<VisitSync | null>(null);
   const [state, setState] = useState<CloseFlowState | null>(null);
@@ -48,15 +180,12 @@ export default function App() {
     if (!API_URL) throw new Error("no API configured; staying queued");
     const response = await fetch(`${API_URL}/api/visit-commands`, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(SESSION_COOKIE ? { cookie: `authjs.session-token=${SESSION_COOKIE}` } : {}),
-      },
+      headers: { "content-type": "application/json", cookie: `authjs.session-token=${token}` },
       body: JSON.stringify({ idempotencyKey: item.idempotencyKey, type: item.type, payload: item.payload }),
     });
     if (!response.ok) throw new Error(`visit-commands ${response.status}`);
     return (await response.json()) as { conflict?: boolean; reason?: string };
-  }, []);
+  }, [token]);
 
   const refresh = useCallback(() => {
     if (!syncRef.current) return;
@@ -64,13 +193,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    flowRef.current = createCloseFlow({ householdId: HOUSEHOLD_ID, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
+    flowRef.current = createCloseFlow({ householdId: household.id, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
     setState(flowRef.current.state);
-    void createVisitSync({ householdId: HOUSEHOLD_ID }).then((s) => {
-      syncRef.current = s;
+    void createVisitSync({ householdId: household.id }).then((sync) => {
+      syncRef.current = sync;
       refresh();
     });
-  }, [refresh]);
+  }, [household.id, refresh]);
 
   function run(action: (flow: CloseFlow) => void) {
     try {
@@ -96,7 +225,7 @@ export default function App() {
     }
   }
 
-  if (!state) return null;
+  if (!state) return <SafeAreaView style={[s.root, s.centered]}><ActivityIndicator color={C.green} /></SafeAreaView>;
   const missing = flowRef.current!.missingRequiredSteps();
 
   return (
@@ -106,6 +235,11 @@ export default function App() {
         <View style={s.masthead}>
           <Text style={s.mastheadEyebrow}>HOUSE MANAGER · OFFLINE-FIRST</Text>
           <Text style={s.mastheadTitle}>WELL KEPT</Text>
+          <Text style={s.mastheadHome}>{household.name}</Text>
+          <View style={s.mastheadActions}>
+            {canSwitch ? <Pressable onPress={onSwitch}><Text style={s.mastheadLink}>Switch household</Text></Pressable> : <View />}
+            <Pressable onPress={onSignOut}><Text style={s.mastheadLink}>Sign out</Text></Pressable>
+          </View>
         </View>
 
         {error ? <Text style={s.error}>{error}</Text> : null}
@@ -113,9 +247,7 @@ export default function App() {
         {submitted ? (
           <View style={s.card}>
             <Text style={s.h2}>Visit submitted</Text>
-            <Text style={s.note}>
-              {queueStatus.pending} item(s) queued on this device; they sync when the API is reachable.
-            </Text>
+            <Text style={s.note}>{queueStatus.pending} item(s) queued on this device; they sync when the API is reachable.</Text>
           </View>
         ) : (
           <>
@@ -136,14 +268,7 @@ export default function App() {
               <Text style={s.h2}>Hours</Text>
               <Pressable
                 style={s.chip}
-                onPress={() =>
-                  run((f) =>
-                    f.captureHours({
-                      startedAt: new Date(Date.now() - 3 * 3600_000).toISOString(),
-                      endedAt: new Date().toISOString(),
-                    }),
-                  )
-                }
+                onPress={() => run((f) => f.captureHours({ startedAt: new Date(Date.now() - 3 * 3600_000).toISOString(), endedAt: new Date().toISOString() }))}
               >
                 <Text style={s.chipText}>{state.hours ? "Hours confirmed" : "Confirm hours (geofence suggestion)"}</Text>
               </Pressable>
@@ -161,68 +286,42 @@ export default function App() {
               <Text style={s.h2}>Changes noticed</Text>
               <Text style={s.note}>&ldquo;none&rdquo; is an answer; blank is not.</Text>
               <TextInput style={s.input} value={changes} onChangeText={setChanges} placeholder="or 'none'" />
-              <Pressable style={s.chip} onPress={() => run((f) => f.setChangesNoticed(changes))}>
-                <Text style={s.chipText}>Save</Text>
-              </Pressable>
+              <Pressable style={s.chip} onPress={() => run((f) => f.setChangesNoticed(changes))}><Text style={s.chipText}>Save</Text></Pressable>
             </View>
 
             <View style={s.card}>
               <Text style={s.h2}>Dots (verbatim, never client-visible)</Text>
               <TextInput style={s.input} value={dotText} onChangeText={setDotText} placeholder="What was said, exactly" />
-              <Pressable style={s.chip} onPress={() => { run((f) => f.addDot(dotText)); setDotText(""); }}>
-                <Text style={s.chipText}>Log dot ({state.dots.length})</Text>
-              </Pressable>
+              <Pressable style={s.chip} onPress={() => { run((f) => f.addDot(dotText)); setDotText(""); }}><Text style={s.chipText}>Log dot ({state.dots.length})</Text></Pressable>
             </View>
 
             <View style={s.card}>
               <View style={s.row}>
                 <Text style={s.h2}>Life-change signal</Text>
-                <Switch
-                  value={lifeChange}
-                  onValueChange={(v) => { setLifeChange(v); run((f) => f.setLifeChangeSignal(v)); }}
-                  trackColor={{ true: C.brick }}
-                />
+                <Switch value={lifeChange} onValueChange={(v) => { setLifeChange(v); run((f) => f.setLifeChangeSignal(v)); }} trackColor={{ true: C.brick }} />
               </View>
               <Text style={s.note}>A yes routes to corporate the same day and never becomes a proposal.</Text>
               {state.lifeChangeSignal === null && (
-                <Pressable style={s.chip} onPress={() => run((f) => f.setLifeChangeSignal(false))}>
-                  <Text style={s.chipText}>Nothing to flag</Text>
-                </Pressable>
+                <Pressable style={s.chip} onPress={() => run((f) => f.setLifeChangeSignal(false))}><Text style={s.chipText}>Nothing to flag</Text></Pressable>
               )}
             </View>
 
             <View style={s.card}>
               <Text style={s.h2}>Zone drift</Text>
               <TextInput style={s.input} value={zone} onChangeText={setZone} />
-              <Pressable style={s.chip} onPress={() => run((f) => f.setZoneDrift({ answer: zone }))}>
-                <Text style={s.chipText}>Save</Text>
-              </Pressable>
+              <Pressable style={s.chip} onPress={() => run((f) => f.setZoneDrift({ answer: zone }))}><Text style={s.chipText}>Save</Text></Pressable>
             </View>
 
             <View style={s.card}>
               <Text style={s.h2}>The report. Exactly three sentences.</Text>
               {["What was done", "What was noticed", "What comes next"].map((hint, i) => (
-                <TextInput
-                  key={hint}
-                  style={s.input}
-                  value={report[i]}
-                  onChangeText={(v) => setReport((prev) => prev.map((x, j) => (j === i ? v : x)))}
-                  placeholder={hint}
-                />
+                <TextInput key={hint} style={s.input} value={report[i]} onChangeText={(v) => setReport((prev) => prev.map((x, j) => (j === i ? v : x)))} placeholder={hint} />
               ))}
-              <Pressable style={s.chip} onPress={() => run((f) => report.forEach((sent, i) => f.setReportSentence(i, sent)))}>
-                <Text style={s.chipText}>Save report</Text>
-              </Pressable>
+              <Pressable style={s.chip} onPress={() => run((f) => report.forEach((sent, i) => f.setReportSentence(i, sent)))}><Text style={s.chipText}>Save report</Text></Pressable>
             </View>
 
-            <Pressable
-              style={[s.submit, missing.length > 0 && s.submitDisabled]}
-              disabled={missing.length > 0}
-              onPress={() => void submit()}
-            >
-              <Text style={s.submitText}>
-                {missing.length > 0 ? `Locked: ${missing.join(", ")}` : "Submit visit report"}
-              </Text>
+            <Pressable style={[s.submit, missing.length > 0 && s.submitDisabled]} disabled={missing.length > 0} onPress={() => void submit()}>
+              <Text style={s.submitText}>{missing.length > 0 ? `Locked: ${missing.join(", ")}` : "Submit visit report"}</Text>
             </Pressable>
           </>
         )}
@@ -230,9 +329,7 @@ export default function App() {
         <View style={s.card}>
           <Text style={s.h2}>Sync</Text>
           <Text style={s.body}>{queueStatus.pending} command(s) queued on device.</Text>
-          <Pressable style={s.chip} onPress={() => void syncRef.current?.sync(transport).catch(() => {}).then(refresh)}>
-            <Text style={s.chipText}>Sync now</Text>
-          </Pressable>
+          <Pressable style={s.chip} onPress={() => void syncRef.current?.sync(transport).catch(() => {}).then(refresh)}><Text style={s.chipText}>Sync now</Text></Pressable>
           {queueStatus.conflicts.map((c) => (
             <Text key={c.mutationId} style={s.error}>{c.reason} — reported to corporate; your work is not lost.</Text>
           ))}
@@ -244,23 +341,31 @@ export default function App() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.cream },
+  centered: { alignItems: "center", justifyContent: "center" },
   scroll: { padding: 14, paddingBottom: 40 },
-  masthead: { backgroundColor: C.green, borderRadius: 10, padding: 16, marginBottom: 12 },
+  masthead: { backgroundColor: C.green, borderRadius: 10, padding: 16, margin: 14, marginBottom: 12 },
   mastheadEyebrow: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   mastheadTitle: { color: "#fff", fontSize: 24, fontFamily: "Georgia", marginTop: 4 },
-  card: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e2e0d8" },
+  mastheadHome: { color: C.sage, fontSize: 14, marginTop: 6 },
+  mastheadActions: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+  mastheadLink: { color: C.gold, fontSize: 12, fontWeight: "600" },
+  card: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginHorizontal: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e2e0d8" },
   h2: { fontFamily: "Georgia", fontSize: 16, color: C.green, marginBottom: 8 },
   body: { fontSize: 14, color: C.ink },
   note: { fontSize: 12, color: C.grey, fontStyle: "italic", marginBottom: 8 },
   taskRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, gap: 10 },
+  pickRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#eee" },
   check: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: C.grey },
   checkOn: { backgroundColor: C.green, borderColor: C.green },
   chip: { backgroundColor: C.green, borderRadius: 8, paddingVertical: 9, paddingHorizontal: 14, alignSelf: "flex-start", marginTop: 6 },
   chipText: { color: "#fff", fontSize: 14 },
   input: { borderWidth: 1, borderColor: "#d8d6cc", borderRadius: 6, padding: 9, fontSize: 14, backgroundColor: "#fff", marginTop: 6 },
+  codeInput: { fontFamily: "Georgia", fontSize: 22, letterSpacing: 4, textAlign: "center" },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  submit: { backgroundColor: C.green, borderRadius: 10, padding: 15, marginBottom: 12 },
+  submit: { backgroundColor: C.green, borderRadius: 10, padding: 15, marginTop: 10 },
   submitDisabled: { backgroundColor: "#b9b4a5" },
   submitText: { color: "#fff", textAlign: "center", fontFamily: "Georgia", fontSize: 16 },
-  error: { color: C.brick, fontSize: 13, marginBottom: 8 },
+  linkBtn: { alignItems: "center", padding: 12 },
+  linkText: { color: C.grey, fontSize: 13, textDecorationLine: "underline" },
+  error: { color: C.brick, fontSize: 13, marginTop: 8 },
 });
