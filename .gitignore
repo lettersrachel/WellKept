@@ -14,3 +14,7 @@ coverage/
 .upstash-connection
 .vercel-env
 .vercel
+
+# Playwright
+tooling/e2e/test-results/
+tooling/e2e/playwright-report/

@@ -1,0 +1,13 @@
+{
+  "name": "@wellkept/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "airplane": "playwright test"
+  },
+  "dependencies": {
+    "@playwright/test": "1.49.1",
+    "pg": "8.22.0"
+  }
+}

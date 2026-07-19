@@ -5,9 +5,10 @@
 #     fails the build below 100% line/branch/function/statement coverage
 #   - fixture parity: the schema vocabulary suite pins zod, pg enums, and
 #     the permission core to one shared vocabulary
-# The airplane test (offline close-flow) is browser-driven and remains a
-# manual release blocker until a Playwright job lands; suppression and
-# founder-walkthrough gates likewise.
+# The airplane test (offline close-flow) now runs automated in the
+# `airplane` job below via Playwright — a fill-offline / queue / reconnect
+# / apply cycle on a real browser. Suppression and founder-walkthrough
+# gates remain manual.
 name: ci
 
 on:
@@ -69,3 +70,51 @@ jobs:
         run: pnpm test
       - name: Dependency audit (fails on high/critical advisories)
         run: pnpm audit --audit-level=high
+
+  airplane:
+    # The release-blocking airplane test (ADR-001 guardrail 4): offline
+    # capture → on-device queue → reconnect → sync → apply, on a real browser.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wellkept
+          POSTGRES_PASSWORD: wellkept_dev
+          POSTGRES_DB: wellkept
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wellkept -d wellkept"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://wellkept:wellkept_dev@localhost:5432/wellkept
+      REDIS_URL: redis://localhost:6379
+      BASE: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate + seed (fresh DB → jordan HM on Fernbrook, no prior visits)
+        run: |
+          pnpm --filter @wellkept/schema db:migrate
+          pnpm --filter @wellkept/schema db:seed
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @wellkept/e2e exec playwright install --with-deps chromium
+      - name: Start the app (dev — skips prod-guard env)
+        run: pnpm --filter @wellkept/web dev &
+      - name: Wait for the app to be ready
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3001/api/health && break || sleep 2
+          done
+      - name: Run the airplane test
+        run: pnpm --filter @wellkept/e2e exec playwright test
