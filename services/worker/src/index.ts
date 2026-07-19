@@ -10,6 +10,19 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem } from "@wellkept/schema";
 import { runTriggerPass, runRegistrySweep, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import * as Sentry from "@sentry/node";
+
+// Error monitoring (launch §2.1). Off unless SENTRY_DSN is set. We only ever
+// send the error + job id/name — NEVER job.data, which carries household field
+// values. sendDefaultPii:false keeps request/user data out too.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  });
+}
 
 const connection = {
   url: process.env.REDIS_URL ?? "redis://localhost:6379",
@@ -88,6 +101,11 @@ if (process.env.WK_WORKER_MAIN === "1") {
   });
   worker.on("failed", (job, err) => {
     console.error(`[worker] ${job?.id} FAILED:`, err.message);
+    // Error + job identity only — never job.data (it holds household values).
+    Sentry.captureException(err, { tags: { jobId: job?.id ?? "unknown", jobName: job?.name ?? "unknown" } });
   });
+  // A crash in the worker is invisible without this — surface it before exit.
+  process.on("uncaughtException", (err) => { Sentry.captureException(err); console.error("[worker] uncaught:", err); });
+  process.on("unhandledRejection", (err) => { Sentry.captureException(err); console.error("[worker] unhandled rejection:", err); });
   console.log(`[worker] listening on ${FIELD_EVENTS_QUEUE}`);
 }

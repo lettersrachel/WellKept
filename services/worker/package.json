@@ -9,6 +9,7 @@
     "seed:rules": "node src/seed-rules.ts"
   },
   "dependencies": {
+    "@sentry/node": "9.46.0",
     "bullmq": "5.80.8",
     "@wellkept/schema": "workspace:*",
     "@wellkept/permissions": "workspace:*",
