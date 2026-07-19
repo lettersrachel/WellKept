@@ -141,6 +141,18 @@ export async function getHouseholdMembers(householdId: string) {
     .orderBy(asc(householdRoleAssignment.role));
 }
 
+/** REQ-032: recent visit photos for a household (ids only — the bytes come
+ * from the auth-gated /api/mobile/photo route). Newest first. */
+export async function getVisitPhotos(householdId: string, limit = 12) {
+  const { visitPhoto } = await import("@wellkept/schema");
+  const { desc } = await import("drizzle-orm");
+  return db.select({ id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy })
+    .from(visitPhoto)
+    .where(eq(visitPhoto.householdId, householdId))
+    .orderBy(desc(visitPhoto.createdAt))
+    .limit(limit);
+}
+
 /** REQ-003: which of these users have a CONFIRMED TOTP second factor.
  * Used by the People & access panel to show 2FA status and gate the reset. */
 export async function getTotpEnrolled(userIds: string[]): Promise<Set<string>> {

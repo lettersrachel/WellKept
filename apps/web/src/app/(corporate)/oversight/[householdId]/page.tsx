@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
 import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp } from "@/lib/actions";
-import { getRegistries, getHouseholdMembers, getTotpEnrolled } from "@/lib/data";
+import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -35,6 +35,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
   ]);
   const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
   const totpEnrolled = await getTotpEnrolled(members.map((m) => m.userId));
+  const visitPhotos = await getVisitPhotos(hh.id);
   const isAdmin = role === "corporate_admin";
   const ROLE_OPTIONS = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
   const pendingGestures = gestures.filter((g) => !g.executedAt);
@@ -123,6 +124,22 @@ export default async function Oversight({ params }: { params: Promise<{ househol
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div className="card">
+        <h2>Visit photos</h2>
+        {visitPhotos.length === 0 ? (
+          <div className="note">No photos captured yet. House managers add them from the field app; they appear here after sync.</div>
+        ) : (
+          <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
+            {visitPhotos.map((p) => (
+              <a key={p.id} href={`/api/mobile/photo?id=${p.id}`} target="_blank" rel="noreferrer" title={`captured ${new Date(p.createdAt).toLocaleString()}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/api/mobile/photo?id=${p.id}`} alt="visit photo" width={84} height={84} style={{ objectFit: "cover", borderRadius: 6, border: "1px solid #e2e0d8" }} />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card">
