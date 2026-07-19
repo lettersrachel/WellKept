@@ -54,8 +54,9 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   const before = await visitCount();
 
   await page.goto("/visit");
-  await page.waitForLoadState("networkidle");
-  await expect(page.getByRole("heading", { name: "Confirm today's tasks" })).toBeVisible();
+  // Dev-mode compiles /visit on first hit and the wizard is a client
+  // component that hydrates after; wait generously for it to be ready.
+  await expect(page.getByRole("heading", { name: "Confirm today's tasks" })).toBeVisible({ timeout: 30_000 });
 
   // ---- go offline ----
   await context.setOffline(true);
