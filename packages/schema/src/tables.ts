@@ -266,6 +266,21 @@ export const userBackupCode = pgTable("user_backup_code", {
 // Only the code HASH is stored; the row is single-use (consumedAt) and expires
 // fast. This is how the phone gets a session without re-implementing magic-link
 // + TOTP on the device — the human already proved both on the web to mint it.
+// Visit photos (REQ-032). Stored base64 in Postgres for the pilot — private by
+// default (served only through an auth-gated, role-checked route, same as every
+// other household datum) and zero new infra. Move to object storage (R2/S3
+// presigned) before scale; the `id` is the client-generated photo id the close
+// flow already carries, so a queued offline visit references it unchanged.
+export const visitPhoto = pgTable("visit_photo", {
+  id: uuid("id").primaryKey(),
+  householdId: uuid("household_id").notNull(),
+  contentType: text("content_type").notNull(),
+  data: text("data").notNull(), // base64, no data: prefix
+  bytes: integer("bytes").notNull(), // decoded size, for quick accounting
+  uploadedBy: text("uploaded_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("visit_photo_household_idx").on(t.householdId)]);
+
 export const devicePairing = pgTable("device_pairing", {
   id: uuid("id").primaryKey(),
   userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),

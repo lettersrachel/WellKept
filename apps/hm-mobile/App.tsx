@@ -10,13 +10,16 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View,
+  ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as Crypto from "expo-crypto";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "./src/visit-sync";
 import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
 import { fetchBriefing, type Briefing } from "./src/briefing";
+import { uploadPhoto, type LocalPhoto } from "./src/photos";
 
 const C = { green: "#1C3D2E", gold: "#B08D2A", cream: "#F7F3E8", sage: "#E4EDE4", ink: "#26241F", brick: "#8C2F22", grey: "#6B6B6B" };
 
@@ -178,6 +181,27 @@ function CloseFlowScreen({
   const [report, setReport] = useState(["", "", ""]);
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [briefingStale, setBriefingStale] = useState(false);
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+
+  async function capturePhoto() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { setError("Camera access is needed to add a visit photo."); return; }
+    const res = await ImagePicker.launchCameraAsync({ quality: 0.4, base64: true });
+    if (res.canceled || !res.assets?.[0]?.base64) return;
+    const a = res.assets[0];
+    const photoId = Crypto.randomUUID();
+    setPhotos((prev) => [...prev, { photoId, localUri: a.uri, base64: a.base64!, contentType: "image/jpeg", uploaded: false }]);
+    run((f) => f.addPhoto(photoId));
+  }
+
+  const uploadPendingPhotos = useCallback(async () => {
+    const pending = photos.filter((p) => !p.uploaded);
+    for (const p of pending) {
+      if (await uploadPhoto(API_URL, token, household.id, p)) {
+        setPhotos((prev) => prev.map((x) => (x.photoId === p.photoId ? { ...x, uploaded: true } : x)));
+      }
+    }
+  }, [photos, token, household.id]);
 
   useEffect(() => {
     let live = true;
@@ -231,6 +255,7 @@ function CloseFlowScreen({
       for (const command of commands) await syncRef.current!.enqueueAndPersist(command);
       refresh();
       setSubmitted(true);
+      await uploadPendingPhotos(); // photos land before the visit that references them
       await syncRef.current!.sync(transport).catch(() => {});
       refresh();
     } catch (err) {
@@ -291,10 +316,20 @@ function CloseFlowScreen({
 
             <View style={s.card}>
               <Text style={s.h2}>Photos</Text>
-              <Text style={s.note}>Camera capture is a later sprint; this logs a placeholder photo id.</Text>
-              <Pressable style={s.chip} onPress={() => run((f) => f.addPhoto(`photo-${Date.now()}`))}>
-                <Text style={s.chipText}>Log photo ({state.photoIds.length})</Text>
+              <Text style={s.note}>Taken here, uploaded on sync. Works offline — they wait with the visit.</Text>
+              <Pressable style={s.chip} onPress={() => void capturePhoto()}>
+                <Text style={s.chipText}>Take photo ({photos.length})</Text>
               </Pressable>
+              {photos.length > 0 && (
+                <View style={s.thumbRow}>
+                  {photos.map((p) => (
+                    <View key={p.photoId} style={s.thumbWrap}>
+                      <Image source={{ uri: p.localUri }} style={s.thumb} />
+                      {!p.uploaded ? <Text style={s.thumbPending}>pending</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={s.card}>
@@ -344,7 +379,7 @@ function CloseFlowScreen({
         <View style={s.card}>
           <Text style={s.h2}>Sync</Text>
           <Text style={s.body}>{queueStatus.pending} command(s) queued on device.</Text>
-          <Pressable style={s.chip} onPress={() => void syncRef.current?.sync(transport).catch(() => {}).then(refresh)}><Text style={s.chipText}>Sync now</Text></Pressable>
+          <Pressable style={s.chip} onPress={() => void (async () => { await uploadPendingPhotos(); await syncRef.current?.sync(transport).catch(() => {}); refresh(); })()}><Text style={s.chipText}>Sync now</Text></Pressable>
           {queueStatus.conflicts.map((c) => (
             <Text key={c.mutationId} style={s.error}>{c.reason} — reported to corporate; your work is not lost.</Text>
           ))}
@@ -478,4 +513,8 @@ const s = StyleSheet.create({
   briefName: { fontSize: 13, color: C.ink, fontWeight: "600" },
   briefVal: { fontSize: 13, color: C.ink, marginTop: 1 },
   prov: { fontSize: 11, color: C.grey, fontStyle: "italic", marginTop: 1 },
+  thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  thumbWrap: { position: "relative" },
+  thumb: { width: 64, height: 64, borderRadius: 6, backgroundColor: "#eee" },
+  thumbPending: { position: "absolute", bottom: 0, left: 0, right: 0, fontSize: 9, color: "#fff", backgroundColor: "rgba(140,47,34,0.85)", textAlign: "center", borderBottomLeftRadius: 6, borderBottomRightRadius: 6 },
 });
