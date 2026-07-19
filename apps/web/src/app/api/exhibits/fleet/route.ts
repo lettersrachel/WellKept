@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { playbookField, visitCommand, strangerTest } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
+import { staffMfaCleared } from "@/lib/totp";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 
@@ -16,6 +17,8 @@ export async function GET() {
   if (corporate.length === 0) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  // REQ-003: bulk fleet export requires the staff second factor too.
+  if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
 
   const header = "household,tier,status_tag,fields_total,fields_confirmed,visits_applied,visit_hours,conflicts,life_change_signals,last_stranger_test,stranger_result";
   const lines = [header];

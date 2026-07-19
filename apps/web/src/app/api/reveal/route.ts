@@ -5,6 +5,7 @@ import { playbookField, auditEvent, household } from "@wellkept/schema";
 import { revealS3, type AuditEntry } from "@wellkept/permissions";
 import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
+import { staffMfaCleared } from "@/lib/totp";
 import { vaultOpen } from "@/lib/vault";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
 
   const principal = await getPrincipal(f.householdId);
   if (!principal) return NextResponse.json({ ok: false, reason: "not authenticated" }, { status: 403 });
+
+  // REQ-003: the second factor gates the API too, not just page navigation.
+  // A staff session that skipped TOTP must not decrypt the vault by calling
+  // this endpoint directly (the layout guard only covers page renders).
+  if (!(await staffMfaCleared())) return NextResponse.json({ ok: false, reason: "second factor required" }, { status: 403 });
 
   // Hardening: a vault reveal is the highest-value action in the system.
   // Cap it per user (bulk exfiltration guard) even for authorized roles —

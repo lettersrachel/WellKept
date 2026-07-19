@@ -97,16 +97,18 @@ export async function issueBackupCodes(userId: string): Promise<string[]> {
   return codes;
 }
 
-/** Redeem a single-use backup code. Marks it spent; false if unknown/used. */
+/** Redeem a single-use backup code. Marks it spent; false if unknown/used.
+ * The claim is ONE atomic UPDATE ... WHERE used_at IS NULL RETURNING, so two
+ * concurrent requests with the same valid code can never both succeed (the
+ * second matches zero rows). */
 export async function redeemBackupCode(userId: string, code: string): Promise<boolean> {
   const hash = hashBackupCode(code);
-  const [match] = await db
-    .select({ id: userBackupCode.id })
-    .from(userBackupCode)
-    .where(and(eq(userBackupCode.userId, userId), eq(userBackupCode.codeHash, hash), isNull(userBackupCode.usedAt)));
-  if (!match) return false;
-  await db.update(userBackupCode).set({ usedAt: new Date() }).where(eq(userBackupCode.id, match.id));
-  return true;
+  const claimed = await db
+    .update(userBackupCode)
+    .set({ usedAt: new Date() })
+    .where(and(eq(userBackupCode.userId, userId), eq(userBackupCode.codeHash, hash), isNull(userBackupCode.usedAt)))
+    .returning({ id: userBackupCode.id });
+  return claimed.length > 0;
 }
 
 /** How many unused backup codes remain (surfaced on the challenge screen). */
@@ -146,16 +148,32 @@ export async function sessionMfaSatisfied(sessionToken: string): Promise<boolean
  * enrolls or challenges as needed). Non-staff (clients) and signed-out
  * requests pass through untouched — their pages own their own redirects.
  */
-export async function enforceStaffMfa(): Promise<void> {
+/**
+ * Core predicate shared by the page guard and the API guard: has the current
+ * request cleared the staff second factor? True when there is nothing to
+ * enforce (dev bypass, signed out, non-staff, or no token — those are handled
+ * by the caller's own auth) OR the staff session has stepped up. False ONLY
+ * for a staff session that hasn't cleared TOTP.
+ */
+export async function staffMfaCleared(): Promise<boolean> {
   // Dev/demo convenience only. HARD-gated on NODE_ENV: in production (Vercel
   // sets NODE_ENV=production) this branch is dead, so the second factor can
   // never be switched off on the live product regardless of the env var.
-  if (process.env.NODE_ENV !== "production" && process.env.WK_DEV_SKIP_MFA === "1") return;
+  if (process.env.NODE_ENV !== "production" && process.env.WK_DEV_SKIP_MFA === "1") return true;
   const user = await getSessionUser();
-  if (!user) return;
-  if (!(await isStaffUser(user.id))) return;
+  if (!user) return true;
+  if (!(await isStaffUser(user.id))) return true;
   const token = await getSessionToken();
-  if (!token) return;
-  if (await sessionMfaSatisfied(token)) return;
-  redirect("/mfa");
+  if (!token) return true;
+  return sessionMfaSatisfied(token);
+}
+
+/**
+ * The page choke point: called from every staff route group's layout. A
+ * signed-in staff user whose session hasn't cleared TOTP is sent to /mfa
+ * (which enrolls or challenges). Non-staff and signed-out requests pass
+ * through — their pages own their own redirects.
+ */
+export async function enforceStaffMfa(): Promise<void> {
+  if (!(await staffMfaCleared())) redirect("/mfa");
 }

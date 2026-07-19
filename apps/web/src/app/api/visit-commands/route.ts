@@ -92,6 +92,10 @@ export async function POST(req: NextRequest) {
   if (!principal || !FIELD_ROLES.has(principal.role)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  // REQ-003: field roles are staff — the offline-drain sink requires the
+  // second factor too, so a stolen HM session can't inject visit data.
+  const { staffMfaCleared } = await import("@/lib/totp");
+  if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
   const result = await applyVisitCommand({
     idempotencyKey: body.idempotencyKey,
     type: body.type,

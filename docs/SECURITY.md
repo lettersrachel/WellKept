@@ -14,7 +14,8 @@ substitute for that review — it is the map into it.
 | S3 vault: envelope AES-256-GCM, KMS-wrapped key | `@wellkept/vault` (6 tests) | full pg_dump contains zero plaintext |
 | S3 reveal: audit-before-value, per-user rate cap | `/api/reveal` | 40/hr then 429 (bulk-exfil guard); audit row precedes decrypt |
 | Sign-in throttle (IP + email) | `/signin/action` + `lib/rate-limit` | 5/hr/email then `?error=rate-limited`, verified in prod |
-| **Staff second factor (TOTP)** | `@wellkept/totp` + `lib/totp` + `/mfa` + route-group guards | RFC 6238 (17 tests, incl. RFC vectors); staff sessions can't reach a staff surface until a code clears; per-session step-up; clients unaffected; brute-force throttled 8/5min |
+| **Staff second factor (TOTP)** | `@wellkept/totp` + `lib/totp` + `/mfa` + route-group guards | RFC 6238 (21 tests, incl. RFC vectors); staff sessions can't reach a staff surface until a code clears; per-session step-up; clients unaffected; brute-force throttled 8/5min |
+| **Second factor gates the API, not just pages** | `staffMfaCleared()` in `/api/reveal`, `/api/exhibits/fleet`, `/api/visit-commands` | an un-stepped-up staff session gets 403 from vault-reveal, fleet export, and the offline-drain sink — closes a direct-API MFA bypass found in review (verified: 403 then 200 after step-up) |
 | **TOTP recovery (self-service backup codes)** | `user_backup_code` + `/mfa/recovery-codes` | 10 single-use codes issued at enrollment, shown once (only SHA-256 hashes stored); redeemable at the challenge; remaining count surfaced. Removes the sole-admin lockout risk |
 | **TOTP recovery (admin reset)** | `resetTotp` action + People & access panel | corporate_admin clears secret + backup codes + kills sessions; audited `totp_reset`; re-enroll on next sign-in |
 | Session revocation from corporate | `forceSignOut` action | corporate_admin deletes a user's `auth_session` rows; audited `sessions_revoked` |
