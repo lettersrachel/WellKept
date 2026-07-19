@@ -1,5 +1,6 @@
 import { Auth } from "@auth/core";
 import { getAuthConfig } from "@/lib/auth/config";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Fronts Auth.js's CSRF-protected /api/auth/signin/email with a plain-form
@@ -15,6 +16,17 @@ export async function POST(request: Request) {
   const email = formData.get("email");
   if (typeof email !== "string" || !email) {
     return Response.redirect(new URL("/signin?error=missing-email", request.url), 303);
+  }
+
+  // Sprint-10 hardening: throttle magic-link requests per IP and per
+  // address (email bombing / enumeration). Fails open on Redis trouble.
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const [ipOk, emailOk] = await Promise.all([
+    rateLimit(`signin:ip:${ip}`, 10, 3600),
+    rateLimit(`signin:email:${email.toLowerCase()}`, 5, 3600),
+  ]);
+  if (!ipOk || !emailOk) {
+    return Response.redirect(new URL("/signin?error=rate-limited", request.url), 303);
   }
 
   const csrfResponse = await Auth(new Request(new URL("/api/auth/csrf", request.url)), authConfig);

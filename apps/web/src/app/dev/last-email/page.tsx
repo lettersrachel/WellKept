@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSentLinks } from "@/lib/auth/config";
+import { getDevOutbox } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,16 @@ export default function LastEmail() {
         One click per link — a used or superseded link says &ldquo;unable to sign in&rdquo;;
         request a fresh one at /signin and use the newest entry here.
       </div>
+      {getDevOutbox().length > 0 && (
+        <>
+          <div className="eyebrow">Dev outbox (non-auth mail)</div>
+          {getDevOutbox().slice(-5).reverse().map((m, i) => (
+            <div key={i} className="prov">
+              → {m.to} · {m.subject} · {m.sentAt}
+            </div>
+          ))}
+        </>
+      )}
       {entries.length === 0 ? (
         <div className="note">Nothing sent yet this server session. Request a link at /signin first.</div>
       ) : (
