@@ -35,6 +35,24 @@ export async function setStatusTag(formData: FormData) {
     kind: "tag_change",
     detail: { from: prior[0].statusTag, to: tag },
   });
+  // Notify the household's house managers when corporate raises a WATCH or
+  // LIFE-EVENT — they see it in the field app before their next visit.
+  if (tag === "WATCH" || tag === "LIFE-EVENT") {
+    const { householdRoleAssignment, notification } = await import("@wellkept/schema");
+    const { inArray } = await import("drizzle-orm");
+    const hms = await db.select({ userId: householdRoleAssignment.userId })
+      .from(householdRoleAssignment)
+      .where(and(eq(householdRoleAssignment.householdId, householdId), inArray(householdRoleAssignment.role, ["house_manager", "backup_hm"])));
+    if (hms.length) {
+      const title = tag === "LIFE-EVENT" ? "Life-event set for a household" : "Household moved to WATCH";
+      const body = tag === "LIFE-EVENT"
+        ? `${prior[0].name}: corporate set LIFE-EVENT. Prompts are held; lead with care, not asks.`
+        : `${prior[0].name}: corporate set WATCH. Extra attention on your next visit.`;
+      await db.insert(notification).values(
+        hms.map((h) => ({ id: randomUUID(), userId: h.userId, householdId, kind: `tag:${tag}`, title, body })),
+      );
+    }
+  }
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${householdId}`);
 }

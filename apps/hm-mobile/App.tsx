@@ -22,6 +22,7 @@ import { loadSession, clearSession, pairDevice, type Household, type Session } f
 import { fetchBriefing, type Briefing } from "./src/briefing";
 import { uploadPhoto, type LocalPhoto } from "./src/photos";
 import { loadPendingPhotos, savePendingPhotos } from "./src/photo-store";
+import { fetchNotifications, markNotificationsRead, type NotifItem } from "./src/notifications";
 
 const C = { green: "#1C3D2E", gold: "#B08D2A", cream: "#F7F3E8", sage: "#E4EDE4", ink: "#26241F", brick: "#8C2F22", grey: "#6B6B6B" };
 
@@ -38,6 +39,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [household, setHousehold] = useState<Household | null>(null);
+  const [notifs, setNotifs] = useState<{ items: NotifItem[]; unread: number }>({ items: [], unread: 0 });
 
   useEffect(() => {
     void loadSession().then((s) => {
@@ -47,10 +49,22 @@ export default function App() {
     });
   }, []);
 
+  const refreshNotifs = useCallback(async () => {
+    if (session) setNotifs(await fetchNotifications(API_URL, session.token));
+  }, [session]);
+  useEffect(() => { void refreshNotifs(); }, [refreshNotifs]);
+
+  const markRead = useCallback(async () => {
+    if (!session) return;
+    await markNotificationsRead(API_URL, session.token);
+    await refreshNotifs();
+  }, [session, refreshNotifs]);
+
   async function signOut() {
     await clearSession();
     setSession(null);
     setHousehold(null);
+    setNotifs({ items: [], unread: 0 });
   }
 
   if (booting) {
@@ -83,6 +97,7 @@ export default function App() {
       <SafeAreaView style={s.root}>
         <Masthead subtitle="CHOOSE A HOUSEHOLD" />
         <ScrollView contentContainerStyle={s.scroll}>
+          <NotificationsBanner notifs={notifs} onMarkRead={() => void markRead()} />
           <View style={s.card}>
             <Text style={s.h2}>Which visit?</Text>
             {session.households.map((h) => (
@@ -106,6 +121,8 @@ export default function App() {
       canSwitch={session.households.length > 1}
       onSwitch={() => setHousehold(null)}
       onSignOut={() => void signOut()}
+      notifs={notifs}
+      onMarkRead={() => void markRead()}
     />
   );
 }
@@ -166,9 +183,10 @@ function PairingScreen({ onPaired }: { onPaired: (s: Session) => void }) {
 }
 
 function CloseFlowScreen({
-  token, household, canSwitch, onSwitch, onSignOut,
+  token, household, canSwitch, onSwitch, onSignOut, notifs, onMarkRead,
 }: {
   token: string; household: Household; canSwitch: boolean; onSwitch: () => void; onSignOut: () => void;
+  notifs: { items: NotifItem[]; unread: number }; onMarkRead: () => void;
 }) {
   const flowRef = useRef<CloseFlow | null>(null);
   const syncRef = useRef<VisitSync | null>(null);
@@ -308,6 +326,8 @@ function CloseFlowScreen({
 
         {error ? <Text style={s.error}>{error}</Text> : null}
 
+        <NotificationsBanner notifs={notifs} onMarkRead={onMarkRead} />
+
         {submitted ? (
           <View style={s.card}>
             <Text style={s.h2}>Visit submitted</Text>
@@ -412,6 +432,24 @@ function CloseFlowScreen({
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function NotificationsBanner({ notifs, onMarkRead }: { notifs: { items: NotifItem[]; unread: number }; onMarkRead: () => void }) {
+  if (notifs.items.length === 0) return null;
+  return (
+    <View style={[s.card, { borderColor: C.gold, borderWidth: notifs.unread > 0 ? 1.5 : 1 }]}>
+      <View style={s.row}>
+        <Text style={s.h2}>Alerts{notifs.unread > 0 ? ` (${notifs.unread} new)` : ""}</Text>
+        {notifs.unread > 0 ? <Pressable onPress={onMarkRead}><Text style={s.mastheadLink}>Mark read</Text></Pressable> : null}
+      </View>
+      {notifs.items.slice(0, 5).map((n) => (
+        <View key={n.id} style={[s.briefItem, !n.read ? { borderLeftWidth: 3, borderLeftColor: C.gold, paddingLeft: 8 } : null]}>
+          <Text style={s.briefName}>{n.title}</Text>
+          <Text style={s.briefVal}>{n.body}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 

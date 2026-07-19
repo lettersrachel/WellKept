@@ -261,6 +261,21 @@ export const userBackupCode = pgTable("user_backup_code", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("user_backup_code_user_idx").on(t.userId)]);
 
+// In-app notifications (REQ-052-ish). Created when corporate flags a household
+// (WATCH/LIFE-EVENT); surfaced to the household's house managers in the app.
+// The same rows can later drive real device push once there's an EAS build —
+// the delivery channel changes, the record doesn't.
+export const notification = pgTable("notification", {
+  id: uuid("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull(),
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("notification_user_idx").on(t.userId, t.readAt)]);
+
 // Native-app device pairing. A signed-in, MFA-cleared staff member generates a
 // short-lived code on the web; the Expo app exchanges it for a real session.
 // Only the code HASH is stored; the row is single-use (consumedAt) and expires
