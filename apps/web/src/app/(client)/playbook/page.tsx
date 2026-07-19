@@ -86,15 +86,31 @@ function ClientField({
  * never 200 empty prompts. s2/s3 stays structurally absent: filterFields
  * runs server-side and assertClientPayloadSafe throws before render.
  */
-export default async function ClientPlaybook() {
+export default async function ClientPlaybook({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const { hh, principal } = await getHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
   if (principal.role !== "client") redirect("/");
 
   const all = await getFields(hh.id);
-  const visible = filterFields("client", all);
+  let visible = filterFields("client", all);
   assertClientPayloadSafe(visible); // the payload test, live in the page's data path
+
+  // REQ-020 search: server-side, within the client's own (already
+  // filtered) view — the search space itself can never contain s2/s3.
+  const query = (q ?? "").trim().toLowerCase();
+  if (query) {
+    visible = visible.filter(
+      (f) =>
+        String(f.name).toLowerCase().includes(query) ||
+        String(f.value ?? "").toLowerCase().includes(query),
+    );
+  }
 
   const pendingEdits = await getPendingEdits(hh.id);
   const pendingByField = new Set(
@@ -128,7 +144,18 @@ export default async function ClientPlaybook() {
       )}
 
       <div className="card">
-        <h2>Your Playbook</h2>
+        <div className="row">
+          <h2 style={{ flex: 1 }}>Your Playbook</h2>
+          <form className="row" style={{ gap: 6 }}>
+            <input name="q" defaultValue={q ?? ""} placeholder="Search your Playbook" className="inline" style={{ marginTop: 0 }} />
+            <button className="act subtle">Search</button>
+          </form>
+        </div>
+        {query && (
+          <div className="note">
+            {captured.length} match(es) for &ldquo;{q}&rdquo; — <a href="/playbook">clear</a>
+          </div>
+        )}
         {rest.length === 0 && !summary && flagged.length === 0 ? (
           <div className="note">
             Your Playbook fills in as your house manager captures your household&apos;s details —

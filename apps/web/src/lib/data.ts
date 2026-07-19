@@ -7,10 +7,39 @@ export async function getHousehold() {
   return rows[0] ?? null;
 }
 
-/** Pilot phase runs one household; pages resolve it plus the caller's principal. */
+/** Households the signed-in user is assigned to (REQ-001: no wildcard grants). */
+export async function getAssignedHouseholds() {
+  const { getSessionUser } = await import("./session");
+  const { householdRoleAssignment } = await import("@wellkept/schema");
+  const user = await getSessionUser();
+  if (!user) return [];
+  const rows = await db
+    .select({ hh: household, role: householdRoleAssignment.role })
+    .from(householdRoleAssignment)
+    .innerJoin(household, eq(household.id, householdRoleAssignment.householdId))
+    .where(eq(householdRoleAssignment.userId, user.id))
+    .orderBy(asc(household.createdAt));
+  return rows;
+}
+
+/** Single-household surfaces (client, HM) resolve the user's FIRST assigned
+ * household; a signed-out session gets the null pair. */
 export async function getHouseholdAndPrincipal() {
   const { getPrincipal } = await import("./session");
-  const hh = await getHousehold();
+  const assigned = await getAssignedHouseholds();
+  const hh = assigned[0]?.hh ?? null;
+  if (!hh) {
+    // Distinguish "no household seeded" from "not signed in" for the pages.
+    const seeded = await getHousehold();
+    return { hh: seeded, principal: null } as const;
+  }
+  return { hh, principal: await getPrincipal(hh.id) } as const;
+}
+
+/** Corporate drill-in: a specific household, principal resolved for IT. */
+export async function getHouseholdAndPrincipalById(householdId: string) {
+  const { getPrincipal } = await import("./session");
+  const [hh] = await db.select().from(household).where(eq(household.id, householdId));
   if (!hh) return { hh: null, principal: null } as const;
   return { hh, principal: await getPrincipal(hh.id) } as const;
 }

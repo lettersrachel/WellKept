@@ -36,6 +36,7 @@ export async function setStatusTag(formData: FormData) {
     detail: { from: prior[0].statusTag, to: tag },
   });
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${householdId}`);
 }
 
 /** REQ-022: a client edit lands in review state; it never touches the field directly. */
@@ -109,6 +110,7 @@ export async function reviewEdit(formData: FormData) {
     .set({ status: decision, reviewedBy: principal.userId, reviewedAt: new Date(), updatedAt: new Date() })
     .where(eq(clientEdit.id, editId));
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${edit.householdId}`);
   revalidatePath("/playbook");
 }
 
@@ -138,6 +140,7 @@ export async function setVaultValue(formData: FormData) {
     newValueHash: sha256(value),
   });
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${f.householdId}`);
 }
 
 /**
@@ -162,6 +165,7 @@ export async function logStrangerTest(formData: FormData) {
   });
   revalidatePath("/visit");
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${householdId}`);
 }
 
 /** REQ-042 gate order is policy, not UI: queue -> cultural fit -> HM notified -> execute. */
@@ -179,6 +183,7 @@ export async function queueGesture(formData: FormData) {
     idea,
   });
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${householdId}`);
 }
 
 export async function gestureGate(formData: FormData) {
@@ -195,6 +200,7 @@ export async function gestureGate(formData: FormData) {
     .set(gate === "cultural_fit" ? { culturalFitChecked: true, updatedAt: new Date() } : { hmNotified: true, updatedAt: new Date() })
     .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${g.householdId}`);
 }
 
 export async function executeGesture(formData: FormData) {
@@ -210,4 +216,5 @@ export async function executeGesture(formData: FormData) {
     .set({ executedAt: new Date(), costCents: Number.isFinite(costCents) ? costCents : null, updatedAt: new Date() })
     .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
+  revalidatePath(`/oversight/${g.householdId}`);
 }
