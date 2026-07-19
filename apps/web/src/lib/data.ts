@@ -38,6 +38,23 @@ export async function getHouseholdAndPrincipal() {
   return { hh, principal: await getPrincipal(hh.id) } as const;
 }
 
+/** The HM field surface (/visit) resolves the user's first FIELD-role
+ * household (house_manager / backup_hm), not just the first assigned one — so
+ * a user who is corporate at one home and an HM at another still lands on the
+ * field tool for the home they actually manage. Falls back to the first
+ * assigned household (the page then redirects a non-field role away). */
+export async function getFieldHouseholdAndPrincipal() {
+  const { getPrincipal } = await import("./session");
+  const assigned = await getAssignedHouseholds();
+  const field = assigned.find((a) => a.role === "house_manager" || a.role === "backup_hm");
+  const hh = field?.hh ?? assigned[0]?.hh ?? null;
+  if (!hh) {
+    const seeded = await getHousehold();
+    return { hh: seeded, principal: null } as const;
+  }
+  return { hh, principal: await getPrincipal(hh.id) } as const;
+}
+
 /** Corporate drill-in: a specific household, principal resolved for IT. */
 export async function getHouseholdAndPrincipalById(householdId: string) {
   const { getPrincipal } = await import("./session");

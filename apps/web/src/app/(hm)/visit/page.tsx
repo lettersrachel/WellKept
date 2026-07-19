@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
-import { getHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
+import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { logStrangerTest } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
@@ -18,7 +18,7 @@ const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
  * unchanged.
  */
 export default async function VisitPage() {
-  const { hh, principal } = await getHouseholdAndPrincipal();
+  const { hh, principal } = await getFieldHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
