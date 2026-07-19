@@ -79,9 +79,14 @@ worker degrades quietly.
 
 ## 3. Process / legal — not code
 
-- ⬜ 🧑 Written consent per household (your WK-SOP-019) before their data goes in.
-- ⬜ 🧑 Staff NDA — the `nda_approved` flag is already in People & access.
-- ⬜ 🧑 A short privacy policy / terms (you're storing personal household data).
+Starting-point drafts are in [`docs/legal/`](legal/README.md), written to match
+exactly what the software collects. **They need a lawyer's review before use**
+(especially retention / right-to-erasure and which privacy laws apply).
+
+- ⏳ 🧑⚖️ Household consent per home — draft: `legal/household-consent.md`.
+- ⏳ 🧑⚖️ Staff confidentiality — draft: `legal/staff-confidentiality.md`
+  (the `nda_approved` flag records it in People & access).
+- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`.
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
 
 ---
