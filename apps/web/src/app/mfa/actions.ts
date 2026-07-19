@@ -1,8 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser, getSessionToken } from "@/lib/session";
-import { isStaffUser, confirmEnrollment, verifyChallenge, markSessionMfaSatisfied } from "@/lib/totp";
+import { isStaffUser, confirmEnrollment, verifyChallenge, markSessionMfaSatisfied, BACKUP_CODES_COOKIE } from "@/lib/totp";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -24,11 +25,25 @@ export async function confirmEnrollmentAction(formData: FormData): Promise<void>
   if (!ctx) redirect("/signin");
   if (!(await rateLimit(`mfa:${ctx.userId}`, 8, 300))) redirect("/mfa?error=throttled");
   const code = String(formData.get("code") ?? "");
-  if (await confirmEnrollment(ctx.userId, code)) {
+  const backupCodes = await confirmEnrollment(ctx.userId, code);
+  if (backupCodes) {
     await markSessionMfaSatisfied(ctx.token);
-    redirect("/");
+    // Hand the one-time codes to the reveal page via an httpOnly, 5-minute
+    // cookie — never in the URL. The reveal page clears it after showing.
+    (await cookies()).set(BACKUP_CODES_COOKIE, backupCodes.join(","), {
+      httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/mfa", maxAge: 300,
+    });
+    redirect("/mfa/recovery-codes");
   }
   redirect("/mfa?error=bad-code");
+}
+
+/** Dismiss the recovery-codes reveal: burn the cookie, then continue. Runs as
+ * an action (a page render may not mutate cookies) when the user clicks
+ * "I've saved these". */
+export async function dismissRecoveryCodesAction(): Promise<void> {
+  (await cookies()).set(BACKUP_CODES_COOKIE, "", { httpOnly: true, path: "/mfa", maxAge: 0 });
+  redirect("/");
 }
 
 export async function challengeAction(formData: FormData): Promise<void> {

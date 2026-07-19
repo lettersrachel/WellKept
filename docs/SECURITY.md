@@ -15,7 +15,8 @@ substitute for that review — it is the map into it.
 | S3 reveal: audit-before-value, per-user rate cap | `/api/reveal` | 40/hr then 429 (bulk-exfil guard); audit row precedes decrypt |
 | Sign-in throttle (IP + email) | `/signin/action` + `lib/rate-limit` | 5/hr/email then `?error=rate-limited`, verified in prod |
 | **Staff second factor (TOTP)** | `@wellkept/totp` + `lib/totp` + `/mfa` + route-group guards | RFC 6238 (17 tests, incl. RFC vectors); staff sessions can't reach a staff surface until a code clears; per-session step-up; clients unaffected; brute-force throttled 8/5min |
-| **TOTP recovery (admin reset)** | `resetTotp` action + People & access panel | corporate_admin clears the secret + kills sessions; audited `totp_reset`; re-enroll on next sign-in |
+| **TOTP recovery (self-service backup codes)** | `user_backup_code` + `/mfa/recovery-codes` | 10 single-use codes issued at enrollment, shown once (only SHA-256 hashes stored); redeemable at the challenge; remaining count surfaced. Removes the sole-admin lockout risk |
+| **TOTP recovery (admin reset)** | `resetTotp` action + People & access panel | corporate_admin clears secret + backup codes + kills sessions; audited `totp_reset`; re-enroll on next sign-in |
 | Session revocation from corporate | `forceSignOut` action | corporate_admin deletes a user's `auth_session` rows; audited `sessions_revoked` |
 | Secrets in managed store, not in code | Vercel env / Railway vars | prod refuses dev AUTH_SECRET / missing KMS key at boot |
 | Security headers (HSTS, nosniff, frame-DENY, referrer, permissions) | `next.config.ts` | verified on prod |
@@ -59,9 +60,8 @@ documented reading of the requirement, recorded in
    TOTP secrets are sealed under this same KEK.
 4. **SAST** not yet in CI (dependency `pnpm audit` gate is). Add a static
    analyzer before real household data.
-5. **TOTP has no scratch/recovery codes** — recovery is an admin reset
-   (`resetTotp`). Fine for a staffed pilot; add self-service backup codes
-   before scale.
+5. **No WebAuthn/passkey factor yet** — TOTP + backup codes cover the pilot;
+   a phishing-resistant hardware factor is the natural next step.
 
 ## Data-handling guardrails (ADR-001)
 

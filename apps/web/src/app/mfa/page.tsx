@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser, getSessionToken } from "@/lib/session";
-import { isStaffUser, getTotpStatus, ensureEnrollment, sessionMfaSatisfied } from "@/lib/totp";
+import { isStaffUser, getTotpStatus, ensureEnrollment, sessionMfaSatisfied, remainingBackupCodes } from "@/lib/totp";
 import { confirmEnrollmentAction, challengeAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -20,20 +20,19 @@ function ErrorBanner({ error }: { error?: string }) {
   return null;
 }
 
-function CodeForm({ action, label }: { action: (fd: FormData) => void; label: string }) {
+function CodeForm({ action, label, allowBackup }: { action: (fd: FormData) => void; label: string; allowBackup?: boolean }) {
   return (
     <form action={action} method="post">
-      <label htmlFor="code">6-digit code</label>
+      <label htmlFor="code">{allowBackup ? "Authenticator code or backup code" : "6-digit code"}</label>
       <input
         id="code"
         name="code"
-        inputMode="numeric"
+        inputMode={allowBackup ? "text" : "numeric"}
         autoComplete="one-time-code"
-        pattern="[0-9 ]*"
-        maxLength={7}
+        {...(allowBackup ? {} : { pattern: "[0-9 ]*", maxLength: 7 })}
         required
         autoFocus
-        placeholder="123456"
+        placeholder={allowBackup ? "123456  or  abcd-efgh" : "123456"}
         style={{ letterSpacing: "0.3em", fontSize: "1.2em" }}
       />
       <p><button className="act" style={{ width: "100%" }}>{label}</button></p>
@@ -53,14 +52,17 @@ export default async function MfaPage({ searchParams }: { searchParams: Promise<
   const { enrolled } = await getTotpStatus(user.id);
 
   if (enrolled) {
+    const remaining = await remainingBackupCodes(user.id);
     return (
       <div className="card" style={{ maxWidth: 460, margin: "60px auto" }}>
         <h2>Confirm it&apos;s you</h2>
-        <p className="note">Signed in as {user.email}. Staff access needs a second factor — enter the current code from your authenticator app.</p>
+        <p className="note">Signed in as {user.email}. Staff access needs a second factor — enter the current code from your authenticator app, or one of your backup codes.</p>
         <ErrorBanner error={error} />
-        <CodeForm action={challengeAction} label="Verify" />
+        <CodeForm action={challengeAction} label="Verify" allowBackup />
         <div className="note" style={{ marginTop: 16 }}>
-          Lost your authenticator? An administrator can reset your second factor from the household&apos;s People &amp; access panel.
+          {remaining > 0
+            ? `Lost your authenticator? Use a backup code above (${remaining} left).`
+            : "Out of backup codes — an administrator can reset your second factor from the household's People & access panel."}
         </div>
       </div>
     );

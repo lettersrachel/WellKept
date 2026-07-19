@@ -340,7 +340,8 @@ export async function resetTotp(formData: FormData) {
   if (!householdId || !targetUserId) return;
   const actor = await getPrincipal(householdId);
   if (actor?.role !== "corporate_admin") return;
-  const { userTotp, authSession } = await import("@wellkept/schema");
+  const { userTotp, userBackupCode, authSession } = await import("@wellkept/schema");
+  await db.delete(userBackupCode).where(eq(userBackupCode.userId, targetUserId));
   await db.delete(userTotp).where(eq(userTotp.userId, targetUserId));
   await db.delete(authSession).where(eq(authSession.userId, targetUserId));
   await db.insert(auditEvent).values({

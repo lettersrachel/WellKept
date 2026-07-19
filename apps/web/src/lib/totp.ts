@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { and, eq, isNull, ne } from "drizzle-orm";
-import { userTotp, authSession, householdRoleAssignment } from "@wellkept/schema";
+import { userTotp, userBackupCode, authSession, householdRoleAssignment } from "@wellkept/schema";
 import { sealValue, openValue, type SealedBox } from "@wellkept/vault";
-import { generateSecret, otpauthUrl, verifyTotp } from "@wellkept/totp";
+import { generateSecret, otpauthUrl, verifyTotp, generateBackupCodes, hashBackupCode } from "@wellkept/totp";
 import { db } from "./db";
 import { kms } from "./vault";
 import { getSessionUser, getSessionToken } from "./session";
@@ -19,6 +20,11 @@ import { getSessionUser, getSessionToken } from "./session";
  */
 
 const ISSUER = "Well Kept";
+
+/** Short-lived httpOnly cookie carrying freshly-issued backup codes to the
+ * one-time reveal page. Defined here (not in the "use server" actions file,
+ * which may only export async functions) and shared by both. */
+export const BACKUP_CODES_COOKIE = "wk_backup_codes";
 
 /** Anyone holding a role other than plain `client` at any household is staff. */
 export async function isStaffUser(userId: string): Promise<boolean> {
@@ -68,20 +74,59 @@ export async function ensureEnrollment(userId: string, account: string): Promise
   return { secret, otpauth: otpauthUrl({ secret, account, issuer: ISSUER }) };
 }
 
-/** Confirm enrollment by proving a first live code. Returns false on mismatch. */
-export async function confirmEnrollment(userId: string, token: string): Promise<boolean> {
+/**
+ * Confirm enrollment by proving a first live code. On success, issues a fresh
+ * set of single-use backup codes and returns their PLAINTEXT (shown once —
+ * only hashes are stored). Returns null on a wrong code.
+ */
+export async function confirmEnrollment(userId: string, token: string): Promise<string[] | null> {
   const [row] = await db.select().from(userTotp).where(and(eq(userTotp.userId, userId), isNull(userTotp.confirmedAt)));
-  if (!row) return false;
-  if (!verifyTotp(openSecret(row), token)) return false;
+  if (!row) return null;
+  if (!verifyTotp(openSecret(row), token)) return null;
   await db.update(userTotp).set({ confirmedAt: new Date() }).where(eq(userTotp.userId, userId));
+  return issueBackupCodes(userId);
+}
+
+/** (Re)issue backup codes: replace any existing set, store only hashes. */
+export async function issueBackupCodes(userId: string): Promise<string[]> {
+  const codes = generateBackupCodes(10);
+  await db.delete(userBackupCode).where(eq(userBackupCode.userId, userId));
+  await db.insert(userBackupCode).values(
+    codes.map((c) => ({ id: randomUUID(), userId, codeHash: hashBackupCode(c) })),
+  );
+  return codes;
+}
+
+/** Redeem a single-use backup code. Marks it spent; false if unknown/used. */
+export async function redeemBackupCode(userId: string, code: string): Promise<boolean> {
+  const hash = hashBackupCode(code);
+  const [match] = await db
+    .select({ id: userBackupCode.id })
+    .from(userBackupCode)
+    .where(and(eq(userBackupCode.userId, userId), eq(userBackupCode.codeHash, hash), isNull(userBackupCode.usedAt)));
+  if (!match) return false;
+  await db.update(userBackupCode).set({ usedAt: new Date() }).where(eq(userBackupCode.id, match.id));
   return true;
 }
 
-/** Verify a code against the user's CONFIRMED secret (the sign-in challenge). */
+/** How many unused backup codes remain (surfaced on the challenge screen). */
+export async function remainingBackupCodes(userId: string): Promise<number> {
+  const rows = await db.select({ id: userBackupCode.id }).from(userBackupCode)
+    .where(and(eq(userBackupCode.userId, userId), isNull(userBackupCode.usedAt)));
+  return rows.length;
+}
+
+/**
+ * Verify a sign-in challenge against the user's CONFIRMED secret, OR — if the
+ * input isn't a valid TOTP — fall back to redeeming a backup code. A 6-digit
+ * numeric input is only ever tried as a TOTP (never burns a backup code).
+ */
 export async function verifyChallenge(userId: string, token: string): Promise<boolean> {
   const [row] = await db.select().from(userTotp).where(eq(userTotp.userId, userId));
   if (!row?.confirmedAt) return false;
-  return verifyTotp(openSecret(row), token);
+  if (verifyTotp(openSecret(row), token)) return true;
+  if (/^\d{6}$/.test(token.replace(/\s+/g, ""))) return false; // a TOTP attempt, not a backup code
+  return redeemBackupCode(userId, token);
 }
 
 /** Stamp this session as having cleared the second factor. */

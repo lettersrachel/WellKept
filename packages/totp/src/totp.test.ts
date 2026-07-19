@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { base32Encode, base32Decode, generateSecret, generateTotp, verifyTotp, otpauthUrl } from "./index";
+import { base32Encode, base32Decode, generateSecret, generateTotp, verifyTotp, otpauthUrl, generateBackupCodes, hashBackupCode, normalizeBackupCode } from "./index";
 
 // RFC 6238 Appendix B test vectors. The shared secret is the ASCII string
 // "12345678901234567890" (20 bytes); its base32 form is what we feed in.
@@ -66,6 +66,31 @@ describe("verifyTotp", () => {
     const code = generateTotp(RFC_SECRET, { t });
     const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
     expect(verifyTotp(RFC_SECRET, spaced, { t })).toBe(true);
+  });
+});
+
+describe("backup codes", () => {
+  it("generates the requested count of distinct formatted codes", () => {
+    const codes = generateBackupCodes(10);
+    expect(codes).toHaveLength(10);
+    expect(new Set(codes).size).toBe(10);
+    for (const c of codes) expect(c).toMatch(/^[a-z0-9]{4}-[a-z0-9]{4}$/);
+  });
+  it("uses no ambiguous characters (0/o/1/i/l)", () => {
+    const joined = generateBackupCodes(20).join("");
+    expect(joined).not.toMatch(/[0o1il]/);
+  });
+  it("hashes stably and normalizes separators + case", () => {
+    const code = generateBackupCodes(1)[0]!;
+    const normalized = normalizeBackupCode(code);
+    expect(normalized).toHaveLength(8);
+    expect(hashBackupCode(code)).toBe(hashBackupCode(code.toUpperCase()));
+    expect(hashBackupCode(code)).toBe(hashBackupCode(normalized));
+    expect(hashBackupCode(code)).toHaveLength(64);
+  });
+  it("gives different hashes for different codes", () => {
+    const codes = generateBackupCodes(2);
+    expect(hashBackupCode(codes[0]!)).not.toBe(hashBackupCode(codes[1]!));
   });
 });
 

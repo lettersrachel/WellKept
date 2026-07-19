@@ -45,9 +45,12 @@ password, because a passwordless first factor is stronger operationally.
   through untouched.
 - Brute-force throttle — 8 attempts / 5 min / user over the existing Redis
   limiter.
-- Recovery — no self-service scratch codes yet; a `corporate_admin` resets a
-  lost factor from the People & access panel (`resetTotp`: clears the secret,
-  kills sessions, audits `totp_reset`), forcing fresh enrollment.
+- Recovery — two layers. Self-service: 10 single-use **backup codes** issued
+  at enrollment (`user_backup_code`, only SHA-256 hashes stored; shown once at
+  `/mfa/recovery-codes`), redeemable in place of a TOTP at the challenge. This
+  removes the sole-`corporate_admin` lockout (no peer to reset them). Admin:
+  `resetTotp` from People & access clears the secret + codes + sessions
+  (audited `totp_reset`), forcing fresh enrollment.
 
 ## Consequences
 
@@ -57,6 +60,5 @@ password, because a passwordless first factor is stronger operationally.
 - **Dev/demo:** `WK_DEV_SKIP_MFA=1` bypasses the factor — but only when
   `NODE_ENV !== 'production'`. On Vercel (`NODE_ENV=production`) the bypass is
   dead code; the factor cannot be switched off on the live product.
-- **Future:** self-service backup codes and WebAuthn/passkeys are the natural
-  next steps; the per-session marker and route-group guard are unchanged by
-  either.
+- **Future:** WebAuthn/passkeys (phishing-resistant hardware) are the natural
+  next step; the per-session marker and route-group guard are unchanged by it.

@@ -43,6 +43,13 @@
       "when": 1784481094153,
       "tag": "0005_staff_totp",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784482595062,
+      "tag": "0006_backup_codes",
+      "breakpoints": true
     }
   ]
 }

@@ -11,9 +11,13 @@
  * interop baseline here, not a security choice about the hash itself; the
  * security comes from the shared secret and the 30-second window.
  */
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+// Backup-code alphabet: no 0/O/1/I/L — unambiguous when written down or read
+// aloud. 31 symbols × 8 chars ≈ 40 bits per code, unguessable at any rate.
+const BACKUP_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 
 /** RFC 4648 base32 encode (no padding — what authenticator apps expect). */
 export function base32Encode(buf: Buffer): string {
@@ -115,4 +119,31 @@ export function verifyTotp(
     if (candidate.length === submitted.length && timingSafeEqual(candidate, submitted)) return true;
   }
   return false;
+}
+
+// --- Backup / recovery codes (REQ-003) ------------------------------------
+// Single-use codes a staff user saves at enrollment to get back in when the
+// authenticator is lost — otherwise a lost phone means an admin reset, and
+// the sole corporate_admin would have no one to reset them.
+
+/** Normalize a code for hashing/compare: drop separators, lowercase. */
+export function normalizeBackupCode(code: string): string {
+  return code.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** A fresh set of formatted backup codes (plaintext — shown once). */
+export function generateBackupCodes(count = 10): string[] {
+  const codes: string[] = [];
+  for (let i = 0; i < count; i++) {
+    let raw = "";
+    for (let c = 0; c < 8; c++) raw += BACKUP_ALPHABET[randomInt(BACKUP_ALPHABET.length)];
+    codes.push(`${raw.slice(0, 4)}-${raw.slice(4)}`);
+  }
+  return codes;
+}
+
+/** SHA-256 hex of the normalized code. Codes are high-entropy and random, so
+ * a fast hash is sufficient — a DB leak yields nothing reversible. */
+export function hashBackupCode(code: string): string {
+  return createHash("sha256").update(normalizeBackupCode(code)).digest("hex");
 }

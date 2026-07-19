@@ -249,6 +249,18 @@ export const userTotp = pgTable("user_totp", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// REQ-003 recovery: single-use backup codes issued at enrollment, so a lost
+// authenticator doesn't require an admin reset (which the sole corporate_admin
+// couldn't obtain). Only the SHA-256 hash is stored — the plaintext is shown
+// once. usedAt stamps the moment a code is redeemed; a used code is spent.
+export const userBackupCode = pgTable("user_backup_code", {
+  id: uuid("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("user_backup_code_user_idx").on(t.userId)]);
+
 // One row per command from @wellkept/close-flow's submit() (visit.submit,
 // dot.create, signal.route), drained by @wellkept/offline-queue. id IS the
 // command's idempotencyKey: redelivery (a device retrying after a flaky
