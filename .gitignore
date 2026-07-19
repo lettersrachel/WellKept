@@ -8,3 +8,6 @@ coverage/
 .DS_Store
 .next/
 .expo/
+.neon-connection
+.neon-connection-pooled
+.production-secrets
