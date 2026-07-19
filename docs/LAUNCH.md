@@ -65,9 +65,9 @@ enforced, vault encryption, rate limits, audited reveals. What's missing: an
 ### 2.1 Error monitoring 🤖 ✅
 Sentry captures server + worker errors (never household data — error + job
 label only). Live on Vercel and Railway; verified by throwing a real error in
-production and confirming capture. Watch it at sentry.io.
-*(Uptime pings — a lightweight "is the site up" check — are still worth adding;
-Sentry Crons or an external pinger against `/api/health`.)*
+production and confirming capture. Watch it at sentry.io. **Uptime:** the
+Railway worker pings the live `/api/health` every 5 min from outside Vercel and
+pages Sentry on a non-200/unreachable — a true external outage check.
 
 ### 2.2 Confirm paid tiers won't sleep 🧑 ⬜
 Free tiers can throttle or pause mid-visit. Confirm billing on: **Neon**,
