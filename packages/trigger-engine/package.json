@@ -1,0 +1,19 @@
+{
+  "name": "@wellkept/trigger-engine",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wellkept/schema": "workspace:*",
+    "drizzle-orm": "0.44.7"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "vitest": "3.2.7",
+    "@types/node": "26.1.1"
+  }
+}

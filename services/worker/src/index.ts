@@ -7,9 +7,9 @@
 import { Worker, Queue } from "bullmq";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
-import { household, triggerRule, promptPackItem } from "@wellkept/schema";
-import { evaluate, deterministicItemId, type FieldChangeEvent, type TriggerRuleRow } from "./engine.ts";
+import { and, eq, gt, isNull } from "drizzle-orm";
+import { promptPackItem } from "@wellkept/schema";
+import { runTriggerPass, type FieldChangeEvent } from "@wellkept/trigger-engine";
 
 const connection = {
   url: process.env.REDIS_URL ?? "redis://localhost:6379",
@@ -26,28 +26,7 @@ export function createFieldEventsQueue() {
   return new Queue<FieldChangeEvent>(FIELD_EVENTS_QUEUE, { connection });
 }
 
-async function handleEvent(event: FieldChangeEvent) {
-  const [hh] = await db.select().from(household).where(eq(household.id, event.householdId));
-  if (!hh) return { emitted: 0, reason: "unknown household" };
-
-  const rules = (await db
-    .select()
-    .from(triggerRule)
-    .where(or(isNull(triggerRule.householdId), eq(triggerRule.householdId, event.householdId)))) as unknown as TriggerRuleRow[];
-
-  const drafts = evaluate(event, rules, { statusTag: hh.statusTag });
-  let emitted = 0;
-  for (const draft of drafts) {
-    const id = await deterministicItemId(event, draft.triggerRuleId, draft.itemText);
-    const inserted = await db
-      .insert(promptPackItem)
-      .values({ id, ...draft })
-      .onConflictDoNothing({ target: promptPackItem.id })
-      .returning({ id: promptPackItem.id });
-    emitted += inserted.length;
-  }
-  return { emitted, evaluated: rules.length, suppressed: hh.statusTag === "LIFE-EVENT" };
-}
+const handleEvent = (event: FieldChangeEvent) => runTriggerPass(db, event);
 
 /**
  * Tag changes drive suppression BOTH ways (LIFE-EVENT holds, not deletes):

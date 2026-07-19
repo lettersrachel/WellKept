@@ -3,7 +3,7 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { triggerRule } from "@wellkept/schema";
-import { CASCADES } from "./cascades.ts";
+import { CASCADES } from "@wellkept/trigger-engine";
 
 const pool = new pg.Pool({
   connectionString:

@@ -75,6 +75,9 @@ importers:
       '@wellkept/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@wellkept/trigger-engine':
+        specifier: workspace:*
+        version: link:../../packages/trigger-engine
       '@wellkept/vault':
         specifier: workspace:*
         version: link:../../packages/vault
@@ -183,6 +186,25 @@ importers:
         specifier: 3.2.7
         version: 3.2.7(@types/node@26.1.1)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
 
+  packages/trigger-engine:
+    dependencies:
+      '@wellkept/schema':
+        specifier: workspace:*
+        version: link:../schema
+      drizzle-orm:
+        specifier: 0.44.7
+        version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: 3.2.7
+        version: 3.2.7(@types/node@26.1.1)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)
+
   packages/vault:
     devDependencies:
       '@types/node':
@@ -203,6 +225,9 @@ importers:
       '@wellkept/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@wellkept/trigger-engine':
+        specifier: workspace:*
+        version: link:../../packages/trigger-engine
       bullmq:
         specifier: 5.80.8
         version: 5.80.8

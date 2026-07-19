@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "start": "WK_WORKER_MAIN=1 node src/index.ts",
     "seed:rules": "node src/seed-rules.ts"
   },
@@ -13,7 +13,8 @@
     "@wellkept/schema": "workspace:*",
     "@wellkept/permissions": "workspace:*",
     "drizzle-orm": "0.44.7",
-    "pg": "8.22.0"
+    "pg": "8.22.0",
+    "@wellkept/trigger-engine": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.8.3",

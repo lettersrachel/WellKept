@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { clampOutOfQuietHours, evaluate, ruleMatches, deterministicItemId, type FieldChangeEvent } from "./engine";
+import { clampOutOfQuietHours, evaluate, ruleMatches, deterministicItemId, type FieldChangeEvent } from "./engine.ts";
 import { CASCADES } from "./cascades";
 
 const EVENT = (over: Partial<FieldChangeEvent> = {}): FieldChangeEvent => ({

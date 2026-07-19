@@ -4,7 +4,7 @@
  * (REQ-051), so these are seed content, not code constants at runtime —
  * `pnpm seed:rules` upserts them into trigger_rule by fixed id.
  */
-import type { TriggerRuleRow } from "./engine";
+import type { TriggerRuleRow } from "./engine.ts";
 
 export const CASCADES: TriggerRuleRow[] = [
   {

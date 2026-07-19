@@ -21,7 +21,8 @@
     "pg": "8.22.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "@wellkept/vault": "workspace:*"
+    "@wellkept/vault": "workspace:*",
+    "@wellkept/trigger-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
