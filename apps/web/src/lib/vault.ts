@@ -16,7 +16,9 @@ import { db } from "./db";
  */
 const DEV_KEK = "d2VsbGtlcHQtZGV2LWtlay0wMTIzNDU2Nzg5YWJjZGU="; // "wellkept-dev-kek-0123456789abcde" (32 bytes)
 
-function kms(): Kms {
+/** The process KMS (LocalKms over WK_KMS_KEY). Shared with lib/totp so the
+ * staff second factor is sealed under the same KEK as the vault. */
+export function kms(): Kms {
   const key = process.env.WK_KMS_KEY;
   if (!key) {
     if (process.env.NODE_ENV === "production") {

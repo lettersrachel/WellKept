@@ -9,7 +9,7 @@ P0s not built are the honest launch-blocking list.
 |---|---|---|
 | 001 multi-tenant, household-scoped | P0 | built (schema); UI assumes one household (pilot); needs household picker at scale |
 | 002 six roles, per-household | P0 | **built+verified** (household_role_assignment, unique per user×household) |
-| 003 staff email+password+TOTP; magic link for clients | P0 | **DELTA: partial** — magic link for ALL roles today. Staff TOTP MFA + corporate session revocation not built. Flagged for the auth hardening sprint |
+| 003 staff email+password+TOTP; magic link for clients | P0 | **BUILT (variant)** — staff clear a TOTP second factor on top of the magic link (no password); corporate session revocation + admin TOTP reset shipped. The magic-link-not-password reading is recorded in ADR-003 |
 | 004 server-side matrix, no s2/s3 in client payload | P0 | **built+verified** (100%-gated core; live scans; CI) |
 | 005 full audit log | P0 | built for s3 reads + field writes + tag changes; ordinary field *reads* not audited (spec says every s3 read + every write — compliant) |
 | 006 NDA mode | P1 | partial: ndaMode in core + reveal path; media-reuse flags not built |
@@ -78,14 +78,18 @@ P0s not built are the honest launch-blocking list.
 | 074 WCAG 2.1 AA | P1 | unaudited |
 | 075 scale envelope 150 households | P0 | schema yes; UI single-household |
 
-## The two deltas worth deciding soon
-1. **REQ-003**: staff should NOT sign in by magic link long-term (spec:
-   password+TOTP for staff; magic link is the *client* affordance). Current
-   all-magic-link is fine for the pilot demo; the auth hardening sprint
-   should split the paths.
-2. **REQ-022**: client proposals should be limited to an allowlist of field
-   kinds, not any s1 field. Small change (a predicate in proposeEdit +
-   hiding the affordance); queued.
+## Deltas resolved since first audit
+1. **REQ-003** (was: all-magic-link): staff now clear a TOTP second factor
+   layered on the magic link — magic-link-first, no password, per ADR-003.
+   Corporate session revocation and admin TOTP reset also shipped.
+2. **REQ-022** (was: any s1 field proposable): client proposals are now
+   gated to an allowlist in `proposeEdit`.
+
+## Remaining known deltas
+- **Managed KMS** (REQ: production KMS) — still `LocalKms`/env KEK; swap is a
+  documented re-wrap migration.
+- **Scale UI** (REQ-075) — schema handles 150 households; corporate UI is
+  still single-household drill-in + fleet board, not a scaled console.
 
 Everything marked built+verified above was exercised against live
 infrastructure, not unit tests alone — see git history for the receipts.

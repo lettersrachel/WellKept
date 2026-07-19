@@ -327,3 +327,25 @@ export async function forceSignOut(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
 }
+
+/**
+ * REQ-003 recovery: reset a user's TOTP second factor (lost/replaced phone).
+ * corporate_admin only. Deletes the enrolled secret AND kills the user's
+ * sessions, so their next sign-in re-enrolls a fresh authenticator — a lost
+ * device can never be a standing hole. Audited.
+ */
+export async function resetTotp(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const targetUserId = String(formData.get("userId") ?? "");
+  if (!householdId || !targetUserId) return;
+  const actor = await getPrincipal(householdId);
+  if (actor?.role !== "corporate_admin") return;
+  const { userTotp, authSession } = await import("@wellkept/schema");
+  await db.delete(userTotp).where(eq(userTotp.userId, targetUserId));
+  await db.delete(authSession).where(eq(authSession.userId, targetUserId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
+    kind: "totp_reset", detail: { targetUserId },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}

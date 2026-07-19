@@ -15,6 +15,7 @@
     "@wellkept/offline-queue": "workspace:*",
     "@wellkept/permissions": "workspace:*",
     "@wellkept/schema": "workspace:*",
+    "@wellkept/totp": "workspace:*",
     "@wellkept/trigger-engine": "workspace:*",
     "@wellkept/vault": "workspace:*",
     "bullmq": "5.80.8",

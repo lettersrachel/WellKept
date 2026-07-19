@@ -6,8 +6,8 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut } from "@/lib/actions";
-import { getRegistries, getHouseholdMembers } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp } from "@/lib/actions";
+import { getRegistries, getHouseholdMembers, getTotpEnrolled } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -34,6 +34,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getUpcomingPackItems(hh.id, 10),
   ]);
   const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
+  const totpEnrolled = await getTotpEnrolled(members.map((m) => m.userId));
   const isAdmin = role === "corporate_admin";
   const ROLE_OPTIONS = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
   const pendingGestures = gestures.filter((g) => !g.executedAt);
@@ -132,20 +133,32 @@ export default async function Oversight({ params }: { params: Promise<{ househol
         </div>
         <table className="panel">
           <thead>
-            <tr><th>Email</th><th>Role</th><th>NDA</th>{isAdmin && <th></th>}</tr>
+            <tr><th>Email</th><th>Role</th><th>NDA</th><th>2FA</th>{isAdmin && <th></th>}</tr>
           </thead>
           <tbody>
-            {members.map((m) => (
+            {members.map((m) => {
+              const staff = m.role !== "client";
+              return (
               <tr key={m.id}>
                 <td>{m.email}</td>
                 <td>{m.role.replace("_", " ")}</td>
                 <td>{m.ndaApproved ? "approved" : "—"}</td>
+                <td title={staff ? "Staff roles require a TOTP second factor (REQ-003)" : "Clients sign in by magic link only"}>
+                  {!staff ? "—" : totpEnrolled.has(m.userId) ? <span className="prov">on</span> : <span className="prov" style={{ opacity: 0.6 }}>pending</span>}
+                </td>
                 {isAdmin && (
                   <td>
                     {m.userId === principal.userId ? (
                       <span className="prov">you</span>
                     ) : (
                       <span className="row" style={{ gap: 6, justifyContent: "flex-end" }}>
+                        {staff && totpEnrolled.has(m.userId) && (
+                          <form action={resetTotp}>
+                            <input type="hidden" name="userId" value={m.userId} />
+                            <input type="hidden" name="householdId" value={hh.id} />
+                            <button className="act subtle" title="Clear their authenticator and sessions; they re-enroll on next sign-in">Reset 2FA</button>
+                          </form>
+                        )}
                         <form action={forceSignOut}>
                           <input type="hidden" name="userId" value={m.userId} />
                           <input type="hidden" name="householdId" value={hh.id} />
@@ -161,7 +174,8 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         {isAdmin && (

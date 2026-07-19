@@ -23,7 +23,10 @@ test.beforeAll(async () => {
   householdId = hh.id;
   const { rows: [u] } = await pool.query("SELECT id FROM auth_user WHERE email='jordan@wellkept.demo'");
   token = randomUUID() + randomUUID();
-  await pool.query("INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+  // mfa_satisfied_at pre-stamped: Jordan is staff (house_manager) so the
+  // REQ-003 guard would otherwise divert to /mfa; this test exercises the
+  // offline close flow, not the second factor (which has its own unit tests).
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
     [token, u.id, new Date(Date.now() + 3600_000)]);
   // Clean slate: the close-flow stamps the visit with today's date, and a
   // second same-day visit is a (correctly-handled) conflict. Clear today's

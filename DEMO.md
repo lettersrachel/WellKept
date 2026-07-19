@@ -24,6 +24,12 @@ each). Demo identities:
 | rachel@wellkept.demo | corporate_admin | /oversight |
 | kelly@wellkept.demo | cfo_readonly | /oversight, view-only |
 
+> **Staff second factor (REQ-003):** the three staff identities (jordan,
+> rachel, kelly) hit a one-time TOTP enrollment on first sign-in — add the
+> shown key to any authenticator app, enter the code, done. To skip this for
+> a fast local demo, start the dev server with `WK_DEV_SKIP_MFA=1` (dev-only;
+> it has no effect in production). Clients (lisa) never see it.
+
 Use a different browser (or private window) per identity — one session per
 browser.
 

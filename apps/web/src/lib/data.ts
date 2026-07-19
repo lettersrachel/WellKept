@@ -141,6 +141,17 @@ export async function getHouseholdMembers(householdId: string) {
     .orderBy(asc(householdRoleAssignment.role));
 }
 
+/** REQ-003: which of these users have a CONFIRMED TOTP second factor.
+ * Used by the People & access panel to show 2FA status and gate the reset. */
+export async function getTotpEnrolled(userIds: string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const { userTotp } = await import("@wellkept/schema");
+  const { inArray, isNotNull, and } = await import("drizzle-orm");
+  const rows = await db.select({ userId: userTotp.userId }).from(userTotp)
+    .where(and(inArray(userTotp.userId, userIds), isNotNull(userTotp.confirmedAt)));
+  return new Set(rows.map((r) => r.userId));
+}
+
 /** REQ-024: the client's data-stewardship summary — what CATEGORIES are
  * held (never values), how many items are secured in the vault, and when
  * anything secured was last accessed. The trust ceremony. */

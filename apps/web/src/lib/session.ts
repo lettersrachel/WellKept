@@ -22,12 +22,19 @@ export interface Principal {
   ndaApproved: boolean;
 }
 
-export async function getSessionUser(): Promise<{ id: string; email: string; name: string | null } | null> {
+/** The raw Auth.js session-cookie value, or null when signed out. Needed by
+ * the MFA guard to read/stamp the per-session step-up marker. */
+export async function getSessionToken(): Promise<string | null> {
   const jar = await cookies();
   let token: string | undefined;
   for (const name of SESSION_COOKIE_NAMES) {
     token = jar.get(name)?.value ?? token;
   }
+  return token ?? null;
+}
+
+export async function getSessionUser(): Promise<{ id: string; email: string; name: string | null } | null> {
+  const token = await getSessionToken();
   if (!token) return null;
   const adapter = getAdapter();
   const result = await adapter.getSessionAndUser!(token);

@@ -208,6 +208,10 @@ export const authSession = pgTable("auth_session", {
   sessionToken: text("session_token").primaryKey(),
   userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
   expires: timestamp("expires", { withTimezone: true }).notNull(),
+  // REQ-003 step-up: stamped when this session clears the TOTP second factor.
+  // Per-session (not per-user) so signing out / revoking a session also drops
+  // its MFA state; the Auth.js adapter ignores this extra column.
+  mfaSatisfiedAt: timestamp("mfa_satisfied_at", { withTimezone: true }),
 });
 
 export const authVerificationToken = pgTable("auth_verification_token", {
@@ -230,6 +234,20 @@ export const householdRoleAssignment = pgTable("household_role_assignment", {
   ndaApproved: boolean("nda_approved").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("household_role_assignment_user_household_unique").on(t.userId, t.householdId)]);
+
+// REQ-003 staff second factor. One TOTP secret per user (not per household —
+// a backup HM covering three homes enrolls once). The secret is stored ONLY
+// sealed: `secretBox` is the AES-256-GCM box, `wrappedKey` the KMS-wrapped
+// data key, mirroring the vault envelope — plaintext never lands in a column.
+// confirmedAt is null until the user proves possession with a first code;
+// an unconfirmed row is a pending enrollment that grants nothing.
+export const userTotp = pgTable("user_totp", {
+  userId: text("user_id").primaryKey().references(() => authUser.id, { onDelete: "cascade" }),
+  secretBox: text("secret_box").notNull(),
+  wrappedKey: text("wrapped_key").notNull(),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // One row per command from @wellkept/close-flow's submit() (visit.submit,
 // dot.create, signal.route), drained by @wellkept/offline-queue. id IS the

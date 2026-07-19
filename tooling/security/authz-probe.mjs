@@ -23,8 +23,11 @@ async function mintSession(email) {
   if (!rows[0]) return null;
   const token = randomUUID() + randomUUID();
   const expires = new Date(Date.now() + 3600_000);
+  // mfa_satisfied_at pre-stamped so staff sessions aren't diverted to /mfa by
+  // the REQ-003 guard — this probe tests role×surface authorization, not the
+  // second-factor step-up (covered by @wellkept/totp unit tests + the MFA e2e).
   await pool.query(
-    "INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+    "INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
     [token, rows[0].id, expires],
   );
   return token;
