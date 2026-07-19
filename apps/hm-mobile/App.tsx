@@ -13,6 +13,7 @@ import {
   ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Crypto from "expo-crypto";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
@@ -20,6 +21,7 @@ import { createVisitSync, type VisitSync } from "./src/visit-sync";
 import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
 import { fetchBriefing, type Briefing } from "./src/briefing";
 import { uploadPhoto, type LocalPhoto } from "./src/photos";
+import { loadPendingPhotos, savePendingPhotos } from "./src/photo-store";
 
 const C = { green: "#1C3D2E", gold: "#B08D2A", cream: "#F7F3E8", sage: "#E4EDE4", ink: "#26241F", brick: "#8C2F22", grey: "#6B6B6B" };
 
@@ -182,15 +184,39 @@ function CloseFlowScreen({
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [briefingStale, setBriefingStale] = useState(false);
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const [photosHydrated, setPhotosHydrated] = useState(false);
+
+  // Rehydrate any photos captured but not yet synced on a prior run.
+  useEffect(() => {
+    void loadPendingPhotos(household.id).then((saved) => {
+      if (saved.length) {
+        setPhotos((prev) => [...saved, ...prev]);
+        saved.forEach((p) => run((f) => f.addPhoto(p.photoId)));
+      }
+      setPhotosHydrated(true);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [household.id]);
+
+  // Persist pending photos whenever the set changes (after hydration).
+  useEffect(() => {
+    if (photosHydrated) void savePendingPhotos(household.id, photos);
+  }, [photos, photosHydrated, household.id]);
 
   async function capturePhoto() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) { setError("Camera access is needed to add a visit photo."); return; }
-    const res = await ImagePicker.launchCameraAsync({ quality: 0.4, base64: true });
-    if (res.canceled || !res.assets?.[0]?.base64) return;
-    const a = res.assets[0];
+    const res = await ImagePicker.launchCameraAsync({ quality: 1 });
+    if (res.canceled || !res.assets?.[0]) return;
+    // Downscale + compress on device so uploads (and the local store) stay small.
+    const shrunk = await ImageManipulator.manipulateAsync(
+      res.assets[0].uri,
+      [{ resize: { width: 1600 } }],
+      { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+    );
+    if (!shrunk.base64) return;
     const photoId = Crypto.randomUUID();
-    setPhotos((prev) => [...prev, { photoId, localUri: a.uri, base64: a.base64!, contentType: "image/jpeg", uploaded: false }]);
+    setPhotos((prev) => [...prev, { photoId, localUri: shrunk.uri, base64: shrunk.base64!, contentType: "image/jpeg", uploaded: false }]);
     run((f) => f.addPhoto(photoId));
   }
 
