@@ -10,6 +10,7 @@ import {
   provenanceSchema, fieldFlagSchema, NA_CONFIRMED,
   sensitivityEnum, provenanceEnum, fieldFlagEnum, tierEnum, statusTagEnum,
   roleEnum, householdRoleAssignment,
+  registryKindSchema, registryKindEnum, registryDetailSchemas, registryEntry,
   household, playbookField, vaultItem, auditEvent, visit,
 } from "./index";
 import { ROLES, SENSITIVITIES } from "@wellkept/permissions";
@@ -26,6 +27,17 @@ test("permissions core vocabulary matches the schema enums", () => {
   assert.deepEqual([...ROLES], roleSchema.options);
   assert.deepEqual([...SENSITIVITIES], sensitivitySchema.options);
   assert.deepEqual([...ROLES], [...roleEnum.enumValues]);
+});
+
+test("registry vocabulary aligned; every kind has a detail schema; sensitivity reuses the matrix", () => {
+  assert.deepEqual(registryKindSchema.options, [...registryKindEnum.enumValues]);
+  for (const kind of registryKindSchema.options) {
+    assert.ok(registryDetailSchemas[kind], `missing detail schema for ${kind}`);
+  }
+  assert.ok("sensitivity" in registryEntry && "keyDate" in registryEntry && "tombstonedAt" in registryEntry);
+  // a malformed dates entry fails closed at the boundary
+  assert.equal(registryDetailSchemas.dates.safeParse({ note: "no occasion" }).success, false);
+  assert.equal(registryDetailSchemas.dates.safeParse({ occasion: "birthday", person: "Mia" }).success, true);
 });
 
 test("role assignments key on user x household and carry the NDA gate", () => {

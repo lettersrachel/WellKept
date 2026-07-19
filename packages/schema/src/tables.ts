@@ -248,3 +248,27 @@ export const visitCommand = pgTable("visit_command", {
   reason: text("reason"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("visit_command_household_received_idx").on(t.householdId, t.receivedAt)]);
+
+// REQ-014: the structured registries. One table, seven kinds — see
+// docs/adr/002-registries-single-table.md for the decision and its
+// revisit triggers. key_date is the single column the trigger engine
+// queries across every kind; sensitivity reuses the tested matrix.
+export const registryKindEnum = pgEnum("registry_kind", [
+  "dates", "sizes", "appliance", "vendor", "subscription", "commitment", "horizon",
+]);
+
+export const registryEntry = pgTable("registry_entry", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  kind: registryKindEnum("kind").notNull(),
+  label: text("label").notNull(),
+  detail: jsonb("detail").notNull().default({}),
+  keyDate: timestamp("key_date", { withTimezone: true }),
+  cadence: text("cadence"),
+  sensitivity: sensitivityEnum("sensitivity").notNull().default("s1"),
+  sourceFieldId: uuid("source_field_id"),
+  tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }), // tombstone, never delete
+}, (t) => [
+  index("registry_entry_household_idx").on(t.householdId),
+  index("registry_entry_household_kind_idx").on(t.householdId, t.kind),
+]);

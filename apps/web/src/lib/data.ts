@@ -109,3 +109,14 @@ export async function getGestures(householdId: string) {
     .where(eq(gesture.householdId, householdId))
     .orderBy(asc(gesture.createdAt));
 }
+
+/** REQ-014 registries, permission-filtered by the same matrix as fields. */
+export async function getRegistries(householdId: string, role: string) {
+  const { registryEntry } = await import("@wellkept/schema");
+  const { readDecision } = await import("@wellkept/permissions");
+  const { isNull, and } = await import("drizzle-orm");
+  const rows = await db.select().from(registryEntry)
+    .where(and(eq(registryEntry.householdId, householdId), isNull(registryEntry.tombstonedAt)))
+    .orderBy(asc(registryEntry.kind), asc(registryEntry.label));
+  return rows.filter((r) => readDecision(role, r.sensitivity) !== "denied");
+}

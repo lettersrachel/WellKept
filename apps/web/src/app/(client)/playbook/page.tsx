@@ -5,6 +5,8 @@ import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data
 import { proposeEdit } from "@/lib/actions";
 import { isClientEditable } from "@/lib/client-allowlist";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
+import { getRegistries } from "@/lib/data";
+import { RegistryCard } from "@/app/RegistryCard";
 
 export const dynamic = "force-dynamic";
 
@@ -133,6 +135,8 @@ export default async function ClientPlaybook({
           <div className="fval" style={{ lineHeight: 1.7, fontSize: 15 }}>{String(summary.value)}</div>
         </div>
       ) : null}
+
+      <RegistryCard entries={await getRegistries(hh.id, "client")} />
 
       {flagged.length > 0 && (
         <div className="card">

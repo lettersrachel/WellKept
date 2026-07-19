@@ -42,3 +42,21 @@ export const SECTION_NAMES: Record<number, string> = {
   21: "Occasions, Traditions & Hospitality", 22: "Scope & Communication",
   23: "Anticipation & The Horizon", 24: "Governance",
 };
+
+/** REQ-014 registry vocabulary (mirrors the registry_kind pg enum). */
+export const registryKindSchema = z.enum([
+  "dates", "sizes", "appliance", "vendor", "subscription", "commitment", "horizon",
+]);
+export type RegistryKind = z.infer<typeof registryKindSchema>;
+
+/** Per-kind detail payloads, validated at the application boundary
+ * (ADR-002: structure lives in zod, storage stays one jsonb column). */
+export const registryDetailSchemas: Record<RegistryKind, z.ZodTypeAny> = {
+  dates: z.object({ person: z.string().optional(), occasion: z.string(), note: z.string().optional() }).passthrough(),
+  sizes: z.object({ person: z.string(), item: z.string(), size: z.string(), updated: z.string().optional() }).passthrough(),
+  appliance: z.object({ location: z.string().optional(), model: z.string().optional(), installYear: z.number().optional(), filterSize: z.string().optional() }).passthrough(),
+  vendor: z.object({ service: z.string(), contact: z.string().optional(), rhythm: z.string().optional() }).passthrough(),
+  subscription: z.object({ provider: z.string(), what: z.string().optional(), renewal: z.string().optional() }).passthrough(),
+  commitment: z.object({ what: z.string(), prep: z.string().optional() }).passthrough(),
+  horizon: z.object({ transition: z.string(), window: z.string().optional() }).passthrough(),
+};

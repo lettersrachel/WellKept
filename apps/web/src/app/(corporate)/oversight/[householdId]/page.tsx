@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
 import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture } from "@/lib/actions";
+import { getRegistries } from "@/lib/data";
+import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
 
@@ -117,6 +119,8 @@ export default async function Oversight({ params }: { params: Promise<{ househol
           </tbody>
         </table>
       </div>
+
+      <RegistryCard entries={await getRegistries(hh.id, role)} showSensitivity />
 
       <div className="card">
         <h2>Anticipation engine (REQ-050: packs are scheduled instances)</h2>

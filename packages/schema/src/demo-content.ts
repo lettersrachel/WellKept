@@ -118,4 +118,39 @@ if (!existing.length) {
 await db.update(household).set({ statusTag: "STEADY", updatedAt: new Date() }).where(eq(household.id, householdId));
 await pool.query("UPDATE prompt_pack_item SET suppressed_by_tag=false WHERE fired_at IS NULL");
 console.log("status tag -> STEADY, holds released");
+
+// REQ-014: structured registry entries (idempotent by household+kind+label).
+const { registryEntry } = await import("./tables.ts");
+const R = (kind: string, label: string, detail: object, keyDate: string | null, cadence: string | null, sensitivity = "s1") =>
+  ({ kind, label, detail, keyDate, cadence, sensitivity });
+const REGISTRIES = [
+  R("dates", "Mia — birthday", { person: "Mia", occasion: "birthday" }, "2026-08-02", "annual"),
+  R("dates", "Wedding anniversary", { person: "David & Lisa", occasion: "anniversary" }, "2026-09-14", "annual"),
+  R("dates", "Gram Ruth — birthday", { person: "Grandma Ruth", occasion: "birthday" }, "2026-10-03", "annual"),
+  R("sizes", "Owen — clothing", { person: "Owen", item: "clothing", size: "4T", updated: "2026-06" }, null, "seasonal changeover"),
+  R("sizes", "Owen — shoes", { person: "Owen", item: "shoes", size: "11T", updated: "2026-06" }, null, "seasonal changeover"),
+  R("sizes", "Mia — clothing", { person: "Mia", item: "clothing", size: "girls 10", updated: "2026-06" }, null, "seasonal changeover"),
+  R("sizes", "Mia — shoes", { person: "Mia", item: "shoes", size: "4", updated: "2026-06" }, null, "seasonal changeover"),
+  R("appliance", "Water heater", { location: "basement", installYear: 2019 }, "2019-06-01", "anode check every 3 yr"),
+  R("appliance", "HVAC filter", { location: "hall return", filterSize: "20x25x1" }, null, "replace every 6 mo"),
+  R("vendor", "Rosa — housekeeper", { service: "housekeeping", rhythm: "Mondays 9-1" }, null, "weekly", "s2"),
+  R("vendor", "Ben — dog walker", { service: "dog walking", rhythm: "weekdays noon" }, null, "weekdays"),
+  R("subscription", "Trupanion — Biscuit", { provider: "Trupanion", what: "pet insurance" }, "2027-01-15", "annual renewal", "s2"),
+  R("commitment", "Thanksgiving hosting", { what: "Hosts Thanksgiving, 25+ people", prep: "T-14 planning, T-3 shop" }, "2026-11-26", "annual"),
+  R("horizon", "Owen — kindergarten", { transition: "Owen starts kindergarten", window: "fall 2026" }, "2026-09-01", null),
+];
+let rset = 0;
+for (const r of REGISTRIES) {
+  const existing = await pool.query(
+    "SELECT id FROM registry_entry WHERE household_id=$1 AND kind=$2::registry_kind AND label=$3",
+    [householdId, r.kind, r.label],
+  );
+  if (existing.rowCount) continue;
+  await pool.query(
+    "INSERT INTO registry_entry (id, household_id, kind, label, detail, key_date, cadence, sensitivity) VALUES ($1,$2,$3::registry_kind,$4,$5,$6,$7,$8::sensitivity)",
+    [randomUUID(), householdId, r.kind, r.label, JSON.stringify(r.detail), r.keyDate, r.cadence, r.sensitivity],
+  );
+  rset += 1;
+}
+console.log(`registries: ${rset} entries added (idempotent)`);
 await pool.end();
