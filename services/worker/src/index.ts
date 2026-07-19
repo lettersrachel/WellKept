@@ -9,7 +9,7 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem } from "@wellkept/schema";
-import { runTriggerPass, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import { runTriggerPass, runRegistrySweep, type FieldChangeEvent } from "@wellkept/trigger-engine";
 
 const connection = {
   url: process.env.REDIS_URL ?? "redis://localhost:6379",
@@ -53,18 +53,29 @@ async function handleTagChange({ householdId, to }: TagChangeEvent) {
 // Started as a service (`pnpm --filter @wellkept/worker start`); importable
 // for tests without side effects via createWorker().
 export function createWorker() {
-  return new Worker<FieldChangeEvent | TagChangeEvent>(
+  return new Worker<FieldChangeEvent | TagChangeEvent | Record<string, never>>(
     FIELD_EVENTS_QUEUE,
-    async (job) =>
-      job.name === "tag-change"
-        ? handleTagChange(job.data as TagChangeEvent)
-        : handleEvent(job.data as FieldChangeEvent),
+    async (job) => {
+      if (job.name === "tag-change") return handleTagChange(job.data as TagChangeEvent);
+      if (job.name === "registry-sweep") return runRegistrySweep(db);
+      return handleEvent(job.data as FieldChangeEvent);
+    },
     { connection },
   );
 }
 
+/** REQ-051: the daily registry sweep, 09:00 UTC (early morning household-
+ * local; fire_at clamps to quiet hours regardless). Idempotent to
+ * re-register on every worker boot. */
+export async function ensureSweepScheduled() {
+  const queue = createFieldEventsQueue();
+  await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
+  await queue.close();
+}
+
 if (process.env.WK_WORKER_MAIN === "1") {
   const worker = createWorker();
+  void ensureSweepScheduled().then(() => console.log("[worker] daily registry sweep scheduled (09:00 UTC)"));
   worker.on("completed", (job, result) => {
     const label = job.name === "tag-change"
       ? `tag->${(job.data as TagChangeEvent).to}`

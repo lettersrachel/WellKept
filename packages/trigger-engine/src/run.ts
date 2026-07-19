@@ -39,3 +39,38 @@ export async function runTriggerPass(db: any, event: FieldChangeEvent) {
   }
   return { emitted, evaluated: rules.length, suppressed: hh.statusTag === "LIFE-EVENT" };
 }
+
+/**
+ * The daily registry sweep (REQ-051 over ADR-002 key_dates): every
+ * household, every dated registry entry, insert whatever prompts have
+ * entered their windows. Runs anywhere, any number of times — sweep item
+ * ids are deterministic on (entry, occurrence, text).
+ */
+export async function runRegistrySweep(db: any, opts: { householdId?: string; now?: Date } = {}) {
+  const { registryEntry } = await import("@wellkept/schema");
+  const { isNull, and } = await import("drizzle-orm");
+  const { sweepRegistryDates, sweepItemId } = await import("./registry-sweep.ts");
+
+  const households = opts.householdId
+    ? await db.select().from(household).where(eq(household.id, opts.householdId))
+    : await db.select().from(household);
+
+  let emitted = 0;
+  for (const hh of households) {
+    const entries = await db.select().from(registryEntry)
+      .where(and(eq(registryEntry.householdId, hh.id), isNull(registryEntry.tombstonedAt)));
+    const drafts = sweepRegistryDates(entries, { statusTag: hh.statusTag, now: opts.now });
+    for (const draft of drafts) {
+      // id keys on (family rule, household, occurrence, text) — the text
+      // embeds the entry label, so distinct entries never collide.
+      const id = await sweepItemId(draft.triggerRuleId + ":" + draft.householdId, draft.occurrence, draft.itemText);
+      const { occurrence: _occ, ...values } = draft;
+      const inserted = await db.insert(promptPackItem)
+        .values({ id, ...values })
+        .onConflictDoNothing({ target: promptPackItem.id })
+        .returning({ id: promptPackItem.id });
+      emitted += inserted.length;
+    }
+  }
+  return { households: households.length, emitted };
+}
