@@ -17,10 +17,11 @@ export const CASCADES: TriggerRuleRow[] = [
     enabled: true,
     definition: {
       packName: "kindergarten-readiness",
+      // methodRefs per Addendum A1 S4, founder-approved 2026-07-24.
       items: [
-        { text: "School registration windows open soon: confirm enrollment paperwork and immunization records are located.", offsetDays: 7 },
-        { text: "Ask about before/after-care needs for the new school schedule.", offsetDays: 14 },
-        { text: "Uniform or supply list: order before the late-summer rush.", offsetDays: 30 },
+        { text: "School registration windows open soon: confirm enrollment paperwork and immunization records are located.", offsetDays: 7, methodRef: "STD-016.4.1" },
+        { text: "Ask about before/after-care needs for the new school schedule.", offsetDays: 14, methodRef: "STD-016.4.1" },
+        { text: "Uniform or supply list: order before the late-summer rush.", offsetDays: 30, methodRef: "STD-015.1.4" },
       ],
     },
   },
@@ -35,7 +36,11 @@ export const CASCADES: TriggerRuleRow[] = [
     definition: {
       packName: "meds-day",
       items: [
-        { text: "Meds day: confirm the refill pickup was collected (bag on entry bench).", offsetDays: 30 },
+        { text: "Meds day: confirm the refill pickup was collected (bag on entry bench).", offsetDays: 30, methodRef: "STD-022.3.2" },
+        // No methodRef, deliberately: this step appears to CONFLICT with the
+        // personal-care floor (STD-022.3.3, never read a medication label;
+        // STD-022.5.10 leaves auto-injectors an open question). Routed to
+        // QA-010 v1.4 — reword the step or carve the exception, per policy.
         { text: "Check expiration dates on EpiPens/inhalers noted in the record.", offsetDays: 60 },
       ],
     },
@@ -51,8 +56,8 @@ export const CASCADES: TriggerRuleRow[] = [
     definition: {
       packName: "occasion-radar",
       items: [
-        { text: "Occasion radar: scan the next 14 days for birthdays and anniversaries; is a gesture planned?", offsetDays: 1 },
-        { text: "Gesture gate check: cultural-fit reviewed and HM notified before execution (REQ-042).", offsetDays: 3 },
+        { text: "Occasion radar: scan the next 14 days for birthdays and anniversaries; is a gesture planned?", offsetDays: 1, methodRef: "STD-019.1.3" },
+        { text: "Gesture gate check: cultural-fit reviewed and HM notified before execution (REQ-042).", offsetDays: 3, methodRef: "STD-019.8.1" },
       ],
     },
   },
