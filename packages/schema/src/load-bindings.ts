@@ -59,7 +59,9 @@ const db = drizzle(pool);
 
 const [hh] = await db.select().from(household).where(eq(household.name, householdName));
 if (!hh) {
-  console.error(`FAIL: no household named "${householdName}"`);
+  const all = await db.select({ name: household.name }).from(household);
+  console.error(`FAIL: no household named "${householdName}". Households here: `
+    + all.map((h) => `"${h.name}"`).join(", "));
   await pool.end();
   process.exit(2);
 }
