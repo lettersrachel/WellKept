@@ -111,7 +111,7 @@ function ClientField({
           </summary>
           <form action={proposeEdit} className="row" style={{ marginTop: 6 }}>
             <input type="hidden" name="fieldId" value={String(f.id)} />
-            <input name="proposedValue" placeholder="What should this say?" style={{ flex: 1 }} />
+            <input name="proposedValue" aria-label="Suggested update" placeholder="What should this say?" style={{ flex: 1 }} />
             <button className="act subtle">Send for review</button>
           </form>
         </details>
@@ -200,7 +200,7 @@ export default async function ClientPlaybook({
         <div className="row">
           <h2 style={{ flex: 1 }}>Your Playbook</h2>
           <form className="row" style={{ gap: 6 }}>
-            <input name="q" defaultValue={q ?? ""} placeholder="Search your Playbook" className="inline" style={{ marginTop: 0 }} />
+            <input name="q" aria-label="Search your Playbook" defaultValue={q ?? ""} placeholder="Search your Playbook" className="inline" style={{ marginTop: 0 }} />
             <button className="act subtle">Search</button>
           </form>
         </div>

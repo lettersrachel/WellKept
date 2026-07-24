@@ -75,7 +75,7 @@ P0s not built are the honest launch-blocking list.
 | 071 privacy (no 3p analytics; media flags; deletion) | P0 | no analytics present; flags/deletion not built |
 | 072 availability/backup targets | P0 | not applicable until hosted (DEPLOY.md notes) |
 | 073 performance targets | P0 | unmeasured |
-| 074 WCAG 2.1 AA | P1 | unaudited |
+| 074 WCAG 2.1 AA | P1 | self-audit + fixes 2026-07-24 (contrast tokens --gold-ink/--gold-bright, provenance text to 4.5:1+, CAUTION tag ink-on-gold, :focus-visible rings, skip link, main landmark, aria-labels on placeholder-only inputs; verified by keyboard in-browser). Formal third-party audit still recommended pre-scale |
 | 075 scale envelope 150 households | P0 | schema yes; UI single-household |
 
 ## Deltas resolved since first audit
@@ -113,4 +113,4 @@ found during the build; none blocked shipping.
 | 9 | Real leak found by the new payload guard: client `/playbook` serialized full field rows (incl. `governing_provisions`) into the flight payload | Fixed (b552e66): fields projected to render-only keys; `assertNoProvisionRows` runs live in the page data path |
 | 10 | Brief's "extend the payload test" conflicts with its own "don't touch the permission-matrix package" | Standards assertions live in `@wellkept/schema`; permissions package untouched (its changes need founder sign-off) |
 | 11 | The three seeded cascades (kindergarten/meds-day/occasion-radar) are not the addendum's method_ref examples (donate-pile/nap-vacuum/gear-zone), so their `methodRef`s are empty | Per S4, an empty ref is a finding, not an error; assigning refs is a policy mapping |
-| 12 | The meds-day cascade step "Check expiration dates on EpiPens/inhalers" conflicts with floor STD-022.3.3 ("never read a medication label"); STD-022.5.10 leaves auto-injectors an open question | Step left without a methodRef (founder-approved 2026-07-24); QA/policy to reword the step (e.g. prompt from the dates registry) or carve the exception in STD-022 |
+| 12 | The meds-day cascade step "Check expiration dates on EpiPens/inhalers" conflicted with floor STD-022.3.3 ("never read a medication label") | RESOLVED by founder decision 2026-07-24: labels are never read unless the Playbook explicitly directs it. Step reworded to work from documented dates (methodRef STD-016.6.4). If the docx library later wants the "unless explicitly directed" carve-out written into STD-022 itself, that edit flows founder -> corrected sheet -> loader |

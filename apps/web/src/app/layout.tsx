@@ -48,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body>
+        <a className="skip-link" href="#main">Skip to content</a>
         <ServiceWorker />
         <header className="masthead">
           <h1>WELL KEPT{hh && principal ? <> &nbsp;|&nbsp; {hh.name}</> : null}</h1>
@@ -60,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </form>
           ) : null}
         </header>
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <div className="footnote">
           One data model, permission-filtered projections (WK-APP-003). Paper remains the
           pilot&apos;s system of record (ADR-001). No real S3 values enter the app before

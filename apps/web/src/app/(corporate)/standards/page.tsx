@@ -69,7 +69,7 @@ export default async function StandardsLibrary({
           </div>
         )}
         <form className="row" style={{ gap: 6, marginTop: 10 }}>
-          <input name="q" defaultValue={q ?? ""} placeholder="Search text, id (STD-006.3.2), or scope (room:kitchen)" className="inline" style={{ marginTop: 0, flex: 1 }} />
+          <input name="q" aria-label="Search the standards library" defaultValue={q ?? ""} placeholder="Search text, id (STD-006.3.2), or scope (room:kitchen)" className="inline" style={{ marginTop: 0, flex: 1 }} />
           <button className="act subtle">Search</button>
           {filtering && <Link className="pill" href="/standards">Clear</Link>}
         </form>

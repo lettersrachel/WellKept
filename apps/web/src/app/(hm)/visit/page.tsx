@@ -71,8 +71,8 @@ export default async function VisitPage() {
         <div style={{ fontSize: 22, marginTop: 4 }}>{hh.name}</div>
         <div className="sans" style={{ fontSize: 12, color: "var(--sage)", marginTop: 2 }}>
           {hh.tier}
-          {lifeEvent && <span style={{ color: "var(--gold)", fontWeight: 700 }}> | LIFE-EVENT set by corporate</span>}
-          {stranger && <span style={{ color: "var(--gold)", fontWeight: 700 }}> | STRANGER MODE — first-visit runbook</span>}
+          {lifeEvent && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | LIFE-EVENT set by corporate</span>}
+          {stranger && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | STRANGER MODE — first-visit runbook</span>}
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export default async function VisitPage() {
             <form action={logStrangerTest}>
               <input type="hidden" name="householdId" value={hh.id} />
               <label>Friction noticed (one per line; blank only if it truly ran clean)</label>
-              <textarea name="frictionNotes" rows={3} placeholder="e.g. Could not find the mudroom bin key from the record alone" />
+              <textarea name="frictionNotes" aria-label="Friction noticed" rows={3} placeholder="e.g. Could not find the mudroom bin key from the record alone" />
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="act" name="passed" value="yes">Ran clean — PASS</button>
                 <button className="act danger" name="passed" value="no">Friction found — log it</button>

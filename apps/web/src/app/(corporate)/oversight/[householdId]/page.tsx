@@ -204,7 +204,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
         {isAdmin && (
           <form action={assignRole} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
             <input type="hidden" name="householdId" value={hh.id} />
-            <input name="email" type="email" placeholder="person@example.com" required style={{ flex: 2, marginTop: 0 }} />
+            <input name="email" type="email" aria-label="Email address to add" placeholder="person@example.com" required style={{ flex: 2, marginTop: 0 }} />
             <select name="role" defaultValue="client" className="inline">
               {ROLE_OPTIONS.map((r) => (
                 <option key={r} value={r}>{r.replace("_", " ")}</option>
@@ -257,7 +257,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                   <form action={queueGesture} className="row" style={{ marginTop: 6 }}>
                     <input type="hidden" name="householdId" value={hh.id} />
                     <input type="hidden" name="dotId" value={d.id} />
-                    <input name="idea" placeholder="The gesture idea" style={{ flex: 1 }} />
+                    <input name="idea" aria-label="Gesture idea" placeholder="The gesture idea" style={{ flex: 1 }} />
                     <button className="act subtle">Queue</button>
                   </form>
                 </details>
@@ -312,7 +312,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                 ) : (
                   <form action={executeGesture} className="row" style={{ gap: 6 }}>
                     <input type="hidden" name="gestureId" value={g.id} />
-                    <input name="costDollars" className="inline" placeholder="$" style={{ width: 70 }} />
+                    <input name="costDollars" aria-label="Cost in dollars" className="inline" placeholder="$" style={{ width: 70 }} />
                     <button className="act">Executed — to the quiet log</button>
                   </form>
                 )}
@@ -436,7 +436,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                           </summary>
                           <form action={setVaultValue} className="row" style={{ marginTop: 6 }}>
                             <input type="hidden" name="fieldId" value={String(f.id)} />
-                            <input name="vaultValue" placeholder="Sealed with the household key; never stored in plain text" style={{ flex: 1 }} />
+                            <input name="vaultValue" aria-label="Vault value to seal" placeholder="Sealed with the household key; never stored in plain text" style={{ flex: 1 }} />
                             <button className="act subtle">Seal</button>
                           </form>
                         </details>

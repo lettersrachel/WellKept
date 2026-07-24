@@ -214,7 +214,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
             </span>
           ))}
         </div>
-        <div className="sans" style={{ fontSize: 12, marginTop: 8, color: online ? "var(--sage)" : "var(--gold)" }} role="status">
+        <div className="sans" style={{ fontSize: 12, marginTop: 8, color: online ? "var(--sage)" : "var(--gold-bright)" }} role="status">
           {online
             ? "Online"
             : "Offline — your work is saved on this device and will sync automatically once you're back online."}
@@ -287,7 +287,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
           <div className="card">
             <h2>Changes noticed</h2>
             <div className="note">Cannot be skipped. &ldquo;none&rdquo; is an answer; blank is not.</div>
-            <input value={changesNoticed} onChange={(e) => setChangesNoticed(e.target.value)} placeholder="or 'none'" />
+            <input aria-label="Changes noticed" value={changesNoticed} onChange={(e) => setChangesNoticed(e.target.value)} placeholder="or 'none'" />
             <p><button className="act subtle" type="button" onClick={() => run((f) => f.setChangesNoticed(changesNoticed))}>Save</button></p>
             {state.changesNoticed && <div className="prov">Saved: {state.changesNoticed}</div>}
           </div>
@@ -296,7 +296,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
             <h2>Dots (optional, verbatim)</h2>
             <div className="note">Verbatim, dated. Never client-visible.</div>
             <div className="row">
-              <input style={{ flex: 1 }} value={dotText} onChange={(e) => setDotText(e.target.value)} placeholder="What was said, exactly" />
+              <input style={{ flex: 1 }} aria-label="Dot: what was said, exactly" value={dotText} onChange={(e) => setDotText(e.target.value)} placeholder="What was said, exactly" />
               <button className="act subtle" type="button" onClick={() => { run((f) => f.addDot(dotText)); setDotText(""); }}>Log dot</button>
             </div>
             {state.dots.map((d) => (
@@ -323,7 +323,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
           <div className="card">
             <h2>Zone drift</h2>
             <input value={zoneAnswer} onChange={(e) => setZoneAnswer(e.target.value)} />
-            <input value={zonePhoto} onChange={(e) => setZonePhoto(e.target.value)} placeholder="photo id (required unless 'none')" />
+            <input aria-label="Zone drift photo id" value={zonePhoto} onChange={(e) => setZonePhoto(e.target.value)} placeholder="photo id (required unless 'none')" />
             <p><button className="act subtle" type="button" onClick={() => run((f) => f.setZoneDrift({ answer: zoneAnswer, photoId: zonePhoto || null }))}>Save</button></p>
             {state.zoneDrift && <div className="prov">Saved: {state.zoneDrift.answer}</div>}
           </div>

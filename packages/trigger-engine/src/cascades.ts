@@ -37,11 +37,10 @@ export const CASCADES: TriggerRuleRow[] = [
       packName: "meds-day",
       items: [
         { text: "Meds day: confirm the refill pickup was collected (bag on entry bench).", offsetDays: 30, methodRef: "STD-022.3.2" },
-        // No methodRef, deliberately: this step appears to CONFLICT with the
-        // personal-care floor (STD-022.3.3, never read a medication label;
-        // STD-022.5.10 leaves auto-injectors an open question). Routed to
-        // QA-010 v1.4 — reword the step or carve the exception, per policy.
-        { text: "Check expiration dates on EpiPens/inhalers noted in the record.", offsetDays: 60 },
+        // Reworded per founder decision 2026-07-24: labels are NEVER read
+        // unless the Playbook explicitly directs it (STD-022.3.3 stays a
+        // floor). The prompt works from documented dates, not from labels.
+        { text: "Where the record documents medication expiry dates (EpiPens/inhalers), flag any approaching to the client. Never read a label unless the Playbook explicitly directs it.", offsetDays: 60, methodRef: "STD-016.6.4" },
       ],
     },
   },
