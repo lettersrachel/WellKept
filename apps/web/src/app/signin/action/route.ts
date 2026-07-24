@@ -51,5 +51,5 @@ export async function POST(request: Request) {
   if (location.includes("error=")) {
     return Response.redirect(new URL("/signin?error=send-failed", request.url), 303);
   }
-  return Response.redirect(new URL("/verify-request", request.url), 303);
+  return Response.redirect(new URL(`/verify-request?email=${encodeURIComponent(email)}`, request.url), 303);
 }

@@ -2,6 +2,7 @@ import type { AuthConfig } from "@auth/core";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type { Adapter } from "@auth/core/adapters";
 import { authUser, authAccount, authSession, authVerificationToken } from "@wellkept/schema";
+import { generateBackupCodes, normalizeBackupCode } from "@wellkept/totp";
 import { db } from "../db";
 
 /**
@@ -54,7 +55,13 @@ export function getAdapter(): Adapter {
  * surfaced at /dev/last-email. Both paths record in non-production so the
  * dev page stays useful even while testing a real provider.
  */
-async function sendMagicLink({ identifier, url }: { identifier: string; url: string }) {
+/** Display form of a sign-in code: ABCD-EFGH (stored/verified normalized). */
+function formatSigninCode(token: string): string {
+  const t = token.toUpperCase();
+  return `${t.slice(0, 4)}-${t.slice(4)}`;
+}
+
+async function sendMagicLink({ identifier, url, token }: { identifier: string; url: string; token: string }) {
   const sent = getSentLinks();
   if (process.env.NODE_ENV !== "production" || !process.env.RESEND_API_KEY) {
     sent.push({ identifier, url, sentAt: new Date().toISOString() });
@@ -74,7 +81,10 @@ async function sendMagicLink({ identifier, url }: { identifier: string; url: str
       from: process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>",
       to: [identifier],
       subject: "Your Well Kept sign-in link",
-      html: `<p>Sign in to Well Kept:</p><p><a href="${url}">Open your household</a></p><p>This link expires in 24 hours and works once. If you didn't request it, ignore this email.</p>`,
+      html: `<p>Sign in to Well Kept:</p><p><a href="${url}">Open your household</a></p>`
+        + `<p>Signing in on the installed phone app? Enter this code on the "Check your email" screen instead:</p>`
+        + `<p style="font-size:22px;letter-spacing:3px;font-family:monospace"><b>${formatSigninCode(token)}</b></p>`
+        + `<p>The link and code expire in 1 hour and work once. If you didn't request this, ignore this email.</p>`,
     }),
   });
   if (!res.ok) {
@@ -103,7 +113,12 @@ export function getAuthConfig(): AuthConfig {
           id: "email",
           type: "email",
           name: "Email",
-          maxAge: 24 * 60 * 60,
+          // 1 hour: the token doubles as a typeable sign-in code (8 chars,
+          // base31, ~40 bits) for the installed PWA, where the emailed link
+          // opens Safari instead of the app. Single-use + short expiry +
+          // rate-limited entry keep the shorter token safe.
+          maxAge: 60 * 60,
+          generateVerificationToken: async () => normalizeBackupCode(generateBackupCodes(1)[0]!),
           sendVerificationRequest: sendMagicLink,
         // The provider shape Auth.js expects for a custom email transport is
         // wider than what this transport needs; the cast covers the gap.
