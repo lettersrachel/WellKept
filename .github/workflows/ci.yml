@@ -38,11 +38,13 @@ jobs:
           --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v5
+      # corepack before setup-node: v5 auto-detects packageManager and
+      # expects pnpm on PATH when it configures caching.
+      - name: Enable corepack pnpm
+        run: corepack enable
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Enable corepack pnpm
-        run: corepack enable
       - name: Install (frozen lockfile — pin-refresh is the law)
         run: pnpm install --frozen-lockfile
       - name: Migrate against a real PostgreSQL 16
@@ -98,10 +100,10 @@ jobs:
       BASE: http://localhost:3001
     steps:
       - uses: actions/checkout@v5
+      - run: corepack enable
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - name: Migrate + seed (fresh DB → jordan HM on Fernbrook, no prior visits)
         run: |
