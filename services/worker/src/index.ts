@@ -138,7 +138,15 @@ export function createWorker() {
       if (job.name === FLOOR_CONFLICT_JOB) return handleFloorConflict(job.data as FloorConflictEvent);
       return handleEvent(job.data as FieldChangeEvent);
     },
-    { connection },
+    {
+      connection,
+      // Upstash bills per COMMAND and the free tier is 500k/month. BullMQ's
+      // defaults (5s empty-queue poll, 30s stalled check) idle at ~600k/month
+      // — the quota dies with zero jobs processed (it did, 2026-07-24).
+      // A pilot's queue traffic is minutes-scale, not seconds-scale:
+      drainDelay: 60, // seconds to block when the queue is empty
+      stalledInterval: 300_000, // stalled-job check every 5min
+    },
   );
 }
 
@@ -149,14 +157,14 @@ export async function ensureSweepScheduled() {
   const queue = createFieldEventsQueue();
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
   await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
-  await queue.upsertJobScheduler("drain-outbox", { every: 120000 }, { name: "drain-outbox" });
+  await queue.upsertJobScheduler("drain-outbox", { every: 300000 }, { name: "drain-outbox" }); // backstop only; the inline pass is primary
   await queue.upsertJobScheduler("uptime-check", { every: 300000 }, { name: "uptime-check" });
   await queue.close();
 }
 
 if (process.env.WK_WORKER_MAIN === "1") {
   const worker = createWorker();
-  void ensureSweepScheduled().then(() => console.log("[worker] scheduled: daily sweep, weekly digest, outbox drain (2m), uptime check (5m)"));
+  void ensureSweepScheduled().then(() => console.log("[worker] scheduled: daily sweep, weekly digest, outbox drain (5m), uptime check (5m)"));
   worker.on("completed", (job, result) => {
     const label = job.name === "tag-change"
       ? `tag->${(job.data as TagChangeEvent).to}`
