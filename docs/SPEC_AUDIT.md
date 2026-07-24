@@ -93,3 +93,23 @@ P0s not built are the honest launch-blocking list.
 
 Everything marked built+verified above was exercised against live
 infrastructure, not unit tests alone — see git history for the receipts.
+
+## Addendum A1 (the standards store) — findings for the QA-010 v1.4 pass
+
+Built T1–T7 and shipped to production 2026-07-24, dark behind
+`standards.seed_reviewed=false`. Everything below is a doc-vs-reality delta
+found during the build; none blocked shipping.
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| 1 | Seed `kind` has three values (rule 902 / table_row 184 / callout 60); the brief said `rule\|callout` and Addendum S3 omits `kind` entirely | Schema adopted the 3-value enum; S3 table should gain the column |
+| 2 | No `preference`-tier rows in the extraction | Enum carries all five WK-STD-000 S1 levels; flag for founder review |
+| 3 | `pilot_default` = 7 rows vs the addendum's "nine adopted defaults" | Candidates for the missing two flagged in the annotated review workbook |
+| 4 | 8 section-0 preamble rows assert "Tier 1/2 floor" in text but carry tier `method` | Founder review (tier assignments are policy, DEV-005 S4) |
+| 5 | Tables named singular (`standard_provision`, `provision_version`) vs the brief's plural | DEV-004 S2 (snake_case singular) is repo law; brief should follow |
+| 6 | `audit_event.household_id NOT NULL` cannot record a global (store-wide) write | `provision_version` is the append-only load record; QA to decide whether audit_event grows a corporate scope |
+| 7 | The review workbook omits `kind`/`effective_date`, so the corrected sheet is an overlay joined to the base seed by provision_id (`wk_provisions.py`) | Working as designed; document in the addendum |
+| 8 | Landed post-launch-readiness, not "before sprint 3"; retrofit cost was LOWER than the addendum's three-sprint estimate (stable codebase, all assumed infra existed) | Timing note for the protocol |
+| 9 | Real leak found by the new payload guard: client `/playbook` serialized full field rows (incl. `governing_provisions`) into the flight payload | Fixed (b552e66): fields projected to render-only keys; `assertNoProvisionRows` runs live in the page data path |
+| 10 | Brief's "extend the payload test" conflicts with its own "don't touch the permission-matrix package" | Standards assertions live in `@wellkept/schema`; permissions package untouched (its changes need founder sign-off) |
+| 11 | The three seeded cascades (kindergarten/meds-day/occasion-radar) are not the addendum's method_ref examples (donate-pile/nap-vacuum/gear-zone), so their `methodRef`s are empty | Per S4, an empty ref is a finding, not an error; assigning refs is a policy mapping |
