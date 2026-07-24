@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { filterFields } from "@wellkept/permissions";
+import { bindProvisions } from "@wellkept/schema";
 import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
+import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
 
@@ -23,25 +25,38 @@ export async function GET(req: NextRequest) {
   }
   if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
 
-  const [allFields, dots, packItems, lastVisit] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
+    standardsSeedReviewed(),
   ]);
   const fields = filterFields(principal.role, allFields, { ndaMode: hh.isNda && !principal.ndaApproved });
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
 
+  // Addendum A1 T4: bound provisions ride the briefing payload, so the
+  // AsyncStorage cache keeps them readable offline (the airplane test).
+  const provisionsFor = (f: Record<string, unknown>) =>
+    bindProvisions(f["governingProvisions"] as string[] | null, provisionsById(), "hm", seedReviewed);
+
   const flags = fields
     .filter((f) => f.flag && f.flag !== "none")
-    .map((f) => ({ name: String(f.name), flag: String(f.flag), value: f.value ? String(f.value) : null }));
+    .map((f) => ({
+      name: String(f.name), flag: String(f.flag), value: f.value ? String(f.value) : null,
+      provisions: provisionsFor(f),
+    }));
 
   const visibleIds = new Set(fields.map((f) => String(f.id)));
+  const fieldById = new Map(fields.map((f) => [String(f.id), f]));
   const deltasRaw = await getDeltasSince(hh.id, lastVisit ? lastVisit.receivedAt : null);
   const changed = deltasRaw
     .filter((d) => visibleIds.has(d.id) && d.value)
     .slice(-6)
-    .map((d) => ({ name: d.name.split(":")[0], value: String(d.value).slice(0, 200), updatedAt: d.updatedAt, provenance: d.provenance }));
+    .map((d) => ({
+      name: d.name.split(":")[0], value: String(d.value).slice(0, 200), updatedAt: d.updatedAt, provenance: d.provenance,
+      provisions: provisionsFor(fieldById.get(d.id) ?? {}),
+    }));
 
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);

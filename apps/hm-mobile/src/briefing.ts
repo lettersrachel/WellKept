@@ -6,10 +6,15 @@
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+/** Bound standard provisions (Addendum A1 T4); floors carry "red-block". */
+export interface BriefingProvision {
+  id: string; document: string; text: string; tier: string; treatment: "red-block" | "quiet";
+}
+
 export interface Briefing {
   household: { name: string; tier: string; lifeEvent: boolean; stranger: boolean };
-  flags: { name: string; flag: string; value: string | null }[];
-  changed: { name: string; value: string; updatedAt: string; provenance: string }[];
+  flags: { name: string; flag: string; value: string | null; provisions?: BriefingProvision[] }[];
+  changed: { name: string; value: string; updatedAt: string; provenance: string; provisions?: BriefingProvision[] }[];
   specials: { text: string; packName: string }[];
   radar: { text: string; packName: string; fireAt: string }[];
   dots: { verbatim: string; heardAt: string }[];

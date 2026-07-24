@@ -117,6 +117,61 @@ export function assertNoProvisionRows(payload: unknown, path = "payload"): true 
   return true;
 }
 
+/** Floors render in the red-block treatment; everything else renders quiet
+ * (Addendum A1 S3: floors are visually distinct, never merely styled text). */
+export type ProvisionTreatment = "red-block" | "quiet";
+export function provisionTreatment(tier: ProvisionTier): ProvisionTreatment {
+  return isOverridable(tier) ? "quiet" : "red-block";
+}
+
+export type ProvisionView = "hm" | "corporate" | "client";
+
+export interface BoundProvision {
+  id: string;
+  document: string;
+  text: string;
+  tier: ProvisionTier;
+  treatment: ProvisionTreatment;
+  /** corporate view only (Addendum A1 S3). */
+  sourceNote?: string | null;
+}
+
+/**
+ * The briefing read path's render model (brief T4): resolve a field's
+ * governing_provisions for one portal view. The rules, in order:
+ * - client NEVER sees provisions (WK-SOP-019; the T7 payload guard enforces
+ *   the same rule at the response boundary);
+ * - everything stays dark until standards.seed_reviewed is true (tier
+ *   assignments are policy and unreviewed tiers must not drive rendering);
+ * - floors sort first and carry the red-block treatment;
+ * - a dangling id renders as absent rather than crashing a field tool
+ *   mid-visit; the seed-integrity test is the loud gate for those.
+ */
+export function bindProvisions(
+  ids: readonly string[] | null | undefined,
+  byId: ReadonlyMap<string, StandardProvision>,
+  view: ProvisionView,
+  seedReviewed: boolean,
+): BoundProvision[] {
+  if (view === "client" || !seedReviewed || !ids?.length) return [];
+  const out: BoundProvision[] = [];
+  for (const id of ids) {
+    const p = byId.get(id);
+    if (!p) continue;
+    out.push({
+      id: p.id,
+      document: p.document,
+      text: p.text,
+      tier: p.tier,
+      treatment: provisionTreatment(p.tier),
+      ...(view === "corporate" ? { sourceNote: p.sourceNote } : {}),
+    });
+  }
+  out.sort((a, b) =>
+    (a.treatment === b.treatment ? a.id.localeCompare(b.id) : a.treatment === "red-block" ? -1 : 1));
+  return out;
+}
+
 /** Seed row -> stored row. Loses doc_title/section_title by design (see above). */
 export function seedRowToProvision(row: ProvisionSeedRow): StandardProvision {
   return standardProvisionSchema.parse({

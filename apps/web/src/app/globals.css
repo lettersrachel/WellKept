@@ -98,6 +98,18 @@ main { max-width: 880px; margin: 22px auto; padding: 0 16px; }
 
 .field.CRITICAL { background: #fbeded; border-left: 4px solid var(--brick); padding-left: 10px; }
 .field.CAUTION { background: var(--cream); border-left: 4px solid var(--gold); padding-left: 10px; }
+
+/* The standards store beneath a field (Addendum A1 T4): collapsed by default;
+   floors carry the red-block convention, method renders quiet. */
+.provisions { margin-top: 4px; }
+.provision { padding: 6px 0 6px 10px; margin-top: 6px; }
+.provision .pid { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--grey); }
+.provision .ptext { font-size: 13px; line-height: 1.5; margin-top: 2px; }
+.provision .psource { font-size: 11px; color: #8a8a8a; font-style: italic; margin-top: 2px; }
+.provision.floor { background: #fbeded; border-left: 4px solid var(--brick); }
+.provision.floor .pid { color: var(--brick); }
+.provision.quiet { border-left: 2px solid var(--line); }
+.tag.FLOOR { background: var(--brick); color: #fff; }
 .field.DELIGHT { background: var(--sage); border-left: 4px solid var(--green); padding-left: 10px; }
 
 .note { font-size: 12px; color: #666; font-style: italic; margin: 8px 0; }

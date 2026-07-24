@@ -13,6 +13,7 @@ import {
   provisionTierEnum, provisionKindEnum, standardProvision, provisionVersion,
   tierSchema, tierEnum, assertNoProvisionRows,
   STANDARDS_READ_ROLES, STANDARDS_WRITE_ROLES,
+  bindProvisions, provisionTreatment, type StandardProvision,
 } from "./index";
 
 const seedPath = fileURLToPath(new URL("../../../tooling/seed/provisions_seed.json", import.meta.url));
@@ -93,6 +94,41 @@ test("standards store roles: client can never read, only corporate_admin writes"
   assert.ok(!STANDARDS_READ_ROLES.includes("client"));
   assert.ok(STANDARDS_READ_ROLES.includes("house_manager"));
   assert.deepEqual([...STANDARDS_WRITE_ROLES], ["corporate_admin"]);
+});
+
+test("bindProvisions: the briefing render model enforces view, gate, and floor ordering (T4)", () => {
+  const P = (id: string, tier: StandardProvision["tier"], sourceNote: string | null = null): StandardProvision => ({
+    id, document: id.slice(0, 7), section: 1, ordinal: 1, text: `text for ${id}`,
+    tier, scope: ["universal"], kind: "rule", membershipTierGate: null,
+    version: 1, effectiveDate: "2026-07-24", supersededBy: null, sourceNote,
+    pilotDefault: false, reviewDate: null,
+  });
+  const byId = new Map([
+    ["STD-006.3.2", P("STD-006.3.2", "method")],
+    ["STD-002.2.1", P("STD-002.2.1", "floor_1", "USDA")],
+    ["STD-014.4.3", P("STD-014.4.3", "floor_2")],
+  ]);
+  const ids = ["STD-006.3.2", "STD-002.2.1", "STD-014.4.3", "STD-999.9.9"];
+
+  // client sees NOTHING, reviewed or not
+  assert.deepEqual(bindProvisions(ids, byId, "client", true), []);
+  // everything is dark until the founder review lands
+  assert.deepEqual(bindProvisions(ids, byId, "hm", false), []);
+  // hm: floors first in red-block, method quiet, dangling id skipped, no source notes
+  const hm = bindProvisions(ids, byId, "hm", true);
+  assert.deepEqual(hm.map((p) => [p.id, p.treatment]), [
+    ["STD-002.2.1", "red-block"], ["STD-014.4.3", "red-block"], ["STD-006.3.2", "quiet"],
+  ]);
+  assert.ok(hm.every((p) => !("sourceNote" in p)));
+  // corporate additionally carries the source note
+  const corp = bindProvisions(ids, byId, "corporate", true);
+  assert.equal(corp.find((p) => p.id === "STD-002.2.1")?.sourceNote, "USDA");
+  // unbound fields bind to nothing
+  assert.deepEqual(bindProvisions(null, byId, "hm", true), []);
+  assert.deepEqual(bindProvisions([], byId, "corporate", true), []);
+  // treatment mirrors the overridable rule exactly
+  for (const tier of ["floor_1", "floor_2"] as const) assert.equal(provisionTreatment(tier), "red-block");
+  for (const tier of ["process", "method", "preference"] as const) assert.equal(provisionTreatment(tier), "quiet");
 });
 
 test("schema drift in a re-emitted seed fails loudly", () => {

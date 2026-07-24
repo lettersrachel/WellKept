@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { visitCommand, SECTION_NAMES } from "@wellkept/schema";
+import { visitCommand, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
+import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
+import { ProvisionList } from "@/app/ProvisionList";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
@@ -34,6 +36,10 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getUpcomingPackItems(hh.id, 10),
   ]);
   const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
+  // Addendum A1 T4: corporate sees every bound provision, source notes included.
+  const seedReviewed = await standardsSeedReviewed();
+  const provisionsFor = (f: Record<string, unknown>) =>
+    bindProvisions(f["governingProvisions"] as string[] | null, provisionsById(), "corporate", seedReviewed);
   const totpEnrolled = await getTotpEnrolled(members.map((m) => m.userId));
   const visitPhotos = await getVisitPhotos(hh.id);
   const isAdmin = role === "corporate_admin";
@@ -446,6 +452,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                   [{String(f.provenance)}
                   {f.confirmed ? ", confirmed" : ""}]
                 </div>
+                <ProvisionList provisions={provisionsFor(f)} />
               </div>
             ))}
           </details>

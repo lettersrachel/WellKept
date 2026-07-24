@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
+import { bindProvisions } from "@wellkept/schema";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
+import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { logStrangerTest } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
+import { ProvisionList } from "../../ProvisionList";
 
 export const dynamic = "force-dynamic";
 
@@ -24,15 +27,22 @@ export default async function VisitPage() {
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
 
-  const [allFields, dots, packItems, lastVisit] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
+    standardsSeedReviewed(),
   ]);
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
   });
+  // Addendum A1 T4: bound provisions render beneath the field, collapsed.
+  // Bundled per release (airplane test); dark until the corrected seed loads.
+  const provisions = provisionsById();
+  const provisionsFor = (f: Record<string, unknown>) =>
+    bindProvisions(f["governingProvisions"] as string[] | null, provisions, "hm", seedReviewed);
+  const fieldById = new Map(fields.map((f) => [String(f.id), f]));
   const flagged = fields.filter((f) => f.flag && f.flag !== "none");
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
   const stranger = principal.role === "backup_hm"; // REQ-033: amplified first-visit mode
@@ -77,6 +87,7 @@ export default async function VisitPage() {
                 <div key={String(f.id)} className="field">
                   <span className="fname">{String(f.name).split(":")[0]}</span>
                   <div className="fval">{String(f.value)}</div>
+                  <ProvisionList provisions={provisionsFor(f)} />
                 </div>
               ))
             )}
@@ -98,6 +109,7 @@ export default async function VisitPage() {
               <span className={`tag ${String(f.flag)}`}>{String(f.flag)}</span>
             </span>
             {f.value ? <div className="fval">{String(f.value)}</div> : null}
+            <ProvisionList provisions={provisionsFor(f)} />
           </div>
         ))
       )}
@@ -112,6 +124,7 @@ export default async function VisitPage() {
               <span className="fname">{d.name.split(":")[0]}</span>
               <div className="fval sans" style={{ fontSize: 13 }}>{d.value.slice(0, 110)}{d.value.length > 110 ? "…" : ""}</div>
               <div className="prov">updated {fmtDay(d.updatedAt)} · {d.provenance}</div>
+              {fieldById.has(d.id) && <ProvisionList provisions={provisionsFor(fieldById.get(d.id)!)} />}
             </div>
           ))}
         </div>
