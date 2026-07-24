@@ -33,6 +33,16 @@ export function provisionsById(): ReadonlyMap<string, StandardProvision> {
   return cache;
 }
 
+/** Document titles (WK-STD-000..023) from the bundled seed — doc-level
+ * metadata the store deliberately does not carry per row. */
+export function documentTitles(): ReadonlyMap<string, string> {
+  const titles = new Map<string, string>();
+  for (const row of provisionsSeedJson as { document: string; doc_title: string }[]) {
+    if (!titles.has(row.document)) titles.set(row.document, row.doc_title);
+  }
+  return titles;
+}
+
 /** The T4 gate: provisions render only after the corrected seed loads. */
 export async function standardsSeedReviewed(): Promise<boolean> {
   try {
