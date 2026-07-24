@@ -1,5 +1,5 @@
 import { filterFields, assertClientPayloadSafe, type FieldRecord } from "@wellkept/permissions";
-import { SECTION_NAMES } from "@wellkept/schema";
+import { SECTION_NAMES, assertNoProvisionRows } from "@wellkept/schema";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
@@ -140,8 +140,17 @@ export default async function ClientPlaybook({
   if (principal.role !== "client") redirect("/");
 
   const all = await getFields(hh.id);
-  let visible = filterFields("client", all);
+  // Project to EXACTLY what the client UI renders before anything can be
+  // serialized toward the client: full field rows carry internal columns
+  // (governing_provisions above all — standards are HM/corporate only per
+  // WK-SOP-019, and Addendum A1 T4's acceptance is that the client portal
+  // shows NONE). Both payload guards then run live in the data path.
+  let visible: FieldRecord[] = filterFields("client", all).map((f) => ({
+    id: f.id, section: f.section, name: f.name, value: f.value,
+    flag: f.flag, sensitivity: f.sensitivity,
+  }));
   assertClientPayloadSafe(visible); // the payload test, live in the page's data path
+  assertNoProvisionRows(visible); // T7: no provision rows or references, ever
 
   // REQ-020 search: server-side, within the client's own (already
   // filtered) view — the search space itself can never contain s2/s3.
