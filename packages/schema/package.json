@@ -10,6 +10,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node src/load-seed.ts",
     "db:provisions": "node src/load-provisions.ts",
+    "db:bindings": "node src/load-bindings.ts",
     "db:demo": "node src/demo-content.ts"
   },
   "dependencies": {
