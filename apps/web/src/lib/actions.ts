@@ -371,3 +371,68 @@ export async function resetTotp(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
 }
+
+/**
+ * Intake capture (the in-app replacement for the workbook): a field-role
+ * user fills a field of their own household during the walk-through. Same
+ * atomic write discipline as every other field mutation — field + audit +
+ * outbox commit together, inline trigger pass after. Two intake-specific
+ * rules: sensitivity never downgrades (importer discipline, fail closed
+ * upward), and s3 stays vault-only — the field row never stores the value
+ * and NOTHING s3 rides the trigger outbox (event payloads carry plaintext).
+ */
+export async function captureField(formData: FormData) {
+  const fieldId = String(formData.get("fieldId") ?? "");
+  if (!fieldId) return;
+  const [f] = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
+  if (!f) return;
+  const principal = await getPrincipal(f.householdId);
+  if (!principal || !["house_manager", "backup_hm"].includes(principal.role)) return; // fail closed
+
+  const PROV = ["asked", "observed", "verified_by_touch"] as const;
+  const SENS = ["s1", "s2", "s3"] as const;
+  const FLAGS = ["none", "CRITICAL", "CAUTION", "DELIGHT"] as const;
+  const provRaw = String(formData.get("provenance") ?? "");
+  const sensRaw = String(formData.get("sensitivity") ?? "");
+  const flagRaw = String(formData.get("flag") ?? "none");
+  if (!(PROV as readonly string[]).includes(provRaw)) return;
+  if (!(SENS as readonly string[]).includes(sensRaw)) return;
+  if (!(FLAGS as readonly string[]).includes(flagRaw)) return;
+  const provenance = provRaw as (typeof PROV)[number];
+  const flag = flagRaw as (typeof FLAGS)[number];
+  // Sensitivity only ratchets up: a capture never quietly declassifies.
+  const ORDER: Record<string, number> = { s1: 1, s2: 2, s3: 3 };
+  const rank = (s: string) => ORDER[s] ?? 3; // unknown marker fails UP
+  const sensitivity = (rank(sensRaw) >= rank(f.sensitivity) ? sensRaw : f.sensitivity) as (typeof SENS)[number];
+
+  const note = String(formData.get("note") ?? "").trim();
+  // s3: the value NEVER lands on the field row (vault law, REQ-013). If a
+  // previously-plain field is being reclassified s3, its plaintext clears.
+  const rawValue = String(formData.get("value") ?? "").trim();
+  const value = sensitivity === "s3" ? "" : rawValue;
+
+  const event = {
+    householdId: f.householdId, fieldId: f.id, fieldName: f.name,
+    section: f.section, newValue: value, changedAt: new Date().toISOString(),
+  };
+  const valueChanged = value !== f.value;
+  await db.transaction(async (tx) => {
+    await tx.update(playbookField)
+      .set({
+        value, note, sensitivity, flag, provenance,
+        provenanceDate: new Date(), provenanceActor: principal.userId,
+        confirmed: Boolean(value), updatedAt: new Date(),
+      })
+      .where(eq(playbookField.id, f.id));
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId: f.householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(value),
+      detail: { via: "intake_capture" },
+    });
+    // s3 and no-op saves emit nothing: outbox payloads carry plaintext.
+    if (valueChanged && sensitivity !== "s3" && value) await outboxFieldEvent(tx, event);
+  });
+  if (valueChanged && sensitivity !== "s3" && value) await emitFieldChange(event);
+  revalidatePath("/intake");
+  revalidatePath("/visit");
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
@@ -73,6 +74,9 @@ export default async function VisitPage() {
           {hh.tier}
           {lifeEvent && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | LIFE-EVENT set by corporate</span>}
           {stranger && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | STRANGER MODE — first-visit runbook</span>}
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <Link className="pill" href="/intake" style={{ background: "var(--sage)", color: "var(--green)" }}>Intake mode</Link>
         </div>
       </div>
 
