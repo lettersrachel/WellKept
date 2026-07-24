@@ -27,7 +27,9 @@ demo phase; the vault is the Year 2 build's job.
 """
 
 import argparse
+import csv
 import json
+import os
 import re
 import sys
 import uuid
@@ -123,6 +125,47 @@ def key(f):
     return (f["section"], f["name"])
 
 
+DEFAULT_PROVISIONS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "..", "seed", "provisions_seed.json")
+
+
+def load_bindings(path: str, provisions_path: str, fields):
+    """Bindings CSV (Addendum A1 S4): columns section, name, provision_ids
+    (semicolon-separated). Attaches governingProvisions to matching field
+    rows. Unknown provision ids and unbound field keys FAIL LOUDLY, same
+    rule as missing sensitivity (WK-DEV-005 S3)."""
+    with open(provisions_path) as f:
+        known_ids = {p["provision_id"] for p in json.load(f)}
+    field_by_key = {key(f): f for f in fields}
+    errors = []
+    bound = 0
+    with open(path, newline="") as f:
+        for i, row in enumerate(csv.DictReader(f), start=2):
+            try:
+                k = (int(row["section"]), row["name"].strip())
+            except (KeyError, ValueError):
+                errors.append(f"line {i}: needs section,name,provision_ids columns")
+                continue
+            ids = [p.strip() for p in row.get("provision_ids", "").split(";") if p.strip()]
+            if not ids:
+                errors.append(f"line {i}: S{k[0]} {k[1]}: no provision ids")
+                continue
+            unknown = [p for p in ids if p not in known_ids]
+            if unknown:
+                errors.append(f"line {i}: S{k[0]} {k[1]}: unknown provision ids {unknown}")
+            if k not in field_by_key:
+                errors.append(f"line {i}: no workbook field matches S{k[0]} {k[1]}")
+            if not unknown and k in field_by_key:
+                field_by_key[k]["governingProvisions"] = ids
+                bound += 1
+    if errors:
+        print(f"\nFAIL (Addendum A1 S4): {len(errors)} binding problems in {path}:")
+        for e in errors[:20]:
+            print(f"    ! {e}")
+        sys.exit(2)
+    return bound
+
+
 def diff(new_fields, old):
     old_by_key = {key(f): f for f in old.get("fields", [])}
     new_by_key = {key(f): f for f in new_fields}
@@ -132,7 +175,8 @@ def diff(new_fields, old):
     for k in new_by_key:
         if k in old_by_key:
             a, b = old_by_key[k], new_by_key[k]
-            deltas = [c for c in ("value", "provenance", "provenanceDate", "sensitivity", "flag", "note")
+            deltas = [c for c in ("value", "provenance", "provenanceDate", "sensitivity", "flag", "note",
+                                  "governingProvisions")
                       if str(a.get(c, "")) != str(b.get(c, ""))]
             if deltas:
                 changed.append((k, deltas, a, b))
@@ -147,6 +191,10 @@ def main():
                     choices=["essential", "family_ops", "concierge"])
     ap.add_argument("--against", help="Existing seed JSON to diff against (preserves UUIDs)")
     ap.add_argument("--commit", help="Write seed JSON to this path (otherwise dry run)")
+    ap.add_argument("--bindings", help="Bindings CSV (section,name,provision_ids) to load "
+                                       "alongside the field seed (Addendum A1 S4)")
+    ap.add_argument("--provisions", default=DEFAULT_PROVISIONS,
+                    help="Provision seed JSON that binding ids must resolve against")
     ap.add_argument("--template", action="store_true",
                     help="Template mode: permit sensitivity inference for blank Sens. cells. "
                          "Without this flag (real household imports), rows with a blank Sens. "
@@ -162,6 +210,10 @@ def main():
         for sec, name in blank_sens[:15]:
             print(f"    ! S{sec}  {name[:75]}")
         sys.exit(2)
+
+    if args.bindings:
+        bound = load_bindings(args.bindings, args.provisions, fields)
+        print(f"Bound {bound} fields to governing provisions from {args.bindings}")
 
     old = None
     if args.against:

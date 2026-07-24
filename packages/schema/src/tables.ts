@@ -2,9 +2,10 @@
 // Naming per WK-DEV-004 S2: snake_case, singular, uuid v7 ids,
 // created_at/updated_at everywhere, household_id indexed on scoped tables.
 // Source of truth for the field shape: WK-PLAY-001 via WK-APP-003 S1.
+import { sql } from "drizzle-orm";
 import {
   pgTable, uuid, text, integer, boolean, timestamp, jsonb, index, pgEnum,
-  primaryKey, uniqueIndex,
+  primaryKey, uniqueIndex, date,
 } from "drizzle-orm/pg-core";
 
 export const sensitivityEnum = pgEnum("sensitivity", ["s1", "s2", "s3"]);
@@ -55,6 +56,9 @@ export const playbookField = pgTable("playbook_field", {
   confirmed: boolean("confirmed").notNull().default(false),
   flag: fieldFlagEnum("flag").notNull().default("none"),
   photoRefs: jsonb("photo_refs"),
+  // Addendum A1 S4: provision ids governing this field (null = none bound).
+  // FK-checked in app code, not the DB — provisions tombstone, never delete.
+  governingProvisions: text("governing_provisions").array(),
   tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }), // fields tombstone, never delete
 }, (t) => [
   index("playbook_field_household_idx").on(t.householdId),
@@ -377,3 +381,79 @@ export const fieldEventOutbox = pgTable("field_event_outbox", {
   processedAt: timestamp("processed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("field_event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);
+
+// ---------------------------------------------------------------------------
+// The standards store (WK-APP-003 Addendum A1): the fourth top-level shape.
+// Global (no household_id), read-mostly, corporate_admin-edited, versioned.
+// Internal class per WK-SOP-019: no sensitivity matrix, no vault interaction.
+// ---------------------------------------------------------------------------
+
+// The five levels of WK-STD-000 Section 1 — the precedence rule as a type.
+// Distinct pg name from the membership "tier" enum above.
+export const provisionTierEnum = pgEnum("provision_tier", [
+  "floor_1", "floor_2", "process", "method", "preference",
+]);
+
+// Emitted by the extraction; "table_row" covers provisions authored as table
+// rows in the source documents (Addendum A1 S3 lists rule/callout only —
+// flagged to QA-010 v1.4).
+export const provisionKindEnum = pgEnum("provision_kind", [
+  "rule", "table_row", "callout",
+]);
+
+// Provision IDs (STD-006.4.1 = document.section.ordinal) are a public API and
+// never renumber (DEV-005 S2), so the natural key is the primary key — the one
+// deliberate exception to the uuid-v7 id convention. Retired provisions
+// tombstone; text is verbatim from the governing docx, which remains the
+// authored source.
+export const standardProvision = pgTable("standard_provision", {
+  id: text("id").primaryKey(), // provision_id, e.g. "STD-006.4.1"
+  document: text("document").notNull(), // "STD-006"
+  section: integer("section").notNull(),
+  ordinal: integer("ordinal").notNull(),
+  text: text("text").notNull(),
+  tier: provisionTierEnum("tier").notNull(),
+  scope: text("scope").array().notNull(), // room:kitchen, task:laundry, ...
+  kind: provisionKindEnum("kind").notNull(),
+  membershipTierGate: tierEnum("membership_tier_gate"), // null = all tiers
+  // Floors are enforced, not displayed: the close flow refuses to record a
+  // floor as adapted-per-Playbook (floor_conflict event instead).
+  overridable: boolean("overridable").notNull()
+    .generatedAlwaysAs(sql`tier not in ('floor_1', 'floor_2')`),
+  version: integer("version").notNull().default(1),
+  effectiveDate: date("effective_date").notNull(),
+  supersededBy: text("superseded_by"), // provision id of the successor version
+  sourceNote: text("source_note"), // USDA/VDH/... — corporate view only
+  pilotDefault: boolean("pilot_default").notNull().default(false), // DEV-005 S7
+  reviewDate: date("review_date"), // pilot-calibrated defaults: review at pilot close
+  tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("standard_provision_document_idx").on(t.document, t.section),
+  index("standard_provision_tier_idx").on(t.tier),
+]);
+
+// Small app-wide flags. First use: standards.seed_reviewed=false gates the
+// briefing read path until the founder's corrected provision seed loads
+// (Addendum A1 S7); DEV-005 S7 configurable pilot defaults land here too.
+export const appSetting = pgTable("app_setting", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Append-only version history: every write to standard_provision records the
+// full prior row here first (same discipline as audit_event — never updated,
+// never deleted). A visit record references the version in force on its date.
+export const provisionVersion = pgTable("provision_version", {
+  id: uuid("id").primaryKey(),
+  provisionId: text("provision_id").notNull(),
+  version: integer("version").notNull(),
+  snapshot: jsonb("snapshot").notNull(), // the full provision row as stored
+  effectiveDate: date("effective_date").notNull(),
+  actorUser: uuid("actor_user"), // null only for the seed load
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("provision_version_provision_version_unique").on(t.provisionId, t.version),
+]);

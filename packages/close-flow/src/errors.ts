@@ -1,0 +1,6 @@
+export class CloseFlowError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CloseFlowError";
+  }
+}

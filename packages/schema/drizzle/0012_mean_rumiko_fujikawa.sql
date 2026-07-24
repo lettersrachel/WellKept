@@ -1,0 +1,1 @@
+ALTER TABLE "playbook_field" ADD COLUMN "governing_provisions" text[];

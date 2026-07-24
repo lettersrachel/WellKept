@@ -8,7 +8,8 @@ import { Worker, Queue } from "bullmq";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
-import { promptPackItem } from "@wellkept/schema";
+import { promptPackItem, householdRoleAssignment, notification } from "@wellkept/schema";
+import type { FloorConflictEvent } from "@wellkept/close-flow";
 import { runTriggerPass, runRegistrySweep, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 import * as Sentry from "@sentry/node";
 
@@ -35,8 +36,10 @@ const db = drizzle(pool);
 
 export const FIELD_EVENTS_QUEUE = "field-events";
 
+type QueueJobData = FieldChangeEvent | TagChangeEvent | FloorConflictEvent | Record<string, never>;
+
 export function createFieldEventsQueue() {
-  return new Queue<FieldChangeEvent>(FIELD_EVENTS_QUEUE, { connection });
+  return new Queue<QueueJobData>(FIELD_EVENTS_QUEUE, { connection });
 }
 
 const handleEvent = (event: FieldChangeEvent) => runTriggerPass(db, event);
@@ -61,6 +64,41 @@ async function handleTagChange({ householdId, to }: TagChangeEvent) {
     ))
     .returning({ id: promptPackItem.id });
   return { [hold ? "held" : "released"]: changed.length };
+}
+
+/**
+ * Floor conflicts (Addendum A1 S5; brief T5): a floor-tier provision cannot
+ * be recorded as adapted-per-Playbook; the refused attempt arrives here as a
+ * structured event and lands in the corporate signal inbox — notification
+ * rows for every corporate role on the household, the same surface other
+ * signals use. The event type is wired now; the close-flow UI that sends it
+ * is its own sprint. NEVER extend this into per-HM analytics: hm_assignment
+ * identifies the one event's context, and aggregation is by provision only.
+ */
+export const FLOOR_CONFLICT_JOB = "floor-conflict";
+
+export function enqueueFloorConflict(event: FloorConflictEvent) {
+  return createFieldEventsQueue().add(FLOOR_CONFLICT_JOB, event);
+}
+
+async function handleFloorConflict(event: FloorConflictEvent) {
+  const corporate = await db
+    .select({ userId: householdRoleAssignment.userId, role: householdRoleAssignment.role })
+    .from(householdRoleAssignment)
+    .where(eq(householdRoleAssignment.householdId, event.household));
+  const recipients = corporate.filter((a) => a.role === "corporate_admin" || a.role === "corporate_ops");
+  for (const r of recipients) {
+    await db.insert(notification).values({
+      id: globalThis.crypto.randomUUID(),
+      userId: r.userId,
+      householdId: event.household,
+      kind: "floor_conflict",
+      title: `Floor conflict: ${event.provision_id}`,
+      body: `An attempt was made to record ${event.provision_id} (a floor) as adapted-per-Playbook. `
+        + `Review per WK-STD-000 S9. Occurred ${event.occurred_at}.`,
+    });
+  }
+  return { routed: recipients.length, provision: event.provision_id };
 }
 
 /**
@@ -89,7 +127,7 @@ async function handleUptimeCheck() {
 // Started as a service (`pnpm --filter @wellkept/worker start`); importable
 // for tests without side effects via createWorker().
 export function createWorker() {
-  return new Worker<FieldChangeEvent | TagChangeEvent | Record<string, never>>(
+  return new Worker<QueueJobData>(
     FIELD_EVENTS_QUEUE,
     async (job) => {
       if (job.name === "tag-change") return handleTagChange(job.data as TagChangeEvent);
@@ -97,6 +135,7 @@ export function createWorker() {
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
       if (job.name === "uptime-check") return handleUptimeCheck();
+      if (job.name === FLOOR_CONFLICT_JOB) return handleFloorConflict(job.data as FloorConflictEvent);
       return handleEvent(job.data as FieldChangeEvent);
     },
     { connection },

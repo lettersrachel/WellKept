@@ -1,0 +1,139 @@
+// standards.ts : the standards store vocabulary and boundary schemas
+// (WK-APP-003 Addendum A1 S3). Provision contents are corporate_admin
+// editable in-app; tier assignments are policy and take founder sign-off.
+import { z } from "zod";
+import { tierSchema } from "./enums.ts";
+
+export const provisionTierSchema = z.enum([
+  "floor_1", "floor_2", "process", "method", "preference",
+]);
+export type ProvisionTier = z.infer<typeof provisionTierSchema>;
+
+export const provisionKindSchema = z.enum(["rule", "table_row", "callout"]);
+export type ProvisionKind = z.infer<typeof provisionKindSchema>;
+
+/** Floors are enforced, not displayed (WK-STD-000 S1 via Addendum A1 S5). */
+export const FLOOR_TIERS = ["floor_1", "floor_2"] as const satisfies readonly ProvisionTier[];
+
+/** Mirrors the GENERATED overridable column; app code must agree with the DB. */
+export function isOverridable(tier: ProvisionTier): boolean {
+  return !(FLOOR_TIERS as readonly string[]).includes(tier);
+}
+
+/** STD-006.4.1 = document, section, ordinal. Never renumbered (DEV-005 S2). */
+export const provisionIdSchema = z.string().regex(/^STD-\d{3}\.\d+\.\d+$/);
+
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * One row of provisions_seed.json exactly as the extraction emits it
+ * (strict: schema drift in a re-emitted seed fails loudly, same rule as
+ * missing sensitivity in the field importer). doc_title/section_title are
+ * document-level metadata carried by the seed but not stored on the
+ * provision row; the store's columns are the Addendum S3 contract.
+ */
+export const provisionSeedRowSchema = z.object({
+  provision_id: provisionIdSchema,
+  document: z.string().regex(/^STD-\d{3}$/),
+  doc_title: z.string().min(1),
+  section: z.number().int().nonnegative(), // 0 = document preamble
+  section_title: z.string(),
+  ordinal: z.number().int().positive(),
+  text: z.string().trim().min(1),
+  tier: provisionTierSchema,
+  scope: z.array(z.string().min(1)).min(1),
+  kind: provisionKindSchema,
+  pilot_default: z.boolean(),
+  version: z.number().int().positive(),
+  effective_date: isoDateSchema,
+}).strict().refine(
+  (r) => r.provision_id === `${r.document}.${r.section}.${r.ordinal}`,
+  { message: "provision_id must equal document.section.ordinal" },
+);
+export type ProvisionSeedRow = z.infer<typeof provisionSeedRowSchema>;
+
+/** The stored provision row at the application boundary (standard_provision). */
+export const standardProvisionSchema = z.object({
+  id: provisionIdSchema,
+  document: z.string().regex(/^STD-\d{3}$/),
+  section: z.number().int().nonnegative(), // 0 = document preamble
+  ordinal: z.number().int().positive(),
+  text: z.string().trim().min(1),
+  tier: provisionTierSchema,
+  scope: z.array(z.string().min(1)).min(1),
+  kind: provisionKindSchema,
+  membershipTierGate: tierSchema.nullable(),
+  version: z.number().int().positive(),
+  effectiveDate: isoDateSchema,
+  supersededBy: provisionIdSchema.nullable(),
+  sourceNote: z.string().nullable(),
+  pilotDefault: z.boolean(),
+  reviewDate: isoDateSchema.nullable(),
+}).strict();
+export type StandardProvision = z.infer<typeof standardProvisionSchema>;
+
+/**
+ * WK-SOP-019: the store is Internal-class — no sensitivity matrix, no vault.
+ * Read is HM/corporate only (the client portal shows NO provisions); write is
+ * corporate_admin alone. These constants are the standards-store rule the T4
+ * routes enforce; the permission-matrix package stays untouched (its own
+ * change-control requires founder sign-off, and the S1/S2/S3 matrix does not
+ * apply here).
+ */
+export const STANDARDS_READ_ROLES = Object.freeze([
+  "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly",
+]);
+export const STANDARDS_WRITE_ROLES = Object.freeze(["corporate_admin"]);
+
+/**
+ * The payload test, extended for the standards store (brief T7): throws if
+ * anything provision-shaped appears anywhere in a client-session response.
+ * Recognizes provisions by their public id form (STD-nnn.s.o) under an
+ * id/provision_id/provisionId key, however deeply nested. Fail loud, not
+ * filter: a provision in a client payload is a build error, not data to
+ * clean. Run against every client route's response body, same discipline as
+ * assertClientPayloadSafe (US-05).
+ */
+export function assertNoProvisionRows(payload: unknown, path = "payload"): true {
+  if (Array.isArray(payload)) {
+    payload.forEach((v, i) => assertNoProvisionRows(v, `${path}[${i}]`));
+    return true;
+  }
+  if (payload && typeof payload === "object") {
+    const ID_KEYS = ["id", "provision_id", "provisionId"];
+    const REF_KEYS = ["governing_provisions", "governingProvisions", "method_ref", "methodRef"];
+    for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
+      const values = Array.isArray(v) ? v : [v];
+      if ([...ID_KEYS, ...REF_KEYS].includes(k)) {
+        for (const item of values) {
+          if (typeof item === "string" && provisionIdSchema.safeParse(item).success) {
+            throw new Error(`SEVERE: provision reference (${item}) reached a client payload at ${path}.${k}`);
+          }
+        }
+      }
+      assertNoProvisionRows(v, `${path}.${k}`);
+    }
+  }
+  return true;
+}
+
+/** Seed row -> stored row. Loses doc_title/section_title by design (see above). */
+export function seedRowToProvision(row: ProvisionSeedRow): StandardProvision {
+  return standardProvisionSchema.parse({
+    id: row.provision_id,
+    document: row.document,
+    section: row.section,
+    ordinal: row.ordinal,
+    text: row.text,
+    tier: row.tier,
+    scope: row.scope,
+    kind: row.kind,
+    membershipTierGate: null,
+    version: row.version,
+    effectiveDate: row.effective_date,
+    supersededBy: null,
+    sourceNote: null,
+    pilotDefault: row.pilot_default,
+    reviewDate: null,
+  });
+}

@@ -9,12 +9,10 @@
  */
 const randomUUID = () => globalThis.crypto.randomUUID();
 
-export class CloseFlowError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CloseFlowError";
-  }
-}
+import { CloseFlowError } from "./errors.ts";
+
+export { CloseFlowError };
+export * from "./standards.ts";
 
 const nonBlank = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;

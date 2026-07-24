@@ -37,6 +37,22 @@ test("LIFE-EVENT holds items (suppressed_by_tag), never drops them", () => {
   assert.ok(drafts.every((d) => d.suppressedByTag === true));
 });
 
+test("a methodRef on a step never changes suppression (Addendum A1: LIFE-EVENT suppresses proposals, not method)", () => {
+  // Same rule with method refs attached: suppression behavior is identical.
+  // Floor RENDERING (which LIFE-EVENT must never suppress) is the briefing
+  // read path's contract and is asserted there when T4 lands.
+  const withRefs = structuredClone(CASCADES);
+  for (const rule of withRefs) {
+    for (const item of rule.definition.items) item.methodRef = "STD-009.3.4";
+  }
+  for (const tag of ["STEADY", "LIFE-EVENT"] as const) {
+    const plain = evaluate(EVENT(), CASCADES, { statusTag: tag });
+    const referenced = evaluate(EVENT(), withRefs, { statusTag: tag });
+    assert.equal(referenced.length, plain.length);
+    referenced.forEach((d, i) => assert.equal(d.suppressedByTag, plain[i]!.suppressedByTag));
+  }
+});
+
 test("a cleared field emits nothing; unmatched fields emit nothing", () => {
   assert.deepEqual(evaluate(EVENT({ newValue: "  " }), CASCADES, { statusTag: "STEADY" }), []);
   assert.deepEqual(

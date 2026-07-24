@@ -270,6 +270,9 @@ importers:
       '@sentry/node':
         specifier: 9.46.0
         version: 9.46.0
+      '@wellkept/close-flow':
+        specifier: workspace:*
+        version: link:../../packages/close-flow
       '@wellkept/mail':
         specifier: workspace:*
         version: link:../../packages/mail

@@ -29,7 +29,10 @@ export interface TriggerRuleRow {
   enabled: boolean;
   definition: {
     packName: string;
-    items: { text: string; offsetDays: number }[];
+    // methodRef (Addendum A1 S4): the provision id a THEN step's implicit
+    // method pointer resolves to; null/absent is a finding (the cascade asks
+    // for work no standard defines), not an error. Step text stays as written.
+    items: { text: string; offsetDays: number; methodRef?: string | null }[];
   };
 }
 
