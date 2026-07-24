@@ -30,6 +30,9 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
+  // Lets the root layout resolve the masthead household per surface (the
+  // /visit field tool resolves the FIELD household, not the first assigned).
+  requestHeaders.set("x-wk-pathname", request.nextUrl.pathname);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

@@ -19,7 +19,7 @@ import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "./src/visit-sync";
 import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
-import { fetchBriefing, type Briefing } from "./src/briefing";
+import { fetchBriefing, type Briefing, type BriefingProvision } from "./src/briefing";
 import { uploadPhoto, type LocalPhoto } from "./src/photos";
 import { loadPendingPhotos, savePendingPhotos } from "./src/photo-store";
 import { fetchNotifications, markNotificationsRead, type NotifItem } from "./src/notifications";
@@ -460,6 +460,33 @@ function flagColor(flag: string): string {
   return C.grey;
 }
 
+/** Bound standard provisions beneath a briefing field (Addendum A1 T4):
+ * collapsed by default, floors in the red-block treatment, method quiet.
+ * Rides the cached briefing payload, so it works offline like the rest. */
+function ProvisionsBlock({ provisions }: { provisions?: BriefingProvision[] }) {
+  const [open, setOpen] = useState(false);
+  if (!provisions || provisions.length === 0) return null;
+  const floors = provisions.filter((p) => p.treatment === "red-block").length;
+  return (
+    <View style={s.provisions}>
+      <Pressable onPress={() => setOpen((v) => !v)}>
+        <Text style={s.prov}>
+          {open ? "▾" : "▸"} The standard behind this field ({provisions.length}
+          {floors > 0 ? `, ${floors} floor${floors === 1 ? "" : "s"}` : ""})
+        </Text>
+      </Pressable>
+      {open ? provisions.map((p) => (
+        <View key={p.id} style={p.treatment === "red-block" ? s.provisionFloor : s.provisionQuiet}>
+          <Text style={[s.provisionId, p.treatment === "red-block" ? { color: C.brick } : null]}>
+            {p.id}{p.treatment === "red-block" ? "  ·  FLOOR" : ""}
+          </Text>
+          <Text style={s.provisionText}>{p.text}</Text>
+        </View>
+      )) : null}
+    </View>
+  );
+}
+
 function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: boolean }) {
   if (!briefing) {
     return (
@@ -485,6 +512,7 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
           <Text style={[s.flagTag, { color: flagColor(f.flag) }]}>{f.flag}</Text>
           <Text style={s.briefName}>{f.name.split(":")[0]}</Text>
           {f.value ? <Text style={s.briefVal}>{f.value}</Text> : null}
+          <ProvisionsBlock provisions={f.provisions} />
         </View>
       ))}
 
@@ -496,6 +524,7 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
               <Text style={s.briefName}>{d.name}</Text>
               <Text style={s.briefVal}>{d.value}</Text>
               <Text style={s.prov}>updated {fmt(d.updatedAt)} · {d.provenance}</Text>
+              <ProvisionsBlock provisions={d.provisions} />
             </View>
           ))}
         </>
@@ -577,6 +606,11 @@ const s = StyleSheet.create({
   briefName: { fontSize: 13, color: C.ink, fontWeight: "600" },
   briefVal: { fontSize: 13, color: C.ink, marginTop: 1 },
   prov: { fontSize: 11, color: C.grey, fontStyle: "italic", marginTop: 1 },
+  provisions: { marginTop: 4 },
+  provisionFloor: { backgroundColor: "#FBEDED", borderLeftWidth: 3, borderLeftColor: C.brick, paddingLeft: 8, paddingVertical: 5, marginTop: 5 },
+  provisionQuiet: { borderLeftWidth: 2, borderLeftColor: "#E2E0D8", paddingLeft: 8, paddingVertical: 5, marginTop: 5 },
+  provisionId: { fontSize: 10, fontWeight: "700", letterSpacing: 0.5, color: C.grey },
+  provisionText: { fontSize: 13, color: C.ink, lineHeight: 18, marginTop: 2 },
   thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   thumbWrap: { position: "relative" },
   thumb: { width: 64, height: 64, borderRadius: 6, backgroundColor: "#eee" },

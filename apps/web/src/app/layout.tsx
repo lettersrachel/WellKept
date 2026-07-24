@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
-import { getHouseholdAndPrincipal } from "@/lib/data";
+import { getHouseholdAndPrincipal, getFieldHouseholdAndPrincipal } from "@/lib/data";
 import { ServiceWorker } from "./ServiceWorker";
 
 export const metadata: Metadata = {
@@ -31,7 +32,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // The masthead is best-effort: a build-time prerender (e.g. the 404 page)
   // or a down database must never take the shell with it. Fail closed to
   // the signed-out chrome; the pages themselves still guard access.
-  const { hh, principal } = await getHouseholdAndPrincipal().catch(
+  // On the field surface the masthead matches the field tool's household —
+  // a corporate-elsewhere/HM-here user was seeing their first assigned
+  // household up top while /visit showed the one they manage.
+  let pathname = "";
+  try {
+    pathname = (await headers()).get("x-wk-pathname") ?? "";
+  } catch {
+    // build-time prerender has no request; the default resolver is fine
+  }
+  const resolve = pathname.startsWith("/visit") ? getFieldHouseholdAndPrincipal : getHouseholdAndPrincipal;
+  const { hh, principal } = await resolve().catch(
     () => ({ hh: null, principal: null }) as const,
   );
   return (
