@@ -22,7 +22,9 @@ function ErrorBanner({ error }: { error?: string }) {
 
 function CodeForm({ action, label, allowBackup }: { action: (fd: FormData) => void; label: string; allowBackup?: boolean }) {
   return (
-    <form action={action} method="post">
+    // No explicit method: React owns it for function actions, and an
+    // explicit one hydration-mismatches (SSR "POST" vs client "post").
+    <form action={action}>
       <label htmlFor="code">{allowBackup ? "Authenticator code or backup code" : "6-digit code"}</label>
       <input
         id="code"
