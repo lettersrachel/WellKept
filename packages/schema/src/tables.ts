@@ -316,11 +316,41 @@ export const visitPhoto = pgTable("visit_photo", {
   id: uuid("id").primaryKey(),
   householdId: uuid("household_id").notNull(),
   contentType: text("content_type").notNull(),
-  data: text("data").notNull(), // base64, no data: prefix
+  data: text("data").notNull(), // base64, no data: prefix; "" after retention purge
   bytes: integer("bytes").notNull(), // decoded size, for quick accounting
   uploadedBy: text("uploaded_by").notNull(),
+  // Photo lifecycle (LAUNCH §3, 2026-07-25): image BYTES purge on a rolling
+  // window (app_setting `photo_retention`, default 90 days); the row survives
+  // as the tombstone — record stays, picture doesn't. A retention hold
+  // (open incident/dispute) exempts the photo until released.
+  retentionHold: boolean("retention_hold").notNull().default(false),
+  purgedAt: timestamp("purged_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("visit_photo_household_idx").on(t.householdId)]);
+
+// The incident & complaint register (LAUNCH §3, 2026-07-25): a client
+// complaint, breakage, injury, or near-miss. NOT a registry kind — registries
+// are practical data with date sweeps; an incident is s2, append-only, and
+// legally significant (in a dispute, the most important record in the
+// business). Rows never delete; corrections and resolutions append/stamp.
+export const incidentKindEnum = pgEnum("incident_kind", [
+  "complaint", "breakage", "injury", "near_miss", "other",
+]);
+
+export const incidentReport = pgTable("incident_report", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  kind: incidentKindEnum("kind").notNull(),
+  severity: text("severity").notNull(), // low | medium | high
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  reportedBy: text("reported_by").notNull(), // auth_user.id of who logged it
+  reportedVia: text("reported_via").notNull(), // client_call | client_email | hm_visit | corporate | other
+  description: text("description").notNull(), // s2
+  status: text("status").notNull().default("open"), // open | resolved
+  resolutionNote: text("resolution_note"),
+  resolvedBy: text("resolved_by"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, (t) => [index("incident_report_household_idx").on(t.householdId, t.status)]);
 
 export const devicePairing = pgTable("device_pairing", {
   id: uuid("id").primaryKey(),

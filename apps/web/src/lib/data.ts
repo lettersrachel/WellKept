@@ -203,11 +203,24 @@ export async function getHouseholdMembers(householdId: string) {
 export async function getVisitPhotos(householdId: string, limit = 12) {
   const { visitPhoto } = await import("@wellkept/schema");
   const { desc } = await import("drizzle-orm");
-  return db.select({ id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy })
+  return db.select({
+    id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy,
+    retentionHold: visitPhoto.retentionHold, purgedAt: visitPhoto.purgedAt,
+  })
     .from(visitPhoto)
     .where(eq(visitPhoto.householdId, householdId))
     .orderBy(desc(visitPhoto.createdAt))
     .limit(limit);
+}
+
+/** The incident & complaint register (LAUNCH §3): open incidents first. */
+export async function getIncidents(householdId: string) {
+  const { incidentReport } = await import("@wellkept/schema");
+  const { desc } = await import("drizzle-orm");
+  const rows = await db.select().from(incidentReport)
+    .where(eq(incidentReport.householdId, householdId))
+    .orderBy(desc(incidentReport.occurredAt));
+  return [...rows.filter((r) => r.status === "open"), ...rows.filter((r) => r.status !== "open")];
 }
 
 /** REQ-003: which of these users have a CONFIRMED TOTP second factor.

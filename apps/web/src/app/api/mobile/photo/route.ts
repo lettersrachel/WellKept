@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
 
   const [row] = await db.select().from(visitPhoto).where(eq(visitPhoto.id, id));
   if (!row) return NextResponse.json({ error: "not found" }, { status: 404 });
+  // Retention purge (LAUNCH §3): the bytes are gone, the record remains.
+  if (row.purgedAt) return NextResponse.json({ error: "purged by retention policy" }, { status: 410 });
 
   const principal = await getPrincipal(row.householdId);
   if (!principal || !STAFF.has(principal.role)) return NextResponse.json({ error: "forbidden" }, { status: 403 });

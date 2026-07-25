@@ -596,6 +596,88 @@ export async function createAnticipationExclusion(formData: FormData) {
   revalidatePath("/visit");
 }
 
+/**
+ * The incident & complaint register (LAUNCH §3): log a client complaint, a
+ * breakage, an injury, or a near-miss. Field roles can log (they witness
+ * incidents in the home); corporate logs what arrives by call or email.
+ * Append-only in spirit: no edit path — corrections are new incidents or
+ * the resolution note. Audited.
+ */
+export async function createIncident(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) return;
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  const KINDS = ["complaint", "breakage", "injury", "near_miss", "other"] as const;
+  const SEVERITIES = ["low", "medium", "high"];
+  const VIA = ["client_call", "client_email", "hm_visit", "corporate", "other"];
+  const kind = String(formData.get("kind") ?? "");
+  const severity = String(formData.get("severity") ?? "");
+  const reportedVia = String(formData.get("reportedVia") ?? "");
+  const description = String(formData.get("description") ?? "").trim().slice(0, 2000);
+  const occurredRaw = String(formData.get("occurredAt") ?? "");
+  const occurredAt = new Date(occurredRaw);
+  if (!(KINDS as readonly string[]).includes(kind) || !SEVERITIES.includes(severity) || !VIA.includes(reportedVia)) return;
+  if (!description || !occurredRaw || Number.isNaN(occurredAt.getTime())) return;
+  if (occurredAt.getTime() > Date.now()) return; // an incident is a fact, not a forecast
+  const { incidentReport } = await import("@wellkept/schema");
+  const id = randomUUID();
+  await db.insert(incidentReport).values({
+    id, householdId, kind: kind as (typeof KINDS)[number], severity, occurredAt,
+    reportedBy: principal.userId, reportedVia, description,
+  });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "incident_logged", detail: { incidentId: id, incidentKind: kind, severity, reportedVia },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  revalidatePath("/oversight");
+}
+
+/** Resolving stamps the note and closer; the row itself never changes. */
+export async function resolveIncident(formData: FormData) {
+  const incidentId = String(formData.get("incidentId") ?? "");
+  const resolutionNote = String(formData.get("resolutionNote") ?? "").trim().slice(0, 2000);
+  if (!incidentId || !resolutionNote) return; // a resolution needs the outcome named
+  const { incidentReport } = await import("@wellkept/schema");
+  const [inc] = await db.select().from(incidentReport).where(eq(incidentReport.id, incidentId));
+  if (!inc || inc.status !== "open") return;
+  const principal = await getPrincipal(inc.householdId);
+  if (principal?.role !== "corporate_admin") return; // closing is a corporate call
+  await db.update(incidentReport)
+    .set({ status: "resolved", resolutionNote, resolvedBy: principal.userId, resolvedAt: new Date(), updatedAt: new Date() })
+    .where(eq(incidentReport.id, incidentId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: inc.householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "incident_resolved", detail: { incidentId, incidentKind: inc.kind },
+  });
+  revalidatePath(`/oversight/${inc.householdId}`);
+  revalidatePath("/oversight");
+}
+
+/**
+ * Photo lifecycle: toggle a retention hold. A held photo is exempt from the
+ * rolling purge until released (open incident or dispute). Audited. A photo
+ * already purged can't be held — there is nothing left to hold.
+ */
+export async function setPhotoRetentionHold(formData: FormData) {
+  const photoId = String(formData.get("photoId") ?? "");
+  const hold = String(formData.get("hold") ?? "") === "true";
+  if (!photoId) return;
+  const { visitPhoto } = await import("@wellkept/schema");
+  const [p] = await db.select({ id: visitPhoto.id, householdId: visitPhoto.householdId, purgedAt: visitPhoto.purgedAt })
+    .from(visitPhoto).where(eq(visitPhoto.id, photoId));
+  if (!p || p.purgedAt) return;
+  const principal = await getPrincipal(p.householdId);
+  if (principal?.role !== "corporate_admin") return;
+  await db.update(visitPhoto).set({ retentionHold: hold }).where(eq(visitPhoto.id, photoId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: p.householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "photo_hold_change", detail: { photoId, hold },
+  });
+  revalidatePath(`/oversight/${p.householdId}`);
+}
+
 /** Ending an exclusion sets effective_to — nothing hard-deletes. Audited. */
 export async function endAnticipationExclusion(formData: FormData) {
   const exclusionId = String(formData.get("exclusionId") ?? "");
