@@ -27,6 +27,7 @@ export async function runFleetDigest(pool: pg.Pool) {
       `SELECT h.id, h.name, h.tier, h.status_tag FROM household h
          JOIN household_role_assignment a ON a.household_id = h.id
         WHERE a.user_id = $1 AND a.role = 'corporate_admin'
+          AND NOT h.is_fixture -- the smoke fixture is not a client (G-23)
         ORDER BY h.created_at`,
       [admin.id],
     );
