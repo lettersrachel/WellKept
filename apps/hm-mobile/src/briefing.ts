@@ -17,6 +17,8 @@ export interface Briefing {
   changed: { name: string; value: string; updatedAt: string; provenance: string; provisions?: BriefingProvision[] }[];
   specials: { text: string; packName: string }[];
   radar: { text: string; packName: string; fireAt: string }[];
+  /** A2/REQ-054 recall lines — optional so pre-A2 cached briefings still parse. */
+  lastYear?: { summary: string; anchorKind: string; observedAt: string }[];
   dots: { verbatim: string; heardAt: string }[];
 }
 

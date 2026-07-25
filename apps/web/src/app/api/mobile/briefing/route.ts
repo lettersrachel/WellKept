@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
+import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
@@ -25,12 +25,13 @@ export async function GET(req: NextRequest) {
   }
   if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
 
-  const [allFields, dots, packItems, lastVisit, seedReviewed] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed, recall] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
     standardsSeedReviewed(),
+    getSeasonRecall(hh.id), // A2/REQ-054: exclusion-filtered in the reader
   ]);
   const fields = filterFields(principal.role, allFields, { ndaMode: hh.isNda && !principal.ndaApproved });
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
@@ -66,12 +67,18 @@ export async function GET(req: NextRequest) {
 
   const openDots = dots.map((d) => ({ verbatim: d.verbatim, heardAt: d.heardAt }));
 
+  // A2/REQ-054: recall lines — fact, not prompts; sits after the radar and
+  // before dots on every briefing surface. s2 (HM/corporate only; this route
+  // is already field-role gated).
+  const lastYear = recall.map((r) => ({ summary: r.summary, anchorKind: r.anchorKind, observedAt: r.observedAt }));
+
   return NextResponse.json({
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: principal.role === "backup_hm" },
     flags,
     changed,
     specials,
     radar,
+    lastYear,
     dots: openDots,
   });
 }

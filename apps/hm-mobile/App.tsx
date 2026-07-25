@@ -582,7 +582,7 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
       </View>
     );
   }
-  const { flags, changed, specials, radar, dots, household } = briefing;
+  const { flags, changed, specials, radar, lastYear, dots, household } = briefing;
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
     <View style={s.card}>
@@ -635,6 +635,18 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
             <View key={i} style={s.briefItem}>
               <Text style={s.briefVal}>{r.text}</Text>
               <Text style={s.prov}>{r.packName} · {fmt(r.fireAt)}</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {(lastYear ?? []).length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Last year at this time</Text>
+          {(lastYear ?? []).map((r, i) => (
+            <View key={i} style={s.briefItem}>
+              <Text style={s.briefVal}>{r.summary}</Text>
+              <Text style={s.prov}>recall · from a {r.anchorKind.replace(/_/g, " ")} · fact, not a prompt</Text>
             </View>
           ))}
         </>

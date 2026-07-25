@@ -4,7 +4,11 @@
 > what the software does, so a lawyer has less to invent — but a qualified
 > attorney in your jurisdiction must review and adapt them before you use them
 > with a real household. Two spots especially need counsel: **data retention /
-> right-to-erasure** (the system tombstones rather than hard-deletes) and
+> right-to-erasure** (the system tombstones rather than hard-deletes — but an
+> executable erasure tool now exists: `apps/web/scripts/erase-household.mjs`
+> crypto-shreds the vault, purges photo bytes, and blanks free text while
+> keeping the audit trail; counsel decides when it applies and what must be
+> retained) and
 > **which privacy laws apply** (state, GDPR if any client/staff is in the EU/UK).
 
 Three documents, one per audience:

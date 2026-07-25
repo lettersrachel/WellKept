@@ -87,12 +87,15 @@ exactly what the software collects. **They need a lawyer's review before use**
 - ⏳ 🧑⚖️ Household consent per home — draft: `legal/household-consent.md`.
 - ⏳ 🧑⚖️ Staff confidentiality — draft: `legal/staff-confidentiality.md`
   (the `nda_approved` flag records it in People & access).
-- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`. **Do not publish
-  as-is:** it describes deletion rights the code cannot execute (the system
-  tombstones via `archived_at`, never hard-deletes — REQ-071 deletion is not
-  built). Counsel must reconcile the tombstone model with any right to
-  erasure, and the notice's retention section must match what the code
-  actually does — or an erasure path gets built first.
+- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`. The deletion
+  rights it describes are now EXECUTABLE (🤖 built 2026-07-25):
+  `apps/web/scripts/erase-household.mjs` — dry-run by default, run twice on
+  purpose — crypto-shreds the vault, purges photo bytes, blanks every piece
+  of free text, tombstones the structure, and keeps the audit trail and
+  incident records unless counsel directs further (`--erase-incidents`,
+  `--scrub-audit-detail`). Counsel's part remains: decide when erasure
+  applies vs what must be retained, and write the notice's retention/erasure
+  section to match what the tool actually does.
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
 - ✅ 🤖 Incident & complaint register — **built 2026-07-25** (founder
   approved the recommendation): `incident_report`, a dedicated append-only

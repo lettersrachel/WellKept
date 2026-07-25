@@ -1,0 +1,1 @@
+ALTER TABLE "visit_photo" ADD COLUMN "reuse_allowed" boolean DEFAULT false NOT NULL;

@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -159,13 +159,25 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                   </a>
                 )}
                 {isAdmin && !p.purgedAt && (
-                  <form action={setPhotoRetentionHold}>
-                    <input type="hidden" name="photoId" value={p.id} />
-                    <input type="hidden" name="hold" value={(!p.retentionHold).toString()} />
-                    <button className="act subtle" style={{ fontSize: 10, padding: "2px 6px" }}>
-                      {p.retentionHold ? "Release hold" : "Hold"}
-                    </button>
-                  </form>
+                  <span className="row" style={{ gap: 4, justifyContent: "center" }}>
+                    <form action={setPhotoRetentionHold}>
+                      <input type="hidden" name="photoId" value={p.id} />
+                      <input type="hidden" name="hold" value={(!p.retentionHold).toString()} />
+                      <button className="act subtle" style={{ fontSize: 10, padding: "2px 6px" }}>
+                        {p.retentionHold ? "Release hold" : "Hold"}
+                      </button>
+                    </form>
+                    {/* REQ-006: reuse is opt-in per photo, never on NDA households. */}
+                    {!hh.isNda && (
+                      <form action={setPhotoReuseAllowed}>
+                        <input type="hidden" name="photoId" value={p.id} />
+                        <input type="hidden" name="allow" value={(!p.reuseAllowed).toString()} />
+                        <button className="act subtle" style={{ fontSize: 10, padding: "2px 6px" }}>
+                          {p.reuseAllowed ? "Reuse: yes" : "Reuse: no"}
+                        </button>
+                      </form>
+                    )}
+                  </span>
                 )}
               </span>
             ))}

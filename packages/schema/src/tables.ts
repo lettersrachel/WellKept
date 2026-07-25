@@ -325,6 +325,10 @@ export const visitPhoto = pgTable("visit_photo", {
   // (open incident/dispute) exempts the photo until released.
   retentionHold: boolean("retention_hold").notNull().default(false),
   purgedAt: timestamp("purged_at", { withTimezone: true }),
+  // REQ-006 media-reuse flag: default NO — a photo is service record only
+  // unless corporate explicitly marks it reusable, and never on an NDA
+  // household (enforced in the action, not just the interface).
+  reuseAllowed: boolean("reuse_allowed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("visit_photo_household_idx").on(t.householdId)]);
 
