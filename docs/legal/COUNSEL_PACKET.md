@@ -1,7 +1,9 @@
 # Counsel engagement packet: Well Kept pilot
 
-Assembled 25 July 2026, revised. Per the gap register's one-engagement
-consolidation.
+Assembled 25 July 2026, rev 3. Per the gap register's one-engagement
+consolidation. Every "What exists" claim below was verified against the
+codebase on 2026-07-25 (see COUNSEL_PACKET_VERIFICATION.md); the four
+corrections that verification produced are incorporated in this revision.
 
 Hand counsel this file plus the three drafts beside it: `household-consent.md`,
 `privacy-notice.md`, `staff-confidentiality.md`. Each attachment states what
@@ -97,9 +99,10 @@ incident records (optionally erased by explicit flag).
 
 Two safety behaviours: the tool refuses to run while the household has an open
 incident, and corporate retention holds on photos are honoured unless an
-explicit override flag is passed. Both the refusal and any override are written
-into the audit trail. The tool defaults to a dry run and requires an explicit
-commit.
+explicit override flag is passed. Any override is recorded in the erasure's
+audit entry. A refusal stops the tool before anything is written, including an
+audit row; the refusal is visible only in the operator's terminal. The tool
+defaults to a dry run and requires an explicit commit.
 
 **Important qualification, which section 3 develops.** The master encryption key
 persists in the application environment after an erasure. Deleting the vault
@@ -110,7 +113,9 @@ means of reading that ciphertext if the rows are recovered by other means.
 exactly this behaviour. (b) When a deletion request arrives during an open
 dispute, which obligation wins? The tool currently makes the operator choose,
 and we would rather the policy decided. (c) Are the audit trail and incident
-records defensible retained categories, and under what wording?
+records defensible retained categories, and under what wording? (d) Should a
+refused erasure itself leave an audit record? Today it does not, and we are
+open to changing that.
 
 ---
 
@@ -224,13 +229,25 @@ queued. Counsel may prefer to fold it into this document.
 
 ## 8. Subprocessor data processing agreements
 
-**What exists.** Five infrastructure vendors process household data: Vercel
-(hosting), Neon (database), Upstash (queue), Railway (worker), Resend
-(transactional email). All five are named in the notice's subprocessor section,
-which is currently bracketed. All five publish a standard DPA.
+**What exists.** Six infrastructure vendors touch our systems. Five process
+household data directly: Vercel (hosting), Neon (database), Upstash (queue),
+Railway (worker), Resend (transactional email, including visit-report emails to
+clients). The sixth is Sentry (error monitoring), configured to exclude
+personal data by default; its residual exposure is an error message that quotes
+a value. All publish a standard DPA. The notice's subprocessor section is
+currently bracketed.
+
+Two further outbound flows exist that are not vendor relationships but that
+counsel should know about: a weekly job sends appliance model and label strings
+(household-derived, no household identifier attached) as search queries to the
+US CPSC's public recall API; and web push notifications, whose payloads can
+contain a household name, transit browser push gateways (Google, Mozilla,
+Apple) end-to-end encrypted, so the gateways carry ciphertext only.
 
 **Question.** Confirm each standard DPA suffices at our scale, fill the
-bracketed section, and flag any vendor that needs more than a click-through.
+bracketed section including whether Sentry belongs in it, flag any vendor that
+needs more than a click-through, and advise whether either outbound flow needs
+notice disclosure.
 
 ---
 
@@ -285,9 +302,12 @@ that adds it to the notice's retention section.
   household's written consent. This is architecture decision record 001,
   guardrail 3, and the software displays a red no-consent banner on any
   household until a signed consent is recorded.
-- **What the software refuses to hold.** Government identifiers, payment card
-  and bank numbers, and health records. Stated in both client-facing drafts.
-  Payment runs entirely outside the software, in QuickBooks.
+- **What the product is not designed to hold.** Government identifiers,
+  payment card and bank numbers, and health records: no field requests them
+  and both client-facing drafts instruct clients not to provide them. This is
+  policy and product design, not automated enforcement; software does not stop
+  a client typing a card number into a free-text field. Payment runs entirely
+  outside the software, in QuickBooks.
 - **Data minimisation by design.** Household data is tiered by sensitivity, and
   the most sensitive tier is encrypted at rest with a separate key, revealed
   only to staff assigned to that household in a session that has cleared a
@@ -315,10 +335,10 @@ is destroyed and the fact that a photo was taken survives.
 
 ## Founder checklist before sending
 
-- ⬜ Run the "What exists" verification session against the codebase (see
-  `COUNSEL_VERIFICATION_SESSION.md`). Every attachment opens with a claim about
-  the software, and counsel will draft against those claims. A wrong one buys
-  advice about a product that does not exist.
+- ✅ Run the "What exists" verification session against the codebase — DONE
+  2026-07-25 (`COUNSEL_PACKET_VERIFICATION.md`): 15 claims confirmed, 2
+  overstated (corrected in this revision), one missing vendor (Sentry, added)
+  and two outbound flows (disclosed above).
 - ⬜ Confirm the three drafts beside this file are the corrected 2026-07-25
   versions whose collection table includes incident records, internal
   observations and anticipation records. An earlier version omits four data

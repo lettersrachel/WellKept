@@ -59,7 +59,8 @@ contact ⟨email⟩. The client view already shows a live summary of what we hol
 ## Subprocessors
 
 We rely on: ⟨hosting (Vercel)⟩, ⟨database (Neon)⟩, ⟨cache/queue (Upstash)⟩,
-⟨background worker (Railway)⟩, ⟨email (Resend)⟩. ⟨Confirm each and link their
+⟨background worker (Railway)⟩, ⟨email (Resend)⟩, ⟨error monitoring (Sentry —
+configured to exclude personal data)⟩. ⟨Confirm each and link their
 terms; a data-processing agreement with each is typically required.⟩
 
 ## Changes
