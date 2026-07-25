@@ -50,7 +50,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 ## E. Corporate portal
 | REQ | P | Status |
 |---|---|---|
-| 040 household list + health/compliance/economics panels | P0 | partial — fleet board + drill-in cover list/health/compliance (visits, conflicts, stranger tests, edits, anticipation, photos, people); **relationship-health and economics panels remain unbuilt** (the management/investor surface) |
+| 040 household list + health/compliance/economics panels | P0 | **built+verified** — /oversight/economics: per-household monthly rate (admin-set, integer cents, audited), 30d hours from visit payloads, effective $/hr, gesture spend, cadence, tag stability, signals, dots, client engagement, stranger recency, portfolio totals |
 | 041 status tags; LIFE-EVENT suppression | P0 | **built+verified** (both directions, holds never delete) |
 | 042 gesture queue + cultural-fit gate | P0 | **built+verified** (8c2c93e: dot→queue→cultural-fit gate→HM-notified gate→execute + cents→quiet log; order server-enforced) |
 | 043 fleet roll-ups | P0 | **built+verified** (381d7cf: fleet board — status, playbook health, stranger recency, visit/conflict counts per household) plus the Monday corporate digest (5194e70) |
@@ -63,7 +63,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | REQ | P | Status |
 |---|---|---|
 | 050 field events → rules → role-routed prompts | P0 | **built+verified** live end-to-end |
-| 051 six trigger families | P0 | partial — field-change flow AND the daily registry sweep are live (e6fb527: annual birthday/anniversary math with T-14/T-3 windows, commitment/subscription/horizon windows; prod-verified radar). Still open: threshold-family rules unseeded, movable_observance table not yet consumed by the sweep. OPERATIONAL: sweeps paused until the Upstash quota resets Aug 1 or the plan upgrades |
+| 051 six trigger families | P0 | **built+verified** — field-change flow, daily registry sweep (birthday/anniversary/commitment/subscription/horizon windows), movable-date observances (calendar table x household's own Playbook naming them, T-14 radar), and the threshold family (load signal: three consecutive drifting visits -> corporate notification, deduped 14d, STD-023.2.7). OPERATIONAL: sweeps paused until the Upstash quota resets Aug 1 or the plan upgrades |
 | 052 staged prompt packs, dated | P0 | **built+verified** (offsets, quiet hours, suppression) |
 | 053 commitment cascade | P1 | covered by the registry sweep's commitment windows (prep T-14, final T-3, e6fb527); a richer bespoke cascade remains open |
 | 054 repeat-season memory | P1 | not built |

@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { sweepRegistryDates, nextAnnualOccurrence, sweepItemId, type RegistryEntryLike } from "./registry-sweep";
+import { sweepRegistryDates, nextAnnualOccurrence, sweepItemId, sweepMovableObservances, detectLoadSignal, type RegistryEntryLike } from "./registry-sweep";
 
 const NOW = new Date("2026-07-19T14:00:00Z");
 const E = (kind: string, label: string, keyDate: string, cadence: string | null = "annual"): RegistryEntryLike =>
@@ -51,4 +51,34 @@ test("sweep ids are deterministic and distinct across occurrences", async () => 
   const c = await sweepItemId("r:hh", "2027-08-02", "text");
   assert.equal(a, b);
   assert.notEqual(a, c);
+});
+
+test("movable observances: radar fires only for households whose Playbook names the observance", () => {
+  const now = new Date("2026-07-20T15:00:00Z");
+  const observances = [
+    { name: "Eid al-Adha", date: new Date("2026-07-28T13:00:00Z") }, // in T-14 window
+    { name: "Diwali", date: new Date("2026-11-08T13:00:00Z") }, // far future
+    { name: "Passover", date: new Date("2026-04-02T13:00:00Z") }, // passed
+  ];
+  const households = [
+    { householdId: "hh-1", statusTag: "STEADY", fieldValue: "We keep Eid al-Adha and Diwali; see S21." },
+    { householdId: "hh-2", statusTag: "STEADY", fieldValue: "" },
+    { householdId: "hh-3", statusTag: "LIFE-EVENT", fieldValue: "eid al-adha (case test)" },
+  ];
+  const drafts = sweepMovableObservances(observances, households, { now });
+  // Only the in-window observance, only for households that name it.
+  assert.deepEqual(drafts.map((d) => [d.householdId, d.suppressedByTag]), [["hh-1", false], ["hh-3", true]]);
+  assert.ok(drafts[0]!.itemText.includes("Eid al-Adha"));
+  assert.ok(drafts[0]!.itemText.includes("WK-STD-014"));
+  assert.equal(drafts[0]!.packName, "observance-radar");
+});
+
+test("load signal: exactly three consecutive drift reports, none breaks the run (STD-023.2.7)", () => {
+  assert.equal(detectLoadSignal(["mudroom slipping", "toys unheld", "garage drift"]), true);
+  assert.equal(detectLoadSignal(["Mudroom", "none", "garage"]), false); // a held visit breaks it
+  assert.equal(detectLoadSignal(["drift", "drift"]), false); // two visits is not a signal
+  assert.equal(detectLoadSignal(["NONE", "drift", "drift"]), false); // case-insensitive none
+  assert.equal(detectLoadSignal(["a", "b", "none", "c"]), false); // only the latest three count
+  assert.equal(detectLoadSignal(["a", "b", "c", "none"]), true); // older held visit is history
+  assert.equal(detectLoadSignal([]), false);
 });

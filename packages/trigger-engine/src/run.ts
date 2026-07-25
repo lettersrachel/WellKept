@@ -47,19 +47,34 @@ export async function runTriggerPass(db: any, event: FieldChangeEvent) {
  * ids are deterministic on (entry, occurrence, text).
  */
 export async function runRegistrySweep(db: any, opts: { householdId?: string; now?: Date } = {}) {
-  const { registryEntry } = await import("@wellkept/schema");
-  const { isNull, and } = await import("drizzle-orm");
-  const { sweepRegistryDates, sweepItemId } = await import("./registry-sweep.ts");
+  const { registryEntry, movableObservance, playbookField } = await import("@wellkept/schema");
+  const { isNull, and, like, gte } = await import("drizzle-orm");
+  const { sweepRegistryDates, sweepMovableObservances, sweepItemId } = await import("./registry-sweep.ts");
 
   const households = opts.householdId
     ? await db.select().from(household).where(eq(household.id, opts.householdId))
     : await db.select().from(household);
+
+  // Movable dates come from the maintained calendar table, never computed
+  // (DEV-005 S2). Relevance is per household: its own Playbook must name
+  // the observance for the radar to fire.
+  const now = opts.now ?? new Date();
+  const observances = await db.select().from(movableObservance)
+    .where(gte(movableObservance.date, now));
 
   let emitted = 0;
   for (const hh of households) {
     const entries = await db.select().from(registryEntry)
       .where(and(eq(registryEntry.householdId, hh.id), isNull(registryEntry.tombstonedAt)));
     const drafts = sweepRegistryDates(entries, { statusTag: hh.statusTag, now: opts.now });
+    if (observances.length) {
+      const [obsField] = await db.select({ value: playbookField.value }).from(playbookField)
+        .where(and(eq(playbookField.householdId, hh.id), like(playbookField.name, "Movable-date observances%")))
+        .limit(1);
+      drafts.push(...sweepMovableObservances(observances, [
+        { householdId: hh.id, statusTag: hh.statusTag, fieldValue: obsField?.value ?? "" },
+      ], { now: opts.now }));
+    }
     for (const draft of drafts) {
       // id keys on (family rule, household, occurrence, text) — the text
       // embeds the entry label, so distinct entries never collide.
@@ -107,4 +122,60 @@ export async function drainFieldOutbox(db: any, opts: { batch?: number; maxAttem
     }
   }
   return { pending: pending.length, processed };
+}
+
+/**
+ * REQ-051 threshold family: the load signal (STD-023.2.7 / APP-002's
+ * converged three-consecutive rule). Scans each household's three most
+ * recent APPLIED visits; three in a row reporting zone drift routes a
+ * corporate notification — aggregated per household, never per HM (the
+ * founder's no-per-HM-analytics boundary). Deduped: one notification per
+ * household per 14 days.
+ */
+export async function sweepLoadSignals(db: any, opts: { now?: Date } = {}) {
+  const { visitCommand, householdRoleAssignment, notification } = await import("@wellkept/schema");
+  const { and, desc, gte, inArray } = await import("drizzle-orm");
+  const { detectLoadSignal } = await import("./registry-sweep.ts");
+  const now = opts.now ?? new Date();
+
+  const households = await db.select().from(household);
+  let signals = 0;
+  for (const hh of households) {
+    const visits = await db.select().from(visitCommand)
+      .where(and(eq(visitCommand.householdId, hh.id), eq(visitCommand.type, "visit.submit"), eq(visitCommand.status, "applied")))
+      .orderBy(desc(visitCommand.receivedAt))
+      .limit(3);
+    const answers = visits.map((v: { payload: unknown }) =>
+      (v.payload as { zoneDrift?: { answer?: string } }).zoneDrift?.answer);
+    if (!detectLoadSignal(answers)) continue;
+    signals += 1; // detected — counted even if the household has no corporate roster yet
+
+    const recent = await db.select({ id: notification.id }).from(notification)
+      .where(and(
+        eq(notification.householdId, hh.id),
+        eq(notification.kind, "load_signal"),
+        gte(notification.createdAt, new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)),
+      ));
+    if (recent.length) continue; // already raised this fortnight
+
+    const corporate = await db.select({ userId: householdRoleAssignment.userId })
+      .from(householdRoleAssignment)
+      .where(and(
+        eq(householdRoleAssignment.householdId, hh.id),
+        inArray(householdRoleAssignment.role, ["corporate_admin", "corporate_ops"]),
+      ));
+    for (const r of corporate) {
+      await db.insert(notification).values({
+        id: globalThis.crypto.randomUUID(),
+        userId: r.userId,
+        householdId: hh.id,
+        kind: "load_signal",
+        title: `Load signal: ${hh.name}`,
+        body: "Three consecutive visits report zone drift. Maintenance capacity is the "
+          + "leading indicator (WK-STD-023, provision STD-023.2.7): the home may no longer "
+          + "hold its reset between visits. Review scope or cadence with the client.",
+      });
+    }
+  }
+  return { households: households.length, signals };
 }

@@ -436,3 +436,27 @@ export async function captureField(formData: FormData) {
   revalidatePath("/intake");
   revalidatePath("/visit");
 }
+
+/**
+ * REQ-040 economics: corporate_admin sets a household's monthly rate. The
+ * value lives in membership_terms (integer cents, DEV-004 S3) and feeds the
+ * economics panel's effective-hourly math. Audited like every other write.
+ */
+export async function setMonthlyRate(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) return;
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") return; // fail closed
+  const dollars = Number(String(formData.get("monthlyRate") ?? "").replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(dollars) || dollars < 0 || dollars > 1_000_000) return;
+  const cents = Math.round(dollars * 100);
+  const [hh] = await db.select().from(household).where(eq(household.id, householdId));
+  if (!hh) return;
+  const terms = { ...(hh.membershipTerms as Record<string, unknown> | null ?? {}), monthlyRateCents: cents };
+  await db.update(household).set({ membershipTerms: terms, updatedAt: new Date() }).where(eq(household.id, householdId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "rate_change", detail: { monthlyRateCents: cents },
+  });
+  revalidatePath("/oversight/economics");
+}

@@ -115,3 +115,65 @@ export async function sweepItemId(entryId: string, occurrenceIso: string, itemTe
   const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
+
+// ---------------------------------------------------------------------------
+// REQ-051 completion: the movable-dates and threshold families.
+// ---------------------------------------------------------------------------
+
+export const OBSERVANCE_RULE_ID = "01980000-0000-7000-8000-000000000d05";
+
+export interface MovableObservanceLike { name: string; date: Date }
+export interface HouseholdObservanceField {
+  householdId: string;
+  statusTag: string;
+  /** The household's movable-date observances field value ("" = none kept). */
+  fieldValue: string;
+}
+
+/**
+ * Movable dates (DEV-005 S2: from the maintained calendar table, never
+ * computed): a household gets an observance radar item when ITS OWN
+ * Playbook names the observance — the movable_observance table carries the
+ * date, the field carries the relevance. T-14 radar, one-shot per year.
+ */
+export function sweepMovableObservances(
+  observances: MovableObservanceLike[],
+  households: HouseholdObservanceField[],
+  opts: { now?: Date; timezone?: string } = {},
+): SweepDraft[] {
+  const now = opts.now ?? new Date();
+  const timezone = opts.timezone ?? "America/New_York";
+  const out: SweepDraft[] = [];
+  for (const obs of observances) {
+    if (obs.date.getTime() < now.getTime()) continue; // passed this year
+    const windowOpens = obs.date.getTime() - 14 * DAY;
+    if (windowOpens > now.getTime()) continue; // not in window yet
+    for (const hh of households) {
+      if (!hh.fieldValue.toLowerCase().includes(obs.name.toLowerCase())) continue;
+      out.push({
+        householdId: hh.householdId,
+        triggerRuleId: OBSERVANCE_RULE_ID,
+        packName: "observance-radar",
+        itemText: `Movable observance ahead: ${obs.name} on ${fmt(obs.date, timezone)}. Prep per this household's Playbook and WK-STD-014.`,
+        fireAt: clampOutOfQuietHours(new Date(Math.max(windowOpens, now.getTime())), timezone),
+        suppressedByTag: hh.statusTag === "LIFE-EVENT",
+        occurrence: obs.date.toISOString(),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * The threshold family's converged number (Addendum A1 S5: APP-002's load
+ * signal and STD-023's maintenance-capacity threshold are the same rule):
+ * three consecutive visits reporting zone drift. Input is the most-recent-
+ * first drift answers of APPLIED visits; "none" (or blank) breaks the run.
+ */
+export function detectLoadSignal(zoneDriftAnswers: (string | null | undefined)[]): boolean {
+  if (zoneDriftAnswers.length < 3) return false;
+  return zoneDriftAnswers.slice(0, 3).every((a) => {
+    const t = (a ?? "").trim().toLowerCase();
+    return t !== "" && t !== "none";
+  });
+}

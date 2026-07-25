@@ -10,7 +10,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem, householdRoleAssignment, notification } from "@wellkept/schema";
 import type { FloorConflictEvent } from "@wellkept/close-flow";
-import { runTriggerPass, runRegistrySweep, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import { runTriggerPass, runRegistrySweep, sweepLoadSignals, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 import * as Sentry from "@sentry/node";
 
 // Error monitoring (launch §2.1). Off unless SENTRY_DSN is set. We only ever
@@ -131,7 +131,11 @@ export function createWorker() {
     FIELD_EVENTS_QUEUE,
     async (job) => {
       if (job.name === "tag-change") return handleTagChange(job.data as TagChangeEvent);
-      if (job.name === "registry-sweep") return runRegistrySweep(db);
+      if (job.name === "registry-sweep") {
+        const sweep = await runRegistrySweep(db);
+        const load = await sweepLoadSignals(db);
+        return { ...sweep, loadSignals: load.signals };
+      }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
       if (job.name === "uptime-check") return handleUptimeCheck();
