@@ -140,6 +140,54 @@ const provisionLeaks = (clientHtml.match(/STD-\d{3}\.\d+\.\d+/g) ?? []).length
   + (clientHtml.includes("governingProvisions") ? 1 : 0);
 check("no provision refs in client HTML", provisionLeaks === 0, `${provisionLeaks} refs`);
 
+// G-05 (Addendum A2 finding 7): exclusions never suppress a floor — the one
+// assertion whose failure mode is physical harm in a client's home, run
+// against the live scheduler path via the dev-gated trigger-pass endpoint.
+// Skipped (with a visible SKIP) when the endpoint 404s, i.e. production —
+// the assertion belongs to dev/CI stacks where the endpoint exists.
+console.log("\nfloor bypass under exclusion (G-05)");
+{
+  const FLOOR_ID = "STD-999.9.2"; // probe's own fixture id (distinct from the e2e spec's)
+  const FLOOR_TEXT = "G05 probe floor step: the safety floor must survive exclusion.";
+  const PLAIN_TEXT = "G05 probe ordinary step: excludable.";
+  const ruleId = randomUUID();
+  const exclusionId = randomUUID();
+  const gate = await probe(null, "POST", "/api/dev/trigger-pass", { householdId: FERNBROOK, fieldName: "nonmatching" });
+  if (gate.status === 404) {
+    console.log("  SKIP  dev endpoint gated (production) — run the probe against a dev stack for G-05");
+  } else {
+    const { rows: [anyUser] } = await pool.query("SELECT id FROM auth_user LIMIT 1");
+    await pool.query(
+      `INSERT INTO standard_provision (id, document, section, ordinal, text, tier, scope, kind, effective_date)
+       VALUES ($1, 'STD-999', 9, 2, 'G05 probe fixture floor', 'floor_1', '{}', 'rule', CURRENT_DATE)
+       ON CONFLICT (id) DO NOTHING`, [FLOOR_ID]);
+    await pool.query(
+      `INSERT INTO trigger_rule (id, household_id, family, binds_to_field_name, enabled, definition, created_at, updated_at)
+       VALUES ($1, NULL, 'signal', 'g05 probe binds', true, $2, now(), now())`,
+      [ruleId, JSON.stringify({ packName: "g05-probe", items: [
+        { offsetDays: 1, text: FLOOR_TEXT, methodRef: FLOOR_ID },
+        { offsetDays: 1, text: PLAIN_TEXT },
+      ] })]);
+    await pool.query(
+      `INSERT INTO anticipation_exclusion (id, household_id, scope, target, reason, requested_by, approved_by, effective_from)
+       VALUES ($1, $2, 'all', '', 'G05 probe fixture', 'corporate', $3, now() - interval '1 hour')`,
+      [exclusionId, FERNBROOK, anyUser.id]);
+    const pass = await probe(null, "POST", "/api/dev/trigger-pass", {
+      householdId: FERNBROOK, fieldName: "G05 probe binds here", newValue: "engaged", changedAt: new Date().toISOString(),
+    });
+    const has = async (text) => (await pool.query(
+      "SELECT 1 FROM prompt_pack_item WHERE household_id=$1 AND item_text=$2 LIMIT 1", [FERNBROOK, text])).rows.length > 0;
+    check("trigger pass ran", pass.status === 200, `status ${pass.status}`);
+    check("floor prompt survives scope=all exclusion", await has(FLOOR_TEXT), "floor prompt missing");
+    check("ordinary prompt suppressed by exclusion", !(await has(PLAIN_TEXT)), "ordinary prompt scheduled anyway");
+    // fixture cleanup
+    await pool.query("DELETE FROM prompt_pack_item WHERE item_text IN ($1,$2)", [FLOOR_TEXT, PLAIN_TEXT]);
+    await pool.query("DELETE FROM anticipation_exclusion WHERE id=$1", [exclusionId]);
+    await pool.query("DELETE FROM trigger_rule WHERE id=$1", [ruleId]);
+    await pool.query("DELETE FROM standard_provision WHERE id=$1 AND text='G05 probe fixture floor'", [FLOOR_ID]);
+  }
+}
+
 // cleanup minted sessions
 for (const t of Object.values(sessions)) if (t) await pool.query("DELETE FROM auth_session WHERE session_token=$1", [t]);
 await pool.end();
