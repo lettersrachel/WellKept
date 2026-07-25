@@ -168,6 +168,7 @@ export function createWorker() {
         return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
+      if (job.name === "cpsc-recall") { const { runCpscRecallSweep } = await import("./cpsc.ts"); return runCpscRecallSweep(db); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
       if (job.name === "uptime-check") return handleUptimeCheck();
       if (job.name === FLOOR_CONFLICT_JOB) return handleFloorConflict(job.data as FloorConflictEvent);
@@ -192,6 +193,8 @@ export async function ensureSweepScheduled() {
   const queue = createFieldEventsQueue();
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
   await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
+  // REQ-047: recalls move on week timescales; Tuesdays after the digest.
+  await queue.upsertJobScheduler("cpsc-recall-weekly", { pattern: "0 14 * * 2" }, { name: "cpsc-recall" });
   await queue.upsertJobScheduler("drain-outbox", { every: 300000 }, { name: "drain-outbox" }); // backstop only; the inline pass is primary
   await queue.upsertJobScheduler("uptime-check", { every: 300000 }, { name: "uptime-check" });
   await queue.close();
