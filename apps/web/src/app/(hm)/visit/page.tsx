@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince } from "@/lib/data";
+import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -28,12 +28,13 @@ export default async function VisitPage() {
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
 
-  const [allFields, dots, packItems, lastVisit, seedReviewed] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed, recall] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
     standardsSeedReviewed(),
+    getSeasonRecall(hh.id),
   ]);
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
@@ -52,6 +53,9 @@ export default async function VisitPage() {
   endOfToday.setHours(23, 59, 59, 999);
   const specials = radarAll.filter((i) => i.fireAt <= endOfToday);
   const radar = radarAll.filter((i) => i.fireAt > endOfToday);
+  // A2/REQ-055: this user's answers on the surfaced prompts. Answering never
+  // gates anything; an ignored prompt is itself the signal.
+  const outcomes = await getPromptOutcomes(specials.map((i) => i.id), principal.userId);
   const deltasRaw = await getDeltasSince(hh.id, lastVisit ? lastVisit.receivedAt : null);
   const visibleIds = new Set(fields.map((f) => String(f.id)));
   const deltas = deltasRaw.filter((d) => visibleIds.has(d.id) && d.value).slice(-6);
@@ -144,6 +148,20 @@ export default async function VisitPage() {
           <div key={i.id} className="card" style={{ background: "var(--sage)", marginBottom: 8 }}>
             <div style={{ fontSize: 15, color: "var(--green)" }}>{i.itemText}</div>
             <div className="prov">{i.packName} · due today</div>
+            {outcomes.has(i.id) ? (
+              <div className="prov">Answered: {outcomes.get(i.id)!.replace(/_/g, " ")}</div>
+            ) : (
+              // A2/REQ-055: four answers, not three — "already done" (right
+              // rule, wrong lead time) and "not applicable" (wrong rule for
+              // this household) imply opposite corrections. Optional always.
+              <form action={recordPromptOutcome} className="row" style={{ gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                <input type="hidden" name="promptId" value={i.id} />
+                <button className="act subtle" name="outcome" value="acted">Acted</button>
+                <button className="act subtle" name="outcome" value="already_done">Already done</button>
+                <button className="act subtle" name="outcome" value="not_applicable">Not applicable</button>
+                <button className="act subtle" name="outcome" value="dismissed">Dismiss</button>
+              </form>
+            )}
           </div>
         ))
       )}
@@ -164,6 +182,26 @@ export default async function VisitPage() {
             </div>
           </div>
         ))
+      )}
+
+      <div className="eyebrow">Last year at this time — repeat-season memory</div>
+      {recall.length === 0 ? (
+        <div className="note">
+          Builds from this household&apos;s own record: recall lines appear once there is a
+          year of history behind them. Not a defect — the memory is accruing now.
+        </div>
+      ) : (
+        <div className="card">
+          {recall.map((r) => (
+            <div key={r.id} className="field">
+              <div className="fval sans" style={{ fontSize: 14 }}>{r.summary}</div>
+              <div className="prov">
+                recall · from a {r.anchorKind.replace(/_/g, " ")} on{" "}
+                {fmtDay(r.observedAt)} {r.observedAt.getFullYear()} · fact, not a prompt
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="eyebrow">Open dots</div>

@@ -117,6 +117,33 @@ export function assertNoProvisionRows(payload: unknown, path = "payload"): true 
   return true;
 }
 
+/**
+ * Addendum A2 finding 10: prompt_outcome.note and season_observation.summary
+ * carry household detail (s2) and must never serialise into a client route.
+ * Same discipline as assertNoProvisionRows — recognizes the rows by their
+ * distinctive column pairs, however deeply nested, and fails loud.
+ */
+export function assertNoAnticipationRows(payload: unknown, path = "payload"): true {
+  if (Array.isArray(payload)) {
+    payload.forEach((v, i) => assertNoAnticipationRows(v, `${path}[${i}]`));
+    return true;
+  }
+  if (payload && typeof payload === "object") {
+    const keys = new Set(Object.keys(payload as Record<string, unknown>));
+    const has = (...ks: string[]) => ks.every((k) => keys.has(k));
+    if (has("anchorKind", "summary") || has("anchor_kind", "summary")) {
+      throw new Error(`SEVERE: a season_observation row reached a client payload at ${path}`);
+    }
+    if (has("outcome", "promptId") || has("outcome", "prompt_id")) {
+      throw new Error(`SEVERE: a prompt_outcome row reached a client payload at ${path}`);
+    }
+    for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
+      assertNoAnticipationRows(v, `${path}.${k}`);
+    }
+  }
+  return true;
+}
+
 /** Floors render in the red-block treatment; everything else renders quiet
  * (Addendum A1 S3: floors are visually distinct, never merely styled text). */
 export type ProvisionTreatment = "red-block" | "quiet";

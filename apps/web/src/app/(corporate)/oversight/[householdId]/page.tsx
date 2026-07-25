@@ -8,8 +8,8 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp } from "@/lib/actions";
-import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion } from "@/lib/actions";
+import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -35,7 +35,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id, 10),
   ]);
-  const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
+  const [gestures, strangerTests, members, exclusions] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id), getExclusions(hh.id)]);
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>
@@ -217,6 +217,95 @@ export default async function Oversight({ params }: { params: Promise<{ househol
               <input type="checkbox" name="ndaApproved" style={{ width: "auto", marginTop: 0 }} /> NDA
             </label>
             <button className="act">Assign</button>
+          </form>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Household consent (ADR-001 guardrail 3 · LAUNCH 1.5)</h2>
+        {hh.consentSignedAt ? (
+          <div className="fval">
+            Signed consent on record: {hh.consentSignedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}
+            {" · "}doc version {hh.consentDocVersion}
+          </div>
+        ) : (
+          <div className="banner">
+            NO CONSENT ON RECORD. Written consent is the precondition for real household
+            data (ADR-001 guardrail 3). Sign legal/household-consent.md, file the paper,
+            and record it here — the client-side counterpart of the staff NDA flag.
+          </div>
+        )}
+        {isAdmin && (
+          <form action={recordHouseholdConsent} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+              Signed on <input type="date" name="signedAt" required style={{ marginTop: 0 }} />
+            </label>
+            <input name="docVersion" aria-label="Consent document version" placeholder="doc version, e.g. household-consent v1 (2026-07)" required style={{ flex: 2, marginTop: 0 }} />
+            <button className="act">Record consent</button>
+          </form>
+        )}
+        <div className="note" style={{ marginTop: 6 }}>
+          The paper stays the artifact; this records that it exists, when, and which
+          version. Corrections re-record — the audit trail keeps every prior value.
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>Anticipation exclusions (REQ-056)</h2>
+        <div className="note">
+          What NOT to surface: enforced server-side in the scheduler before anything is
+          queued, fail closed. Safety floors bypass exclusions entirely. Approval is
+          corporate only, always; ending an exclusion closes its window (nothing deletes).
+        </div>
+        {exclusions.length === 0 ? (
+          <div className="note">No exclusions recorded.</div>
+        ) : (
+          <table className="panel">
+            <thead>
+              <tr><th>Scope</th><th>Target</th><th>Requested by</th><th>Window</th>{isAdmin && <th></th>}</tr>
+            </thead>
+            <tbody>
+              {exclusions.map((x) => {
+                const ended = x.effectiveTo && x.effectiveTo <= new Date();
+                return (
+                  <tr key={x.id} style={ended ? { opacity: 0.55 } : undefined}>
+                    <td>{x.scope}</td>
+                    <td>{x.scope === "all" ? "everything" : x.target}</td>
+                    <td>{x.requestedBy.replace("_", " ")}</td>
+                    <td>
+                      {x.effectiveFrom.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}
+                      {" – "}
+                      {x.effectiveTo ? x.effectiveTo.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "open"}
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        {!ended && (
+                          <form action={endAnticipationExclusion}>
+                            <input type="hidden" name="exclusionId" value={x.id} />
+                            <button className="act subtle danger">End</button>
+                          </form>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {isAdmin && (
+          <form action={createAnticipationExclusion} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="scope" defaultValue="topic" className="inline" aria-label="Exclusion scope">
+              {["rule", "topic", "person", "field", "all"].map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <input name="target" aria-label="Exclusion target" placeholder="rule id, topic, person, or field ref" style={{ flex: 2, marginTop: 0 }} />
+            <select name="requestedBy" defaultValue="client" className="inline" aria-label="Requested by">
+              {["client", "house_manager", "corporate"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+            </select>
+            <input name="reason" aria-label="Reason (internal, s2)" placeholder="reason (internal, s2)" style={{ flex: 2, marginTop: 0 }} />
+            <button className="act">Approve exclusion</button>
           </form>
         )}
       </div>

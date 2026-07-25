@@ -10,7 +10,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem, householdRoleAssignment, notification } from "@wellkept/schema";
 import type { FloorConflictEvent } from "@wellkept/close-flow";
-import { runTriggerPass, runRegistrySweep, sweepLoadSignals, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import { runTriggerPass, runRegistrySweep, sweepLoadSignals, materializeSeasonObservations, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 import * as Sentry from "@sentry/node";
 
 // Error monitoring (launch §2.1). Off unless SENTRY_DSN is set. We only ever
@@ -134,7 +134,10 @@ export function createWorker() {
       if (job.name === "registry-sweep") {
         const sweep = await runRegistrySweep(db);
         const load = await sweepLoadSignals(db);
-        return { ...sweep, loadSignals: load.signals };
+        // A2/REQ-054: season memory accrues on the same daily pass (an
+        // extension of the sweep, not a second sweep). Idempotent.
+        const season = await materializeSeasonObservations(db);
+        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);

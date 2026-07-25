@@ -486,6 +486,134 @@ export async function setTriggerRuleEnabled(formData: FormData) {
   revalidatePath("/oversight/triggers");
 }
 
+/**
+ * LAUNCH.md 1.5 / ADR-001 guardrail 3: record that a household's written
+ * consent exists — when it was signed and which doc version. The paper
+ * remains the artifact; this is the system's sight of it, the client-side
+ * counterpart of nda_approved. corporate_admin only; audited; correcting a
+ * mistake is re-recording (the audit trail keeps every prior value).
+ */
+export async function recordHouseholdConsent(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) return;
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") return; // fail closed
+  const signedAtRaw = String(formData.get("signedAt") ?? "");
+  const docVersion = String(formData.get("docVersion") ?? "").trim().slice(0, 80);
+  const signedAt = new Date(signedAtRaw);
+  if (!signedAtRaw || Number.isNaN(signedAt.getTime()) || !docVersion) return;
+  if (signedAt.getTime() > Date.now()) return; // consent is a fact, not a plan
+  const [hh] = await db.select().from(household).where(eq(household.id, householdId));
+  if (!hh) return;
+  await db.update(household)
+    .set({ consentSignedAt: signedAt, consentDocVersion: docVersion, consentRecordedBy: principal.userId, updatedAt: new Date() })
+    .where(eq(household.id, householdId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "consent_recorded",
+    detail: {
+      signedAt: signedAt.toISOString(), docVersion,
+      prior: hh.consentSignedAt ? { signedAt: hh.consentSignedAt.toISOString(), docVersion: hh.consentDocVersion } : null,
+    },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}
+
+/**
+ * A2/REQ-055: a field-role user answers a surfaced prompt. Answering never
+ * gates anything; an unanswered prompt is itself data (the strongest noise
+ * signal) and is deliberately NOT a row. Append-only: the unique
+ * (prompt, user) index makes a second answer a no-op, and no update or
+ * delete path exists.
+ */
+export async function recordPromptOutcome(formData: FormData) {
+  const promptId = String(formData.get("promptId") ?? "");
+  const outcome = String(formData.get("outcome") ?? "");
+  const OUTCOMES = ["acted", "dismissed", "not_applicable", "already_done"] as const;
+  if (!promptId || !(OUTCOMES as readonly string[]).includes(outcome)) return;
+  const { promptPackItem, promptOutcome } = await import("@wellkept/schema");
+  const [item] = await db.select().from(promptPackItem).where(eq(promptPackItem.id, promptId));
+  if (!item) return;
+  const principal = await getPrincipal(item.householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  const answeredAt = new Date();
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null; // s2
+  // lead_days: answered_at to the prompt's own target (A2 finding 8 — null
+  // for event-driven prompts, and rule health states the sample size).
+  let leadDays: number | null = null;
+  if (item.targetDate) {
+    const target = new Date(`${item.targetDate}T12:00:00Z`);
+    leadDays = Math.round((target.getTime() - answeredAt.getTime()) / (24 * 60 * 60 * 1000));
+  }
+  await db.insert(promptOutcome).values({
+    id: randomUUID(),
+    householdId: item.householdId,
+    promptId: item.id,
+    ruleId: item.triggerRuleId,
+    provisionRef: null,
+    userId: principal.userId,
+    role: principal.role, // role at answer time, not current role
+    outcome: outcome as (typeof OUTCOMES)[number],
+    firedAt: item.firedAt ?? item.fireAt,
+    answeredAt,
+    targetDate: item.targetDate,
+    leadDays,
+    note,
+  }).onConflictDoNothing({ target: [promptOutcome.promptId, promptOutcome.userId] });
+  revalidatePath("/visit");
+  revalidatePath("/oversight/triggers");
+}
+
+/**
+ * A2/REQ-056: create an anticipation exclusion. Anyone can REQUEST one
+ * (requested_by records who), but approval is corporate only, always —
+ * this action IS the approval, so corporate_admin is the gate. Audited.
+ */
+export async function createAnticipationExclusion(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) return;
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") return; // approval is corporate only, always
+  const SCOPES = ["rule", "topic", "person", "field", "all"];
+  const REQUESTERS = ["client", "house_manager", "corporate"];
+  const scope = String(formData.get("scope") ?? "");
+  const target = String(formData.get("target") ?? "").trim().slice(0, 200);
+  const requestedBy = String(formData.get("requestedBy") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || null; // s2
+  if (!SCOPES.includes(scope) || !REQUESTERS.includes(requestedBy)) return;
+  if (scope !== "all" && target.length < 2) return; // an empty target excludes nothing
+  const { anticipationExclusion } = await import("@wellkept/schema");
+  const id = randomUUID();
+  await db.insert(anticipationExclusion).values({
+    id, householdId, scope, target, reason, requestedBy,
+    approvedBy: principal.userId, effectiveFrom: new Date(),
+  });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "exclusion_created", detail: { exclusionId: id, scope, target, requestedBy },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  revalidatePath("/visit");
+}
+
+/** Ending an exclusion sets effective_to — nothing hard-deletes. Audited. */
+export async function endAnticipationExclusion(formData: FormData) {
+  const exclusionId = String(formData.get("exclusionId") ?? "");
+  if (!exclusionId) return;
+  const { anticipationExclusion } = await import("@wellkept/schema");
+  const [x] = await db.select().from(anticipationExclusion).where(eq(anticipationExclusion.id, exclusionId));
+  if (!x || x.effectiveTo) return;
+  const principal = await getPrincipal(x.householdId);
+  if (principal?.role !== "corporate_admin") return;
+  await db.update(anticipationExclusion).set({ effectiveTo: new Date() }).where(eq(anticipationExclusion.id, exclusionId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: x.householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "exclusion_ended", detail: { exclusionId, scope: x.scope, target: x.target },
+  });
+  revalidatePath(`/oversight/${x.householdId}`);
+  revalidatePath("/visit");
+}
+
 export async function createTriggerRule(formData: FormData) {
   const anchorHouseholdId = String(formData.get("anchorHouseholdId") ?? "");
   if (!anchorHouseholdId) return;

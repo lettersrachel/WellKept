@@ -43,6 +43,10 @@ export interface PromptPackItemDraft {
   itemText: string;
   fireAt: Date;
   suppressedByTag: boolean;
+  // A2/REQ-056: carried so the exclusion filter can recognize a floor-backed
+  // step (floors bypass exclusions). Not a prompt_pack_item column — the
+  // runner strips it before insert.
+  methodRef?: string | null;
 }
 
 const QUIET_START_HOUR = 21; // 9pm household-local
@@ -105,6 +109,7 @@ export function evaluate(
         itemText: item.text,
         fireAt: clampOutOfQuietHours(raw, timezone),
         suppressedByTag: suppressed,
+        methodRef: item.methodRef ?? null,
       });
     }
   }

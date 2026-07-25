@@ -46,18 +46,16 @@ enforced, vault encryption, rate limits, audited reveals. What's missing: an
   self-review — but decide that on purpose and write it down.
 - Before scaling past a household or two, get an outside review.
 
-### 1.5 Client consent captured where the system can see it 🧑⚖️ ⬜
+### 1.5 Client consent captured where the system can see it 🧑⚖️ ⏳
 ADR-001 guardrail 3 makes the household's written consent the precondition
-for any real data — but the app has no record of it. Staff have an
-`nda_approved` flag in People & access; clients have no equivalent, so the
-fact that gates everything is tracked outside the system that enforces
-everything else.
+for any real data. Staff have `nda_approved`; the household record now has
+its counterpart: 🤖 **built 2026-07-25** — a Household consent card on the
+corporate drill-in records that consent was signed, when, and which doc
+version (audited; corrections re-record).
 
-- Before real household data: sign `legal/household-consent.md` (after
-  counsel), file the paper, and record on the household **that** consent was
-  signed, **when**, and **which version** — a household-level flag mirroring
-  `nda_approved` is the natural build (small; needs the go-ahead since it
-  touches the schema).
+- Remaining, yours: counsel reviews `legal/household-consent.md`, the
+  household signs, you file the paper and record it on the card. Until the
+  card shows a signed consent, no real data for that household.
 
 ---
 

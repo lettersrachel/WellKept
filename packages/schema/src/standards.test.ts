@@ -138,3 +138,23 @@ test("schema drift in a re-emitted seed fails loudly", () => {
   assert.equal(provisionSeedRowSchema.safeParse({ ...row, tier: "floor_3" }).success, false);
   assert.equal(provisionSeedRowSchema.safeParse({ ...row, scope: [] }).success, false);
 });
+
+test("A2 payload guard: recall and outcome rows never reach a client payload", async () => {
+  const { assertNoAnticipationRows } = await import("./standards");
+  // Clean payloads pass, however nested.
+  assert.ok(assertNoAnticipationRows([{ name: "Kitchen", value: "reset", nested: [{ ok: true }] }]));
+  // A season_observation row fails loud wherever it hides.
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: [{ anchorKind: "dot", summary: "Heard last July" }] }),
+    /season_observation/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows([{ anchor_kind: "visit", summary: "snake_case too" }]),
+    /season_observation/,
+  );
+  // A prompt_outcome row fails loud too.
+  assert.throws(
+    () => assertNoAnticipationRows({ rows: [{ outcome: "acted", promptId: "p-1" }] }),
+    /prompt_outcome/,
+  );
+});
