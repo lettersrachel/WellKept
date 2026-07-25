@@ -109,6 +109,22 @@ for (const [email, role] of Object.entries(ROLES)) {
   check("s3 reveal", role === "client" ? forbidden(reveal) : (reveal.status === 200 || reveal.status === 429), `status ${reveal.status}`);
   // Visit submit: field roles only (others 403)
   check("visit submit", field ? (visitCmd.status === 200) : forbidden(visitCmd), `status ${visitCmd.status}`);
+
+  // 2026-07-25 surfaces: economics, triggers, exhibit pack (corporate only);
+  // intake (field roles only); standards library (corporate only); mobile
+  // briefing API (field roles only, 403 otherwise).
+  const economics = await probe(t, "GET", "/oversight/economics");
+  const triggers = await probe(t, "GET", "/oversight/triggers");
+  const exhibitPage = await probe(t, "GET", `/oversight/${FERNBROOK}/exhibit`);
+  const intake = await probe(t, "GET", "/intake");
+  const standards = await probe(t, "GET", "/standards");
+  const mobileBriefing = await probe(t, "GET", `/api/mobile/briefing?householdId=${FERNBROOK}`);
+  check("economics panel", corporate ? reaches(economics) : redirected(economics), `status ${economics.status}`);
+  check("trigger admin", corporate ? reaches(triggers) : redirected(triggers), `status ${triggers.status}`);
+  check("exhibit pack", corporate ? reaches(exhibitPage) : redirected(exhibitPage), `status ${exhibitPage.status}`);
+  check("intake mode", field ? reaches(intake) : redirected(intake), `status ${intake.status}`);
+  check("standards library", corporate ? reaches(standards) : redirected(standards), `status ${standards.status}`);
+  check("mobile briefing API", field ? reaches(mobileBriefing) : forbidden(mobileBriefing), `status ${mobileBriefing.status}`);
 }
 
 // Payload safety: the client's rendered HTML carries no s2/s3 field names.
@@ -118,6 +134,11 @@ const seed = JSON.parse(await (await import("node:fs/promises")).readFile(
 const clientHtml = await (await fetch(BASE + "/playbook", { headers: { cookie: `authjs.session-token=${sessions["lisa@fernbrook.demo"]}` } })).text();
 const leaks = seed.fields.filter((f) => f.sensitivity !== "s1" && clientHtml.includes(f.name.slice(0, 40)));
 check(`no s2/s3 in client HTML`, leaks.length === 0, `${leaks.length} leaks`);
+// Standards never reach a client session (Addendum A1 T4 / brief T7): no
+// provision ids or binding keys anywhere in the served client HTML.
+const provisionLeaks = (clientHtml.match(/STD-\d{3}\.\d+\.\d+/g) ?? []).length
+  + (clientHtml.includes("governingProvisions") ? 1 : 0);
+check("no provision refs in client HTML", provisionLeaks === 0, `${provisionLeaks} refs`);
 
 // cleanup minted sessions
 for (const t of Object.values(sessions)) if (t) await pool.query("DELETE FROM auth_session WHERE session_token=$1", [t]);
