@@ -11,10 +11,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.wellkept.hm"
+      "bundleIdentifier": "com.wellkept.hm",
+      "buildNumber": "1"
     },
     "android": {
-      "package": "com.wellkept.hm"
+      "package": "com.wellkept.hm",
+      "versionCode": 1
     },
     "plugins": [
       [
@@ -23,6 +25,7 @@
           "cameraPermission": "Well Kept uses the camera to add photos to a visit report."
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }
