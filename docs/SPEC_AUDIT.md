@@ -75,7 +75,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 070 security stack (TLS, at-rest, envelope vault, secrets) | P0 | built for pilot — envelope vault live, secrets in Vercel/Railway env + password manager, enforcing CSP, staff TOTP, rate limits, CI dependency-audit gate. Outstanding: managed KMS, external pen review (ADR-001 gate for real s3) |
 | 071 privacy (no 3p analytics; media flags; deletion) | P0 | no analytics present; flags/deletion not built |
 | 072 availability/backup targets | P0 | not applicable until hosted (DEPLOY.md notes) |
-| 073 performance targets | P0 | unmeasured |
+| 073 performance targets | P0 | measured 2026-07-25 against live prod (wellkept-orcin, 5-sample TTFB via curl): /api/health (DB round-trip) ~104-139ms warm / 357ms cold; /signin SSR ~108-132ms warm / 474ms cold; /privacy ~112-139ms. Well inside interactive targets at pilot scale; re-measure under fleet load before 075 |
 | 074 WCAG 2.1 AA | P1 | self-audit + fixes 2026-07-24 (contrast tokens --gold-ink/--gold-bright, provenance text to 4.5:1+, CAUTION tag ink-on-gold, :focus-visible rings, skip link, main landmark, aria-labels on placeholder-only inputs; verified by keyboard in-browser). Formal third-party audit still recommended pre-scale |
 | 075 scale envelope 150 households | P0 | schema yes; fleet board + drill-in handle multiple households (pilot-scale); a scaled corporate console for 150 is the 2027-2028 build |
 
