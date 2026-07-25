@@ -324,3 +324,205 @@ verified against the repo and what changed in the commit that added this file.
 | G-01 | **ADR-005 drafted this commit** (`docs/adr/005-key-custody.md`, Proposed) with the custodian and mechanism as ⟨brackets⟩ — the afternoon it costs is now filling in names. |
 | G-08 | Partly a rev-4 brief omission: LAUNCH §3 never lost the name-an-owner item (the brief's remaining-work list did). The breach one-pager, a possible `security` incident kind, and Sentry alert routing remain open as written. |
 | G-02, G-07, G-09, G-10, G-13, G-14 | Stand as written — all outside the repo. G-09 and G-02's retention question joined the counsel packet note in LAUNCH §3. |
+# Gap register, addendum B (rev 6 input)
+
+Prepared 25 July 2026, evening. Review of the rev 5 handoff package against
+rev 4 and against the original register. Appends to GAP_REGISTER.md and its
+same-day repo addendum; neither is restated here.
+
+**Owners:** 🧑 Rachel · 🤖 code or infra · ⚖️ a decision to make
+**Status:** ⬜ not started · ⏳ in progress · ✅ done
+
+## Verification of rev 5's claims
+
+Checked file by file against the rev 4 package. The brief's claim, that the
+register's severity-1 and severity-2 items which were code's to fix are fixed,
+holds as worded.
+
+| ID | Rev 5 disposition | Verified |
+|---|---|---|
+| G-03 | Holds honoured by default, refusal over open incidents, both flags in the final audit entry | ✅ Closed, and inverted the right way round rather than patched |
+| G-04 | Documented in the tool header and printed in dry-run output, added to the counsel packet | ✅ Closed. Printing it where the operator is standing is the right placement |
+| G-05 | Live e2e assertion on every CI run via a dev-gated endpoint | ✅ Closed with evidence rather than a claim about evidence. See G-15 for the surface it introduced |
+| G-06 | DEPLOY §4 extended from 5 checks to 14 | ✅ Closed for the rev-4 surfaces. See G-15 for what it does not cover |
+| G-11 | Partly incorrect, the protocol existed and rev 4 omitted it | ✅ Correction accepted. The two remaining slivers are the right ones and are carried below as G-20 |
+| G-12 | Partly covered by the protocol's exit test | ✅ Accepted, with the qualification in G-16 |
+| G-01 | ADR-005 drafted, Proposed, brackets to fill | ⏳ Correct status. See G-17 and G-22 |
+
+Everything else in the original register stands as written.
+
+---
+
+## New items
+
+| ID | Item | Owner | When |
+|---|---|---|---|
+| G-15 | The extended smoke checklist verifies rev 4 and not rev 5 | 🤖 | With the deploy |
+| G-16 | The parallel-pilot exit test has no volume guard | 🧑⚖️ | Before visits start |
+| G-17 | Key custody gates nothing | ⚖️ | Before any real s3 value |
+| G-18 | G-02 is filed under counsel and is mostly not counsel's | 🧑⚖️ | Filing correction |
+| G-19 | The counsel packet is missing the breach-notification commitment | 🧑 | Before the engagement |
+| G-20 | The weekly drift check may be aspirational, and the friction log has no home | 🧑🤖 | Before visits start |
+| G-21 | The quarterly lender reconciliation has no owner and leaves no evidence | 🧑 | Before the first lender number |
+| G-22 | The key re-wrap has never been drilled | 🤖 | With ADR-005 |
+
+### G-15. The extended smoke checklist verifies rev 4 and not rev 5
+
+DEPLOY §4 was extended in the same session that shipped two code fixes, and
+covers neither of them. Two instances, same pattern.
+
+**The erasure guard never fires.** Item 7 logs a test incident and resolves it.
+Item 13 then dry-runs the erasure tool. By the time 13 runs there is no open
+incident, so the refusal added for G-03 is never exercised, and the checklist
+would pass identically against a build where that guard was reverted.
+
+*Fix:* split item 13. Run the dry run once while the item-7 incident is still
+open and confirm the tool refuses, then resolve the incident and run it again
+to read the plan. Two lines, and it makes the guard a tested claim.
+
+**The new dev endpoint is not gate-checked.** G-05 introduced
+`/api/dev/trigger-pass`, which drives the real scheduler path and is dev-gated
+to 404 in production. Item 4 checks that `/dev/last-email` returns 404. The new
+endpoint, which is the more consequential of the two, has no equivalent check.
+
+*Fix:* extend item 4 to cover both dev-gated routes, and treat "any new
+dev-gated surface gets a 404 line in §4" as the standing rule, since this is
+now the second one.
+
+### G-16. The parallel-pilot exit test has no volume guard
+
+The protocol promotes the app toward system of record after one full month with
+zero APP DEFECT entries and clean weekly diffs. With one House Manager and one
+household that is roughly four mirrored visits. Zero defects across four visits
+is equally consistent with the app being sound and with nobody logging
+anything, and the second reading is the one that costs you the pilot's whole
+purpose.
+
+Addendum A2 already solved this exact problem one layer down. The
+retirement-candidate flag fires only when the act rate is below the floor AND
+at least three households AND at least two users have contributed, on the
+stated reasoning that a fleet rule must not be retired on the evidence of one
+household or one House Manager having a bad month. As it stands the system
+applies more rigour to retiring a trigger rule than to retiring the paper
+system of record.
+
+*Fix:* give the exit test the same shape. A minimum number of mirrored visits,
+a minimum number of distinct visits logged by the House Manager, and an
+explicit rule that a month producing no friction-log entries at all is
+inconclusive rather than clean. The numbers are policy and yours to set; the
+guard is the point.
+
+### G-17. Key custody gates nothing
+
+ADR-005 is correctly drafted and correctly Proposed. What it does not have is a
+guardrail, so nothing prevents real s3 values entering the vault while the
+second custody is still a bracket. Given the failure mode is permanent and
+total loss of every vault row, custody deserves at least the treatment consent
+already gets.
+
+ADR-001 has the pattern: guardrail 2 held real s3 values out until the vault
+sprint was complete, and guardrail 3 holds real household data out until that
+household consents. Both are refusals, not reminders.
+
+*Fix:* add to ADR-005 that no real s3 value enters the vault until the sealed
+second copy exists and has been confirmed readable once, and cross-reference it
+from LAUNCH §1.1. That turns the register's most serious item from a task on a
+list into something the process will not run past.
+
+### G-18. G-02 is filed under counsel and is mostly not counsel's
+
+The off-Neon backup question is now attachment 6 in the LAUNCH §3 counsel
+packet. Two problems. First, whether Neon point-in-time recovery alone is
+adequate protection for the only copy of every playbook, vault row, audit
+event, incident, and photo in the business is a continuity decision, and it is
+yours; counsel owns only the retention rule for a backup that ends up existing.
+Second, a severity-1 item now sits in the process-and-legal section, so it gets
+read at the wrong time and behind five items that genuinely are legal.
+
+*Fix:* move the decision to LAUNCH §2 alongside the paid-tier and restore-drill
+items, and leave a pointer in the counsel packet for the retention rule
+conditional on the answer.
+
+### G-19. The counsel packet is missing the breach-notification commitment
+
+The privacy notice still carries ⟨add your breach-notification commitment⟩, and
+the packet's six attachments do not include it. It is the legal half of G-08,
+and splitting it into a second engagement wastes the consolidation the packet
+was built for.
+
+*Fix:* seventh attachment, phrased as the commitment plus what Virginia
+requires by way of timing and content.
+
+### G-20. The weekly drift check may be aspirational, and the friction log has no home
+
+Two remainders in the protocol, one of which the repo addendum already
+acknowledged.
+
+The weekly step says the importer's `--against` dry run mechanically diffs the
+app's household record against the workbook. SPEC_AUDIT REQ-016 records a
+workbook import with a dry run as built and verified, which is a different
+operation from a record-level diff against an existing household. Confirm the
+diff mode exists and produces a readable delta; if it does not, the weekly
+check has no mechanism behind it and the protocol's "zero silent drift allowed"
+is a sentence rather than a control.
+
+The friction log has no named owner and no decided location. It is the artifact
+the entire parallel phase produces, it carries the APP DEFECT and SPEC
+CANDIDATE verdicts, and G-16 above makes its completeness load-bearing for the
+exit decision.
+
+*Fix:* verify the diff mode, then name where the log lives and who writes in it
+before the first mirrored visit rather than after.
+
+### G-21. The quarterly lender reconciliation has no owner and leaves no evidence
+
+The protocol requires the app's exhibit tables to be reconciled against the
+hand-built WK_SBA workbook before any number is shown to a lender. That is the
+one step in the document with consequences outside the business, and it has no
+owner, no procedure, and no record that it happened. Given the DSCR figures and
+the Year 5 plan are load-bearing in the lender package, a reconciliation nobody
+can prove took place is close to no reconciliation at all.
+
+*Fix:* a dated sign-off line naming who reconciled, which workbook version, and
+which exhibit period. One row per quarter is enough.
+
+### G-22. The key re-wrap has never been drilled
+
+ADR-005 requires rotation to update both custodies in one sitting and describes
+the re-wrap as the documented managed-KMS migration in reverse. Documented is
+not drilled. LAUNCH §1.2 already establishes the principle in this package that
+a recovery path is theoretical until it has been exercised, which is why the
+Neon restore gets a drill rather than a paragraph.
+
+*Fix:* rehearse the re-wrap once against a throwaway branch, ideally in the
+same sitting that creates the second custody, so the first execution is not
+during a suspected key compromise.
+
+---
+
+## Suggested order
+
+1. **With the deploy:** G-15, both halves. It is the difference between a
+   checklist that tests the build and one that tests the previous build.
+2. **With ADR-005, same afternoon:** G-17 and G-22, since both attach to work
+   already scheduled.
+3. **Before the first mirrored visit:** G-16 and G-20. Both describe how the
+   pilot is supposed to prove things, and neither is worth writing halfway
+   through it.
+4. **Filing, five minutes:** G-18 and G-19.
+5. **Before a number reaches a lender:** G-21.
+
+---
+
+## Repo addendum B (2026-07-25, same evening — verification + actions on addendum B)
+
+| ID | Verification / action |
+|---|---|
+| G-15 | **FIXED this commit, both halves.** DEPLOY §4 item 7 now leaves its test incident open; item 13 splits into 13a (dry-run must REFUSE, exit 2, while the incident is open — a build without the G-03 guard fails here) and 13b (resolve, re-run, read the plan). Item 4 checks BOTH dev-gated routes (`/dev/last-email`, `/api/dev/trigger-pass`) with the standing rule written in. |
+| G-16 | **Guard added this commit** to the protocol's exit test, numbers left as ⟨brackets⟩ (founder policy): minimum mirrored visits, minimum visits with any friction entry, and the explicit rule that an empty-log month is INCONCLUSIVE, not clean. |
+| G-17 | **Guardrail added this commit** to ADR-005 — no real s3 value enters the vault until the sealed second copy exists and has been confirmed readable once — and LAUNCH 1.1 demoted from ✅ to ⏳ with the cross-reference (its "done" covered the lost-laptop half only). |
+| G-18 | **Refiled this commit.** The backup decision is now LAUNCH §2.4 (continuity, yours), with only the conditional retention rule remaining in the counsel packet. |
+| G-19 | **Added this commit** as counsel-packet attachment 6 (breach-notification commitment + Virginia timing/content). |
+| G-20 | **Verified, and the missing halves built.** `wk_import.py --against` exists and diffs; `dump-seed.ts` existed but grabbed an arbitrary first household and had no script entry. Now: `db:dump` takes a household uuid, and the protocol spells the two-command weekly procedure. The friction log's home/owner stays a ⟨bracket⟩ for the founder — flagged in the protocol itself. |
+| G-21 | **Sign-off table added this commit** to the protocol's quarterly step (quarter, who, workbook version, exhibit period, deltas, date). |
+| G-22 | **CONFIRMED — worse than "not drilled": no re-wrap tool existed** (only prose pointing at the foundation repo). Built this commit: `db:rewrap-kek` — dry-run-default rotation that proves every stored key unwraps under OLD and round-trips under NEW before anything is written, then rotates vault + TOTP wraps in one transaction with an in-transaction decrypt check before COMMIT. The rotation round-trip is unit-tested in @wellkept/vault (rotated wraps open under the new KEK and are opaque to the old). The operational drill against a throwaway Neon branch remains scheduled with ADR-005's custody sitting. |

@@ -35,6 +35,16 @@ This ADR applies the same reasoning to the key that protects the vault.
 
 ## Guardrails
 
+- **NO REAL S3 VALUE ENTERS THE VAULT until the sealed second copy exists
+  and has been confirmed readable once** (G-17). This is a refusal, not a
+  reminder — the same shape as ADR-001 guardrails 2 and 3. LAUNCH 1.1 is
+  not "done" until this holds; it cross-references here.
+- The re-wrap is DRILLED, not just documented (G-22): in the same sitting
+  that creates the second custody, run `pnpm --filter @wellkept/schema
+  db:rewrap-kek` (dry run — proves every stored key unwraps and round-trips)
+  and one `--commit` against a throwaway Neon branch. The first real
+  execution of a recovery path must not be during a suspected compromise;
+  the rotation round-trip is also unit-tested in @wellkept/vault.
 - No plaintext key files on any disk, ever (the 1.1 rule stands).
 - The second copy is sealed: opening it outside the retrieval condition is
   itself an incident (log it in the incident register).

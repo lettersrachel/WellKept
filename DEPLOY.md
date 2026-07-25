@@ -59,13 +59,15 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
 3. As corporate: approve any pending client edit on a bound field → the
    worker host's logs show the field-change job → the anticipation panel
    gains items
-4. `/dev/last-email` → 404 (dev-only page is gated in production)
+4. Dev-gated surfaces are actually gated — BOTH return 404 in production:
+   `/dev/last-email` AND `/api/dev/trigger-pass` (POST). Standing rule:
+   every new dev-gated surface gets its own 404 line here (G-15)
 5. An s3 reveal → audit row present in `audit_event`
 6. A household drill-in shows the **Household consent card** — red
    NO-CONSENT banner on any household without a recorded consent
 7. Log a test incident (kind `other`, low) → it appears open on the
-   drill-in AND flags red in the fleet board's Queues column → resolve it
-   with a note → flag clears
+   drill-in AND flags red in the fleet board's Queues column. LEAVE IT
+   OPEN — item 13a needs it; it's resolved at 13b
 8. **CEO previews**: drill-in → View as client and View as HM both render
    (the client preview running without error IS the live payload-guard
    pass); the switcher banner flips all three ways
@@ -80,9 +82,14 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
     (`{"actRateFloor":0.25,"minHouseholds":3,"minUsers":2}`) — insert
     them if absent; a missing key is a missing knob, defaults only cover
     code paths that read them
-13. Dry-run the erasure tool against a DEMO household id and read the
-    plan it prints (counts, hold handling, open-incident guard). Do NOT
-    `--commit`
+13. The erasure tool, twice, against the household carrying item 7's
+    still-open incident (G-15 — the guard must FIRE, not just exist):
+    a. Dry-run it now → the tool must REFUSE with the open-incident
+       message (exit 2). A build where it prints a plan instead has lost
+       the G-03 guard.
+    b. Resolve item 7's incident with a note (flag clears on the fleet
+       board), dry-run again → now read the plan it prints (counts, hold
+       handling). Do NOT `--commit`
 14. `/oversight/triggers` shows the health line on every rule (zeros are
     fine pre-pilot)
 

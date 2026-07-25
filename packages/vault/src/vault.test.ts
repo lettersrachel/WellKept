@@ -53,3 +53,17 @@ test("raw encrypt/decrypt roundtrip with unicode", () => {
   const value = "Tür-Code: 4-8-2-7 — Keller";
   assert.equal(decrypt(key, encrypt(key, value)), value);
 });
+
+test("KEK rotation (ADR-005/G-22): re-wrapping moves custody without touching ciphertext", () => {
+  const kekA = new LocalKms(randomBytes(32));
+  const kekB = new LocalKms(randomBytes(32));
+  const sealed = sealValue(kekA, null, "alarm code 4711, panel behind the coats");
+
+  // The rotation: unwrap under A, wrap under B. Ciphertext untouched.
+  const rewrapped = kekB.wrap(kekA.unwrap(sealed.wrappedKey));
+
+  // The value opens under the NEW custody...
+  assert.equal(openValue(kekB, rewrapped, sealed.box), "alarm code 4711, panel behind the coats");
+  // ...and the new wrap is opaque to the OLD KEK (rotation actually rotated).
+  assert.throws(() => kekA.unwrap(rewrapped));
+});
