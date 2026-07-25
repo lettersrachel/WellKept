@@ -95,19 +95,37 @@ exactly what the software collects. **They need a lawyer's review before use**
   actually does — or an erasure path gets built first.
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
 - ⬜ ⚖️ Incident & complaint register — decide where a client complaint, a
-  breakage, an injury, or a near-miss is recorded (in-app registry kind vs
-  paper log). Today no such record exists anywhere: dots are HM
-  observations, stranger tests are friction — neither is a complaint. In a
-  dispute this is the single most important record in the business.
+  breakage, an injury, or a near-miss is recorded. Today no such record
+  exists anywhere: dots are HM observations, stranger tests are friction —
+  neither is a complaint. In a dispute this is the single most important
+  record in the business. **Recommended (2026-07-25, awaiting your yes):**
+  a dedicated in-app `incident_report` table, NOT a registry kind
+  (registries are practical data with date sweeps; incidents are s2,
+  append-only, legally significant — a different class, modeled on
+  `stranger_test`). Kinds: complaint · breakage · injury · near_miss ·
+  other; who reported, via what channel, when it happened, severity, a
+  resolution note when closed; rows never delete, corrections append.
+  Surfaced on the drill-in + a fleet-board count so an open incident is
+  never invisible. Small build (~a session) once you say go.
 - ⬜ 🧑⚖️ Photo lifecycle, written down — photos of the inside of a client's
   home are the most sensitive artifact held. Reality today: stored inside
   Postgres (`visit_photo`), staff-only + second factor on every read, never
-  on the client view. Not written anywhere client-facing: that location, a
-  retention period, and who can see them. Decide retention + disclosure
-  (privacy notice "visit records" row) before real photos accumulate.
-- ⬜ ⚖️ Billing / scheduling / payroll seams — deliberately outside the app;
-  ADR-004 records the boundary. It stays **Proposed** until the systems of
-  record (who invoices, who rosters, who pays) are named in it.
+  on the client view. **Recommended (2026-07-25, needs counsel + your
+  number):** a 90-day rolling window — long enough to cover any dispute
+  about a specific visit and the quarterly review cycle, short enough that
+  the archive never becomes an attractive target. Mechanics: a daily job
+  purges the image BYTES past the window and stamps the row (id, household,
+  uploader, byte count remain as the tombstone — the record survives, the
+  picture doesn't), with a hold flag exempting any photo attached to an
+  open incident or dispute. Disclose the location, the window, and who can
+  see them in the privacy notice's "visit records" row before real photos
+  accumulate.
+- ✅ ⚖️ Billing / scheduling / payroll seams — ADR-004 **Accepted**
+  (2026-07-25): QuickBooks is the system of record for invoicing/collection
+  and for payroll-grade time; scheduling stays in the Jobber stack. The app
+  displays but never originates any of the three. Operational remainder
+  (outside this repo): configure QuickBooks invoicing before the first
+  paying household.
 
 ---
 

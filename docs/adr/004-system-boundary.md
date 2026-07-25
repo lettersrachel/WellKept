@@ -1,6 +1,6 @@
 # ADR-004: System boundary - what Well Kept deliberately does not do
 
-Date: 2026-07-25 | Status: Proposed (needs founder acceptance) | Decider: Rachel Letters (founder)
+Date: 2026-07-25 | Status: Accepted (founder decision, 2026-07-25) | Decider: Rachel Letters (founder)
 
 ## Context
 
@@ -31,10 +31,11 @@ OUTSIDE the application, each with a named system of record:
 - The economics panel's admin-set monthly rate (integer cents, audited,
   REQ-040) exists for oversight math only - effective $/hr, portfolio
   totals. It is not an invoice and nothing bills from it.
-- System of record for invoicing, collection, and dunning:
-  ⟨name it - e.g. the Jobber stack's invoicing, an accounting system, or
-  bank transfer + spreadsheet; for a weekly membership billed in advance
-  this must exist before the first paying household⟩.
+- System of record for invoicing, collection, and dunning: **QuickBooks**
+  (founder decision, 2026-07-25). Invoices, payments, and the chase on a
+  missed payment all live and are recorded there; for a weekly membership
+  billed in advance, QuickBooks invoicing is configured before the first
+  paying household.
 
 ### 2. Scheduling and rostering
 
@@ -55,8 +56,10 @@ OUTSIDE the application, each with a named system of record:
   NOT payroll-grade time records.
 - Payroll-grade time - FLSA-accurate hours including compensable travel
   time and the economic model's non-productive allowance - is kept and
-  paid from ⟨name the payroll/timekeeping system of record⟩. It may be
-  cross-checked against visit payloads, but is never derived from them.
+  paid from **QuickBooks** (payroll/timekeeping; founder decision,
+  2026-07-25, alongside the billing seam - one edit here if payroll later
+  moves to a dedicated provider). It may be cross-checked against visit
+  payloads, but is never derived from them.
 
 ## Guardrails
 
@@ -72,6 +75,7 @@ OUTSIDE the application, each with a named system of record:
 
 - The stack is honest about what it does: the largest functions it does
   not perform are now named, with named owners, instead of being invisible.
-- The bracketed systems of record above are founder decisions; until they
-  are filled in, this ADR remains Proposed and the gap register in
-  SPEC_AUDIT carries billing and payroll as open items.
+- QuickBooks is the named system of record for both money seams (billing
+  and payroll). The SPEC_AUDIT gap register's billing and payroll rows
+  close as boundary decisions; what remains operational is configuring
+  QuickBooks itself, which is outside this repo by definition.
