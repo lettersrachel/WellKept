@@ -11,6 +11,7 @@
     "db:seed": "node src/load-seed.ts",
     "db:provisions": "node src/load-provisions.ts",
     "db:bindings": "node src/load-bindings.ts",
+    "db:template": "node src/load-template.ts",
     "db:demo": "node src/demo-content.ts"
   },
   "dependencies": {
