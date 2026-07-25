@@ -526,3 +526,202 @@ during a suspected key compromise.
 | G-20 | **Verified, and the missing halves built.** `wk_import.py --against` exists and diffs; `dump-seed.ts` existed but grabbed an arbitrary first household and had no script entry. Now: `db:dump` takes a household uuid, and the protocol spells the two-command weekly procedure. The friction log's home/owner stays a ⟨bracket⟩ for the founder — flagged in the protocol itself. |
 | G-21 | **Sign-off table added this commit** to the protocol's quarterly step (quarter, who, workbook version, exhibit period, deltas, date). |
 | G-22 | **CONFIRMED — worse than "not drilled": no re-wrap tool existed** (only prose pointing at the foundation repo). Built this commit: `db:rewrap-kek` — dry-run-default rotation that proves every stored key unwraps under OLD and round-trips under NEW before anything is written, then rotates vault + TOTP wraps in one transaction with an in-transaction decrypt check before COMMIT. The rotation round-trip is unit-tested in @wellkept/vault (rotated wraps open under the new KEK and are opaque to the old). The operational drill against a throwaway Neon branch remains scheduled with ADR-005's custody sitting. |
+# Gap register, addendum C (rev 7 input)
+
+Prepared 25 July 2026, night. Review of the rev 6 handoff package against
+rev 5. Appends to GAP_REGISTER.md, its repo addendum, and addendum B with its
+repo addendum. Nothing already closed is restated.
+
+**Owners:** 🧑 Rachel · 🤖 code or infra · ⚖️ a decision to make
+**Status:** ⬜ not started · ⏳ in progress · ✅ done
+
+## Verification of rev 6's claims
+
+| ID | Rev 6 disposition | Verified |
+|---|---|---|
+| G-15 | Item 7 leaves the incident open, item 13 splits into refuse-then-plan, item 4 gates both dev routes with the standing rule | ✅ Closed. 13a now fails a build that lost the G-03 guard, which is the whole point. See G-23 for what the checklist does after go-live |
+| G-16 | Volume guard added, numbers bracketed, empty-log month declared inconclusive | ⏳ Guard present, but criterion 3 as written pulls against criterion 1. See G-24 and G-25 |
+| G-17 | Refusal guardrail in ADR-005, LAUNCH 1.1 demoted from done to in progress | ✅ Right guardrail, right demotion. See G-26 for its status problem |
+| G-18 | Backup decision refiled to LAUNCH §2.4 as a continuity decision, conditional retention rule left with counsel | ✅ Closed, and the framing in §2.4 is correct |
+| G-19 | Breach-notification commitment added as counsel attachment 6 | ✅ Closed |
+| G-20 | `--against` confirmed to exist and diff; `db:dump` given a household argument; two-command weekly procedure written into the protocol; friction log home and owner left bracketed and flagged | ✅ Mechanism closed. See G-27 for what the dump leaves on disk |
+| G-21 | Sign-off table added to the quarterly step | ✅ Closed |
+| G-22 | No re-wrap tool existed at all; `db:rewrap-kek` built, dry-run default, round-trip proven before any write, one transaction with an in-transaction decrypt check, rotation unit-tested | ✅ Closed, and the finding was worse than reported, which is the right way to be wrong |
+
+Six new items follow. None is a defect in what was built. Four are
+consequences of the rev 5 and rev 6 fixes meeting parts of the package that
+were written before them.
+
+---
+
+## New items
+
+| ID | Item | Owner | When |
+|---|---|---|---|
+| G-23 | The smoke checklist stops being safe to run once demo data is archived | 🤖⚖️ | Before go-live |
+| G-24 | Exit-test criteria 1 and 3 pull against each other | 🧑 | Before the first mirrored visit |
+| G-25 | The exit-test numbers are a structural gate, not a tuning knob | ⚖️ | Same sitting as G-24 |
+| G-26 | The strongest safety guardrail in the package sits in a Proposed ADR | ⚖️ | Five minutes |
+| G-27 | The weekly drift dump is a new plaintext artifact with no retention rule | 🤖🧑 | Before the first mirrored visit |
+| G-28 | The brief demotes two items that LAUNCH and the checklist depend on | 🧑 | Filing |
+
+### G-23. The smoke checklist stops being safe to run once demo data is archived
+
+Three things that were each correct in isolation now collide. The checklist
+header says it runs after every deploy. The incident register is append-only
+with no delete path, by design. LAUNCH §1.3 archives every demo household at
+go-live.
+
+So after go-live, running the checklist as written means logging a fake
+incident on a real client's household, on a record that can never be deleted,
+creating a topic exclusion against their prompts, toggling hold and reuse flags
+on one of their photos, and dry-running the erasure tool against their
+household id. Every one of those writes an audit row in a real household's
+history. The first three deploys after go-live would put more manufactured
+incidents in the register than a quiet quarter of real service.
+
+The checklist was extended for the right reason and generalized to every deploy
+for the right reason. What is missing is a production fixture to point it at.
+
+*Fix:* keep one permanent non-client household in production, seeded and never
+archived, explicitly not a real client, and point items 6, 7, 9, 11 and 13 at
+it by name. `archive-demo-data.mjs` should exempt it. If you would rather not
+carry a permanent fixture, the alternative is a reduced post-go-live checklist
+that drops the write-heavy items, but that gives up exactly the coverage rev 6
+just built. The fixture is the better answer and it costs one seed row.
+
+### G-24. Exit-test criteria 1 and 3 pull against each other
+
+The protocol says an entry lands in the friction log at any point where the app
+made the mirror harder, easier, or different from paper, and every entry
+carries one of two verdicts: APP DEFECT or SPEC CANDIDATE. Entries therefore
+exist only where there was friction.
+
+Criterion 1 requires zero APP DEFECT entries for the month. Criterion 3
+requires at least eight of the twelve mirrored visits to carry at least one
+entry of any kind. Together they require eight or more SPEC CANDIDATE entries
+in the same month the app produced no defects at all. The exit condition is
+satisfied only by a month where the software is flawless and the methodology is
+still churning heavily, which is a narrow and slightly strange target.
+
+The intent behind the guard was to prove the log was kept. The implementation
+proves friction existed, which is a different thing and works against the
+condition sitting next to it.
+
+*Fix:* give every mirrored visit a row, and add a third neutral verdict such as
+NO FRICTION. Criterion 3 then becomes "every mirrored visit has a row," which
+evidences that the log was kept without requiring friction to occur, and an
+empty log still reads as inconclusive because the rows are simply missing. One
+column value, and the two criteria stop fighting.
+
+### G-25. The exit-test numbers are a structural gate, not a tuning knob
+
+Twelve mirrored visits in a calendar month, on a weekly membership, is roughly
+three households running concurrently. The suggested numbers therefore say
+something stronger than they appear to: the app cannot be promoted to system of
+record until the pilot has at least three households live.
+
+That may well be the right answer, and it is the same reasoning A2 already
+applies to rule retirement, where the flag requires three households and two
+users. But it should be chosen rather than arrived at, because as bracketed
+numbers they read like dials, and as a consequence they are a gate that a
+single-household pilot can never pass no matter how well it goes.
+
+*Fix:* decide which you mean and say so in the protocol. Either state plainly
+that promotion requires three concurrent households and keep twelve, or scale
+the number to the pilot's actual visit volume and accept the weaker evidence
+with the reason written down.
+
+Second, smaller point in the same paragraph: criterion 4 asks for four
+consecutive clean weekly diffs inside a single calendar month. Months with a
+partial first or last week make that fragile for reasons that have nothing to
+do with the software. A rolling thirty-day window removes the calendar
+accident without weakening the test.
+
+### G-26. The strongest safety guardrail in the package sits in a Proposed ADR
+
+ADR-005 now carries the refusal that no real s3 value enters the vault until
+the sealed second custody exists. Its status line is Proposed, and its own
+consequences section says it stays Proposed until the brackets are filled and
+the sealed copy exists.
+
+By the repo's own convention, ADR-001 and ADR-004 bind because they are
+Accepted. So the package's strongest safety gate is currently inside the one
+ADR that is not yet a decision, and it cannot become one until the thing it
+gates on has happened. The cross-reference in LAUNCH §1.1 carries it in
+practice, which is why this is a five-minute fix rather than a serious one, but
+the governance reads backwards.
+
+*Fix:* separate the two halves. Accept the guardrail now, since it costs
+nothing while no real s3 values exist and it is the part you want binding
+immediately, and leave the custodian, mechanism and retrieval condition as the
+open decision that keeps the rest Proposed. "Accepted in part, 2026-07-25"
+with a line saying which part is enough.
+
+While you are in that file: `db:rewrap-kek` succeeding writes a new KEK that,
+by default, exists only in Vercel. ADR-005 item 5 already says a rotation that
+does not update both custodies did not happen, but the tool does not say it.
+Have it print that reminder as its final line on a successful `--commit`, so
+the policy is in front of whoever just rotated rather than in a document they
+read once.
+
+### G-27. The weekly drift dump is a new plaintext artifact with no retention rule
+
+The weekly procedure now writes `dump.json`, a household record export, to
+local disk before diffing it against the workbook. That runs every week, for
+the life of the parallel phase, on someone's laptop.
+
+This is the same class of object LAUNCH §1.1 shredded and congratulated itself
+for shredding. It is less severe, since it is not key material, but it is a
+plaintext copy of a real household's record sitting outside every control the
+system enforces: outside the role filters, outside the audit log, outside the
+photo purge, and outside the erasure tool's reach. It is also the exact
+artifact staff confidentiality clause 4 tells House Managers never to create,
+which is defensible for a corporate tool but worth being deliberate about.
+
+*Fix:* three small things. Confirm the dump excludes vault plaintext and
+carries ciphertext at most. Write it to a gitignored temp path rather than the
+working directory. And add one line to the protocol saying the dump is deleted
+after the diff, so the weekly procedure ends where it started.
+
+### G-28. The brief demotes two items that LAUNCH and the checklist depend on
+
+The rev 6 brief reorganizes remaining work by when, which is a real improvement.
+Two items landed in the wrong bucket.
+
+`seed:rules` is under "Whenever." The trigger library has to exist for smoke
+check 14 to show anything, and for the anticipation panel in check 3 to gain
+items. It belongs with the deploy.
+
+Neon history retention, the restore drill and paid tiers are also under
+"Whenever." In LAUNCH they are §1.2, a data-safety gate before any real
+household data, and the restore drill is the evidence base for the §2.4 backup
+decision the brief lists separately. A gate that precedes a decision should not
+sit after it in the same document.
+
+*Fix:* move `seed:rules` to "with the deploy" and §1.2 to "before the first
+real household," which is where LAUNCH already puts it.
+
+---
+
+## Suggested order
+
+1. **Five minutes, now:** G-26, both halves.
+2. **Before the first mirrored visit:** G-24, G-25 and G-27, ideally in one
+   sitting since all three edit the protocol.
+3. **Before go-live, and before `archive-demo-data.mjs` runs:** G-23. After
+   that script runs the checklist has nowhere safe to point.
+4. **Filing:** G-28.
+
+---
+
+## Repo addendum C (2026-07-25, same night — verification + actions on addendum C)
+
+| ID | Verification / action |
+|---|---|
+| G-23 | **CONFIRMED — the best catch of the round — and FIXED this commit.** A permanent `Smoke Test Fixture` household: DEPLOY §4 now routes the write-heavy items (6, 7, 9, 11, 13) at it by name with one-time creation instructions, and `archive-demo-data.mjs` exempts it explicitly. One seed row buys back the whole checklist after go-live. |
+| G-24 | **FIXED this commit.** Third verdict NO FRICTION added; every mirrored visit gets a row; criterion 3 now proves the log was kept rather than that friction existed. Criteria 1 and 3 no longer fight. |
+| G-25 | **Half fixed, half framed this commit.** Criterion 4 moved to a rolling 30-day window (the calendar accident is gone). The N=12 structural-gate choice is written into the protocol as an explicit either/or with the reasoning — the founder picks which sentence stays. |
+| G-26 | **DONE this commit, first half:** ADR-005 is now "Accepted in part" — the Guardrails section (including the no-real-s3 refusal) binds as of 2026-07-25; the custody brackets remain Proposed. **Second half was already satisfied:** `db:rewrap-kek`'s final line on a successful `--commit` has printed "update BOTH custody copies (ADR-005)" since it was built — the reviewer had the zip, not the source. |
+| G-27 | **Verified and tightened this commit.** Confirmed: the dump carries NO vault material at all — s3 values are structurally absent from field rows (vault law), so not even ciphertext leaves the DB. Still a plaintext record: the procedure now writes to /tmp, ends with `rm`, both dump filenames are gitignored, and the tool's header says who runs it and why it dies after the diff. |
+| G-28 | **Noted for the next brief.** The brief lives in the handoff zip, not the repo; rev 7's brief moves `seed:rules` to "with the deploy" and Neon retention/drill/paid tiers to "before the first real household," matching LAUNCH. |

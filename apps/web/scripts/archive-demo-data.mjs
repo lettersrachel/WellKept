@@ -17,7 +17,12 @@ if (!url) { console.error("Set DATABASE_URL (the Neon connection string)."); pro
 
 // Demo households by name; demo accounts by the *.demo email domains the seed
 // uses. The real founder login (a real mailbox) can never match either.
-const HOUSEHOLD_MATCH = "(name ILIKE '%demo%' OR name = 'Field Test Home')";
+// The SMOKE TEST FIXTURE is exempt (G-23): one permanent non-client household
+// stays live in production so the post-deploy checklist has somewhere safe to
+// write — its incidents, exclusions, photo flags, and erasure dry-runs never
+// touch a real client's record. Never archive it; it is not a client.
+const SMOKE_FIXTURE = "Smoke Test Fixture";
+const HOUSEHOLD_MATCH = `(name ILIKE '%demo%' OR name = 'Field Test Home') AND name <> '${SMOKE_FIXTURE}'`;
 const DEMO_EMAIL = "email LIKE '%.demo'";
 
 const c = new pg.Client({ connectionString: url });

@@ -18,3 +18,7 @@ coverage/
 # Playwright
 tooling/e2e/test-results/
 tooling/e2e/playwright-report/
+
+# weekly drift dumps (G-27): plaintext household records, never committed
+household_dump.json
+wk-drift-dump.json
