@@ -11,11 +11,18 @@ data-safety and operational gates for going live with real people.
 
 ## 1. Data-safety gates — before ANY real household data
 
-### 1.1 Custody the master key 🧑 ✅ DONE
+### 1.1 Custody the master key 🧑 ⏳ (lost-laptop half done; recovery half open)
 `WK_KMS_KEY` (and `AUTH_SECRET`) are saved in your password manager; the local
 plaintext files (`.production-secrets`, `.vercel-env`) were shredded. The key
 now lives only in Vercel (running the app) + your manager (safe backup) — so a
 lost laptop no longer risks the vault.
+
+- ⚠️ **ADR-005 guardrail (G-17): no real s3 value enters the vault until the
+  sealed SECOND custody exists and has been confirmed readable once.** Fill
+  the brackets in `adr/005-key-custody.md`, make the sealed copy, and drill
+  the re-wrap (`db:rewrap-kek` dry run + one `--commit` on a throwaway Neon
+  branch) in the same sitting. Single-custodian custody protects against a
+  lost laptop; it does nothing for a lost custodian.
 
 ### 1.2 Confirm backups & know the restore path 🧑 ⏳
 Neon keeps point-in-time-recovery history, but the window depends on your plan
@@ -73,6 +80,16 @@ Free tiers can throttle or pause mid-visit. Confirm billing on: **Neon**,
 **Upstash** (Redis), **Railway** (worker), **Resend** (mail). A paused Redis or
 worker degrades quietly.
 
+### 2.4 Decide the off-Neon backup question 🧑⚖️ ⬜ (G-02, refiled from the counsel packet — G-18)
+Neon PITR is currently the ONLY copy of every playbook, vault row, audit
+event, incident, and photo in the business. Whether that is adequate at
+pilot scale (with the §1.2 restore drill proven) or whether you also want a
+periodic dump you control is a **continuity decision, yours** — with the
+stated complication that any off-Neon copy also holds vault ciphertext and
+photos the daily purge can't reach. Either answer is defensible; decide it
+here, on purpose. IF the answer is yes, counsel then owns the backup's own
+retention rule (the pointer stays in the §3 packet).
+
 ### 2.3 Health signal 🤖 ✅
 `/api/health` reports DB up/down (already live and green).
 
@@ -103,8 +120,10 @@ exactly what the software collects. **They need a lawyer's review before use**
   semantics vs the notice's deletion language, (2) the 90-day photo window,
   (3) the consent doc, (4) the Neon PITR window as the true floor on erasure
   latency (G-04), (5) the five subprocessor DPAs — Vercel, Neon, Upstash,
-  Railway, Resend (G-09), and (6) whether an off-Neon backup is worth its own
-  exposure, and if so its retention rule (G-02).
+  Railway, Resend (G-09), (6) the breach-notification commitment the privacy
+  notice still carries in brackets — what Virginia requires by way of timing
+  and content (G-19, the legal half of G-08), and (7) only if §2.4 decided
+  yes: the off-Neon backup's retention rule (G-02/G-18).
 - ⬜ 🧑⚖️ Key custody (G-01, the register's most serious item): fill the
   brackets in `adr/005-key-custody.md` — second custodian, sealed mechanism,
   retrieval condition — and make the sealed copy exist. An afternoon.
