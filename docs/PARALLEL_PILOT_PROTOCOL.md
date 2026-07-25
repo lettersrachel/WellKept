@@ -50,21 +50,28 @@ reasoning to trigger rules, and retiring the paper system of record
 deserves no less rigour):
 
 1. Zero APP DEFECT entries in the friction log;
-2. At least ⟨N — suggest 12⟩ mirrored visits in the window;
+2. At least 12 mirrored visits in the window;
 3. EVERY mirrored visit has a friction-log row (G-24: NO FRICTION is a
    valid row) — missing rows mean the log was not kept, and the window is
    INCONCLUSIVE, not clean;
-4. Four consecutive clean `--against` diffs inside the same window.
+4. Four consecutive clean `--against` diffs inside the same window;
+5. At least one mirrored visit in the window performed by a backup HM —
+   the record must work for someone other than the person who wrote it
+   (the Stranger Test's thesis, and A2's distinct-users guard).
 
 The window is a ROLLING 30 DAYS, not a calendar month (G-25: partial
 first/last weeks broke criterion 4 for reasons that had nothing to do
 with the software).
 
-⟨N⟩ is not a dial, it is a structural gate (G-25): at weekly cadence,
-N=12 means roughly THREE households running concurrently — i.e. the app
-cannot be promoted off a single-household pilot no matter how well it
-goes. Decide which you mean and write it here: EITHER "promotion requires
-~3 concurrent households; N=12 stands" (the same evidentiary bar A2 sets
-for retiring a trigger rule) OR "N scales to the pilot's actual volume
-(N=⟨4-5⟩ for one household), and the weaker evidence is accepted
-because ⟨reason⟩."
+N=12 is a STRUCTURAL GATE, chosen deliberately (founder decision,
+2026-07-25): at weekly cadence it means promotion off paper requires
+roughly THREE households running concurrently. That is on purpose — A2
+will not retire a single trigger rule on evidence from fewer than three
+households and two users, and retiring the paper system of record cannot
+rationally clear a lower bar; single-household evidence cannot
+distinguish "the app is sound" from "the app fits this one house"; the
+mirror costs about an hour a week while premature promotion risks the
+pilot's purpose; and three households is the business milestone the
+economics need anyway, so the app earns system-of-record status exactly
+when the business earns its next stage. If the mirroring burden ever
+itself threatens the pilot, revisit N with the reason written down here.
