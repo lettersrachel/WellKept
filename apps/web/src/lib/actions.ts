@@ -678,6 +678,34 @@ export async function setPhotoRetentionHold(formData: FormData) {
   revalidatePath(`/oversight/${p.householdId}`);
 }
 
+/**
+ * REQ-006 media-reuse flag: corporate_admin marks a photo reusable beyond
+ * the service record (or revokes it). Fails closed on NDA households —
+ * their media is never reusable, and the rule lives here, not in the UI.
+ * Audited.
+ */
+export async function setPhotoReuseAllowed(formData: FormData) {
+  const photoId = String(formData.get("photoId") ?? "");
+  const allow = String(formData.get("allow") ?? "") === "true";
+  if (!photoId) return;
+  const { visitPhoto } = await import("@wellkept/schema");
+  const [p] = await db.select({ id: visitPhoto.id, householdId: visitPhoto.householdId, purgedAt: visitPhoto.purgedAt })
+    .from(visitPhoto).where(eq(visitPhoto.id, photoId));
+  if (!p || p.purgedAt) return; // nothing reusable about a purged photo
+  const principal = await getPrincipal(p.householdId);
+  if (principal?.role !== "corporate_admin") return;
+  if (allow) {
+    const [hh] = await db.select({ isNda: household.isNda }).from(household).where(eq(household.id, p.householdId));
+    if (!hh || hh.isNda) return; // NDA household media is never reusable
+  }
+  await db.update(visitPhoto).set({ reuseAllowed: allow }).where(eq(visitPhoto.id, photoId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: p.householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "photo_reuse_change", detail: { photoId, reuseAllowed: allow },
+  });
+  revalidatePath(`/oversight/${p.householdId}`);
+}
+
 /** Ending an exclusion sets effective_to — nothing hard-deletes. Audited. */
 export async function endAnticipationExclusion(formData: FormData) {
   const exclusionId = String(formData.get("exclusionId") ?? "");

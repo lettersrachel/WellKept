@@ -205,7 +205,7 @@ export async function getVisitPhotos(householdId: string, limit = 12) {
   const { desc } = await import("drizzle-orm");
   return db.select({
     id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy,
-    retentionHold: visitPhoto.retentionHold, purgedAt: visitPhoto.purgedAt,
+    retentionHold: visitPhoto.retentionHold, purgedAt: visitPhoto.purgedAt, reuseAllowed: visitPhoto.reuseAllowed,
   })
     .from(visitPhoto)
     .where(eq(visitPhoto.householdId, householdId))
