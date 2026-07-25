@@ -51,7 +51,7 @@ One instance is plenty; commands are idempotent so restarts are safe.
 
 Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker seed:rules`
 
-## 4. Smoke checklist (after first deploy)
+## 4. Smoke checklist (after every deploy; extended 2026-07-25 for the rev-4 surfaces)
 
 1. `https://app.yourdomain.com/api/health` → `{"ok":true,"db":"up"}`
 2. `/signin` → request a link for your own email → it arrives via Resend →
@@ -61,6 +61,30 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
    gains items
 4. `/dev/last-email` → 404 (dev-only page is gated in production)
 5. An s3 reveal → audit row present in `audit_event`
+6. A household drill-in shows the **Household consent card** — red
+   NO-CONSENT banner on any household without a recorded consent
+7. Log a test incident (kind `other`, low) → it appears open on the
+   drill-in AND flags red in the fleet board's Queues column → resolve it
+   with a note → flag clears
+8. **CEO previews**: drill-in → View as client and View as HM both render
+   (the client preview running without error IS the live payload-guard
+   pass); the switcher banner flips all three ways
+9. Create a topic exclusion on a test household → confirm the excluded
+   text stops appearing in newly generated prompts; end the exclusion
+10. Both briefing surfaces show the "Last year at this time" section (its
+    empty-state note counts — recall is dark until a year of history)
+11. A visit photo shows the Hold and Reuse toggles (corporate_admin);
+    toggling each writes an audit row
+12. `app_setting` rows exist in production with intended values:
+    `photo_retention` (`{"days":90}`) and `rule_health`
+    (`{"actRateFloor":0.25,"minHouseholds":3,"minUsers":2}`) — insert
+    them if absent; a missing key is a missing knob, defaults only cover
+    code paths that read them
+13. Dry-run the erasure tool against a DEMO household id and read the
+    plan it prints (counts, hold handling, open-incident guard). Do NOT
+    `--commit`
+14. `/oversight/triggers` shows the health line on every rule (zeros are
+    fine pre-pilot)
 
 ## Not covered here (later tiers)
 

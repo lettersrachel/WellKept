@@ -8,12 +8,23 @@
  *
  * What it does, per table:
  *  - vault_item: rows DELETED — removing ciphertext + wrapped keys is a
- *    crypto-shred; the secrets are unrecoverable. The one deliberate
- *    exception to "nothing hard-deletes": tombstoned ciphertext would still
- *    be the secret.
+ *    crypto-shred; the secrets are unrecoverable... in the LIVE database.
+ *    Inside Neon's point-in-time-recovery window a restore branch can
+ *    reconstitute deleted rows while the KEK is still live, so for that
+ *    window erasure is a strong revocation of access, not destruction —
+ *    the history-retention setting is the true floor on erasure latency
+ *    (gap register G-04; counsel writes the notice knowing this).
  *  - visit_photo: image bytes cleared + purged_at stamped (tombstone rows
- *    remain). Erasure overrides retention holds — a legal hold that must
- *    survive an erasure request is counsel's call to make BEFORE running.
+ *    remain). Retention holds are HONOURED by default — a hold exists
+ *    precisely because the photo substantiates an open incident or
+ *    dispute; destroying it while preserving the incident row would keep
+ *    the claim and burn the evidence (gap register G-03). Pass
+ *    --override-holds only when counsel directs that a deletion right
+ *    defeats the hold.
+ *  - OPEN INCIDENTS BLOCK THE RUN. If the household has an open
+ *    incident_report, the tool refuses (even the dry run says so) unless
+ *    --despite-open-incidents is passed. The 2am default must never
+ *    silently choose between a deletion request and a live dispute.
  *  - playbook_field: value/note cleared, tombstoned.
  *  - registry_entry: label '[erased]', detail {}, tombstoned.
  *  - dot / visit / visit_command / gesture / stranger_test / client_edit /
@@ -34,7 +45,7 @@
  * Usage (from apps/web so `pg` resolves):
  *   DATABASE_URL="<url>" node scripts/erase-household.mjs <household-id>            # dry run
  *   DATABASE_URL="<url>" node scripts/erase-household.mjs <household-id> --commit
- *   flags: --erase-incidents --scrub-audit-detail
+ *   flags: --erase-incidents --scrub-audit-detail --override-holds --despite-open-incidents
  */
 import pg from "pg";
 
@@ -42,12 +53,14 @@ const args = process.argv.slice(2);
 const COMMIT = args.includes("--commit");
 const ERASE_INCIDENTS = args.includes("--erase-incidents");
 const SCRUB_AUDIT = args.includes("--scrub-audit-detail");
+const OVERRIDE_HOLDS = args.includes("--override-holds");
+const DESPITE_OPEN = args.includes("--despite-open-incidents");
 const householdId = args.find((a) => !a.startsWith("--"));
 
 const url = process.env.DATABASE_URL;
 if (!url) { console.error("Set DATABASE_URL."); process.exit(1); }
 if (!householdId || !/^[0-9a-f-]{36}$/i.test(householdId)) {
-  console.error("Usage: node scripts/erase-household.mjs <household-uuid> [--commit] [--erase-incidents] [--scrub-audit-detail]");
+  console.error("Usage: node scripts/erase-household.mjs <household-uuid> [--commit] [--erase-incidents] [--scrub-audit-detail] [--override-holds] [--despite-open-incidents]");
   process.exit(1);
 }
 
@@ -58,9 +71,24 @@ const { rows: [hh] } = await c.query("SELECT id, name, archived_at FROM househol
 if (!hh) { console.error(`No household ${householdId}.`); await c.end(); process.exit(1); }
 
 const count = async (sql) => Number((await c.query(sql, [householdId])).rows[0].n);
+
+// G-03 guard: an open incident blocks the run entirely unless explicitly
+// overridden — the tool must never silently choose between a deletion
+// request and a live dispute. Checked before anything else, dry run included.
+const openIncidents = await count("SELECT count(*) n FROM incident_report WHERE household_id=$1 AND status='open'");
+if (openIncidents > 0 && !DESPITE_OPEN) {
+  console.error(
+    `\nREFUSED: household has ${openIncidents} OPEN incident(s). Resolve them first, or — if counsel`
+    + `\ndirects that the deletion request proceeds despite the dispute — re-run with --despite-open-incidents.\n`,
+  );
+  await c.end();
+  process.exit(2);
+}
+
 const counts = {
   vault: await count("SELECT count(*) n FROM vault_item WHERE household_id=$1"),
-  photos: await count("SELECT count(*) n FROM visit_photo WHERE household_id=$1 AND purged_at IS NULL"),
+  photos: await count("SELECT count(*) n FROM visit_photo WHERE household_id=$1 AND purged_at IS NULL AND retention_hold=false"),
+  heldPhotos: await count("SELECT count(*) n FROM visit_photo WHERE household_id=$1 AND purged_at IS NULL AND retention_hold=true"),
   fields: await count("SELECT count(*) n FROM playbook_field WHERE household_id=$1"),
   registries: await count("SELECT count(*) n FROM registry_entry WHERE household_id=$1"),
   dots: await count("SELECT count(*) n FROM dot WHERE household_id=$1"),
@@ -77,8 +105,11 @@ const counts = {
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
-console.log(`  vault items to CRYPTO-SHRED (rows deleted, unrecoverable): ${counts.vault}`);
-console.log(`  photos to purge (bytes cleared, tombstones remain):        ${counts.photos}  (erasure overrides holds)`);
+if (openIncidents > 0) console.log(`  !! ${openIncidents} OPEN incident(s) — proceeding on --despite-open-incidents\n`);
+console.log(`  vault items to CRYPTO-SHRED (rows deleted, unrecoverable*): ${counts.vault}`);
+console.log(`     *inside the Neon PITR window a restore can reconstitute them (G-04) — retention is the erasure-latency floor`);
+console.log(`  photos to purge (bytes cleared, tombstones remain):        ${counts.photos}`);
+console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " — WILL BE PURGED (--override-holds)" : " — HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
 console.log(`  registry entries to clear + tombstone:                     ${counts.registries}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
@@ -98,7 +129,14 @@ await c.query("BEGIN");
 try {
   const E = "[erased]";
   await c.query("DELETE FROM vault_item WHERE household_id=$1", [householdId]);
-  await c.query("UPDATE visit_photo SET data='', purged_at=now(), retention_hold=false, reuse_allowed=false WHERE household_id=$1 AND purged_at IS NULL", [householdId]);
+  // Holds honoured by default (G-03): held photos substantiate an open
+  // incident or dispute and survive unless counsel explicitly directs.
+  await c.query(
+    OVERRIDE_HOLDS
+      ? "UPDATE visit_photo SET data='', purged_at=now(), retention_hold=false, reuse_allowed=false WHERE household_id=$1 AND purged_at IS NULL"
+      : "UPDATE visit_photo SET data='', purged_at=now(), reuse_allowed=false WHERE household_id=$1 AND purged_at IS NULL AND retention_hold=false",
+    [householdId],
+  );
   await c.query("UPDATE playbook_field SET value='', note='', tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId]);
   await c.query("UPDATE registry_entry SET label=$2, detail='{}', tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE dot SET verbatim=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
@@ -128,7 +166,7 @@ try {
   await c.query(
     `INSERT INTO audit_event (id, household_id, actor_user, actor_role, kind, detail, created_at, updated_at)
      VALUES (gen_random_uuid(), $1, $2, 'erasure_tool', 'household_erased', $3, now(), now())`,
-    [householdId, "00000000-0000-0000-0000-000000000000", JSON.stringify({ eraseIncidents: ERASE_INCIDENTS, scrubAuditDetail: SCRUB_AUDIT, counts })],
+    [householdId, "00000000-0000-0000-0000-000000000000", JSON.stringify({ eraseIncidents: ERASE_INCIDENTS, scrubAuditDetail: SCRUB_AUDIT, overrideHolds: OVERRIDE_HOLDS, despiteOpenIncidents: DESPITE_OPEN, openIncidents, counts })],
   );
   await c.query("COMMIT");
 } catch (err) {

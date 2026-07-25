@@ -96,7 +96,18 @@ exactly what the software collects. **They need a lawyer's review before use**
   `--scrub-audit-detail`). Counsel's part remains: decide when erasure
   applies vs what must be retained, and write the notice's retention/erasure
   section to match what the tool actually does.
-- ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
+- ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called) —
+  and route Sentry alerts somewhere a person actually sees them. One page:
+  detect, assess, notify, record (gap register G-08).
+- ⬜ 🧑⚖️ The counsel packet, in one engagement (gap register): (1) erasure-tool
+  semantics vs the notice's deletion language, (2) the 90-day photo window,
+  (3) the consent doc, (4) the Neon PITR window as the true floor on erasure
+  latency (G-04), (5) the five subprocessor DPAs — Vercel, Neon, Upstash,
+  Railway, Resend (G-09), and (6) whether an off-Neon backup is worth its own
+  exposure, and if so its retention rule (G-02).
+- ⬜ 🧑⚖️ Key custody (G-01, the register's most serious item): fill the
+  brackets in `adr/005-key-custody.md` — second custodian, sealed mechanism,
+  retrieval condition — and make the sealed copy exist. An afternoon.
 - ✅ 🤖 Incident & complaint register — **built 2026-07-25** (founder
   approved the recommendation): `incident_report`, a dedicated append-only
   table, not a registry kind. Kinds complaint · breakage · injury ·

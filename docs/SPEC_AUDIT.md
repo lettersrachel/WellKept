@@ -100,6 +100,11 @@ infrastructure, not unit tests alone — see git history for the receipts.
 
 ## Functional gaps outside the requirement table (added 2026-07-25)
 
+> A second-pass review of the rev-4 handoff produced a companion register —
+> [GAP_REGISTER.md](GAP_REGISTER.md) (14 items: custody, backups, two
+> shipped-mechanism contradictions since fixed, business/legal gates,
+> governance obligations). It extends this table; neither duplicates the other.
+
 The table above audits the build against WK-DEV-001's requirements, so
 "every P0 built" is only true of functions the requirement table asked for.
 A gap review of the pilot handoff found seven business functions that appear
