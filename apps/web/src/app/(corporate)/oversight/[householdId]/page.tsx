@@ -71,8 +71,11 @@ export default async function Oversight({ params }: { params: Promise<{ househol
   return (
     <>
       <div className="card">
-        <div className="row" style={{ alignItems: "baseline" }}>
+        <div className="row" style={{ alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <h2 style={{ flex: 1 }}><Link href="/oversight" style={{ color: "var(--grey)", textDecoration: "none" }}>Fleet</Link> → {hh.name}</h2>
+          {/* CEO master view: read-only previews through the other roles' projections. */}
+          {isAdmin && <Link className="pill" href={`/oversight/${hh.id}/preview/hm`}>View as HM</Link>}
+          {isAdmin && <Link className="pill" href={`/oversight/${hh.id}/preview/client`}>View as client</Link>}
           <Link className="pill" href={`/oversight/${hh.id}/exhibit`}>Exhibit pack</Link>
         </div>
         <form action={setStatusTag} className="row">
