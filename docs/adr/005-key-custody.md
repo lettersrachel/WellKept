@@ -1,6 +1,6 @@
 # ADR-005: Master-key custody - a second custodian and a written recovery path
 
-Date: 2026-07-25 | Status: Proposed (needs founder decision on the brackets) | Decider: Rachel Letters (founder)
+Date: 2026-07-25 | Status: ACCEPTED IN PART (the Guardrails section binds as of 2026-07-25, G-26 — it costs nothing while no real s3 values exist and is the half that must bind immediately); the Decision section's brackets (custodian, mechanism, retrieval condition) remain Proposed | Decider: Rachel Letters (founder)
 
 ## Context
 
@@ -58,5 +58,7 @@ This ADR applies the same reasoning to the key that protects the vault.
 - One more person can, under a named condition, reach everything the vault
   protects - which is why the condition, the seal, and the incident rule
   above are part of the decision, not decoration.
-- Until the brackets are filled and the sealed copy exists, this ADR is
-  Proposed and G-01 stays open.
+- The GUARDRAILS BIND NOW (accepted in part, G-26): the no-real-s3 refusal
+  is in force today, precisely because the custody it gates on does not yet
+  exist. The Decision section stays Proposed until the brackets are filled
+  and the sealed copy exists; G-01 stays open until then.

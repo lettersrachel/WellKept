@@ -4,6 +4,11 @@
  * branded Playbook export (REQ-017), and the parallel-pilot weekly drift
  * diff (`wk_import.py WORKBOOK --against dump.json`, protocol §weekly /
  * gap register G-20) — run against current data.
+ * The dump carries NO vault material (G-27): s3 values are structurally
+ * absent from playbook_field rows (the vault law), so the worst this file
+ * holds is s1/s2 operating detail. It is still a plaintext household record
+ * outside the system's controls: write it to a temp path and delete it
+ * after use, per the protocol's weekly procedure.
  * Usage: node src/dump-seed.ts [household-uuid] [out.json]
  *   (no uuid: the first household — fine for a fresh dev DB, ambiguous in
  *    prod where demo households exist; the weekly drift check must name it)

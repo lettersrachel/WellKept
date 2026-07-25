@@ -53,6 +53,15 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
 
 ## 4. Smoke checklist (after every deploy; extended 2026-07-25 for the rev-4 surfaces)
 
+**The write-heavy items (6, 7, 9, 11, 13) run against the SMOKE TEST
+FIXTURE, never a client household** (G-23 — the incident register is
+append-only by design, so a checklist incident on a real household is
+permanent). One-time setup: create a household named exactly `Smoke Test
+Fixture` (any tier; add yourself as its corporate contact), the same way a
+real household is created. `archive-demo-data.mjs` exempts it by name at
+go-live; it is not a client and never will be. Before go-live the demo
+households serve; after go-live the fixture is the only safe target.
+
 1. `https://app.yourdomain.com/api/health` → `{"ok":true,"db":"up"}`
 2. `/signin` → request a link for your own email → it arrives via Resend →
    clicking lands you per your role assignment
