@@ -35,6 +35,18 @@ Three documents, one per audience:
   should set one (see the photo-lifecycle item in LAUNCH.md §3).
 - **"Dots"** — verbatim observations a house manager logs; never shown to the
   client.
+- **Incident & complaint records** (added 2026-07-25) — a complaint,
+  breakage, injury, or near-miss: what happened, severity, who reported it
+  and how, and the resolution note. Append-only; internal; never shown to
+  the client in the app.
+- **Anticipation records** (added 2026-07-25) — staff answers to service
+  prompts (with optional internal notes), service-preference exclusions
+  ("don't bring this up") with their reasons, and season-recall lines
+  derived from the household's own history. All internal (s2); structurally
+  blocked from client views by the payload guards.
+- **The consent record itself** (added 2026-07-25) — that the household's
+  written consent was signed, when, and which document version; recorded by
+  a named corporate user. The paper stays the artifact.
 - **Registries** — important dates, vendors, appliances, subscriptions.
 - **Account & activity** — email, role, and an append-only audit log of who
   accessed or changed what.

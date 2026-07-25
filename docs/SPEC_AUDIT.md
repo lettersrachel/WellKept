@@ -98,6 +98,15 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 Everything marked built+verified above was exercised against live
 infrastructure, not unit tests alone — see git history for the receipts.
 
+## Anticipation-engine roadmap (added 2026-07-25, night)
+
+> Six design items — news-vs-known outcomes, incident back-links, briefing
+> budget, field age/confirmation, external signals, cold start — are specified
+> in [ANTICIPATION_ROADMAP.md](ANTICIPATION_ROADMAP.md) with pilot-milestone
+> sequencing. NONE are built, by that document's own instruction: items A and B
+> gate on the deploy session completing clean, and must land before real
+> household data accumulates.
+
 ## Functional gaps outside the requirement table (added 2026-07-25)
 
 > A second-pass review of the rev-4 handoff produced a companion register —
