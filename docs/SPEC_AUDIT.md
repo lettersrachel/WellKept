@@ -95,6 +95,26 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 Everything marked built+verified above was exercised against live
 infrastructure, not unit tests alone — see git history for the receipts.
 
+## Functional gaps outside the requirement table (added 2026-07-25)
+
+The table above audits the build against WK-DEV-001's requirements, so
+"every P0 built" is only true of functions the requirement table asked for.
+A gap review of the pilot handoff found seven business functions that appear
+in no governing doc at all — absent, not marked incomplete. Three are
+deliberate boundary decisions, now recorded in ADR-004; four are open gaps.
+None of these can be inferred from the REQ table; this register is where
+they are marked.
+
+| Gap | Kind | Disposition |
+|---|---|---|
+| Billing & payment collection | boundary (ADR-004 §1) | Nothing in the stack invoices, charges, or dunns; the economics rate (REQ-040) is oversight math only, and the privacy notice deliberately keeps card/bank numbers out. Open until the outside system of record is named in ADR-004. For a weekly membership billed in advance, the largest functional gap in the stack |
+| Scheduling & rostering | boundary (ADR-004 §2) | HM-to-household assignment lives in the Jobber stack (plan 9.2); the app records who did visit, never who will. The codebase's only "roster" is the `roster_age` trigger family — not staff rostering |
+| Time → payroll | boundary (ADR-004 §3) + gap | 30d hours derive from visit payloads — a service record, not FLSA-grade time (no compensable travel, no non-productive allowance); geofence is stubbed text (REQ-036). Payroll system of record unnamed; nothing connects to it |
+| Incident / complaint register | **gap — not built** | No record anywhere of a client complaint, breakage, injury, or near-miss. Dots capture HM observations, stranger tests capture friction; neither is a complaint. In a dispute this is the single most important record in the business. Needs a decision (in-app registry kind vs paper log) — gated in LAUNCH.md §3 |
+| Client consent capture | **gap — not built** | ADR-001 guardrail 3 makes written consent the precondition for real household data; staff have `nda_approved`, clients have no equivalent field, so the thing that gates everything is tracked outside the system that enforces everything else. Gated in LAUNCH.md §1.5 |
+| Photo lifecycle | **gap — undocumented** | Photos are live: base64 in Postgres (`visit_photo`), staff-only + MFA on read, never in the client view. But `photoRefs` (REQ-012) is unused, media-reuse flags (REQ-006/071) are not built, and no doc states where images live, for how long, or who can see them — the most sensitive artifact held. Gated in LAUNCH.md §3 |
+| Deletion / erasure | **promise gap** (REQ-071, P0) | The system tombstones (`archived_at`) and never hard-deletes; the legal drafts already flag that counsel must reconcile this with any right to erasure. Until an erasure path exists (build + counsel), the privacy notice describes rights the code cannot execute — it must not be published as-is. Gated in LAUNCH.md §3 |
+
 ## Addendum A1 (the standards store) — findings for the QA-010 v1.4 pass
 
 Built T1–T7 and shipped to production 2026-07-24, dark behind

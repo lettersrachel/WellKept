@@ -25,7 +25,10 @@ Three documents, one per audience:
 - **s3 items are encrypted at rest** (AES-256-GCM) and only shown after an
   authorized, **audited** reveal.
 - **Visit records** — tasks completed, hours, a three-sentence report, and
-  (soon) photos.
+  photos. Photos are stored inside the database, are shown only to assigned
+  staff and management (second factor required on every view), and never
+  appear on the client's view. No retention period is set yet — counsel
+  should set one (see the photo-lifecycle item in LAUNCH.md §3).
 - **"Dots"** — verbatim observations a house manager logs; never shown to the
   client.
 - **Registries** — important dates, vendors, appliances, subscriptions.

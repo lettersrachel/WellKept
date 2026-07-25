@@ -46,6 +46,19 @@ enforced, vault encryption, rate limits, audited reveals. What's missing: an
   self-review — but decide that on purpose and write it down.
 - Before scaling past a household or two, get an outside review.
 
+### 1.5 Client consent captured where the system can see it 🧑⚖️ ⬜
+ADR-001 guardrail 3 makes the household's written consent the precondition
+for any real data — but the app has no record of it. Staff have an
+`nda_approved` flag in People & access; clients have no equivalent, so the
+fact that gates everything is tracked outside the system that enforces
+everything else.
+
+- Before real household data: sign `legal/household-consent.md` (after
+  counsel), file the paper, and record on the household **that** consent was
+  signed, **when**, and **which version** — a household-level flag mirroring
+  `nda_approved` is the natural build (small; needs the go-ahead since it
+  touches the schema).
+
 ---
 
 ## 2. Operational readiness — before it's load-bearing
@@ -76,8 +89,27 @@ exactly what the software collects. **They need a lawyer's review before use**
 - ⏳ 🧑⚖️ Household consent per home — draft: `legal/household-consent.md`.
 - ⏳ 🧑⚖️ Staff confidentiality — draft: `legal/staff-confidentiality.md`
   (the `nda_approved` flag records it in People & access).
-- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`.
+- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`. **Do not publish
+  as-is:** it describes deletion rights the code cannot execute (the system
+  tombstones via `archived_at`, never hard-deletes — REQ-071 deletion is not
+  built). Counsel must reconcile the tombstone model with any right to
+  erasure, and the notice's retention section must match what the code
+  actually does — or an erasure path gets built first.
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
+- ⬜ ⚖️ Incident & complaint register — decide where a client complaint, a
+  breakage, an injury, or a near-miss is recorded (in-app registry kind vs
+  paper log). Today no such record exists anywhere: dots are HM
+  observations, stranger tests are friction — neither is a complaint. In a
+  dispute this is the single most important record in the business.
+- ⬜ 🧑⚖️ Photo lifecycle, written down — photos of the inside of a client's
+  home are the most sensitive artifact held. Reality today: stored inside
+  Postgres (`visit_photo`), staff-only + second factor on every read, never
+  on the client view. Not written anywhere client-facing: that location, a
+  retention period, and who can see them. Decide retention + disclosure
+  (privacy notice "visit records" row) before real photos accumulate.
+- ⬜ ⚖️ Billing / scheduling / payroll seams — deliberately outside the app;
+  ADR-004 records the boundary. It stays **Proposed** until the systems of
+  record (who invoices, who rosters, who pays) are named in it.
 
 ---
 
