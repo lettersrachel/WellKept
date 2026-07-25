@@ -30,6 +30,8 @@ code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 -X POST -H 'conten
 [ "$code" = "404" ]; need $? "check 4b: POST /api/dev/trigger-pass -> 404 (got $code)"
 
 # 12. app_setting knobs exist with intended values (insert if absent).
+# The node block prints per-key DETAIL lines only; the single PASS/FAIL
+# verdict for check 12 comes from `need` below — one verdict per check.
 if [ -n "${DATABASE_URL:-}" ]; then
   ( cd "$(dirname "$0")/../apps/web" && node --input-type=module - <<'EOF'
 import pg from "pg";
@@ -44,18 +46,18 @@ for (const [key, want] of Object.entries(WANT)) {
   const { rows: [row] } = await c.query("SELECT value FROM app_setting WHERE key=$1", [key]);
   if (!row) {
     await c.query("INSERT INTO app_setting (key, value, updated_at) VALUES ($1, $2, now())", [key, JSON.stringify(want)]);
-    console.log(`  PASS check 12: ${key} was ABSENT — inserted intended value`);
+    console.log(`         ${key}: was absent — inserted intended value`);
   } else {
     const missing = Object.keys(want).filter((k) => !(k in row.value));
-    if (missing.length) { console.log(`  FAIL check 12: ${key} exists but lacks ${missing.join(", ")}`); bad = 1; }
-    else console.log(`  PASS check 12: ${key} present (${JSON.stringify(row.value)})`);
+    if (missing.length) { console.log(`         ${key}: exists but lacks ${missing.join(", ")}`); bad = 1; }
+    else console.log(`         ${key}: present (${JSON.stringify(row.value)})`);
   }
 }
 await c.end();
 process.exit(bad);
 EOF
   )
-  need $? "check 12: app_setting knobs"
+  need $? "check 12: app_setting knobs (detail above)"
 else
   say SKIP "check 12: DATABASE_URL not set — knobs NOT verified; re-run with it before calling the checklist done"
 fi

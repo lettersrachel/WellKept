@@ -59,12 +59,14 @@ append-only by design, so a checklist incident on a real household is
 permanent). Setup is one idempotent command (safe to re-run every deploy;
 prints the FIXTURE_UUID the checklist needs):
 
-    cd apps/web && DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs you@example.com
+    cd apps/web && DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs lettersrachel@gmail.com
 
 The fixture carries `is_fixture=true`: excluded from fleet counts,
 economics totals, and the weekly digest; rendered dimmed + tagged where it
 appears; `archive-demo-data.mjs` exempts it by column and REFUSES to run
-if no live fixture exists. It is not a client and never will be.
+if no live fixture exists. It is not a client and never will be. Before
+go-live the demo households serve; after go-live the fixture is the only
+safe target.
 
 **Checks 1, 4, and 12 are scripted** — run them first, then work the
 manual ones:
