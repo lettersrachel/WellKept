@@ -57,7 +57,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 044 exhibit-pack exports | P0 | **built+verified** — fleet CSV (/api/exhibits/fleet) + the per-household printable exhibit pack (see 023) |
 | 045 trigger administration UI | P1 | **built+verified** — /oversight/triggers: full library with steps + method refs, enable/disable (audited; disable is the retirement path), create fleet rules with fail-closed validation (bounded offsets, real provision ids, DEV-005 no-em-dash) |
 | 046 dot triage → promote to field | P1 | **built+verified** (997f805: corporate promotes a dot into a chosen field, provenance observed, audited, fires triggers) |
-| 047 CPSC recall job | P2 | not built |
+| 047 CPSC recall job | P2 | **built** (2026-07-25): weekly worker job (Tuesdays) searches the CPSC SaferProducts feed per appliance-registry entry (model preferred, label fallback), notifies corporate_admin on a MAY-match with the recall URL and an explicit verify-the-unit instruction, deduped once-ever per (household, recall). Quiet on feed failure — skipped rounds retry next week. OPERATIONAL: runs once Upstash resumes |
 | 048 CEO master view (new REQ, founder request 2026-07-25) | P1 | **built** (2026-07-25): /oversight/[id]/preview/{client,hm} — corporate_admin-only, read-only previews through the other roles' projections, using the SAME server-side filters as the real surfaces; the client preview runs all three payload guards live, so every CEO visit re-proves the client projection is safe. Switcher pills on the drill-in header |
 
 ## F. Trigger engine
