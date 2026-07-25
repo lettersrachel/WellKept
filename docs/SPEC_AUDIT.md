@@ -66,7 +66,9 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 051 six trigger families | P0 | **built+verified** — field-change flow, daily registry sweep (birthday/anniversary/commitment/subscription/horizon windows), movable-date observances (calendar table x household's own Playbook naming them, T-14 radar), and the threshold family (load signal: three consecutive drifting visits -> corporate notification, deduped 14d, STD-023.2.7). OPERATIONAL: sweeps paused until the Upstash quota resets Aug 1 or the plan upgrades |
 | 052 staged prompt packs, dated | P0 | **built+verified** (offsets, quiet hours, suppression) |
 | 053 commitment cascade | P1 | covered by the registry sweep's commitment windows (prep T-14, final T-3, e6fb527); a richer bespoke cascade remains open |
-| 054 repeat-season memory | P1 | not built |
+| 054 repeat-season memory | P1 | not built; specified in [Addendum A2](SPEC_ADDENDUM_A2.md) |
+| 055 prompt outcome capture and rule health | P1 | not built; specified in [Addendum A2](SPEC_ADDENDUM_A2.md) (new REQ, 2026-07-25) |
+| 056 anticipation exclusion list | P1 | not built; specified in [Addendum A2](SPEC_ADDENDUM_A2.md) (new REQ, 2026-07-25). Dependency of 054 |
 
 ## G/H. Notifications & non-functional
 | REQ | P | Status |
