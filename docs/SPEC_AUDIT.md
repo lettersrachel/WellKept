@@ -66,7 +66,9 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 051 six trigger families | P0 | **built+verified** — field-change flow, daily registry sweep (birthday/anniversary/commitment/subscription/horizon windows), movable-date observances (calendar table x household's own Playbook naming them, T-14 radar), and the threshold family (load signal: three consecutive drifting visits -> corporate notification, deduped 14d, STD-023.2.7). OPERATIONAL: sweeps paused until the Upstash quota resets Aug 1 or the plan upgrades |
 | 052 staged prompt packs, dated | P0 | **built+verified** (offsets, quiet hours, suppression) |
 | 053 commitment cascade | P1 | covered by the registry sweep's commitment windows (prep T-14, final T-3, e6fb527); a richer bespoke cascade remains open |
-| 054 repeat-season memory | P1 | not built |
+| 054 repeat-season memory | P1 | **built** per [Addendum A2](SPEC_ADDENDUM_A2.md) (2026-07-25): `season_observation` materialized on the daily sweep from the household's own anchors (visits, dots, gestures); recall section in the web briefing (after radar, before dots), filtered through exclusions, dark until 12 months of history and says so. Native-app recall section pending; payload guard extended (`assertNoAnticipationRows`) |
+| 055 prompt outcome capture and rule health | P1 | **built** per A2 (2026-07-25): `prompt_outcome` (four-value enum, append-only, unique per prompt×user), answer buttons on today's specials (never gates anything), rule health in /oversight/triggers (fired from the prompt table, act/ignore/n-a/already-done rates, median lead where target dates exist, retirement-candidate flag). Thresholds ship as configuration (`app_setting` key `rule_health`), founder-set |
+| 056 anticipation exclusion list | P1 | **built** per A2 (2026-07-25): `anticipation_exclusion`, enforced server-side in the scheduler before queue writes, fail closed; floors bypass exclusions entirely (asserted in trigger-engine unit tests; live-probe assertion still to add); corporate-only approval + audited end-dating in the household drill-in |
 
 ## G/H. Notifications & non-functional
 | REQ | P | Status |
@@ -94,6 +96,26 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 
 Everything marked built+verified above was exercised against live
 infrastructure, not unit tests alone — see git history for the receipts.
+
+## Functional gaps outside the requirement table (added 2026-07-25)
+
+The table above audits the build against WK-DEV-001's requirements, so
+"every P0 built" is only true of functions the requirement table asked for.
+A gap review of the pilot handoff found seven business functions that appear
+in no governing doc at all — absent, not marked incomplete. Three are
+deliberate boundary decisions, now recorded in ADR-004; four are open gaps.
+None of these can be inferred from the REQ table; this register is where
+they are marked.
+
+| Gap | Kind | Disposition |
+|---|---|---|
+| Billing & payment collection | **boundary, closed** (ADR-004 §1, Accepted 2026-07-25) | QuickBooks is the named system of record for invoicing, collection, and dunning; the app never collects payment (privacy notice keeps card/bank numbers out by policy) and the economics rate (REQ-040) stays oversight math only. Operational remainder outside this repo: configure QuickBooks invoicing before the first paying household |
+| Scheduling & rostering | **boundary, closed** (ADR-004 §2, Accepted 2026-07-25) | HM-to-household assignment lives in the Jobber stack (plan 9.2); the app records who did visit, never who will. The codebase's only "roster" is the `roster_age` trigger family — not staff rostering |
+| Time → payroll | **boundary, closed** (ADR-004 §3, Accepted 2026-07-25) | QuickBooks (payroll/timekeeping) is the named system of record for FLSA-grade time; app hours stay service records (geofence is stubbed text, REQ-036) that may cross-check payroll but never feed it |
+| Incident / complaint register | **built** (2026-07-25) | `incident_report`: append-only, five kinds, severity + channel + reporter, audited create/resolve, no delete path. Logged from the drill-in (field + corporate roles); open incidents flag red on the fleet board |
+| Client consent capture | **built** (2026-07-25) | The household record now carries `consent_signed_at` / `consent_doc_version` / `consent_recorded_by`, recorded by corporate_admin on the drill-in (audited, corrections re-record). What remains is Rachel's: counsel review, the signature itself, and recording it — gated in LAUNCH.md §1.5 |
+| Photo lifecycle | **mechanism built** (2026-07-25) | Daily purge of image bytes past the configurable window (`app_setting` `photo_retention`, default 90d, floor 7d); tombstoned rows serve 410; corporate retention hold exempts disputed photos, audited. Remaining: counsel blesses the window + privacy-notice disclosure; `photoRefs` (REQ-012) and media-reuse flags (REQ-006/071) still unbuilt |
+| Deletion / erasure | **promise gap** (REQ-071, P0) | The system tombstones (`archived_at`) and never hard-deletes; the legal drafts already flag that counsel must reconcile this with any right to erasure. Until an erasure path exists (build + counsel), the privacy notice describes rights the code cannot execute — it must not be published as-is. Gated in LAUNCH.md §3 |
 
 ## Addendum A1 (the standards store) — findings for the QA-010 v1.4 pass
 

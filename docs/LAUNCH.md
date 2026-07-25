@@ -46,6 +46,17 @@ enforced, vault encryption, rate limits, audited reveals. What's missing: an
   self-review — but decide that on purpose and write it down.
 - Before scaling past a household or two, get an outside review.
 
+### 1.5 Client consent captured where the system can see it 🧑⚖️ ⏳
+ADR-001 guardrail 3 makes the household's written consent the precondition
+for any real data. Staff have `nda_approved`; the household record now has
+its counterpart: 🤖 **built 2026-07-25** — a Household consent card on the
+corporate drill-in records that consent was signed, when, and which doc
+version (audited; corrections re-record).
+
+- Remaining, yours: counsel reviews `legal/household-consent.md`, the
+  household signs, you file the paper and record it on the card. Until the
+  card shows a signed consent, no real data for that household.
+
 ---
 
 ## 2. Operational readiness — before it's load-bearing
@@ -76,8 +87,36 @@ exactly what the software collects. **They need a lawyer's review before use**
 - ⏳ 🧑⚖️ Household consent per home — draft: `legal/household-consent.md`.
 - ⏳ 🧑⚖️ Staff confidentiality — draft: `legal/staff-confidentiality.md`
   (the `nda_approved` flag records it in People & access).
-- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`.
+- ⏳ 🧑⚖️ Privacy notice — draft: `legal/privacy-notice.md`. **Do not publish
+  as-is:** it describes deletion rights the code cannot execute (the system
+  tombstones via `archived_at`, never hard-deletes — REQ-071 deletion is not
+  built). Counsel must reconcile the tombstone model with any right to
+  erasure, and the notice's retention section must match what the code
+  actually does — or an erasure path gets built first.
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called).
+- ✅ 🤖 Incident & complaint register — **built 2026-07-25** (founder
+  approved the recommendation): `incident_report`, a dedicated append-only
+  table, not a registry kind. Kinds complaint · breakage · injury ·
+  near-miss · other, with severity, channel, who logged it, and a
+  resolution note when closed; rows never delete, every entry and
+  resolution audited. Logged from the household drill-in (field roles can
+  log too — they witness incidents); open incidents show red on the fleet
+  board so nothing festers invisibly.
+- ⏳ 🧑⚖️ Photo lifecycle — **mechanism built 2026-07-25** (founder approved
+  the 90-day recommendation): a daily job purges image BYTES past the
+  rolling window (`app_setting` key `photo_retention`, default 90 days —
+  change the number there, no deploy needed); the row survives as the
+  tombstone, a purged photo serves 410, and a corporate hold (red border,
+  drill-in) exempts a photo tied to an open incident or dispute. Remaining,
+  yours + counsel: bless the 90-day number and disclose location + window +
+  who-can-see in the privacy notice's "visit records" row before real
+  photos accumulate.
+- ✅ ⚖️ Billing / scheduling / payroll seams — ADR-004 **Accepted**
+  (2026-07-25): QuickBooks is the system of record for invoicing/collection
+  and for payroll-grade time; scheduling stays in the Jobber stack. The app
+  displays but never originates any of the three. Operational remainder
+  (outside this repo): configure QuickBooks invoicing before the first
+  paying household.
 
 ---
 

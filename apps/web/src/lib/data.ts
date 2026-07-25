@@ -97,6 +97,46 @@ export async function getUpcomingPackItems(householdId: string, limit = 8) {
   return rows.slice(0, limit);
 }
 
+/**
+ * A2/REQ-054: the briefing's recall lines — this household's own history at
+ * this point in the year, filtered through the exclusion list before
+ * rendering (the guardrail lives here, not in the component). s2: never
+ * client-facing.
+ */
+export async function getSeasonRecall(householdId: string, limit = 5) {
+  const { seasonObservation, anticipationExclusion } = await import("@wellkept/schema");
+  const { selectRecall, recallExcluded, exclusionActive } = await import("@wellkept/trigger-engine");
+  const now = new Date();
+  const rows = await db.select().from(seasonObservation)
+    .where(eq(seasonObservation.householdId, householdId));
+  const exclusions = (await db.select().from(anticipationExclusion)
+    .where(eq(anticipationExclusion.householdId, householdId)))
+    .filter((x) => exclusionActive(x, now));
+  return selectRecall(rows, now)
+    .filter((r) => !recallExcluded(r.summary, exclusions))
+    .slice(0, limit);
+}
+
+/** A2/REQ-055: this user's answers for a set of surfaced prompts. */
+export async function getPromptOutcomes(promptIds: string[], userId: string) {
+  if (promptIds.length === 0) return new Map<string, string>();
+  const { promptOutcome } = await import("@wellkept/schema");
+  const { and, inArray } = await import("drizzle-orm");
+  const rows = await db.select({ promptId: promptOutcome.promptId, outcome: promptOutcome.outcome })
+    .from(promptOutcome)
+    .where(and(inArray(promptOutcome.promptId, promptIds), eq(promptOutcome.userId, userId)));
+  return new Map(rows.map((r) => [r.promptId, r.outcome as string]));
+}
+
+/** REQ-056: a household's exclusion rows, active first (admin surface). */
+export async function getExclusions(householdId: string) {
+  const { anticipationExclusion } = await import("@wellkept/schema");
+  const { desc } = await import("drizzle-orm");
+  return db.select().from(anticipationExclusion)
+    .where(eq(anticipationExclusion.householdId, householdId))
+    .orderBy(desc(anticipationExclusion.createdAt));
+}
+
 export async function getRecentAudit(householdId: string, limit = 12) {
   const rows = await db
     .select()
@@ -163,11 +203,24 @@ export async function getHouseholdMembers(householdId: string) {
 export async function getVisitPhotos(householdId: string, limit = 12) {
   const { visitPhoto } = await import("@wellkept/schema");
   const { desc } = await import("drizzle-orm");
-  return db.select({ id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy })
+  return db.select({
+    id: visitPhoto.id, createdAt: visitPhoto.createdAt, uploadedBy: visitPhoto.uploadedBy,
+    retentionHold: visitPhoto.retentionHold, purgedAt: visitPhoto.purgedAt,
+  })
     .from(visitPhoto)
     .where(eq(visitPhoto.householdId, householdId))
     .orderBy(desc(visitPhoto.createdAt))
     .limit(limit);
+}
+
+/** The incident & complaint register (LAUNCH §3): open incidents first. */
+export async function getIncidents(householdId: string) {
+  const { incidentReport } = await import("@wellkept/schema");
+  const { desc } = await import("drizzle-orm");
+  const rows = await db.select().from(incidentReport)
+    .where(eq(incidentReport.householdId, householdId))
+    .orderBy(desc(incidentReport.occurredAt));
+  return [...rows.filter((r) => r.status === "open"), ...rows.filter((r) => r.status !== "open")];
 }
 
 /** REQ-003: which of these users have a CONFIRMED TOTP second factor.

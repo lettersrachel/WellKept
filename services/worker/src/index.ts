@@ -10,7 +10,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { promptPackItem, householdRoleAssignment, notification } from "@wellkept/schema";
 import type { FloorConflictEvent } from "@wellkept/close-flow";
-import { runTriggerPass, runRegistrySweep, sweepLoadSignals, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
+import { runTriggerPass, runRegistrySweep, sweepLoadSignals, materializeSeasonObservations, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 import * as Sentry from "@sentry/node";
 
 // Error monitoring (launch §2.1). Off unless SENTRY_DSN is set. We only ever
@@ -124,6 +124,33 @@ async function handleUptimeCheck() {
   }
 }
 
+/**
+ * Photo lifecycle (LAUNCH §3, 2026-07-25): purge visit-photo image BYTES
+ * past the rolling retention window. The row survives as the tombstone
+ * (household, uploader, byte count, dates) — the record stays, the picture
+ * doesn't. A retention hold (open incident/dispute) exempts a photo until
+ * released. The window is configuration, not a constant: app_setting
+ * `photo_retention` { days }, default 90 — founder-set, counsel to bless.
+ * Runs on the daily sweep; idempotent (purged rows never match again).
+ */
+export async function runPhotoRetention(now = new Date()): Promise<number> {
+  const { visitPhoto, appSetting } = await import("@wellkept/schema");
+  const { and, eq: eqOp, isNull: isNullOp, lt } = await import("drizzle-orm");
+  const [cfg] = await db.select().from(appSetting).where(eqOp(appSetting.key, "photo_retention"));
+  const days = Number((cfg?.value as { days?: number } | undefined)?.days ?? 90);
+  if (!Number.isFinite(days) || days < 7) return 0; // refuse a nonsense window; 7d is the floor
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const purged = await db.update(visitPhoto)
+    .set({ data: "", purgedAt: now })
+    .where(and(
+      lt(visitPhoto.createdAt, cutoff),
+      isNullOp(visitPhoto.purgedAt),
+      eqOp(visitPhoto.retentionHold, false),
+    ))
+    .returning({ id: visitPhoto.id });
+  return purged.length;
+}
+
 // Started as a service (`pnpm --filter @wellkept/worker start`); importable
 // for tests without side effects via createWorker().
 export function createWorker() {
@@ -134,7 +161,11 @@ export function createWorker() {
       if (job.name === "registry-sweep") {
         const sweep = await runRegistrySweep(db);
         const load = await sweepLoadSignals(db);
-        return { ...sweep, loadSignals: load.signals };
+        // A2/REQ-054: season memory accrues on the same daily pass (an
+        // extension of the sweep, not a second sweep). Idempotent.
+        const season = await materializeSeasonObservations(db);
+        const purged = await runPhotoRetention();
+        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);

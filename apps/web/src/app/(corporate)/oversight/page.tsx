@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { eq, and, isNull } from "drizzle-orm";
-import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit } from "@wellkept/schema";
+import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit, incidentReport } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
@@ -20,7 +20,7 @@ export default async function FleetBoard() {
 
   const rows = await Promise.all(
     corporate.map(async ({ hh }) => {
-      const [fields, commands, tests, pending, held] = await Promise.all([
+      const [fields, commands, tests, pending, held, openIncidents] = await Promise.all([
         db.select({ confirmed: playbookField.confirmed, sensitivity: playbookField.sensitivity })
           .from(playbookField).where(eq(playbookField.householdId, hh.id)),
         db.select({ type: visitCommand.type, status: visitCommand.status })
@@ -30,6 +30,8 @@ export default async function FleetBoard() {
           .where(and(eq(clientEdit.householdId, hh.id), eq(clientEdit.status, "pending"))),
         db.select({ id: promptPackItem.id }).from(promptPackItem)
           .where(and(eq(promptPackItem.householdId, hh.id), isNull(promptPackItem.firedAt))),
+        db.select({ id: incidentReport.id }).from(incidentReport)
+          .where(and(eq(incidentReport.householdId, hh.id), eq(incidentReport.status, "open"))),
       ]);
       const lastTest = tests[tests.length - 1];
       return {
@@ -43,6 +45,7 @@ export default async function FleetBoard() {
           : "never",
         pendingEdits: pending.length,
         scheduled: held.length,
+        openIncidents: openIncidents.length,
       };
     }),
   );
@@ -86,7 +89,16 @@ export default async function FleetBoard() {
                 <td>{r.confirmed}/{r.total} confirmed</td>
                 <td>{r.visits} applied{r.conflicts ? ` · ${r.conflicts} conflict` : ""}</td>
                 <td>{r.stranger}</td>
-                <td>{r.pendingEdits} edits · {r.scheduled} prompts</td>
+                <td>
+                  {r.pendingEdits} edits · {r.scheduled} prompts
+                  {/* An open incident is never invisible (LAUNCH §3). */}
+                  {r.openIncidents > 0 && (
+                    <>
+                      {" · "}
+                      <span className="tag CRITICAL">{r.openIncidents} open incident{r.openIncidents > 1 ? "s" : ""}</span>
+                    </>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

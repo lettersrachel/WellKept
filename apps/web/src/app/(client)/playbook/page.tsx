@@ -1,5 +1,5 @@
 import { filterFields, assertClientPayloadSafe, type FieldRecord } from "@wellkept/permissions";
-import { SECTION_NAMES, assertNoProvisionRows } from "@wellkept/schema";
+import { SECTION_NAMES, assertNoProvisionRows, assertNoAnticipationRows } from "@wellkept/schema";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
 import { proposeEdit } from "@/lib/actions";
@@ -151,6 +151,7 @@ export default async function ClientPlaybook({
   }));
   assertClientPayloadSafe(visible); // the payload test, live in the page's data path
   assertNoProvisionRows(visible); // T7: no provision rows or references, ever
+  assertNoAnticipationRows(visible); // A2: recall/outcome rows are s2, never client-facing
 
   // REQ-020 search: server-side, within the client's own (already
   // filtered) view — the search space itself can never contain s2/s3.

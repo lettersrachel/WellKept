@@ -17,6 +17,48 @@ type Db = {
   insert: (...args: never[]) => any;
 };
 
+/**
+ * REQ-056: load a household's exclusion rows and a floor predicate for the
+ * drafts' method refs, then filter. Fail closed — an errored exclusion read
+ * suppresses every non-floor draft (A2 Part 3); floors always pass.
+ */
+async function applyExclusions<T extends import("./engine.ts").PromptPackItemDraft>(
+  db: any,
+  householdId: string,
+  drafts: T[],
+  ctx: { fieldName?: string } = {},
+): Promise<{ kept: T[]; suppressed: number }> {
+  if (drafts.length === 0) return { kept: drafts, suppressed: 0 };
+  const { filterExcludedDrafts, failClosedDrafts } = await import("./exclusions.ts");
+
+  // Floor predicate: only queried for refs the drafts actually carry.
+  let floorRefs = new Set<string>();
+  const refs = [...new Set(drafts.map((d) => d.methodRef).filter((r): r is string => Boolean(r)))];
+  if (refs.length) {
+    try {
+      const { standardProvision } = await import("@wellkept/schema");
+      const { inArray, and } = await import("drizzle-orm");
+      const rows = await db.select({ id: standardProvision.id }).from(standardProvision)
+        .where(and(inArray(standardProvision.id, refs), inArray(standardProvision.tier, ["floor_1", "floor_2"])));
+      floorRefs = new Set(rows.map((r: { id: string }) => r.id));
+    } catch {
+      // Can't tell floor from method: treat every carried ref as a floor so a
+      // broken provision read can never silence a safety step.
+      floorRefs = new Set(refs);
+    }
+  }
+  const isFloorRef = (ref: string) => floorRefs.has(ref);
+
+  try {
+    const { anticipationExclusion } = await import("@wellkept/schema");
+    const exclusions = await db.select().from(anticipationExclusion)
+      .where(eq(anticipationExclusion.householdId, householdId));
+    return filterExcludedDrafts(drafts, exclusions, { ctx, isFloorRef });
+  } catch {
+    return failClosedDrafts(drafts, isFloorRef); // fail closed, floors excepted
+  }
+}
+
 export async function runTriggerPass(db: any, event: FieldChangeEvent) {
   const [hh] = await db.select().from(household).where(eq(household.id, event.householdId));
   if (!hh) return { emitted: 0, reason: "unknown household" };
@@ -27,17 +69,19 @@ export async function runTriggerPass(db: any, event: FieldChangeEvent) {
     .where(or(isNull(triggerRule.householdId), eq(triggerRule.householdId, event.householdId)))) as TriggerRuleRow[];
 
   const drafts = evaluate(event, rules, { statusTag: hh.statusTag });
+  const { kept, suppressed: excluded } = await applyExclusions(db, event.householdId, drafts, { fieldName: event.fieldName });
   let emitted = 0;
-  for (const draft of drafts) {
+  for (const draft of kept) {
     const id = await deterministicItemId(event, draft.triggerRuleId, draft.itemText);
+    const { methodRef: _ref, ...values } = draft; // not a prompt_pack_item column
     const inserted = await db
       .insert(promptPackItem)
-      .values({ id, ...draft })
+      .values({ id, ...values })
       .onConflictDoNothing({ target: promptPackItem.id })
       .returning({ id: promptPackItem.id });
     emitted += inserted.length;
   }
-  return { emitted, evaluated: rules.length, suppressed: hh.statusTag === "LIFE-EVENT" };
+  return { emitted, evaluated: rules.length, excluded, suppressed: hh.statusTag === "LIFE-EVENT" };
 }
 
 /**
@@ -75,19 +119,64 @@ export async function runRegistrySweep(db: any, opts: { householdId?: string; no
         { householdId: hh.id, statusTag: hh.statusTag, fieldValue: obsField?.value ?? "" },
       ], { now: opts.now }));
     }
-    for (const draft of drafts) {
+    const { kept } = await applyExclusions(db, hh.id, drafts); // REQ-056, fail closed
+    for (const draft of kept) {
       // id keys on (family rule, household, occurrence, text) — the text
       // embeds the entry label, so distinct entries never collide.
       const id = await sweepItemId(draft.triggerRuleId + ":" + draft.householdId, draft.occurrence, draft.itemText);
-      const { occurrence: _occ, ...values } = draft;
+      const { occurrence, ...values } = draft;
       const inserted = await db.insert(promptPackItem)
-        .values({ id, ...values })
+        // occurrence becomes target_date (A2/REQ-055 lead-time calibration).
+        .values({ id, ...values, targetDate: occurrence.slice(0, 10) })
         .onConflictDoNothing({ target: promptPackItem.id })
         .returning({ id: promptPackItem.id });
       emitted += inserted.length;
     }
   }
   return { households: households.length, emitted };
+}
+
+/**
+ * REQ-054: materialize season observations from the household's own anchors
+ * (applied visits, dots, executed gestures). Runs with the daily sweep, any
+ * number of times — ids are deterministic on the anchor, so re-runs insert
+ * nothing. Rows accumulate silently for a year before recall has anything
+ * to say (A2: that is the point of building it during the pilot).
+ */
+export async function materializeSeasonObservations(db: any, opts: { householdId?: string; now?: Date } = {}) {
+  const { visit, dot, gesture, seasonObservation } = await import("@wellkept/schema");
+  const { deriveSeasonObservations, seasonObservationId } = await import("./season.ts");
+  type Anchor = import("./season.ts").SeasonAnchor;
+
+  const anchors: Anchor[] = [];
+  const visits = await db.select().from(visit)
+    .where(opts.householdId ? eq(visit.householdId, opts.householdId) : undefined);
+  for (const v of visits) {
+    if (!v.submittedAt || !v.reportSentence1) continue;
+    anchors.push({ kind: "visit", id: v.id, householdId: v.householdId, occurredAt: v.submittedAt, text: v.reportSentence1 });
+  }
+  const dots = await db.select().from(dot)
+    .where(opts.householdId ? eq(dot.householdId, opts.householdId) : undefined);
+  for (const d of dots) {
+    anchors.push({ kind: "dot", id: d.id, householdId: d.householdId, occurredAt: d.heardAt, text: d.verbatim });
+  }
+  const gestures = await db.select().from(gesture)
+    .where(opts.householdId ? eq(gesture.householdId, opts.householdId) : undefined);
+  for (const g of gestures) {
+    if (!g.executedAt) continue;
+    anchors.push({ kind: "gesture", id: g.id, householdId: g.householdId, occurredAt: g.executedAt, text: g.idea });
+  }
+
+  let inserted = 0;
+  for (const draft of deriveSeasonObservations(anchors)) {
+    const id = await seasonObservationId(draft.anchorKind, draft.anchorId);
+    const rows = await db.insert(seasonObservation)
+      .values({ id, ...draft })
+      .onConflictDoNothing({ target: seasonObservation.id })
+      .returning({ id: seasonObservation.id });
+    inserted += rows.length;
+  }
+  return { anchors: anchors.length, inserted };
 }
 
 /**

@@ -4,7 +4,7 @@
 // Source of truth for the field shape: WK-PLAY-001 via WK-APP-003 S1.
 import { sql } from "drizzle-orm";
 import {
-  pgTable, uuid, text, integer, boolean, timestamp, jsonb, index, pgEnum,
+  pgTable, uuid, text, integer, smallint, boolean, timestamp, jsonb, index, pgEnum,
   primaryKey, uniqueIndex, date,
 } from "drizzle-orm/pg-core";
 
@@ -37,6 +37,13 @@ export const household = pgTable("household", {
   isNda: boolean("is_nda").notNull().default(false), // REQ-006
   foundingRateLockUntil: timestamp("founding_rate_lock_until", { withTimezone: true }),
   membershipTerms: jsonb("membership_terms"),
+  // LAUNCH.md 1.5: the client-side counterpart of nda_approved. ADR-001
+  // guardrail 3 gates real household data on written consent; these columns
+  // record THAT the signed consent exists (when, which doc version, recorded
+  // by whom) — the paper stays the artifact, this is the system's sight of it.
+  consentSignedAt: timestamp("consent_signed_at", { withTimezone: true }),
+  consentDocVersion: text("consent_doc_version"),
+  consentRecordedBy: text("consent_recorded_by"),
   archivedAt: timestamp("archived_at", { withTimezone: true }), // nothing hard-deletes (DEV-005 S3)
 });
 
@@ -148,6 +155,9 @@ export const promptPackItem = pgTable("prompt_pack_item", {
   fireAt: timestamp("fire_at", { withTimezone: true }).notNull(), // household-local computed upstream
   firedAt: timestamp("fired_at", { withTimezone: true }),
   suppressedByTag: boolean("suppressed_by_tag").notNull().default(false), // LIFE-EVENT holds, not deletes
+  // A2/REQ-055: the prompt's own target date (a sweep item's occurrence);
+  // null for event-driven items. lead_days calibration reads this.
+  targetDate: date("target_date"),
 }, (t) => [index("prompt_pack_item_household_idx").on(t.householdId)]);
 
 // REQ-022: client edits land in review state, merge only on HM approval, full diff kept.
@@ -306,11 +316,41 @@ export const visitPhoto = pgTable("visit_photo", {
   id: uuid("id").primaryKey(),
   householdId: uuid("household_id").notNull(),
   contentType: text("content_type").notNull(),
-  data: text("data").notNull(), // base64, no data: prefix
+  data: text("data").notNull(), // base64, no data: prefix; "" after retention purge
   bytes: integer("bytes").notNull(), // decoded size, for quick accounting
   uploadedBy: text("uploaded_by").notNull(),
+  // Photo lifecycle (LAUNCH §3, 2026-07-25): image BYTES purge on a rolling
+  // window (app_setting `photo_retention`, default 90 days); the row survives
+  // as the tombstone — record stays, picture doesn't. A retention hold
+  // (open incident/dispute) exempts the photo until released.
+  retentionHold: boolean("retention_hold").notNull().default(false),
+  purgedAt: timestamp("purged_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("visit_photo_household_idx").on(t.householdId)]);
+
+// The incident & complaint register (LAUNCH §3, 2026-07-25): a client
+// complaint, breakage, injury, or near-miss. NOT a registry kind — registries
+// are practical data with date sweeps; an incident is s2, append-only, and
+// legally significant (in a dispute, the most important record in the
+// business). Rows never delete; corrections and resolutions append/stamp.
+export const incidentKindEnum = pgEnum("incident_kind", [
+  "complaint", "breakage", "injury", "near_miss", "other",
+]);
+
+export const incidentReport = pgTable("incident_report", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  kind: incidentKindEnum("kind").notNull(),
+  severity: text("severity").notNull(), // low | medium | high
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  reportedBy: text("reported_by").notNull(), // auth_user.id of who logged it
+  reportedVia: text("reported_via").notNull(), // client_call | client_email | hm_visit | corporate | other
+  description: text("description").notNull(), // s2
+  status: text("status").notNull().default("open"), // open | resolved
+  resolutionNote: text("resolution_note"),
+  resolvedBy: text("resolved_by"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, (t) => [index("incident_report_household_idx").on(t.householdId, t.status)]);
 
 export const devicePairing = pgTable("device_pairing", {
   id: uuid("id").primaryKey(),
@@ -457,3 +497,85 @@ export const provisionVersion = pgTable("provision_version", {
 }, (t) => [
   uniqueIndex("provision_version_provision_version_unique").on(t.provisionId, t.version),
 ]);
+
+// ---------------------------------------------------------------------------
+// Addendum A2 (docs/SPEC_ADDENDUM_A2.md): anticipation feedback (REQ-055),
+// repeat-season memory (REQ-054), exclusions (REQ-056). User-id columns are
+// text because they reference auth_user.id (Auth.js text ids — the same
+// precedent as notification/visit_photo; A2's uuid columns are a
+// doc-vs-reality delta, recorded here rather than papered over).
+// ---------------------------------------------------------------------------
+
+export const promptOutcomeKindEnum = pgEnum("prompt_outcome_kind", [
+  // Four values, not three (A2 finding 2): already_done means the rule was
+  // right but LATE (lead time wrong); not_applicable means the rule was
+  // WRONG for this household (exclusion candidate). Opposite corrections.
+  "acted", "dismissed", "not_applicable", "already_done",
+]);
+
+// REQ-055: one row per (prompt, user) answer. Append-only — no update or
+// delete path exists anywhere in code. An unanswered prompt is deliberately
+// NOT a row: ignore_rate reads fired counts from prompt_pack_item, never
+// from here (A2 finding 3 — an ignored rule must not look clean).
+export const promptOutcome = pgTable("prompt_outcome", {
+  id: uuid("id").primaryKey(),
+  householdId: uuid("household_id").notNull(),
+  promptId: uuid("prompt_id").notNull(), // the scheduled prompt_pack_item
+  ruleId: uuid("rule_id").notNull(), // denormalised: rule health reads without a join
+  provisionRef: text("provision_ref"), // methodRef the prompt carried, if any
+  userId: text("user_id").notNull().references(() => authUser.id),
+  role: text("role").notNull(), // role at answer time, not current role
+  outcome: promptOutcomeKindEnum("outcome").notNull(),
+  firedAt: timestamp("fired_at", { withTimezone: true }).notNull(), // when the prompt surfaced
+  answeredAt: timestamp("answered_at", { withTimezone: true }).notNull(),
+  targetDate: date("target_date"), // null for event-driven prompts
+  leadDays: integer("lead_days"), // answered_at to target_date; null without a target
+  note: text("note"), // optional free text, sensitivity s2
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("prompt_outcome_prompt_user_unique").on(t.promptId, t.userId),
+  index("prompt_outcome_rule_idx").on(t.ruleId, t.answeredAt),
+  index("prompt_outcome_household_idx").on(t.householdId, t.answeredAt),
+]);
+
+// REQ-054: repeat-season memory. Recall, not a rule family — each row is a
+// FACT about this household at a point in its year, attributable to the
+// anchor that produced it. Single-household only (cross-household inference
+// is policy and out of A2 scope). Versioned via superseded_by, never deleted.
+export const seasonObservation = pgTable("season_observation", {
+  id: uuid("id").primaryKey(),
+  householdId: uuid("household_id").notNull(),
+  observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+  seasonMonth: smallint("season_month").notNull(), // 1-12, the matching granularity
+  seasonWeek: smallint("season_week"), // 1-53, for anchors needing tighter matching
+  anchorKind: text("anchor_kind").notNull(), // registry_entry | field | visit | dot | gesture
+  anchorId: uuid("anchor_id").notNull(),
+  summary: text("summary").notNull(), // one line, human readable, s2, DEV-005 applies
+  fieldRef: text("field_ref"), // the Playbook field if the observation maps to one
+  provisionRef: text("provision_ref"),
+  recurrence: text("recurrence").notNull(), // annual | seasonal | none
+  confidence: text("confidence").notNull(), // observed | inferred
+  sourceEventId: uuid("source_event_id"), // the audit_event that produced it
+  supersededBy: uuid("superseded_by"), // versioned, never hard-deleted
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("season_observation_household_month_idx").on(t.householdId, t.seasonMonth),
+]);
+
+// REQ-056: the anticipation exclusion list — what NOT to surface. Enforced
+// server-side in the prompt scheduler before anything reaches the queue,
+// fail closed. Approval is corporate only, always; ending an exclusion sets
+// effective_to (nothing hard-deletes). SAFETY FLOORS BYPASS THIS TABLE
+// ENTIRELY — asserted in @wellkept/trigger-engine exclusion tests.
+export const anticipationExclusion = pgTable("anticipation_exclusion", {
+  id: uuid("id").primaryKey(),
+  householdId: uuid("household_id").notNull(),
+  scope: text("scope").notNull(), // rule | topic | person | field | all
+  target: text("target").notNull(), // rule_id, topic tag, person reference, field ref
+  reason: text("reason"), // sensitivity s2
+  requestedBy: text("requested_by").notNull(), // client | house_manager | corporate
+  approvedBy: text("approved_by").notNull().references(() => authUser.id), // corporate only, always
+  effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull(),
+  effectiveTo: timestamp("effective_to", { withTimezone: true }), // null = indefinite
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("anticipation_exclusion_household_idx").on(t.householdId)]);

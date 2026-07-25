@@ -8,8 +8,8 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp } from "@/lib/actions";
-import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold } from "@/lib/actions";
+import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -35,7 +35,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id, 10),
   ]);
-  const [gestures, strangerTests, members] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id)]);
+  const [gestures, strangerTests, members, exclusions, incidents] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id), getExclusions(hh.id), getIncidents(hh.id)]);
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>
@@ -137,18 +137,104 @@ export default async function Oversight({ params }: { params: Promise<{ househol
 
       <div className="card">
         <h2>Visit photos</h2>
+        <div className="note">
+          Image bytes purge on a rolling window (default 90 days; `photo_retention`
+          setting) — the record survives as a tombstone. A hold exempts a photo
+          (open incident or dispute) until released.
+        </div>
         {visitPhotos.length === 0 ? (
           <div className="note">No photos captured yet. House managers add them from the field app; they appear here after sync.</div>
         ) : (
           <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
             {visitPhotos.map((p) => (
-              <a key={p.id} href={`/api/mobile/photo?id=${p.id}`} target="_blank" rel="noreferrer" title={`captured ${new Date(p.createdAt).toLocaleString()}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/mobile/photo?id=${p.id}`} alt="visit photo" width={84} height={84} style={{ objectFit: "cover", borderRadius: 6, border: "1px solid #e2e0d8" }} />
-              </a>
+              <span key={p.id} style={{ textAlign: "center" }}>
+                {p.purgedAt ? (
+                  <span className="prov" style={{ display: "inline-block", width: 84, height: 84, border: "1px dashed var(--grey)", borderRadius: 6, padding: 6, fontSize: 10 }}>
+                    purged {new Date(p.purgedAt).toLocaleDateString()}<br />record retained
+                  </span>
+                ) : (
+                  <a href={`/api/mobile/photo?id=${p.id}`} target="_blank" rel="noreferrer" title={`captured ${new Date(p.createdAt).toLocaleString()}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/api/mobile/photo?id=${p.id}`} alt="visit photo" width={84} height={84} style={{ objectFit: "cover", borderRadius: 6, border: p.retentionHold ? "2px solid var(--brick)" : "1px solid #e2e0d8" }} />
+                  </a>
+                )}
+                {isAdmin && !p.purgedAt && (
+                  <form action={setPhotoRetentionHold}>
+                    <input type="hidden" name="photoId" value={p.id} />
+                    <input type="hidden" name="hold" value={(!p.retentionHold).toString()} />
+                    <button className="act subtle" style={{ fontSize: 10, padding: "2px 6px" }}>
+                      {p.retentionHold ? "Release hold" : "Hold"}
+                    </button>
+                  </form>
+                )}
+              </span>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <h2>Incidents &amp; complaints</h2>
+        <div className="note">
+          A complaint, breakage, injury, or near-miss — in a dispute, the most important
+          record in the business. Append-only: no edits; corrections are new entries,
+          outcomes are resolution notes. Every entry and resolution is audited.
+        </div>
+        {incidents.length === 0 ? (
+          <div className="note">No incidents recorded.</div>
+        ) : (
+          <table className="panel">
+            <thead>
+              <tr><th>Occurred</th><th>Kind</th><th>Severity</th><th>Via</th><th>Description</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {incidents.map((i) => (
+                <tr key={i.id}>
+                  <td>{i.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</td>
+                  <td>{i.kind.replace(/_/g, " ")}</td>
+                  <td><span className={`tag ${i.severity === "high" ? "CRITICAL" : i.severity === "medium" ? "CAUTION" : "s2"}`}>{i.severity}</span></td>
+                  <td>{i.reportedVia.replace(/_/g, " ")}</td>
+                  <td>
+                    {i.description.slice(0, 90)}{i.description.length > 90 ? "…" : ""}
+                    {i.resolutionNote && <div className="prov">resolved: {i.resolutionNote.slice(0, 90)}</div>}
+                  </td>
+                  <td>
+                    {i.status === "open" ? (
+                      isAdmin ? (
+                        <form action={resolveIncident} className="row" style={{ gap: 4 }}>
+                          <input type="hidden" name="incidentId" value={i.id} />
+                          <input name="resolutionNote" aria-label="Resolution note" placeholder="resolution note" required style={{ marginTop: 0, fontSize: 12 }} />
+                          <button className="act subtle">Resolve</button>
+                        </form>
+                      ) : (
+                        <span className="tag CAUTION">OPEN</span>
+                      )
+                    ) : (
+                      "resolved"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <form action={createIncident} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <select name="kind" defaultValue="complaint" className="inline" aria-label="Incident kind">
+            {["complaint", "breakage", "injury", "near_miss", "other"].map((k) => <option key={k} value={k}>{k.replace(/_/g, " ")}</option>)}
+          </select>
+          <select name="severity" defaultValue="low" className="inline" aria-label="Severity">
+            {["low", "medium", "high"].map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <select name="reportedVia" defaultValue="client_call" className="inline" aria-label="Reported via">
+            {["client_call", "client_email", "hm_visit", "corporate", "other"].map((v) => <option key={v} value={v}>{v.replace(/_/g, " ")}</option>)}
+          </select>
+          <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+            Occurred <input type="date" name="occurredAt" required style={{ marginTop: 0 }} />
+          </label>
+          <input name="description" aria-label="What happened" placeholder="what happened (s2, internal)" required style={{ flex: 2, marginTop: 0 }} />
+          <button className="act">Log incident</button>
+        </form>
       </div>
 
       <div className="card">
@@ -217,6 +303,95 @@ export default async function Oversight({ params }: { params: Promise<{ househol
               <input type="checkbox" name="ndaApproved" style={{ width: "auto", marginTop: 0 }} /> NDA
             </label>
             <button className="act">Assign</button>
+          </form>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Household consent (ADR-001 guardrail 3 · LAUNCH 1.5)</h2>
+        {hh.consentSignedAt ? (
+          <div className="fval">
+            Signed consent on record: {hh.consentSignedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}
+            {" · "}doc version {hh.consentDocVersion}
+          </div>
+        ) : (
+          <div className="banner">
+            NO CONSENT ON RECORD. Written consent is the precondition for real household
+            data (ADR-001 guardrail 3). Sign legal/household-consent.md, file the paper,
+            and record it here — the client-side counterpart of the staff NDA flag.
+          </div>
+        )}
+        {isAdmin && (
+          <form action={recordHouseholdConsent} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+              Signed on <input type="date" name="signedAt" required style={{ marginTop: 0 }} />
+            </label>
+            <input name="docVersion" aria-label="Consent document version" placeholder="doc version, e.g. household-consent v1 (2026-07)" required style={{ flex: 2, marginTop: 0 }} />
+            <button className="act">Record consent</button>
+          </form>
+        )}
+        <div className="note" style={{ marginTop: 6 }}>
+          The paper stays the artifact; this records that it exists, when, and which
+          version. Corrections re-record — the audit trail keeps every prior value.
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>Anticipation exclusions (REQ-056)</h2>
+        <div className="note">
+          What NOT to surface: enforced server-side in the scheduler before anything is
+          queued, fail closed. Safety floors bypass exclusions entirely. Approval is
+          corporate only, always; ending an exclusion closes its window (nothing deletes).
+        </div>
+        {exclusions.length === 0 ? (
+          <div className="note">No exclusions recorded.</div>
+        ) : (
+          <table className="panel">
+            <thead>
+              <tr><th>Scope</th><th>Target</th><th>Requested by</th><th>Window</th>{isAdmin && <th></th>}</tr>
+            </thead>
+            <tbody>
+              {exclusions.map((x) => {
+                const ended = x.effectiveTo && x.effectiveTo <= new Date();
+                return (
+                  <tr key={x.id} style={ended ? { opacity: 0.55 } : undefined}>
+                    <td>{x.scope}</td>
+                    <td>{x.scope === "all" ? "everything" : x.target}</td>
+                    <td>{x.requestedBy.replace("_", " ")}</td>
+                    <td>
+                      {x.effectiveFrom.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}
+                      {" – "}
+                      {x.effectiveTo ? x.effectiveTo.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "open"}
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        {!ended && (
+                          <form action={endAnticipationExclusion}>
+                            <input type="hidden" name="exclusionId" value={x.id} />
+                            <button className="act subtle danger">End</button>
+                          </form>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {isAdmin && (
+          <form action={createAnticipationExclusion} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="scope" defaultValue="topic" className="inline" aria-label="Exclusion scope">
+              {["rule", "topic", "person", "field", "all"].map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <input name="target" aria-label="Exclusion target" placeholder="rule id, topic, person, or field ref" style={{ flex: 2, marginTop: 0 }} />
+            <select name="requestedBy" defaultValue="client" className="inline" aria-label="Requested by">
+              {["client", "house_manager", "corporate"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+            </select>
+            <input name="reason" aria-label="Reason (internal, s2)" placeholder="reason (internal, s2)" style={{ flex: 2, marginTop: 0 }} />
+            <button className="act">Approve exclusion</button>
           </form>
         )}
       </div>
