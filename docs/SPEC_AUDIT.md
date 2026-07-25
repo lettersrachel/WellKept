@@ -3,11 +3,12 @@
 Date: 2026-07-18. Audited against the full handoff package (01_Read_First
 … 04_Governance). Status: **built+verified** / **partial** / **not built**.
 P0s not built are the honest launch-blocking list.
+Table rows updated 2026-07-25 against the code as it stands (receipts = commit hashes).
 
 ## A. Platform, auth & tenancy
 | REQ | P | Status |
 |---|---|---|
-| 001 multi-tenant, household-scoped | P0 | built (schema); UI assumes one household (pilot); needs household picker at scale |
+| 001 multi-tenant, household-scoped | P0 | **built+verified** (fleet board + per-household drill-in; second household onboarded through the importer, 381d7cf); scaled console for 150 still open (see 075) |
 | 002 six roles, per-household | P0 | **built+verified** (household_role_assignment, unique per user×household) |
 | 003 staff email+password+TOTP; magic link for clients | P0 | **BUILT (variant)** — staff clear a TOTP second factor on top of the magic link (no password); corporate session revocation + admin TOTP reset shipped. The magic-link-not-password reading is recorded in ADR-003 |
 | 004 server-side matrix, no s2/s3 in client payload | P0 | **built+verified** (100%-gated core; live scans; CI) |
@@ -20,63 +21,63 @@ P0s not built are the honest launch-blocking list.
 | 010 household record | P0 | built |
 | 011 24 fixed sections, N/A-confirmed first-class | P0 | built (canonical SECTION_NAMES now in schema); nothing enforces non-renumbering beyond convention |
 | 012 field record shape | P0 | built (photoRefs unused so far) |
-| 013 s3 vault, envelope-encrypted | P0 | **not built** — vault_item table + audited reveal + 60s TTL exist; encryption/KMS is the vault sprint. ADR-001 guardrail 2 keeps real s3 out until then |
-| 014 registries as structured sub-tables | P0 | **not built** — registry content lives in field text today |
-| 015 human-readable change timeline | P0 | partial — audit_event holds the data; no timeline UI (Section 24 feed) |
+| 013 s3 vault, envelope-encrypted | P0 | **built+verified** (83c12b8: AES-256-GCM envelope, per-household wrapped keys, zero plaintext in pg_dump). LocalKms/env KEK for pilot; managed KMS swap is a documented re-wrap. ADR-001: real s3 stays out until the security review |
+| 014 registries as structured sub-tables | P0 | **built+verified** (08b655f: ADR-002 single registry_entry table x 7 kinds, per-kind zod, key_date drives the sweep; client + corporate cards) |
+| 015 human-readable change timeline | P0 | **built+verified** (8c2c93e: humanized Section-24 change log on the corporate drill-in) |
 | 016 workbook import + dry run | P1 | **built+verified** (wk_import.py) |
 | 017 branded client export | P1 | **built+verified** (tooling/export; payload-gated; internal S1+S2 binder variant not built) |
 
 ## C. Client portal
 | REQ | P | Status |
 |---|---|---|
-| 020 read-mostly branded s1 view + search | P0 | built except **search not built** |
+| 020 read-mostly branded s1 view + search | P0 | **built+verified** (server-side search within the client's filtered view, 381d7cf; payload guards run live in the page) |
 | 021 visit report feed | P0 | built (latest report; feed/history view thin) |
-| 022 self-service updates via review queue | P0 | **DELTA: partial** — review queue built+verified, but proposals allowed on ANY s1 field; spec wants an allowlist (travel dates, contacts, preference notes) |
+| 022 self-service updates via review queue | P0 | **built+verified** — review queue + the spec's allowlist (lib/client-allowlist) enforced in proposeEdit |
 | 023 quarterly review artifacts | P1 | not built |
-| 024 data stewardship view | P2 | not built |
+| 024 data stewardship view | P2 | **built+verified** (feb76f0: what-we-hold-for-you card — categories, counts, vault count, last access; counts only, never values) |
 
 ## D. HM portal
 | REQ | P | Status |
 |---|---|---|
-| 030 briefing (flags→deltas→specials→radar→dots→gesture→proposal) | P0 | partial — flags/radar/dots/proposal built+verified; deltas-since-last-visit and today's specials not built |
+| 030 briefing (flags→deltas→specials→radar→dots→gesture→proposal) | P0 | **built+verified** complete (deltas-since-last-visit + today's specials landed 8c2c93e); provisions render beneath bound fields (Addendum A1 T4) |
 | 031 enforced close flow | P0 | **built+verified** (state machine; airplane-tested) |
 | 032 offline-first, LWW + conflict to corporate | P0 | **built+verified** (IndexedDB/AsyncStorage + SW shell; conflicts surfaced) |
-| 033 stranger mode | P0 | **not built** (stranger_test table exists) |
-| 034 in-context s3 reveal | P0 | built+verified (web; vault-pending values until REQ-013) |
+| 033 stranger mode | P0 | **built+verified** (8c2c93e: backup_hm gets the amplified first-visit briefing; friction logs to stranger_test and routes to corporate) |
+| 034 in-context s3 reveal | P0 | **built+verified** end-to-end (real vault decrypt + audit + 60s TTL; per-user reveal rate cap) |
 | 035 service-intelligence quick log | P1 | not built |
 | 036 geofence hour suggestion | P1 | stubbed text only |
 
 ## E. Corporate portal
 | REQ | P | Status |
 |---|---|---|
-| 040 household list + health/compliance/economics panels | P0 | partial — single-household oversight with playbook-health, visits, anticipation; relationship-health + economics panels not built |
+| 040 household list + health/compliance/economics panels | P0 | partial — fleet board + drill-in cover list/health/compliance (visits, conflicts, stranger tests, edits, anticipation, photos, people); **relationship-health and economics panels remain unbuilt** (the management/investor surface) |
 | 041 status tags; LIFE-EVENT suppression | P0 | **built+verified** (both directions, holds never delete) |
-| 042 gesture queue + cultural-fit gate | P0 | **not built** (gesture table exists) |
-| 043 fleet roll-ups | P0 | **not built** (single household today) |
-| 044 exhibit-pack exports | P0 | **not built** |
+| 042 gesture queue + cultural-fit gate | P0 | **built+verified** (8c2c93e: dot→queue→cultural-fit gate→HM-notified gate→execute + cents→quiet log; order server-enforced) |
+| 043 fleet roll-ups | P0 | **built+verified** (381d7cf: fleet board — status, playbook health, stranger recency, visit/conflict counts per household) plus the Monday corporate digest (5194e70) |
+| 044 exhibit-pack exports | P0 | partial — fleet CSV export live (/api/exhibits/fleet, MFA-gated); the fuller exhibit pack (per-household bundles, REQ-023 artifacts) not built |
 | 045 trigger administration UI | P1 | not built (rules seeded by script; library is data, ready for it) |
-| 046 dot triage → promote to field | P1 | not built (dots displayed) |
+| 046 dot triage → promote to field | P1 | **built+verified** (997f805: corporate promotes a dot into a chosen field, provenance observed, audited, fires triggers) |
 | 047 CPSC recall job | P2 | not built |
 
 ## F. Trigger engine
 | REQ | P | Status |
 |---|---|---|
 | 050 field events → rules → role-routed prompts | P0 | **built+verified** live end-to-end |
-| 051 six trigger families | P0 | partial — binding/evaluation built; only field-change events flow; birthday math, thresholds, movable dates (table exists) not implemented |
+| 051 six trigger families | P0 | partial — field-change flow AND the daily registry sweep are live (e6fb527: annual birthday/anniversary math with T-14/T-3 windows, commitment/subscription/horizon windows; prod-verified radar). Still open: threshold-family rules unseeded, movable_observance table not yet consumed by the sweep. OPERATIONAL: sweeps paused until the Upstash quota resets Aug 1 or the plan upgrades |
 | 052 staged prompt packs, dated | P0 | **built+verified** (offsets, quiet hours, suppression) |
-| 053 commitment cascade | P1 | not built |
+| 053 commitment cascade | P1 | covered by the registry sweep's commitment windows (prep T-14, final T-3, e6fb527); a richer bespoke cascade remains open |
 | 054 repeat-season memory | P1 | not built |
 
 ## G/H. Notifications & non-functional
 | REQ | P | Status |
 |---|---|---|
-| 060/061 push+email digests, report delivery | P0 | **not built** (reports appear in-portal only) |
-| 070 security stack (TLS, at-rest, envelope vault, secrets) | P0 | partial — deploy prep done; vault/KMS, secret store, scanning outstanding |
+| 060/061 push+email digests, report delivery | P0 | **built+verified** — client report email on visit close + corporate WATCH/LIFE-EVENT alerts (5a535c4), in-app + web-push notifications (85f9ccf, d8b1a0a), Monday fleet digest (5194e70) |
+| 070 security stack (TLS, at-rest, envelope vault, secrets) | P0 | built for pilot — envelope vault live, secrets in Vercel/Railway env + password manager, enforcing CSP, staff TOTP, rate limits, CI dependency-audit gate. Outstanding: managed KMS, external pen review (ADR-001 gate for real s3) |
 | 071 privacy (no 3p analytics; media flags; deletion) | P0 | no analytics present; flags/deletion not built |
 | 072 availability/backup targets | P0 | not applicable until hosted (DEPLOY.md notes) |
 | 073 performance targets | P0 | unmeasured |
 | 074 WCAG 2.1 AA | P1 | self-audit + fixes 2026-07-24 (contrast tokens --gold-ink/--gold-bright, provenance text to 4.5:1+, CAUTION tag ink-on-gold, :focus-visible rings, skip link, main landmark, aria-labels on placeholder-only inputs; verified by keyboard in-browser). Formal third-party audit still recommended pre-scale |
-| 075 scale envelope 150 households | P0 | schema yes; UI single-household |
+| 075 scale envelope 150 households | P0 | schema yes; fleet board + drill-in handle multiple households (pilot-scale); a scaled corporate console for 150 is the 2027-2028 build |
 
 ## Deltas resolved since first audit
 1. **REQ-003** (was: all-magic-link): staff now clear a TOTP second factor
