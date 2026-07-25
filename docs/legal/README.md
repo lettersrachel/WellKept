@@ -11,6 +11,10 @@
 > retained) and
 > **which privacy laws apply** (state, GDPR if any client/staff is in the EU/UK).
 
+**For the engagement itself:** [`COUNSEL_PACKET.md`](COUNSEL_PACKET.md)
+assembles the seven attachments — what the software does today, and the
+specific question per item — so one engagement closes all of them.
+
 Three documents, one per audience:
 
 - [`household-consent.md`](household-consent.md) — what a client agrees to

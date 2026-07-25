@@ -116,7 +116,11 @@ exactly what the software collects. **They need a lawyer's review before use**
 - ⬜ 🧑 Name a data-recovery / incident owner (who restores, who's called) —
   and route Sentry alerts somewhere a person actually sees them. One page:
   detect, assess, notify, record (gap register G-08).
-- ⬜ 🧑⚖️ The counsel packet, in one engagement (gap register): (1) erasure-tool
+- ⬜ 🧑⚖️ The counsel packet, in one engagement — ASSEMBLED as
+  [`legal/COUNSEL_PACKET.md`](legal/COUNSEL_PACKET.md) (2026-07-25): hand
+  counsel that file plus the three drafts; each attachment states what the
+  software does today and the specific question. The seven, for reference:
+  (1) erasure-tool
   semantics vs the notice's deletion language, (2) the 90-day photo window,
   (3) the consent doc, (4) the Neon PITR window as the true floor on erasure
   latency (G-04), (5) the five subprocessor DPAs — Vercel, Neon, Upstash,
