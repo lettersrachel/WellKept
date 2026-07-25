@@ -4,14 +4,16 @@
  * grant a corporate_admin contact, and print the uuid the checklist needs.
  * Safe to run every deploy session — it changes nothing that already holds.
  *
- * Run from apps/web so `pg` resolves:
+ * Run from apps/web so `pg` resolves. The admin email comes from the arg or
+ * the WK_ADMIN_EMAIL env var — no personal address hardcoded anywhere:
  *   DATABASE_URL="<url>" node scripts/ensure-smoke-fixture.mjs [admin-email]
+ *   DATABASE_URL="<url>" WK_ADMIN_EMAIL=you@example.com node scripts/ensure-smoke-fixture.mjs
  */
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 
 const FIXTURE_NAME = "Smoke Test Fixture";
-const email = process.argv[2]?.trim().toLowerCase() ?? null;
+const email = (process.argv[2] ?? process.env.WK_ADMIN_EMAIL)?.trim().toLowerCase() || null;
 
 const url = process.env.DATABASE_URL;
 if (!url) { console.error("Set DATABASE_URL."); process.exit(1); }

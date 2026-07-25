@@ -59,7 +59,7 @@ append-only by design, so a checklist incident on a real household is
 permanent). Setup is one idempotent command (safe to re-run every deploy;
 prints the FIXTURE_UUID the checklist needs):
 
-    cd apps/web && DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs lettersrachel@gmail.com
+    cd apps/web && DATABASE_URL=... WK_ADMIN_EMAIL=<your corporate login> node scripts/ensure-smoke-fixture.mjs
 
 The fixture carries `is_fixture=true`: excluded from fleet counts,
 economics totals, and the weekly digest; rendered dimmed + tagged where it

@@ -46,7 +46,9 @@ for (const [key, want] of Object.entries(WANT)) {
   const { rows: [row] } = await c.query("SELECT value FROM app_setting WHERE key=$1", [key]);
   if (!row) {
     await c.query("INSERT INTO app_setting (key, value, updated_at) VALUES ($1, $2, now())", [key, JSON.stringify(want)]);
-    console.log(`         ${key}: was absent — inserted intended value`);
+    // REPAIRED, not silently PASS: the operator should know the knob was
+    // missing and the script created it — that is a finding worth reading.
+    console.log(`         ${key}: REPAIRED — was absent, inserted intended value`);
   } else {
     const missing = Object.keys(want).filter((k) => !(k in row.value));
     if (missing.length) { console.log(`         ${key}: exists but lacks ${missing.join(", ")}`); bad = 1; }
@@ -57,7 +59,7 @@ await c.end();
 process.exit(bad);
 EOF
   )
-  need $? "check 12: app_setting knobs (detail above)"
+  need $? "check 12: app_setting knobs (detail above; REPAIRED counts as pass but read it)"
 else
   say SKIP "check 12: DATABASE_URL not set — knobs NOT verified; re-run with it before calling the checklist done"
 fi
