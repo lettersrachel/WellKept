@@ -1,17 +1,12 @@
-import { Auth } from "@auth/core";
-import { getAuthConfig } from "@/lib/auth/config";
+import { sendSigninEmail } from "@/lib/auth/send-signin";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Fronts Auth.js's CSRF-protected /api/auth/signin/email with a plain-form
- * endpoint: does the csrf-token-then-signin exchange server-to-server so the
- * form only POSTs an email. Synthetic requests are built from the REAL
- * incoming request URL — Auth.js embeds that origin into the magic link it
- * generates, and a made-up origin produces an unreachable link (a real bug
- * caught by hand in the foundation repo).
+ * endpoint (the exchange itself lives in lib/auth/send-signin, shared with
+ * the mobile sign-in endpoint).
  */
 export async function POST(request: Request) {
-  const authConfig = getAuthConfig();
   const formData = await request.formData();
   const email = formData.get("email");
   if (typeof email !== "string" || !email) {
@@ -29,26 +24,10 @@ export async function POST(request: Request) {
     return Response.redirect(new URL("/signin?error=rate-limited", request.url), 303);
   }
 
-  const csrfResponse = await Auth(new Request(new URL("/api/auth/csrf", request.url)), authConfig);
-  const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
-  const csrfCookie = csrfResponse.headers
-    .getSetCookie()
-    .find((line) => line.includes("csrf-token"))
-    ?.split(";")[0];
-
-  const signinResponse = await Auth(
-    new Request(new URL("/api/auth/signin/email", request.url), {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded", cookie: csrfCookie ?? "" },
-      body: new URLSearchParams({ email, csrfToken }).toString(),
-    }),
-    authConfig,
-  );
-
-  // Auth.js reports a failed send as a redirect to its error page; surface
-  // it instead of promising an email that never left (a silent lockout).
-  const location = signinResponse.headers.get("location") ?? "";
-  if (location.includes("error=")) {
+  // A failed send surfaces instead of promising an email that never left
+  // (a silent lockout).
+  const sent = await sendSigninEmail(request.url, email);
+  if (!sent) {
     return Response.redirect(new URL("/signin?error=send-failed", request.url), 303);
   }
   return Response.redirect(new URL(`/verify-request?email=${encodeURIComponent(email)}`, request.url), 303);

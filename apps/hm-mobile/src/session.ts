@@ -56,3 +56,38 @@ export async function pairDevice(apiUrl: string, code: string): Promise<Session>
   await saveSession(session);
   return session;
 }
+
+/** Standalone sign-in, step 1: ask the server to email a sign-in code. */
+export async function requestSigninCode(apiUrl: string, email: string): Promise<void> {
+  if (!apiUrl) throw new Error("No server configured (set EXPO_PUBLIC_API_URL).");
+  const res = await fetch(`${apiUrl}/api/mobile/signin`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  if (res.status === 429) throw new Error("Too many attempts. Wait a few minutes and try again.");
+  if (!res.ok) throw new Error("Could not send the email. Check the address and try again.");
+}
+
+/** Standalone sign-in, step 2: emailed code + authenticator code -> session. */
+export async function signInWithCode(
+  apiUrl: string,
+  email: string,
+  code: string,
+  totp: string,
+): Promise<Session> {
+  if (!apiUrl) throw new Error("No server configured (set EXPO_PUBLIC_API_URL).");
+  const res = await fetch(`${apiUrl}/api/mobile/signin/verify`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: email.trim(), code: code.trim(), totp: totp.trim() }),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? `Sign-in failed (${res.status}).`);
+  }
+  const data = (await res.json()) as { sessionToken: string; userId: string; households: Household[] };
+  const session: Session = { token: data.sessionToken, userId: data.userId, households: data.households };
+  await saveSession(session);
+  return session;
+}

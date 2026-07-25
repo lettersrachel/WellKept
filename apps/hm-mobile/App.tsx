@@ -18,7 +18,7 @@ import * as Crypto from "expo-crypto";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "./src/visit-sync";
-import { loadSession, clearSession, pairDevice, type Household, type Session } from "./src/session";
+import { loadSession, clearSession, pairDevice, requestSigninCode, signInWithCode, type Household, type Session } from "./src/session";
 import { fetchBriefing, type Briefing, type BriefingProvision } from "./src/briefing";
 import { uploadPhoto, type LocalPhoto } from "./src/photos";
 import { loadPendingPhotos, savePendingPhotos } from "./src/photo-store";
@@ -76,7 +76,7 @@ export default function App() {
   }
 
   if (!session) {
-    return <PairingScreen onPaired={(s) => { setSession(s); if (s.households.length === 1) setHousehold(s.households[0]!); }} />;
+    return <SignInScreen onSignedIn={(s) => { setSession(s); if (s.households.length === 1) setHousehold(s.households[0]!); }} />;
   }
 
   if (session.households.length === 0) {
@@ -136,16 +136,25 @@ function Masthead({ subtitle }: { subtitle: string }) {
   );
 }
 
-function PairingScreen({ onPaired }: { onPaired: (s: Session) => void }) {
+/**
+ * Standalone sign-in: email -> emailed code + authenticator code -> session.
+ * Pairing from the web remains as a fallback for anyone already signed in
+ * on a computer. First-run copy doubles as the app's onboarding.
+ */
+function SignInScreen({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
+  const [mode, setMode] = useState<"email" | "code" | "pair">("email");
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [totp, setTotp] = useState("");
+  const [pairCode, setPairCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit() {
+  async function run(fn: () => Promise<void>) {
     setBusy(true);
     setError(null);
     try {
-      onPaired(await pairDevice(API_URL, code));
+      await fn();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -156,27 +165,104 @@ function PairingScreen({ onPaired }: { onPaired: (s: Session) => void }) {
   return (
     <SafeAreaView style={s.root}>
       <ScrollView contentContainerStyle={s.scroll}>
-        <Masthead subtitle="PAIR THIS DEVICE" />
-        <View style={s.card}>
-          <Text style={s.h2}>Connect your phone</Text>
-          <Text style={s.note}>
-            On a computer or browser, sign in to Well Kept and open <Text style={{ fontWeight: "700" }}>Link your phone</Text>.
-            Enter the code it shows below.
-          </Text>
-          <TextInput
-            style={[s.input, s.codeInput]}
-            value={code}
-            onChangeText={setCode}
-            placeholder="abcd-efgh"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!busy}
-          />
-          {error ? <Text style={s.error}>{error}</Text> : null}
-          <Pressable style={[s.submit, (busy || code.trim().length < 8) && s.submitDisabled]} disabled={busy || code.trim().length < 8} onPress={() => void submit()}>
-            <Text style={s.submitText}>{busy ? "Pairing…" : "Pair device"}</Text>
-          </Pressable>
-        </View>
+        <Masthead subtitle="SIGN IN" />
+        {mode === "email" ? (
+          <View style={s.card}>
+            <Text style={s.h2}>Welcome</Text>
+            <Text style={s.note}>
+              Well Kept is the field tool for house managers: your pre-visit briefing, the
+              close-of-visit flow, photos, and alerts, working offline mid-visit. Sign in with
+              your work email; there are no passwords.
+            </Text>
+            <TextInput
+              style={s.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              editable={!busy}
+            />
+            {error ? <Text style={s.error}>{error}</Text> : null}
+            <Pressable
+              style={[s.submit, (busy || !email.includes("@")) && s.submitDisabled]}
+              disabled={busy || !email.includes("@")}
+              onPress={() => void run(async () => { await requestSigninCode(API_URL, email); setMode("code"); })}
+            >
+              <Text style={s.submitText}>{busy ? "Sending…" : "Email me a sign-in code"}</Text>
+            </Pressable>
+            <Pressable onPress={() => { setError(null); setMode("pair"); }} disabled={busy}>
+              <Text style={[s.note, { marginTop: 12, textDecorationLine: "underline" }]}>
+                Already signed in on a computer? Pair from the web instead.
+              </Text>
+            </Pressable>
+          </View>
+        ) : mode === "code" ? (
+          <View style={s.card}>
+            <Text style={s.h2}>Check your email</Text>
+            <Text style={s.note}>
+              Enter the code from the email we sent to {email.trim()}, plus the 6-digit code
+              from your authenticator app.
+            </Text>
+            <TextInput
+              style={[s.input, s.codeInput]}
+              value={code}
+              onChangeText={setCode}
+              placeholder="ABCD-EFGH (from the email)"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!busy}
+            />
+            <TextInput
+              style={[s.input, s.codeInput]}
+              value={totp}
+              onChangeText={setTotp}
+              placeholder="123456 (authenticator app)"
+              keyboardType="number-pad"
+              editable={!busy}
+            />
+            {error ? <Text style={s.error}>{error}</Text> : null}
+            <Pressable
+              style={[s.submit, (busy || code.trim().length < 8 || totp.trim().length < 6) && s.submitDisabled]}
+              disabled={busy || code.trim().length < 8 || totp.trim().length < 6}
+              onPress={() => void run(async () => { onSignedIn(await signInWithCode(API_URL, email, code, totp)); })}
+            >
+              <Text style={s.submitText}>{busy ? "Signing in…" : "Sign in"}</Text>
+            </Pressable>
+            <Pressable onPress={() => { setError(null); setMode("email"); }} disabled={busy}>
+              <Text style={[s.note, { marginTop: 12, textDecorationLine: "underline" }]}>Different email</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={s.card}>
+            <Text style={s.h2}>Connect your phone</Text>
+            <Text style={s.note}>
+              On a computer or browser, sign in to Well Kept and open <Text style={{ fontWeight: "700" }}>Link your phone</Text>.
+              Enter the code it shows below.
+            </Text>
+            <TextInput
+              style={[s.input, s.codeInput]}
+              value={pairCode}
+              onChangeText={setPairCode}
+              placeholder="abcd-efgh"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!busy}
+            />
+            {error ? <Text style={s.error}>{error}</Text> : null}
+            <Pressable
+              style={[s.submit, (busy || pairCode.trim().length < 8) && s.submitDisabled]}
+              disabled={busy || pairCode.trim().length < 8}
+              onPress={() => void run(async () => { onSignedIn(await pairDevice(API_URL, pairCode)); })}
+            >
+              <Text style={s.submitText}>{busy ? "Pairing…" : "Pair device"}</Text>
+            </Pressable>
+            <Pressable onPress={() => { setError(null); setMode("email"); }} disabled={busy}>
+              <Text style={[s.note, { marginTop: 12, textDecorationLine: "underline" }]}>Sign in with email instead</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

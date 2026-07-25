@@ -17,7 +17,12 @@
       "package": "com.wellkept.hm"
     },
     "plugins": [
-      ["expo-image-picker", { "cameraPermission": "Well Kept uses the camera to add photos to a visit report." }]
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Well Kept uses the camera to add photos to a visit report."
+        }
+      ]
     ]
   }
 }

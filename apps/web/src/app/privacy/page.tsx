@@ -1,0 +1,80 @@
+/**
+ * Public privacy notice (App Store listing requirement; linked from the
+ * support page). Content follows docs/legal/privacy-notice.md; the pilot
+ * banner stays until counsel signs off (their open items live in that doc).
+ */
+export const metadata = { title: "Privacy — Well Kept" };
+
+export default function PrivacyPage() {
+  return (
+    <div className="card" style={{ maxWidth: 640, margin: "40px auto" }}>
+      <h2>Privacy notice</h2>
+      <div className="note">
+        Pilot edition, last updated July 24, 2026. Well Kept Home Operations
+        Management LLC (&ldquo;Well Kept,&rdquo; &ldquo;we&rdquo;). Contact:
+        lettersrachel@gmail.com.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>What we collect</h2>
+      <div className="fval">
+        Household operating details (routines, preferences, standards, layout) to run your
+        household; secured details (access codes, alarm info) to care for the home, held
+        encrypted with every access logged; visit records (tasks, hours, notes, photos) for
+        service delivery and accountability; practical data (important dates, vendors,
+        appliances, subscriptions) to anticipate needs; and account activity (name, email,
+        role, sign-in and access logs) to run and secure accounts. We ask clients not to
+        provide government IDs, payment card or bank numbers, or health records; the product
+        is not designed to hold them.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>How we use it</h2>
+      <div className="fval">
+        To provide and improve the household service, coordinate the team assigned to you,
+        anticipate what your home needs, and keep an accurate, accountable record. We do not
+        sell personal information.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>Who sees it</h2>
+      <div className="fval">
+        Access is role-based and enforced by the software: a client sees a curated view of
+        their own household; assigned staff see what their role requires; management has
+        oversight. Every view of a secured item and every change is recorded in an
+        append-only log. We share outside your service team only with your instruction, with
+        vendors who run our infrastructure under contract, or where the law requires.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>How we protect it</h2>
+      <div className="fval">
+        Encryption of secured items at rest (AES-256-GCM) and of all traffic in transit
+        (HTTPS). Staff sign-in requires a personal emailed link and a second factor
+        (authenticator app). Access is least-privilege and audited.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>How long we keep it</h2>
+      <div className="fval">
+        We retain records for the life of your service and, for continuity and
+        accountability, may keep archived copies afterward. To ask about retention or
+        request deletion, contact us at the address above.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>Your rights</h2>
+      <div className="fval">
+        Depending on where you live, you may have rights to access, correct, delete, or
+        restrict use of your information, and to withdraw consent. To exercise any, contact
+        us. The client view already shows a live summary of what we hold for you.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>Service providers</h2>
+      <div className="fval">
+        We rely on Vercel (hosting), Neon (database), Upstash (queues), Railway (background
+        worker), and Resend (email delivery), each under their own contractual terms.
+      </div>
+
+      <h2 style={{ marginTop: 18 }}>Changes</h2>
+      <div className="fval">
+        We will post updates here and date them; material changes will be communicated
+        directly.
+      </div>
+    </div>
+  );
+}
