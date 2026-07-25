@@ -18,7 +18,7 @@ export default async function FleetBoard() {
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
 
-  const rows = await Promise.all(
+  const rowsAll = await Promise.all(
     corporate.map(async ({ hh }) => {
       const [fields, commands, tests, pending, held, openIncidents] = await Promise.all([
         db.select({ confirmed: playbookField.confirmed, sensitivity: playbookField.sensitivity })
@@ -49,6 +49,12 @@ export default async function FleetBoard() {
       };
     }),
   );
+
+  // The smoke fixture is not a client (G-23/phase 3): out of the count, out
+  // of the roll-up rows, rendered last and visibly marked so its permanent
+  // red states never train the eye to ignore red.
+  const rows = rowsAll.filter((r) => !r.hh.isFixture);
+  const fixtures = rowsAll.filter((r) => r.hh.isFixture);
 
   return (
     <>
@@ -103,6 +109,18 @@ export default async function FleetBoard() {
             ))}
           </tbody>
         </table>
+        {fixtures.length > 0 && (
+          <div style={{ marginTop: 10, opacity: 0.65 }}>
+            {fixtures.map((r) => (
+              <div key={r.hh.id} className="prov">
+                <span className="tag s2">FIXTURE — not a client</span>{" "}
+                <Link href={`/oversight/${r.hh.id}`} style={{ color: "var(--grey)" }}>{r.hh.name}</Link>
+                {" · "}deploy-checklist target; excluded from counts, economics, and the digest
+                {r.openIncidents > 0 && ` · ${r.openIncidents} open (checklist 13b resolves it)`}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="note" style={{ marginTop: 8 }}>
           Rows are the households you hold an explicit assignment for — there is no
           fleet-wide wildcard (REQ-001).

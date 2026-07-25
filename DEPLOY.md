@@ -56,11 +56,20 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
 **The write-heavy items (6, 7, 9, 11, 13) run against the SMOKE TEST
 FIXTURE, never a client household** (G-23 — the incident register is
 append-only by design, so a checklist incident on a real household is
-permanent). One-time setup: create a household named exactly `Smoke Test
-Fixture` (any tier; add yourself as its corporate contact), the same way a
-real household is created. `archive-demo-data.mjs` exempts it by name at
-go-live; it is not a client and never will be. Before go-live the demo
-households serve; after go-live the fixture is the only safe target.
+permanent). Setup is one idempotent command (safe to re-run every deploy;
+prints the FIXTURE_UUID the checklist needs):
+
+    cd apps/web && DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs you@example.com
+
+The fixture carries `is_fixture=true`: excluded from fleet counts,
+economics totals, and the weekly digest; rendered dimmed + tagged where it
+appears; `archive-demo-data.mjs` exempts it by column and REFUSES to run
+if no live fixture exists. It is not a client and never will be.
+
+**Checks 1, 4, and 12 are scripted** — run them first, then work the
+manual ones:
+
+    BASE=https://<your-prod-host> DATABASE_URL=... bash tooling/smoke-mechanical.sh
 
 1. `https://app.yourdomain.com/api/health` → `{"ok":true,"db":"up"}`
 2. `/signin` → request a link for your own email → it arrives via Resend →

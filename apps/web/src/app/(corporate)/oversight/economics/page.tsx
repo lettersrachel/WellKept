@@ -25,7 +25,8 @@ const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { m
  */
 export default async function EconomicsPage() {
   const assigned = await getAssignedHouseholds();
-  const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
+  // Fixture households are not clients: out of every total and count here.
+  const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role) && !a.hh.isFixture);
   if (corporate.length === 0) redirect("/");
   const isAdmin = (await getPrincipal(corporate[0]!.hh.id))?.role === "corporate_admin";
 

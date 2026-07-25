@@ -44,6 +44,12 @@ export const household = pgTable("household", {
   consentSignedAt: timestamp("consent_signed_at", { withTimezone: true }),
   consentDocVersion: text("consent_doc_version"),
   consentRecordedBy: text("consent_recorded_by"),
+  // The smoke-test fixture flag (G-23 / deploy runbook phase 3): a permanent
+  // non-client household the post-deploy checklist writes against. Excluded
+  // from fleet roll-ups, economics totals, and the weekly digest; marked
+  // visibly wherever it still appears; exempt from go-live archiving BY
+  // THIS COLUMN, not by name.
+  isFixture: boolean("is_fixture").notNull().default(false),
   archivedAt: timestamp("archived_at", { withTimezone: true }), // nothing hard-deletes (DEV-005 S3)
 });
 

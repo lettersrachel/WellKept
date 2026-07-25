@@ -17,16 +17,29 @@ if (!url) { console.error("Set DATABASE_URL (the Neon connection string)."); pro
 
 // Demo households by name; demo accounts by the *.demo email domains the seed
 // uses. The real founder login (a real mailbox) can never match either.
-// The SMOKE TEST FIXTURE is exempt (G-23): one permanent non-client household
-// stays live in production so the post-deploy checklist has somewhere safe to
-// write — its incidents, exclusions, photo flags, and erasure dry-runs never
-// touch a real client's record. Never archive it; it is not a client.
-const SMOKE_FIXTURE = "Smoke Test Fixture";
-const HOUSEHOLD_MATCH = `(name ILIKE '%demo%' OR name = 'Field Test Home') AND name <> '${SMOKE_FIXTURE}'`;
+// FIXTURE households are exempt BY COLUMN, not by name (G-23 / runbook phase
+// 3): the permanent Smoke Test Fixture stays live so the post-deploy
+// checklist has somewhere safe to write. A go-live with NO fixture is a
+// mistake — the next deploy's checklist would have no target — so this
+// script refuses to run until one exists (ensure-smoke-fixture.mjs).
+const HOUSEHOLD_MATCH = "(name ILIKE '%demo%' OR name = 'Field Test Home') AND NOT is_fixture";
 const DEMO_EMAIL = "email LIKE '%.demo'";
 
 const c = new pg.Client({ connectionString: url });
 await c.connect();
+
+// Fail loudly if no fixture exists (G-23): archiving the demo households
+// without one leaves the post-deploy checklist nowhere safe to write.
+const { rows: [{ n: fixtures }] } = await c.query("SELECT count(*)::int n FROM household WHERE is_fixture AND archived_at IS NULL");
+if (Number(fixtures) === 0) {
+  console.error(
+    "\nREFUSED: no live fixture household exists. Run\n"
+    + "  DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs <your-email>\n"
+    + "first, then re-run this script — go-live must not strand the deploy checklist.\n",
+  );
+  await c.end();
+  process.exit(2);
+}
 
 const households = (await c.query(`SELECT id, name, archived_at FROM household WHERE ${HOUSEHOLD_MATCH} ORDER BY name`)).rows;
 const demoUsers = (await c.query(`SELECT id, email FROM auth_user WHERE ${DEMO_EMAIL} ORDER BY email`)).rows;
