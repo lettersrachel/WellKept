@@ -58,6 +58,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 045 trigger administration UI | P1 | **built+verified** — /oversight/triggers: full library with steps + method refs, enable/disable (audited; disable is the retirement path), create fleet rules with fail-closed validation (bounded offsets, real provision ids, DEV-005 no-em-dash) |
 | 046 dot triage → promote to field | P1 | **built+verified** (997f805: corporate promotes a dot into a chosen field, provenance observed, audited, fires triggers) |
 | 047 CPSC recall job | P2 | not built |
+| 048 CEO master view (new REQ, founder request 2026-07-25) | P1 | **built** (2026-07-25): /oversight/[id]/preview/{client,hm} — corporate_admin-only, read-only previews through the other roles' projections, using the SAME server-side filters as the real surfaces; the client preview runs all three payload guards live, so every CEO visit re-proves the client projection is safe. Switcher pills on the drill-in header |
 
 ## F. Trigger engine
 | REQ | P | Status |
