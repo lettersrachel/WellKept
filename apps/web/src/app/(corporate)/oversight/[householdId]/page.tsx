@@ -71,7 +71,10 @@ export default async function Oversight({ params }: { params: Promise<{ househol
   return (
     <>
       <div className="card">
-        <h2><Link href="/oversight" style={{ color: "var(--grey)", textDecoration: "none" }}>Fleet</Link> → {hh.name}</h2>
+        <div className="row" style={{ alignItems: "baseline" }}>
+          <h2 style={{ flex: 1 }}><Link href="/oversight" style={{ color: "var(--grey)", textDecoration: "none" }}>Fleet</Link> → {hh.name}</h2>
+          <Link className="pill" href={`/oversight/${hh.id}/exhibit`}>Exhibit pack</Link>
+        </div>
         <form action={setStatusTag} className="row">
           <span>Status tag (drives app-wide behavior, REQ-041)</span>
           <input type="hidden" name="householdId" value={hh.id} />

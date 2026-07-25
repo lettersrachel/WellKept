@@ -33,7 +33,7 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 020 read-mostly branded s1 view + search | P0 | **built+verified** (server-side search within the client's filtered view, 381d7cf; payload guards run live in the page) |
 | 021 visit report feed | P0 | built (latest report; feed/history view thin) |
 | 022 self-service updates via review queue | P0 | **built+verified** — review queue + the spec's allowlist (lib/client-allowlist) enforced in proposeEdit |
-| 023 quarterly review artifacts | P1 | not built |
+| 023 quarterly review artifacts | P1 | **built+verified** — the exhibit pack (/oversight/[id]/exhibit): windowed 30/90/180/365d, visits + hours + reports timeline, gesture spend, client updates, stranger tests, tag history; browser print IS the export |
 | 024 data stewardship view | P2 | **built+verified** (feb76f0: what-we-hold-for-you card — categories, counts, vault count, last access; counts only, never values) |
 
 ## D. HM portal
@@ -54,8 +54,8 @@ Table rows updated 2026-07-25 against the code as it stands (receipts = commit h
 | 041 status tags; LIFE-EVENT suppression | P0 | **built+verified** (both directions, holds never delete) |
 | 042 gesture queue + cultural-fit gate | P0 | **built+verified** (8c2c93e: dot→queue→cultural-fit gate→HM-notified gate→execute + cents→quiet log; order server-enforced) |
 | 043 fleet roll-ups | P0 | **built+verified** (381d7cf: fleet board — status, playbook health, stranger recency, visit/conflict counts per household) plus the Monday corporate digest (5194e70) |
-| 044 exhibit-pack exports | P0 | partial — fleet CSV export live (/api/exhibits/fleet, MFA-gated); the fuller exhibit pack (per-household bundles, REQ-023 artifacts) not built |
-| 045 trigger administration UI | P1 | not built (rules seeded by script; library is data, ready for it) |
+| 044 exhibit-pack exports | P0 | **built+verified** — fleet CSV (/api/exhibits/fleet) + the per-household printable exhibit pack (see 023) |
+| 045 trigger administration UI | P1 | **built+verified** — /oversight/triggers: full library with steps + method refs, enable/disable (audited; disable is the retirement path), create fleet rules with fail-closed validation (bounded offsets, real provision ids, DEV-005 no-em-dash) |
 | 046 dot triage → promote to field | P1 | **built+verified** (997f805: corporate promotes a dot into a chosen field, provenance observed, audited, fires triggers) |
 | 047 CPSC recall job | P2 | not built |
 

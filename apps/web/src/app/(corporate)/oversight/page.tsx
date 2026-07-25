@@ -53,6 +53,7 @@ export default async function FleetBoard() {
         <div className="row">
           <h2 style={{ border: "none", margin: 0, padding: 0 }}>Fleet — {rows.length} household(s)</h2>
           <Link className="pill" href="/oversight/economics">Economics</Link>
+          <Link className="pill" href="/oversight/triggers">Triggers</Link>
           <Link className="pill" href="/standards">Standards library</Link>
           <a className="pill" href="/api/exhibits/fleet">Export exhibit CSV</a>
         </div>

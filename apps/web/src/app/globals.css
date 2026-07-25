@@ -190,3 +190,10 @@ select:focus-visible, summary:focus-visible {
   background: var(--green); color: #fff; padding: 8px 14px; border-radius: 0 0 6px 0;
 }
 .skip-link:focus { left: 0; }
+
+/* Exhibit packs: browser print IS the export (REQ-023/044). */
+@media print {
+  .masthead, .no-print, .skip-link, button, form { display: none !important; }
+  body { background: #fff; }
+  .card { break-inside: avoid; border: 1px solid var(--line); box-shadow: none; }
+}

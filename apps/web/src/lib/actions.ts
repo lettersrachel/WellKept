@@ -460,3 +460,68 @@ export async function setMonthlyRate(formData: FormData) {
   });
   revalidatePath("/oversight/economics");
 }
+
+/**
+ * REQ-045 trigger administration. The rule library is versioned corporate
+ * content (WK-DEV-005 S4): corporate_admin toggles and creates fleet-level
+ * rules; definitions are zod-validated before they touch the table so a
+ * malformed rule can never reach the engine. Every change audited.
+ * Rules never hard-delete — disable is the retirement path.
+ */
+export async function setTriggerRuleEnabled(formData: FormData) {
+  const ruleId = String(formData.get("ruleId") ?? "");
+  const enabled = String(formData.get("enabled") ?? "") === "true";
+  const anchorHouseholdId = String(formData.get("anchorHouseholdId") ?? "");
+  if (!ruleId || !anchorHouseholdId) return;
+  const principal = await getPrincipal(anchorHouseholdId);
+  if (principal?.role !== "corporate_admin") return; // fail closed
+  const { triggerRule } = await import("@wellkept/schema");
+  const [rule] = await db.select().from(triggerRule).where(eq(triggerRule.id, ruleId));
+  if (!rule) return;
+  await db.update(triggerRule).set({ enabled, updatedAt: new Date() }).where(eq(triggerRule.id, ruleId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: anchorHouseholdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "trigger_rule_change", detail: { ruleId, enabled, packName: (rule.definition as { packName?: string }).packName },
+  });
+  revalidatePath("/oversight/triggers");
+}
+
+export async function createTriggerRule(formData: FormData) {
+  const anchorHouseholdId = String(formData.get("anchorHouseholdId") ?? "");
+  if (!anchorHouseholdId) return;
+  const principal = await getPrincipal(anchorHouseholdId);
+  if (principal?.role !== "corporate_admin") return; // fail closed
+
+  const { provisionIdSchema } = await import("@wellkept/schema");
+  const FAMILIES = ["roster_age", "calendar", "threshold", "signal", "relationship", "external"];
+  const family = String(formData.get("family") ?? "");
+  const bindsToFieldName = String(formData.get("bindsToFieldName") ?? "").trim();
+  const packName = String(formData.get("packName") ?? "").trim();
+  // items arrive one per line: offsetDays | text | optional provision id.
+  // Validated fail-closed before anything reaches the engine: bounded
+  // offsets, real provision ids only, no em dashes in prompt text (DEV-005).
+  const items: { offsetDays: number; text: string; methodRef?: string }[] = [];
+  for (const line of String(formData.get("items") ?? "").split("\n").map((l) => l.trim()).filter(Boolean)) {
+    const [days, text, ref] = line.split("|").map((p) => p.trim());
+    const offsetDays = Number(days);
+    if (!Number.isInteger(offsetDays) || offsetDays < 0 || offsetDays > 365) return;
+    if (!text || text.length < 8 || text.includes("\u2014")) return;
+    if (ref && !provisionIdSchema.safeParse(ref).success) return;
+    items.push({ offsetDays, text, ...(ref ? { methodRef: ref } : {}) });
+  }
+  if (!FAMILIES.includes(family)) return;
+  if (bindsToFieldName.length < 2 || packName.length < 2 || !/^[a-z0-9-]+$/.test(packName)) return;
+  if (items.length < 1 || items.length > 10) return;
+
+  const { triggerRule } = await import("@wellkept/schema");
+  const ruleId = randomUUID();
+  await db.insert(triggerRule).values({
+    id: ruleId, householdId: null, family, bindsToFieldName, enabled: true,
+    definition: { packName, items },
+  });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: anchorHouseholdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "trigger_rule_change", detail: { ruleId, created: true, packName },
+  });
+  revalidatePath("/oversight/triggers");
+}
