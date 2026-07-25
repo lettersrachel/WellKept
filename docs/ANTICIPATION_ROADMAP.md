@@ -1,6 +1,8 @@
 # Anticipation engine: what has to change
 
-Prepared 25 July 2026. Design spec, not a build order.
+Prepared 25 July 2026. Design spec, not a build order. The build handover
+lives in [ANTICIPATION_SESSIONS.md](ANTICIPATION_SESSIONS.md) — one gated
+session brief per item; paste one section into Claude Code, never the file.
 
 > **Do not build any of this yet.** Migrations 0014 to 0017 have not met the
 > live database. Nothing below is worth starting before the deploy session
