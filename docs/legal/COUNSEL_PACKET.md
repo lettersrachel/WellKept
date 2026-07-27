@@ -1,9 +1,13 @@
 # Counsel engagement packet: Well Kept pilot
 
-Assembled 25 July 2026, rev 3. Per the gap register's one-engagement
-consolidation. Every "What exists" claim below was verified against the
-codebase on 2026-07-25 (see COUNSEL_PACKET_VERIFICATION.md); the four
-corrections that verification produced are incorporated in this revision.
+Assembled 25 July 2026; rev 4, 27 July 2026. Per the gap register's
+one-engagement consolidation. Every "What exists" claim was verified against
+the codebase on 2026-07-25 (see COUNSEL_PACKET_VERIFICATION.md); the four
+corrections that verification produced are incorporated. Rev 4 adds the data
+categories shipped after that verification (section 2a below and the addendum
+paragraph in section 0), the erasure tool's treatment of them, and two audit
+wording refinements from the 2026-07-27 audit-invariant review
+(POST_DEPLOY_FINDINGS_A_B.md, session A).
 
 Hand counsel this file plus the three drafts beside it: `household-consent.md`,
 `privacy-notice.md`, `staff-confidentiality.md`. Each attachment states what
@@ -118,6 +122,37 @@ refused erasure itself leave an audit record? Today it does not, and we are
 open to changing that.
 
 ---
+
+## 2a. Data categories added after verification (rev 4)
+
+**What exists.** Since the 2026-07-25 verification the system also captures:
+categorized service time (delivery, travel, intake, admin, training),
+attributed to the staff member who worked it, entered after the fact;
+non-labor costs (supplies, materials, mileage, other) with an optional
+receipt photo that is stored and retained exactly like a visit photo; the
+household's referral source (a six-value category plus an optional note);
+and membership state changes (start, tier change, pause, resume,
+cancellation with a reason and an initiator) as an append-only history with
+the price at each event. QuickBooks remains the billing system of record;
+these records capture that state changed, never that money moved.
+
+**What the erasure tool now does with them (defaults chosen 2026-07-27,
+for counsel to confirm).** On a household erasure: time and cost rows are
+KEPT (employer and business records) with their free-text notes blanked,
+deletable by an explicit flag; membership events are KEPT (commercial
+history) with cancellation reasons blanked, deletable by an explicit flag;
+the referral source and note are CLEARED (personal data with no
+business-record claim once the household is erased); receipt photos purge
+with the photo pass.
+
+**Questions.** (a) Are the keep-by-default choices right - in particular,
+may staff-attributed time survive a household deletion request as an
+employer record? (b) Staff-attributed time is a personnel record: we
+believe the staff-facing disclosure (item 7's document family) must exist
+and be acknowledged before any non-founder logs an hour. Confirm, and tell
+us what that disclosure must contain about time records. (c) Does the
+client-facing notice's "Service time & costs" row say enough, given the
+staff half is disclosed in the staff document rather than the notice?
 
 ## 3. The recovery window is the true floor on erasure latency
 
@@ -312,7 +347,11 @@ that adds it to the notice's retention section.
   the most sensitive tier is encrypted at rest with a separate key, revealed
   only to staff assigned to that household in a session that has cleared a
   second authentication factor, and every reveal is logged before the value is
-  released.
+  released. The log entry is written and committed before the value is
+  decrypted, and a failed log write aborts the reveal: the log is
+  load-bearing, not advisory. A revealed value remains on screen for sixty
+  seconds and re-displays within that window without an additional entry;
+  the trail records reveal actions, not seconds of viewing.
 
 ---
 

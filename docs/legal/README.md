@@ -6,8 +6,11 @@
 > with a real household. Two spots especially need counsel: **data retention /
 > right-to-erasure** (the system tombstones rather than hard-deletes — but an
 > executable erasure tool now exists: `apps/web/scripts/erase-household.mjs`
-> crypto-shreds the vault, purges photo bytes, and blanks free text while
-> keeping the audit trail; counsel decides when it applies and what must be
+> crypto-shreds the vault, purges photo bytes (receipts included), blanks
+> free text across every table including service-time/cost notes and
+> membership cancellation reasons, clears the referral record, and keeps
+> business/employer rows and the audit trail by default (counsel-directed
+> flags go further); counsel decides when it applies and what must be
 > retained) and
 > **which privacy laws apply** (state, GDPR if any client/staff is in the EU/UK).
 

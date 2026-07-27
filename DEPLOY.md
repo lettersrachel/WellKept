@@ -78,6 +78,11 @@ if no live fixture exists. It is not a client and never will be. Before
 go-live the demo households serve; after go-live the fixture is the only
 safe target.
 
+**Migration counting (C3, so nobody re-derives it):** migration files
+number from `0000`, so "N applied in the database" means files `0000`
+through `N-1` — 23 applied = `0000`…`0022`. State counts as "N in the
+database, N on disk" and let the filenames carry the rest.
+
 **Step zero, before ANY manual check: hard-refresh every open tab of the
 app (Cmd+Shift+R), and again after every redeploy mid-run.** A page loaded
 before a deploy carries dead client JS and stale server-action IDs — its

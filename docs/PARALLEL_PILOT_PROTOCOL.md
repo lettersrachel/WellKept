@@ -1,5 +1,10 @@
 # Parallel Pilot Protocol: paper and app, side by side
 
+
+> **Gate note (post-deploy review, 2026-07-27):** the friction log's
+> ⟨home⟩ and ⟨owner⟩ brackets below are a GATE on the pilot starting,
+> not a tidy-up — this protocol is what makes the pilot produce evidence
+> rather than activity, and an unowned friction log produces neither.
 Paper is the system of record; the app is the harness under test.
 
 Per visit: (1) the HM runs the visit entirely on the paper system;

@@ -112,6 +112,14 @@ export default async function TriggersPage({ searchParams }: {
     .innerJoin(household, eq(incidentReport.householdId, household.id))
     .where(eq(incidentReport.preventableByPrompt, "no_prompt_existed"))
     .orderBy(asc(incidentReport.occurredAt));
+  // Post-deploy session C2: is the back-link mechanism actually being
+  // used? The question is skippable by design, but if it is skipped most
+  // of the time the Misses panel is decorative. Just the number - no
+  // threshold, no alert.
+  const resolvedIncidents = await db.select({ preventable: incidentReport.preventableByPrompt })
+    .from(incidentReport)
+    .where(eq(incidentReport.status, "resolved"));
+  const answeredCount = resolvedIncidents.filter((r) => r.preventable !== null).length;
   const missesByKind = new Map<string, typeof misses>();
   for (const m of misses) {
     if (!missesByKind.has(m.kind)) missesByKind.set(m.kind, []);
@@ -207,6 +215,12 @@ export default async function TriggersPage({ searchParams }: {
           gets; this list IS the rule library's backlog. Never inferred. */}
       <div className="card">
         <h2>Misses — incidents no prompt existed for</h2>
+        <div className="prov">
+          back-link answered on {answeredCount} of {resolvedIncidents.length} resolved incident(s)
+          {resolvedIncidents.length > 0 && ` (${Math.round((answeredCount / resolvedIncidents.length) * 100)}%)`}
+          {" — "}the question is skippable; this number says whether the mechanism is
+          being used before you rely on what it produces
+        </div>
         {misses.length === 0 ? (
           <div className="note">
             None recorded. Rows appear when an incident is resolved with

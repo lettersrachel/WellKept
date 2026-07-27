@@ -932,3 +932,74 @@ banner), recordPromptOutcome (its answered-state is already visible
 inline), and setMonthlyRate (economics page).
 The two mis-kinded fixture rows stay (append-only; they are fixture test
 data and harmless).
+
+---
+
+## Post-deploy review addendum (2026-07-27 evening) — sessions C and D filings
+
+Filed per POST_DEPLOY_SESSIONS.md, after read-only sessions A and B
+(findings: POST_DEPLOY_FINDINGS_A_B.md). Current maximum read before
+filing: G-39.
+
+### G-40. Erasure drift over the capture tables — FIXED this commit
+Session B's finding: `erase-household.mjs` reached none of `time_entry`,
+`cost_entry`, `membership_event`, or `household.referral_note` — the
+deletion story stopped being true at migration 0020. Extended this commit,
+defaults chosen for counsel to confirm (packet rev 4, section 2a): time
+and cost rows KEPT (employer/business records) with notes blanked,
+deletable by `--erase-time-and-costs`; membership events KEPT with
+cancellation reasons blanked, deletable by `--erase-membership-history`;
+referral source and note CLEARED; receipt photos purge with the photo
+pass. Standing rule for every future data category: the erasure tool is
+part of the definition of done — a category ships with its erasure
+treatment or it does not ship.
+
+### G-41. Personnel data captured without a staff disclosure
+`time_entry` records hours against a named House Manager; the G-13
+staff-facing disclosure is unwritten. Nothing has gone wrong because the
+only person logging hours is a founder. **G-13 now gates HIRING, not just
+capture session 5** — the disclosure must exist and be acknowledged before
+a real House Manager enters a single row. Cross-referenced from
+CORPORATE_CAPTURE_SESSIONS.md session 1, whose "deploy clean" gate should
+have carried this condition. Also queued as packet rev 4 question (b).
+
+### G-42. After-the-fact time entry meets W-2 recordkeeping
+No live clock is fine while a founder logs their own time. It becomes an
+employer recordkeeping question the moment a non-exempt employee
+reconstructs hours from memory. **Trigger: the first non-founder time
+entry**, not a household count. The revisit is capture session 1's own
+noted follow-up (clock-based entry when a second HM exists).
+
+### G-43. Membership price duplicated across systems
+`membership_event` carries a price per event; QuickBooks is the billing
+system of record; nothing reconciles the two. This is the ADR-004 seam
+appearing where it was always going to appear first. At pilot scale a
+quarterly eyeball suffices; the real reconciliation belongs to the
+workforce/billing tool purchase ADR-004 already anticipates at 15–20
+households. Filed so the seam has a name before it has a discrepancy.
+
+### G-44. Unbounded spend after the Upstash upgrade
+The pay-as-you-go upgrade (2026-07-27, mid-incident) replaced a quota
+failure with a spend failure: no cap, no alert. Founder dashboard action:
+set a monthly budget alert in Upstash (they support spend notifications);
+five minutes, same visit as the other chores. The worker's queue polling
+is the main consumer — the same behaviour that burned the free tier's
+500k requests.
+
+### G-45. Intake-hours capture is in no runbook
+Capture session 1 shipped the `intake` category; nothing requires anyone
+to use it during a first onboarding. Intake cost decides whether the
+108-household arithmetic works, and it is capturable exactly once per
+household, during a chaotic first week. Disposition: add one line to the
+LAUNCH §4 onboarding runbook — "log every intake hour as you go
+(time category: intake); it cannot be reconstructed later" — done this
+commit. The schema was necessary; the habit is the sufficient part.
+
+### G-46. Mileage substantiation fields — awaiting founder field list
+Session C1, reported not built: `cost_entry` captures category, amount,
+date, optional miles, optional note. IRS substantiation for vehicle
+expenses generally wants date (have), business purpose and destination
+(absent — reconstructable from `note` only by accident). A migration
+would add `purpose text` and `destination text` on mileage rows, or the
+founder may direct that the note field carries both by convention.
+NOT added — the field list is the founder's call, per the session brief.
