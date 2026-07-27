@@ -840,6 +840,22 @@ the server's and overlays "this page is from before the last deploy —
 refresh" the moment they diverge. Until one lands, the operational rule
 holds: hard-refresh after every deploy (DEPLOY §4 step zero).
 
+**FIXED 2026-07-27 — the app now detects its own skew.** Every build bakes
+`NEXT_PUBLIC_BUILD_ID` (the commit sha) into both its client bundle and
+its server runtime; `/api/build-id` answers with the LIVE deployment's id;
+a root-layout watcher compares on a 60s interval and on every
+tab-refocus — the exact moment stale pages resurface — and overlays "this
+page is from before the latest update" with a reload button on a CONFIRMED
+mismatch only (network failure renders nothing: the field client is
+offline-first and must never nag from a driveway). This covers all five
+observed vectors: dead server-action writes ×3, the stale read (G-38's
+tail), and the /visit service-worker fallback that can resurrect an old
+build offline. The platform alternative (Vercel skew protection) was
+considered and not used: it keeps old pages WORKING against old code,
+which is the right call for a consumer site and the wrong one for an
+ops tool whose audit surfaces must converge on the newest build.
+DEPLOY §4 step zero remains as belt-and-braces.
+
 ### G-38. The trailing-30-day time & costs card renders empty against present data
 Observed 2026-07-27 on dpl_5x4uPWSZ (main 1265067): the drill-in's "Time &
 costs" card shows its "Nothing recorded yet" empty state for EVERY
