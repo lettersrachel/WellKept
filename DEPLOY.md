@@ -49,6 +49,15 @@ zero env vars, auto-deploys on every push) — the live project is
 `wellkept`, the one holding all ten env vars. Don't debug against the
 wrong one.
 
+**Deploying** (the live project does NOT auto-deploy; every production
+deploy is manual): from the REPO ROOT of an up-to-date `main` checkout,
+run `npx vercel --prod --yes`. Always the repo root — never from
+`apps/web`, even though that is the project's configured Root Directory:
+`apps/web` has no `.vercel` link, so `--yes` there suppresses the only
+prompt that would have saved you and silently CREATES A THIRD Vercel
+project instead of deploying this one (caught live 2026-07-27). After the
+deploy, `/api/build-id` must equal the commit you deployed.
+
 ## 3. Worker (Railway / Render / Fly — any Docker host)
 
 Deploy from the repo with `services/worker/Dockerfile` (build context =
@@ -164,6 +173,15 @@ Sharp edges the 2026-07-27 run paid for (symptoms → causes):
   Since 2026-07-27 the app also detects this itself (G-37): a stale page
   overlays a red "refresh now" banner within a minute or on tab refocus,
   via `/api/build-id`. The manual refresh stays as belt-and-braces.
+- **`npx vercel --yes` from an unlinked directory creates a NEW project**
+  rather than failing — the flag exists to skip confirmations, and the
+  confirmation it skips is "set up and deploy this directory?". Deploy
+  from the repo root only (§2). A surprise fourth project appearing in
+  the dashboard means someone deployed from the wrong directory.
+- **A docs-only merge still moves the build id** — the G-37 skew banner
+  keys on the commit sha, so any deploy of any merge makes parked tabs
+  prompt for a refresh, code change or not. Correct behaviour; don't
+  read it as a failed deploy.
 - **A magic link that never arrives can still return the success page** —
   the failing Resend send has been observed returning the normal
   `/verify-request` redirect. Retry once before debugging; check the
