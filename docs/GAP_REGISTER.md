@@ -840,7 +840,9 @@ the server's and overlays "this page is from before the last deploy —
 refresh" the moment they diverge. Until one lands, the operational rule
 holds: hard-refresh after every deploy (DEPLOY §4 step zero).
 
-**FIXED 2026-07-27 — the app now detects its own skew.** Every build bakes
+**BUILT AND LIVE 2026-07-27; the mismatch branch is UNVERIFIED until the next deploy.** The first spot-check was structurally invalid — the parked tab predated SkewWatch, and the deploy that introduces client-side skew detection is the one deploy it can never catch (its own bootstrap). Proven so far: the server half answers with the correct sha, and fresh pages run the watcher without false positives. The valid test, armed: a tab parked on THIS build banners within ~60s (or on refocus) of the next deploy of any different commit. Only then does this entry earn "fixed."
+
+The mechanism as built: Every build bakes
 `NEXT_PUBLIC_BUILD_ID` (the commit sha) into both its client bundle and
 its server runtime; `/api/build-id` answers with the LIVE deployment's id;
 a root-layout watcher compares on a 60s interval and on every
