@@ -79,6 +79,11 @@ pilot months that ran without them, and the pilot's entire output is evidence.
 > survive offline sync with no field-client changes. Other categories are
 > logged after the fact on the visit surface or the drill-in. ADR-004
 > held: hours in, no pay out.
+> **Gate correction (post-deploy review, G-41):** this session's gate was
+> written as "deploy clean" and should also have carried the G-13
+> condition — staff-attributed time is a personnel record, so the
+> staff-facing disclosure must exist and be acknowledged before any
+> NON-FOUNDER logs a single hour. G-13 gates hiring.
 
 **Gate:** deploy clean.
 

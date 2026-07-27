@@ -101,7 +101,10 @@ worker degrades quietly.
 > reach, silently defeating the retention policy counsel is blessing.
 > Revisit at five households or the first non-pilot client, whichever
 > comes first — and if the answer changes, counsel owns the backup's own
-> retention rule (packet item 7). Signed: ______ Date: ______
+> retention rule (packet item 7). NOTE (post-deploy review): this position
+> leans on Neon PITR being sufficient, and the §1.2 restore drill that
+> demonstrates that is still pending — SIGN AFTER THE DRILL, not before.
+> Signed: ______ Date: ______
 Neon PITR is currently the ONLY copy of every playbook, vault row, audit
 event, incident, and photo in the business. Whether that is adequate at
 pilot scale (with the §1.2 restore drill proven) or whether you also want a
@@ -196,7 +199,11 @@ exactly what the software collects. **They need a lawyer's review before use**
    to any address), sign in, and staff set up 2FA once.
 3. House managers: after signing in on web, open **/link-device** and pair the
    phone app with the code.
-4. Revoke anyone instantly from the same panel (**Sign out** + **Revoke**;
+4. **Log every intake hour as you go** (time category: `intake`, on the
+   visit surface or the drill-in) — intake cost is capturable exactly once,
+   during onboarding, and it is the number the unit-economics model needs
+   most (G-45).
+5. Revoke anyone instantly from the same panel (**Sign out** + **Revoke**;
    **Reset 2FA** if they lose their phone).
 
 ---
