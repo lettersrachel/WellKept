@@ -57,6 +57,16 @@ Three documents, one per audience:
 - **The consent record itself** (added 2026-07-25) — that the household's
   written consent was signed, when, and which document version; recorded by
   a named corporate user. The paper stays the artifact.
+- **Service time & cost records** (added 2026-07-27) — time spent serving
+  the household, categorized (delivery, travel, intake, admin, training)
+  and entered after the fact (a visit's delivery hours record themselves
+  when the visit closes), and non-labor costs (supplies, materials,
+  mileage, other) with amount, date, and who recorded them. Internal (s2);
+  never shown to the client in the app. Hours and costs only — no pay
+  rates, no payroll, no invoices (ADR-004; QuickBooks is the book of
+  record for money). Note: time entries are attributed to the staff member
+  who worked them — this is also STAFF data, and it belongs in the G-13
+  staff-facing disclosure when that is written.
 - **Registries** — important dates, vendors, appliances, subscriptions.
 - **Account & activity** — email, role, and an append-only audit log of who
   accessed or changed what.

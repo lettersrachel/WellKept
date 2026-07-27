@@ -786,3 +786,65 @@ export async function createTriggerRule(formData: FormData) {
   });
   revalidatePath("/oversight/triggers");
 }
+
+/**
+ * Capture session 1: an after-the-fact categorized time entry (founder
+ * decision 2026-07-27: no live clock at pilot scale). Field roles log
+ * their own time on their household; corporate can log too (intake and
+ * admin time are often theirs). ADR-004 holds: this records hours, never
+ * pay — no rates, no overtime, nothing payroll-shaped.
+ */
+export async function createTimeEntry(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const category = String(formData.get("category") ?? "");
+  const CATEGORIES = ["delivery", "travel", "intake", "admin", "training"] as const;
+  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) return;
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  const start = new Date(String(formData.get("startedAt") ?? ""));
+  const end = new Date(String(formData.get("endedAt") ?? ""));
+  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) return;
+  const minutes = Math.round((+end - +start) / 60_000);
+  if (minutes > 24 * 60) return; // a single entry over a day is a typo, not a shift
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
+  const { timeEntry } = await import("@wellkept/schema");
+  await db.insert(timeEntry).values({
+    id: randomUUID(), householdId, userId: principal.userId,
+    category: category as (typeof CATEGORIES)[number],
+    startedAt: start, endedAt: end, minutes, source: "manual", note,
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  revalidatePath("/visit");
+}
+
+/**
+ * Capture session 2: a non-labor cost against a household. Founder
+ * decisions 2026-07-27: categories supplies|materials|mileage|other,
+ * mileage entered (miles field), never derived from travel time.
+ * QuickBooks stays the book of record — this is capture, not accounting.
+ */
+export async function createCostEntry(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const category = String(formData.get("category") ?? "");
+  const CATEGORIES = ["supplies", "materials", "mileage", "other"] as const;
+  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) return;
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  // Money in integer cents (DEV-004 S3); accept "12.50" style input.
+  const amountRaw = String(formData.get("amount") ?? "").trim();
+  const amount = Number.parseFloat(amountRaw);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000) return;
+  const amountCents = Math.round(amount * 100);
+  const incurredOn = String(formData.get("incurredOn") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(incurredOn)) return;
+  const milesRaw = String(formData.get("miles") ?? "").trim();
+  const miles = category === "mileage" && /^\d{1,4}$/.test(milesRaw) ? Number.parseInt(milesRaw, 10) : null;
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
+  const { costEntry } = await import("@wellkept/schema");
+  await db.insert(costEntry).values({
+    id: randomUUID(), householdId, category: category as (typeof CATEGORIES)[number],
+    amountCents, incurredOn, recordedBy: principal.userId, miles, note,
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  revalidatePath("/visit");
+}

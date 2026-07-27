@@ -393,6 +393,51 @@ export const devicePairing = pgTable("device_pairing", {
 // visit.submit for a household that already has one applied the same day;
 // stored, never dropped, so corporate can review (last-write-wins per
 // REQ-032). Ported from the July 12 foundation repo.
+// Capture session 1 (CORPORATE_CAPTURE_SESSIONS.md, founder decisions
+// 2026-07-27): categorized time. The five categories are the founder's
+// list; entry is after-the-fact for the pilot (no live clock — a clock has
+// to survive offline sync gaps and waits for a second HM). ADR-004 holds:
+// hours in, never paychecks out — no rates, no overtime, no payroll.
+export const timeCategoryEnum = pgEnum("time_category", [
+  "delivery", "travel", "intake", "admin", "training",
+]);
+
+export const timeEntry = pgTable("time_entry", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  userId: text("user_id").notNull().references(() => authUser.id), // the staff member
+  category: timeCategoryEnum("category").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+  minutes: integer("minutes").notNull(), // derived from the interval at write
+  source: text("source").notNull(), // visit_close (derived from the applied visit) | manual
+  visitCommandId: text("visit_command_id"), // the visit.submit this derives from, if any
+  note: text("note"), // s2
+}, (t) => [index("time_entry_household_started_idx").on(t.householdId, t.startedAt)]);
+
+// Capture session 2: non-labor cost. Founder decisions 2026-07-27:
+// categories supplies | materials | mileage | other; mileage ENTERED, not
+// derived from travel time (a derived number breaks the moment someone
+// drives without logging travel). QuickBooks remains the book of record —
+// this captures that a cost happened, not reimbursement or accounting.
+export const costCategoryEnum = pgEnum("cost_category", [
+  "supplies", "materials", "mileage", "other",
+]);
+
+export const costEntry = pgTable("cost_entry", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  category: costCategoryEnum("category").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  incurredOn: date("incurred_on").notNull(),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+  miles: integer("miles"), // mileage rows only
+  note: text("note"), // s2
+  // A receipt is a visit_photo row: same storage, same rolling retention
+  // purge, same hold semantics — one photo lifecycle, not two.
+  receiptPhotoId: uuid("receipt_photo_id"),
+}, (t) => [index("cost_entry_household_incurred_idx").on(t.householdId, t.incurredOn)]);
+
 export const visitCommand = pgTable("visit_command", {
   id: text("id").primaryKey(),
   type: text("type").notNull(), // visit.submit | dot.create | signal.route

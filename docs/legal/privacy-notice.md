@@ -16,6 +16,7 @@
 | Visit records | tasks, hours, notes, photos | service delivery + accountability |
 | Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |
 | Practical data | important dates, vendors, appliances, subscriptions | to anticipate needs |
+| Service time & costs | time spent serving your household by activity, and costs incurred in serving it (supplies, materials, mileage) | accurate cost and quality of your service |
 | Account & activity | name, email, role, sign-in and access logs | to run and secure accounts |
 
 We ask clients **not** to provide government IDs, payment card/bank numbers, or

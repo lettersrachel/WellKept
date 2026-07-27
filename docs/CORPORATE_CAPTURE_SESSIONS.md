@@ -69,6 +69,17 @@ pilot months that ran without them, and the pilot's entire output is evidence.
 
 ## Session 1. Categorized time capture
 
+> **BUILT 2026-07-27** (migration 0020), gate met the same day the deploy
+> ran clean. Founder decisions recorded: categories **delivery, travel,
+> intake, admin, training** (the suggested list, adopted); entry is
+> **after the fact** for the pilot (no live clock until a second House
+> Manager exists — a clock has to survive offline sync gaps). A visit's
+> delivery hours derive automatically: the applied `visit.submit` command
+> writes a `delivery` time entry in the same transaction, so entries
+> survive offline sync with no field-client changes. Other categories are
+> logged after the fact on the visit surface or the drill-in. ADR-004
+> held: hours in, no pay out.
+
 **Gate:** deploy clean.
 
 **Why first.** Per-household unit economics, the 108-household arithmetic, and
@@ -94,6 +105,15 @@ survive an offline sync, and travel time is separable from delivery time for any
 household over any date range.
 
 ## Session 2. Non-labor cost capture
+
+> **BUILT 2026-07-27** (migration 0021, separate from session 1's 0020 per
+> standing rule 2). Founder decisions recorded: categories **supplies,
+> materials, mileage, other**; **mileage is entered** (a miles field on
+> mileage rows), never derived from travel time. Receipt photos: the
+> schema links a `visit_photo` row (`receipt_photo_id`) so a receipt gets
+> the same retention purge and hold semantics as every other photo; no
+> upload UI yet - add it when the first real receipt needs capturing.
+> QuickBooks remains the book of record.
 
 **Gate:** deploy clean. Pairs naturally with session 1, separate migration.
 
