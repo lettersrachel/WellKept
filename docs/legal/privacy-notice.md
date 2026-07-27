@@ -14,7 +14,7 @@
 | Household operating details | routines, preferences, standards, layout | to run your household |
 | Secured details | access codes, alarm info, where valuables are kept | to care for the home; **encrypted**, access **logged** |
 | Visit records | tasks, hours, notes, photos | service delivery + accountability |
-| Service records | incident and complaint records, staff responses to service prompts, your "please don't raise this" preferences | accountability + service quality |
+| Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |
 | Practical data | important dates, vendors, appliances, subscriptions | to anticipate needs |
 | Account & activity | name, email, role, sign-in and access logs | to run and secure accounts |
 

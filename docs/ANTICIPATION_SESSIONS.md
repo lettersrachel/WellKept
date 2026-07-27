@@ -60,6 +60,18 @@ section:
 
 ## Session A. News versus known
 
+> **BUILT 2026-07-27** (migration 0018), gate met — the deploy ran clean
+> 14/14 the same day. Founder decisions recorded: acted labels "Good
+> catch" / "Already on it"; dismiss reasons `wrong` ("Wrong for this
+> home") and `bad_timing` ("Bad timing") only — `not_applicable` and
+> `already_done` were already one-tap outcomes in the shipped enum (the
+> reconciliation the repo note required); informative-rate floor left
+> BLANK on purpose (set `informativeRateFloor` in the `rule_health` knob
+> after real numbers — no retirement flag keys to it until then). One
+> deviation from the spec's letter, not its intent: the "two taps" are
+> flattened into one labeled tap each ("Good catch" carries acted+news in
+> a single press) — same data, less driveway friction.
+
 **Gate:** the deploy session is complete and phase 2 was clean.
 
 **Why it is first:** it changes what gets recorded. Built after the pilot
@@ -87,6 +99,13 @@ side by side with the retirement flag keyed to the new one.
 ---
 
 ## Session B. Incident back-link
+
+> **BUILT 2026-07-27** (migration 0019, separate from A's 0018 per rule 2).
+> Founder decision recorded: the resolution-form question is SKIPPABLE —
+> blank means unanswered, never guessed. The Misses panel lives on
+> `/oversight/triggers`; `related_prompt_id` exists in the schema and the
+> action, with no picker UI yet (add one when a real fired-prompt case
+> needs it).
 
 **Gate:** same as A. Can share a session with A if both stay small, but
 separate migrations.

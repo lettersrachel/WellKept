@@ -347,6 +347,13 @@ export const incidentKindEnum = pgEnum("incident_kind", [
   "complaint", "breakage", "injury", "near_miss", "other",
 ]);
 
+// Session B: could the anticipation engine have prevented this incident?
+// no_prompt_existed rows feed the Misses panel — the only false-negative
+// stream the business gets (roadmap item B).
+export const incidentPreventableEnum = pgEnum("incident_preventable_kind", [
+  "fired_and_ignored", "fired_too_late", "no_prompt_existed", "not_preventable", "unclear",
+]);
+
 export const incidentReport = pgTable("incident_report", {
   ...stamps,
   householdId: uuid("household_id").notNull(),
@@ -360,6 +367,13 @@ export const incidentReport = pgTable("incident_report", {
   resolutionNote: text("resolution_note"),
   resolvedBy: text("resolved_by"),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  // Session B (roadmap item B): the incident-to-engine back-link, answered
+  // by the person RESOLVING (never at creation, never inferred — an
+  // inferred link is a false-negative stream made of fiction). Skippable
+  // by founder decision 2026-07-27: null = the question wasn't answered.
+  preventableByPrompt: incidentPreventableEnum("preventable_by_prompt"),
+  relatedRuleId: uuid("related_rule_id"), // trigger_rule, where one applies
+  relatedPromptId: uuid("related_prompt_id"), // the fired prompt_pack_item, where one exists
 }, (t) => [index("incident_report_household_idx").on(t.householdId, t.status)]);
 
 export const devicePairing = pgTable("device_pairing", {
@@ -523,6 +537,14 @@ export const promptOutcomeKindEnum = pgEnum("prompt_outcome_kind", [
   "acted", "dismissed", "not_applicable", "already_done",
 ]);
 
+// Session A (roadmap item A, reconciled with the enum above): the shipped
+// outcome kinds already capture not_applicable and already_done as one-tap
+// answers, so a dismissal reason only needs what's left of the roadmap's
+// four: the rule was wrong for this home, or the moment was wrong.
+export const promptDismissReasonEnum = pgEnum("prompt_dismiss_reason", [
+  "wrong", "bad_timing",
+]);
+
 // REQ-055: one row per (prompt, user) answer. Append-only — no update or
 // delete path exists anywhere in code. An unanswered prompt is deliberately
 // NOT a row: ignore_rate reads fired counts from prompt_pack_item, never
@@ -541,6 +563,14 @@ export const promptOutcome = pgTable("prompt_outcome", {
   targetDate: date("target_date"), // null for event-driven prompts
   leadDays: integer("lead_days"), // answered_at to target_date; null without a target
   note: text("note"), // optional free text, sensitivity s2
+  // Session A (item A): did an acted prompt tell the HM something new?
+  // Set only when outcome=acted ("Good catch" true / "Already on it" false);
+  // null on every other outcome AND on historical acted rows — the
+  // informative-rate metric ignores nulls rather than backfilling a guess.
+  wasNews: boolean("was_news"),
+  // Set only when outcome=dismissed; null means dismissed-without-reason
+  // (historical rows) — never coerced.
+  dismissReason: promptDismissReasonEnum("dismiss_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   uniqueIndex("prompt_outcome_prompt_user_unique").on(t.promptId, t.userId),

@@ -118,14 +118,19 @@ export async function getSeasonRecall(householdId: string, limit = 5) {
 }
 
 /** A2/REQ-055: this user's answers for a set of surfaced prompts. */
+export interface PromptAnswer { outcome: string; wasNews: boolean | null; dismissReason: string | null }
+
 export async function getPromptOutcomes(promptIds: string[], userId: string) {
-  if (promptIds.length === 0) return new Map<string, string>();
+  if (promptIds.length === 0) return new Map<string, PromptAnswer>();
   const { promptOutcome } = await import("@wellkept/schema");
   const { and, inArray } = await import("drizzle-orm");
-  const rows = await db.select({ promptId: promptOutcome.promptId, outcome: promptOutcome.outcome })
+  const rows = await db.select({
+    promptId: promptOutcome.promptId, outcome: promptOutcome.outcome,
+    wasNews: promptOutcome.wasNews, dismissReason: promptOutcome.dismissReason,
+  })
     .from(promptOutcome)
     .where(and(inArray(promptOutcome.promptId, promptIds), eq(promptOutcome.userId, userId)));
-  return new Map(rows.map((r) => [r.promptId, r.outcome as string]));
+  return new Map(rows.map((r) => [r.promptId, { outcome: r.outcome as string, wasNews: r.wasNews, dismissReason: r.dismissReason as string | null }]));
 }
 
 /** REQ-056: a household's exclusion rows, active first (admin surface). */

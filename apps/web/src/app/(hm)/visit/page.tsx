@@ -16,6 +16,35 @@ export const dynamic = "force-dynamic";
 const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
 
 /**
+ * Session A: one answer = one tap, with the second dimension (was it news?
+ * why dismissed?) carried by hidden fields instead of a second screen — a
+ * driveway answer beats a modal. Each choice is its own form because only
+ * the clicked submit button's value travels with the POST.
+ */
+function OutcomeChoice({ promptId, outcome, label, wasNews, dismissReason }: {
+  promptId: string; outcome: string; label: string; wasNews?: string; dismissReason?: string;
+}) {
+  return (
+    <form action={recordPromptOutcome} style={{ display: "inline" }}>
+      <input type="hidden" name="promptId" value={promptId} />
+      <input type="hidden" name="outcome" value={outcome} />
+      {wasNews !== undefined && <input type="hidden" name="wasNews" value={wasNews} />}
+      {dismissReason !== undefined && <input type="hidden" name="dismissReason" value={dismissReason} />}
+      <button className="act subtle">{label}</button>
+    </form>
+  );
+}
+
+/** Session A: render an answer with its second dimension, if recorded. */
+function outcomeLabel(o: { outcome: string; wasNews: boolean | null; dismissReason: string | null }): string {
+  if (o.outcome === "acted" && o.wasNews === true) return "acted — good catch";
+  if (o.outcome === "acted" && o.wasNews === false) return "acted — already on it";
+  if (o.outcome === "dismissed" && o.dismissReason === "wrong") return "dismissed — wrong for this home";
+  if (o.outcome === "dismissed" && o.dismissReason === "bad_timing") return "dismissed — bad timing";
+  return o.outcome.replace(/_/g, " ");
+}
+
+/**
  * The HM surface (REQ-030/031), mobile-web per the verified foundation-repo
  * pattern: briefing (flags first, LIFE-EVENT suppression) + the close-flow
  * wizard with offline queue. The Expo app remains the sprint 3-5 native
@@ -149,18 +178,27 @@ export default async function VisitPage() {
             <div style={{ fontSize: 15, color: "var(--green)" }}>{i.itemText}</div>
             <div className="prov">{i.packName} · due today</div>
             {outcomes.has(i.id) ? (
-              <div className="prov">Answered: {outcomes.get(i.id)!.replace(/_/g, " ")}</div>
+              <div className="prov">Answered: {outcomeLabel(outcomes.get(i.id)!)}</div>
             ) : (
-              // A2/REQ-055: four answers, not three — "already done" (right
-              // rule, wrong lead time) and "not applicable" (wrong rule for
-              // this household) imply opposite corrections. Optional always.
-              <form action={recordPromptOutcome} className="row" style={{ gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                <input type="hidden" name="promptId" value={i.id} />
-                <button className="act subtle" name="outcome" value="acted">Acted</button>
-                <button className="act subtle" name="outcome" value="already_done">Already done</button>
-                <button className="act subtle" name="outcome" value="not_applicable">Not applicable</button>
-                <button className="act subtle" name="outcome" value="dismissed">Dismiss</button>
-              </form>
+              // A2/REQ-055 + Session A: "already done" (right rule, wrong
+              // lead time) and "not applicable" (wrong rule for this
+              // household) imply opposite corrections; acted splits by
+              // whether it was news (informative rate), dismissed by why.
+              // Optional always.
+              <div style={{ marginTop: 8 }}>
+                <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <span className="prov">Acted:</span>
+                  <OutcomeChoice promptId={i.id} outcome="acted" wasNews="true" label="Good catch" />
+                  <OutcomeChoice promptId={i.id} outcome="acted" wasNews="false" label="Already on it" />
+                  <OutcomeChoice promptId={i.id} outcome="already_done" label="Already done" />
+                  <OutcomeChoice promptId={i.id} outcome="not_applicable" label="Not applicable" />
+                </div>
+                <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+                  <span className="prov">Dismiss:</span>
+                  <OutcomeChoice promptId={i.id} outcome="dismissed" dismissReason="wrong" label="Wrong for this home" />
+                  <OutcomeChoice promptId={i.id} outcome="dismissed" dismissReason="bad_timing" label="Bad timing" />
+                </div>
+              </div>
             )}
           </div>
         ))

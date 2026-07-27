@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
-import { appSetting, promptOutcome, promptPackItem, triggerRule } from "@wellkept/schema";
+import { appSetting, household, incidentReport, promptOutcome, promptPackItem, triggerRule } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
@@ -17,7 +17,8 @@ interface RuleDef { packName?: string; items?: { offsetDays: number; text: strin
 
 interface RuleHealth {
   fired: number; answered: number; acted: number; notApplicable: number;
-  alreadyDone: number; leads: number[]; households: Set<string>; users: Set<string>;
+  alreadyDone: number; actedNews: number; actedNewsKnown: number;
+  leads: number[]; households: Set<string>; users: Set<string>;
 }
 
 /**
@@ -33,19 +34,33 @@ async function ruleHealthByRule(now: Date) {
     .where(and(gte(promptPackItem.fireAt, since), lte(promptPackItem.fireAt, now), eq(promptPackItem.suppressedByTag, false)));
   const answers = await db.select().from(promptOutcome).where(gte(promptOutcome.answeredAt, since));
   const [cfgRow] = await db.select().from(appSetting).where(eq(appSetting.key, "rule_health"));
-  const cfg = { actRateFloor: 0.25, minHouseholds: 3, minUsers: 2, ...(cfgRow?.value as object | undefined) };
+  // Session A: informativeRateFloor is DELIBERATELY absent from the
+  // defaults (founder decision 2026-07-27 — set it after real numbers).
+  // Until the knob carries it, no rule gets a retirement flag; act rate is
+  // display only either way.
+  const cfg = {
+    actRateFloor: 0.25, minHouseholds: 3, minUsers: 2,
+    ...(cfgRow?.value as object | undefined),
+  } as { actRateFloor: number; minHouseholds: number; minUsers: number; informativeRateFloor?: number };
 
   const health = new Map<string, RuleHealth>();
   const get = (ruleId: string) => {
     let h = health.get(ruleId);
-    if (!h) { h = { fired: 0, answered: 0, acted: 0, notApplicable: 0, alreadyDone: 0, leads: [], households: new Set(), users: new Set() }; health.set(ruleId, h); }
+    if (!h) { h = { fired: 0, answered: 0, acted: 0, notApplicable: 0, alreadyDone: 0, actedNews: 0, actedNewsKnown: 0, leads: [], households: new Set(), users: new Set() }; health.set(ruleId, h); }
     return h;
   };
   for (const f of fired) get(f.ruleId).fired += 1;
   for (const a of answers) {
     const h = get(a.ruleId);
     h.answered += 1;
-    if (a.outcome === "acted") { h.acted += 1; if (a.leadDays !== null) h.leads.push(a.leadDays); }
+    if (a.outcome === "acted") {
+      h.acted += 1;
+      if (a.leadDays !== null) h.leads.push(a.leadDays);
+      // Session A: informative = acted AND news. Historical acted rows have
+      // was_news null and are excluded from the known-denominator, never
+      // counted either way (the metric ignores nulls, it doesn't guess).
+      if (a.wasNews !== null) { h.actedNewsKnown += 1; if (a.wasNews) h.actedNews += 1; }
+    }
     if (a.outcome === "not_applicable") h.notApplicable += 1;
     if (a.outcome === "already_done") h.alreadyDone += 1;
     h.households.add(a.householdId);
@@ -80,6 +95,23 @@ export default async function TriggersPage() {
   const rules = await db.select().from(triggerRule).orderBy(asc(triggerRule.createdAt));
   const { health, cfg } = await ruleHealthByRule(new Date());
 
+  // Session B: the Misses panel reads resolved incidents whose resolver
+  // answered no_prompt_existed, grouped by what the incident was about.
+  const misses = await db.select({
+    id: incidentReport.id, kind: incidentReport.kind, severity: incidentReport.severity,
+    description: incidentReport.description, occurredAt: incidentReport.occurredAt,
+    householdName: household.name,
+  })
+    .from(incidentReport)
+    .innerJoin(household, eq(incidentReport.householdId, household.id))
+    .where(eq(incidentReport.preventableByPrompt, "no_prompt_existed"))
+    .orderBy(asc(incidentReport.occurredAt));
+  const missesByKind = new Map<string, typeof misses>();
+  for (const m of misses) {
+    if (!missesByKind.has(m.kind)) missesByKind.set(m.kind, []);
+    missesByKind.get(m.kind)!.push(m);
+  }
+
   return (
     <>
       <div className="card">
@@ -100,10 +132,18 @@ export default async function TriggersPage() {
         const def = r.definition as RuleDef;
         const h = health.get(r.id);
         const actRate = h && h.answered > 0 ? h.acted / h.answered : null;
+        // Session A: informative rate = acted-and-news over fired (roadmap
+        // item A). A rule that reminds people of what they already planned
+        // scores act-rate green and informative-rate zero — the difference
+        // is the whole point.
+        const informativeRate = h && h.fired > 0 ? h.actedNews / h.fired : null;
         // Both guards required (A2): never retire a fleet rule on the
-        // evidence of one household or one HM having a bad month.
-        const retirementCandidate = h !== undefined && actRate !== null
-          && actRate < cfg.actRateFloor
+        // evidence of one household or one HM having a bad month. Session A
+        // demotes act rate to display: retirement keys ONLY to the
+        // informative floor, and only once the founder sets it in the knob.
+        const retirementCandidate = h !== undefined && informativeRate !== null
+          && cfg.informativeRateFloor !== undefined
+          && informativeRate < cfg.informativeRateFloor
           && h.households.size >= cfg.minHouseholds
           && h.users.size >= cfg.minUsers;
         const medianLead = h ? median(h.leads) : null;
@@ -135,6 +175,8 @@ export default async function TriggersPage() {
                 for the founder's decision, never an automatic act. */}
             <div className="prov">
               health 90d: fired {h?.fired ?? 0} · answered {h?.answered ?? 0}
+              {" · "}informative {pct(h?.actedNews ?? 0, h?.fired ?? 0)}
+              {(h?.acted ?? 0) > (h?.actedNewsKnown ?? 0) && ` (news data on ${h!.actedNewsKnown} of ${h!.acted} acted)`}
               {" · "}act {pct(h?.acted ?? 0, h?.answered ?? 0)}
               {" · "}ignored {pct((h?.fired ?? 0) - (h?.answered ?? 0), h?.fired ?? 0)}
               {" · "}n/a {pct(h?.notApplicable ?? 0, h?.answered ?? 0)}
@@ -152,6 +194,36 @@ export default async function TriggersPage() {
           </div>
         );
       })}
+
+      {/* Session B: the Misses panel — incidents the resolver marked
+          no_prompt_existed. The only false-negative stream the business
+          gets; this list IS the rule library's backlog. Never inferred. */}
+      <div className="card">
+        <h2>Misses — incidents no prompt existed for</h2>
+        {misses.length === 0 ? (
+          <div className="note">
+            None recorded. Rows appear when an incident is resolved with
+            &ldquo;no prompt existed&rdquo; — the question is asked (and skippable)
+            on the incident resolution form.
+          </div>
+        ) : (
+          Array.from(missesByKind.entries()).map(([kind, rows]) => (
+            <div key={kind} style={{ marginBottom: 8 }}>
+              <div className="eyebrow">{kind.replace(/_/g, " ")} · {rows.length}</div>
+              {rows.map((m) => (
+                <div className="field" key={m.id}>
+                  <span className="fname">{m.householdName}</span>
+                  <div className="fval">{m.description.length > 140 ? `${m.description.slice(0, 140)}…` : m.description}</div>
+                  <div className="prov">
+                    occurred {m.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}
+                    {" · "}severity {m.severity} · resolved
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
 
       {isAdmin && (
         <div className="card">
