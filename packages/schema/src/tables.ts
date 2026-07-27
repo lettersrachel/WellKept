@@ -509,6 +509,33 @@ export const registryEntry = pgTable("registry_entry", {
   index("registry_entry_household_kind_idx").on(t.householdId, t.kind),
 ]);
 
+// G-49 (INTAKE_CAPTURE_GAP_REVIEW §2): the observation series. Condition
+// and fill level are worthless captured once and valuable captured
+// repeatedly — a condition that moved 4→3→2 over three visits is a
+// prediction, fill level over time is a reorder date. The intake
+// instruments collect these repeatedly; before this table the record held
+// only current state. One row per look, against a registry object.
+// Erasure: rows DELETED with the household (operational household data,
+// no business-record claim). Values are integers by design: condition is
+// the rubric's 1–5 scale, fill_level is percent 0–100.
+export const observationMeasureEnum = pgEnum("observation_measure", [
+  "condition", "fill_level",
+]);
+
+export const objectObservation = pgTable("object_observation", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  registryEntryId: uuid("registry_entry_id").notNull().references(() => registryEntry.id),
+  measure: observationMeasureEnum("measure").notNull(),
+  value: integer("value").notNull(),
+  note: text("note"), // s2, optional ("left rear burner weak")
+  observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("object_observation_household_idx").on(t.householdId),
+  index("object_observation_series_idx").on(t.registryEntryId, t.measure, t.observedAt),
+]);
+
 // Transactional outbox for field-change events (durable trigger delivery).
 // Written in the SAME transaction as the playbook_field write, so a field
 // change and its trigger event commit atomically or not at all — no change

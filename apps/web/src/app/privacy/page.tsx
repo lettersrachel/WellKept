@@ -23,7 +23,8 @@ export default function PrivacyPage() {
         service delivery and accountability; service records (incident and complaint
         records, and staff responses to service reminders) for accountability and service
         quality; practical data (important dates, vendors,
-        appliances, subscriptions) to anticipate needs; service time and costs (time spent
+        appliances, subscriptions, and the condition of items we care for, observed over
+        time) to anticipate needs; service time and costs (time spent
         serving your household by activity, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);
         your membership record (how you found us, and your membership history); and

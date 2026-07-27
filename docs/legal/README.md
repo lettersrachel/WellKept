@@ -87,6 +87,12 @@ Four documents, one per audience and direction:
   Records that state changed, never that money moved (ADR-004 — QuickBooks
   is the billing system of record).
 - **Registries** — important dates, vendors, appliances, subscriptions.
+- **Object observations** (added 2026-07-27, G-49) — repeated staff
+  observations of registry objects over time: condition (1–5) and fill
+  level, with an optional internal note and who recorded them. Internal
+  (s2); never shown to the client; deleted with the household on erasure.
+  Recorded by a named staff member — also STAFF data (the G-13
+  disclosure's "written work" item covers it).
 - **Account & activity** — email, role, and an append-only audit log of who
   accessed or changed what.
 

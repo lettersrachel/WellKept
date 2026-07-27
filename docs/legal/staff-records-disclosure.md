@@ -29,9 +29,10 @@ before your first shift than discover it later.
    records; they are retained even if a client household's data is deleted.
 
 3. **Your written work.** Visit reports you author (clients see their
-   content), internal observations you log ("dots" stay internal and are
-   never shown to clients), and, when you cover another manager's household,
-   the first-visit notes which include whether the visit went smoothly.
+   content), internal observations you log ("dots" and object condition or
+   fill-level observations stay internal and are never shown to clients),
+   and, when you cover another manager's household, the first-visit notes
+   which include whether the visit went smoothly.
 
 4. **Your judgment calls on service prompts.** When the app suggests an
    action and you act on it or set it aside, it records your answer,

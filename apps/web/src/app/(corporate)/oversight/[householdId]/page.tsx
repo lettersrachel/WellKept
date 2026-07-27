@@ -8,8 +8,8 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent } from "@/lib/actions";
-import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents } from "@/lib/data";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation } from "@/lib/actions";
+import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
@@ -631,7 +631,14 @@ export default async function Oversight({ params, searchParams }: {
         )}
       </div>
 
-      <RegistryCard entries={await getRegistries(hh.id, role)} showSensitivity />
+      <RegistryCard
+        entries={await getRegistries(hh.id, role)}
+        showSensitivity
+        series={await getObjectObservations(hh.id)}
+        observe={recordObjectObservation}
+        returnTo={`/oversight/${hh.id}`}
+        householdId={hh.id}
+      />
 
       <div className="card">
         <h2>Anticipation engine (REQ-050: packs are scheduled instances)</h2>

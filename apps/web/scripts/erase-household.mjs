@@ -58,6 +58,8 @@
  *  - trigger_rule (household-scoped only): kept and disabled, definition
  *    replaced with an erased stub (rules never hard-delete; fleet-level
  *    rules are untouched).
+ *  - object_observation: rows DELETED - the condition/fill-level series
+ *    describes the household's objects (G-49); no business-record claim.
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -134,6 +136,7 @@ const counts = {
   notifications: await count("SELECT count(*) n FROM notification WHERE household_id=$1"),
   outbox: await count("SELECT count(*) n FROM field_event_outbox WHERE household_id=$1"),
   scopedRules: await count("SELECT count(*) n FROM trigger_rule WHERE household_id=$1"),
+  objectObservations: await count("SELECT count(*) n FROM object_observation WHERE household_id=$1"),
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
@@ -144,6 +147,7 @@ console.log(`  photos to purge (bytes cleared, tombstones remain):        ${coun
 console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " — WILL BE PURGED (--override-holds)" : " — HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
 console.log(`  registry entries to clear + tombstone:                     ${counts.registries}`);
+console.log(`  object observations to DELETE (condition/fill series):     ${counts.objectObservations}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
 console.log(`  gestures / stranger tests / client edits to blank:         ${counts.gestures} / ${counts.stranger} / ${counts.edits}`);
 console.log(`  season observations / prompts / outcome notes to blank:    ${counts.season} / ${counts.prompts} / ${counts.outcomes}`);
@@ -203,6 +207,10 @@ try {
   await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
   await c.query("DELETE FROM field_event_outbox WHERE household_id=$1", [householdId]);
+  // object_observation (G-49, 2026-07-27): DELETED — the condition/fill
+  // series describes the household's objects; operational data, no
+  // business-record claim once the household is erased.
+  await c.query("DELETE FROM object_observation WHERE household_id=$1", [householdId]);
   await c.query(`UPDATE trigger_rule SET enabled=false, definition='{\"packName\":\"[erased]\",\"items\":[]}', updated_at=now() WHERE household_id=$1`, [householdId]);
   if (ERASE_INCIDENTS) {
     await c.query("UPDATE incident_report SET description=$2, resolution_note=CASE WHEN resolution_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
