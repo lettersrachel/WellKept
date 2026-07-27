@@ -1044,3 +1044,56 @@ later, yet a destination usually names the erased household's address) is
 routed to counsel per the round-two decision: packet rev 5, section 2a
 question (e), to be answered at the custody sitting BEFORE any columns
 are added.
+
+---
+
+Filed 2026-07-27 (night) from the intake-capture review
+(INTAKE_CAPTURE_GAP_REVIEW.md), after verifying every checkable claim
+against the tree. Current maximum read before filing: G-46.
+
+### G-47. Tier gating exists as data, not as behavior
+`standard_provision.membership_tier_gate` (null = all tiers) has exactly
+one consumer in the tree: a display string on the standards page. The
+trigger engine reads neither the gate nor the household's tier (the
+provision `tier` it does read is the floor-tier concept, a different
+axis), and the provision loader omits the gate from its supersede update
+set, so gates cannot even be revised through the normal versioning path.
+All 1,146 seeded provisions carry null. Consequence: every household gets
+identical cascade behavior regardless of what they pay for — a margin
+problem and a promise problem the moment tiers differ in practice
+(review §5). Enforcement is a small engine change; authoring 1,146 gate
+decisions is content work and pointless before tiers differ. **Trigger:
+the first household on a non-Concierge tier, or the first non-null gate
+authored, whichever comes first.** The loader's update-set omission
+should be fixed with the same change.
+
+### G-48. Hired and non-owned auto liability — from manifest finding to documented fact
+The 23 July manifest flagged hired/non-owned auto liability as apparently
+uncovered, broker and counsel needed before the first pilot signature.
+Sharper now than when written: `travel` and `mileage` are shipped capture
+categories, so House Managers driving on business is a documented
+operational fact the software itself records. **Founder action, same
+call as binding workers' comp: ask the broker for hired & non-owned auto
+before the first pilot signature.** Filed so it lives in the register,
+not only in a manifest.
+
+### G-49. Object observation series and horizon inputs gate first-household intake
+The intake instruments capture series (condition 1-5, fill level over
+repeated visits) and horizon-derivation inputs (install date, expected
+lifespan, maintenance interval, last serviced); the schema holds neither.
+No table supports an observation series against an object (`dot` is
+household-level free text; `season_observation` is derived seasonal
+lines), and the registry sweep reads only `key_date` + `cadence` —
+horizons are maintained target dates that rot the first time nobody
+updates one (verified in registry-sweep.ts). Both instruments are
+collecting inputs to calculations the software cannot perform (review
+§§1-2). **Both changes gate FIRST-HOUSEHOLD INTAKE**: every day of intake
+without them produces states where series were intended. Two builds, one
+migration each: the observation table (entry reference, date, measure,
+value, recorder), then typed horizon inputs with sweep computation.
+Related note recorded here so it is not lost: the registry `sizes` kind
+defaults to sensitivity s1 (client-visible) like every registry entry;
+children's sizes are child data under WK-SOP-019 and must not land
+client-visible by default — the write surface, when built, sets s2 for
+sizes, and counsel is asked about children's data handling (packet rev 6,
+section 6).

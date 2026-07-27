@@ -13,7 +13,10 @@ question is reframed as an obligation for counsel to confirm rather than a
 preference to bless, the erasure defaults now describe the referral split
 and four further tables, a mileage-substantiation question is added ahead
 of any schema change, and the key-rotation disclosure sentence is added to
-the data-minimisation note.
+the data-minimisation note. Rev 6, same day, adds two questions from the
+intake-capture review (docs/INTAKE_CAPTURE_GAP_REVIEW.md): children's data
+handling in section 6, and a prospective AI-transcription subprocessor in
+section 8 — both asked BEFORE the relevant capability is built.
 
 Hand counsel this file plus the four drafts beside it: `household-consent.md`,
 `privacy-notice.md`, `staff-confidentiality.md`,
@@ -260,7 +263,13 @@ disagree? (d) What is the position on minors in the home, and on photographs
 that capture any person? (e) Do household employees such as a nanny or cleaner
 require separate notice? (f) Does the absence of a recorded withdrawal state
 need fixing before the first signature, or is a written withdrawal letter
-sufficient for a pilot?
+sufficient for a pilot? (g) The intake protocol collects children's data
+beyond photographs: school names and schedules, activity rosters, and
+clothing sizes, held internally and never shown outside the service team.
+Our internal rule already treats these as child data requiring care. Does
+Virginia law (or a duty of care you would advise regardless) require
+handling beyond internal-only access for this material — and does the
+answer change what the consent document must say about children?
 
 ---
 
@@ -315,6 +324,16 @@ Apple) end-to-end encrypted, so the gateways carry ciphertext only.
 bracketed section including whether Sentry belongs in it, flag any vendor that
 needs more than a click-through, and advise whether either outbound flow needs
 notice disclosure.
+
+**A prospective seventh, asked before we build.** Our designed intake method
+is voice narration during the home walk-through, transcribed and then
+structured into records by an AI service. That would send household
+contents (though not secured items) to a new vendor. We have not built
+this. Before we do: what would engaging an AI transcription/structuring
+vendor require by way of DPA, notice disclosure, and consent-document
+language, and is there anything about home-interior narration specifically
+(other people's names, children, visible valuables) that changes the
+analysis?
 
 ---
 
