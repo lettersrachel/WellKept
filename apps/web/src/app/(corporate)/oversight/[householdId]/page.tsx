@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -65,6 +65,11 @@ export default async function Oversight({ params, searchParams }: {
     .where(and(eq(costEntry.householdId, hh.id), gte(costEntry.incurredOn, since30.toISOString().slice(0, 10))))
     .orderBy(desc(costEntry.incurredOn))
     .limit(20);
+  // Capture session 3: the household's commercial history, oldest first —
+  // reconstructable from the event sequence.
+  const membershipEvents = await db.select().from(membershipEvent)
+    .where(eq(membershipEvent.householdId, hh.id))
+    .orderBy(membershipEvent.effectiveOn);
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>
@@ -447,6 +452,79 @@ export default async function Oversight({ params, searchParams }: {
             <button className="act">Assign</button>
           </form>
         )}
+      </div>
+
+      {/* Capture session 3: commercial attributes. Referral recorded once
+          (corrections re-record, audited); membership history as append-only
+          events. ADR-004: QuickBooks bills — this records state, not money. */}
+      <div className="card">
+        <h2>Commercial record (capture session 3)</h2>
+        <div className="prov">
+          Referral: {hh.referralSource ? hh.referralSource.replace(/_/g, " ") : "not recorded"}
+          {hh.referralNote && ` — ${hh.referralNote}`}
+        </div>
+        {isAdmin && (
+          <form action={setReferralSource} className="row" style={{ marginTop: 6, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="referralSource" defaultValue={hh.referralSource ?? "client_referral"} className="inline" aria-label="Referral source">
+              {["client_referral", "professional_referral", "personal_network", "community", "press_or_search", "other"].map((s) => (
+                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+              ))}
+            </select>
+            <input name="referralNote" aria-label="Referral note" placeholder="note (who referred, s2, optional)" defaultValue={hh.referralNote ?? ""} style={{ flex: 1, marginTop: 0, minWidth: 160 }} />
+            <button className="act subtle">Record referral</button>
+          </form>
+        )}
+        {membershipEvents.length === 0 ? (
+          <div className="note" style={{ marginTop: 8 }}>
+            No membership events. The history starts with a &ldquo;start&rdquo; event when
+            the household signs — record it the day it happens, with the tier and price.
+          </div>
+        ) : (
+          <table className="panel" style={{ marginTop: 8 }}>
+            <thead>
+              <tr><th>Date</th><th>Event</th><th>Tier</th><th>Price</th><th>Reason / initiator</th></tr>
+            </thead>
+            <tbody>
+              {membershipEvents.map((e) => (
+                <tr key={e.id}>
+                  <td>{e.effectiveOn}</td>
+                  <td>{e.kind.replace(/_/g, " ")}</td>
+                  <td>{e.tier ? e.tier.replace(/_/g, " ") : ""}</td>
+                  <td>{e.priceCents !== null ? `$${(e.priceCents / 100).toFixed(2)}` : ""}</td>
+                  <td className="prov">{[e.reason, e.initiatedBy].filter(Boolean).join(" · ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {isAdmin && (
+          <form action={recordMembershipEvent} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="kind" defaultValue="start" className="inline" aria-label="Event kind">
+              {["start", "tier_change", "pause", "resume", "cancel"].map((k) => <option key={k} value={k}>{k.replace(/_/g, " ")}</option>)}
+            </select>
+            <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+              Effective <input type="date" name="effectiveOn" required style={{ marginTop: 0 }} />
+            </label>
+            <select name="tier" defaultValue="" className="inline" aria-label="Tier (start and tier change)">
+              <option value="">tier…</option>
+              {["essential", "family_ops", "concierge"].map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+            </select>
+            <input name="price" aria-label="Price in dollars" inputMode="decimal" placeholder="$ price" style={{ marginTop: 0, width: 90 }} />
+            <select name="initiatedBy" defaultValue="" className="inline" aria-label="Initiated by (required on cancel)">
+              <option value="">initiated by…</option>
+              <option value="client">client</option>
+              <option value="corporate">corporate</option>
+            </select>
+            <input name="reason" aria-label="Reason (required on cancel)" placeholder="reason (required on cancel, s2)" style={{ flex: 1, marginTop: 0, minWidth: 150 }} />
+            <button className="act">Record event</button>
+          </form>
+        )}
+        <div className="note" style={{ marginTop: 6 }}>
+          Append-only: corrections add a superseding event. QuickBooks remains the
+          billing system of record (ADR-004) — this records that state changed.
+        </div>
       </div>
 
       <div className="card">

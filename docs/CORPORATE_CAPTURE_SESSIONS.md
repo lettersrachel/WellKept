@@ -135,6 +135,18 @@ integration. QuickBooks remains the book of record for money.
 
 ## Session 3. Household commercial attributes
 
+> **BUILT 2026-07-27** (migration 0022), ahead of its gate (first household
+> has not signed; the point was to have it ready BEFORE). Founder decisions
+> recorded: referral taxonomy is the six-value list — client_referral,
+> professional_referral, personal_network, community, press_or_search,
+> other (+ optional note); tier names REUSE the shipped tier enum
+> (essential / family_ops / concierge — same reconciliation pattern as
+> anticipation session A), and price is recorded per membership event, so
+> no price list was needed up front. The done-when is enforced in the
+> action: a cancellation REFUSES (visibly, per G-29) without a reason and
+> an initiator. Both surfaces live on the corporate drill-in's Commercial
+> record card.
+
 **Gate:** before the first household signs, which is a tighter gate than the
 deploy.
 
