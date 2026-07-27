@@ -18,6 +18,7 @@
 | Practical data | important dates, vendors, appliances, subscriptions | to anticipate needs |
 | Service time & costs | time spent serving your household by activity, and costs incurred in serving it (supplies, materials, mileage) | accurate cost and quality of your service |
 | Account & activity | name, email, role, sign-in and access logs | to run and secure accounts |
+| Membership record | how you found us, your membership tier and its history (start, pauses, changes, cancellation) | to run your membership |
 
 We ask clients **not** to provide government IDs, payment card/bank numbers, or
 health records; the product is not designed to hold them.

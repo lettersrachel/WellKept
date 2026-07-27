@@ -28,6 +28,14 @@ const stamps = {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 };
 
+// Capture session 3 (CORPORATE_CAPTURE_SESSIONS.md, founder decisions
+// 2026-07-27): how a household found Well Kept. Recorded once — "you will
+// remember for household one; you will not remember for household twenty."
+export const referralSourceEnum = pgEnum("referral_source", [
+  "client_referral", "professional_referral", "personal_network",
+  "community", "press_or_search", "other",
+]);
+
 // REQ-010: the household record. Status tag drives app-wide behavior (REQ-041).
 export const household = pgTable("household", {
   ...stamps,
@@ -50,8 +58,37 @@ export const household = pgTable("household", {
   // visibly wherever it still appears; exempt from go-live archiving BY
   // THIS COLUMN, not by name.
   isFixture: boolean("is_fixture").notNull().default(false),
+  // Capture session 3: the referral channel (LTV:CAC's CAC side starts
+  // here) plus an optional note ("other" wants one; a professional
+  // referral's name belongs here too).
+  referralSource: referralSourceEnum("referral_source"),
+  referralNote: text("referral_note"), // s2
   archivedAt: timestamp("archived_at", { withTimezone: true }), // nothing hard-deletes (DEV-005 S3)
 });
+
+// Capture session 3: membership state changes as EVENTS — commercial
+// history is reconstructable from the sequence, cohort retention needs the
+// dates, and a cancellation carries its reason and initiator (the brief's
+// done-when). Tier names are the SHIPPED tier enum (founder decision
+// 2026-07-27 — same reconciliation pattern as session A); price is
+// recorded per event in integer cents (DEV-004 S3). ADR-004 holds:
+// QuickBooks bills — this records that a state changed, never that money
+// moved. Append-only; corrections append a superseding event.
+export const membershipEventKindEnum = pgEnum("membership_event_kind", [
+  "start", "tier_change", "pause", "resume", "cancel",
+]);
+
+export const membershipEvent = pgTable("membership_event", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  kind: membershipEventKindEnum("kind").notNull(),
+  effectiveOn: date("effective_on").notNull(),
+  tier: tierEnum("tier"), // set on start and tier_change
+  priceCents: integer("price_cents"), // the price at this event, where one applies
+  reason: text("reason"), // required on cancel (enforced in the action), s2
+  initiatedBy: text("initiated_by"), // client | corporate — required on cancel
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [index("membership_event_household_idx").on(t.householdId, t.effectiveOn)]);
 
 // REQ-011/012: the field record, rich from day one (WK-APP-003 "why the field is rich").
 // S3 VALUES ARE NEVER STORED HERE; the vault_item table holds them (REQ-013).

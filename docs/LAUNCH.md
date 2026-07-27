@@ -43,7 +43,18 @@ Test Home) and the demo cast (jordan, kelly, lisa, devon…). Nothing hard-delet
   you're still using Field Test Home). It archives the demo households and lists
   the demo accounts to revoke. Dry-run by default; `--commit` to apply.
 
-### 1.4 Security review — a conscious decision ⚖️ ⬜
+### 1.4 Security review — a conscious decision ⚖️ ⬜ (draft below, unsigned)
+
+> **PROPOSED DECISION (drafted 2026-07-27 — not in force until you date and
+> initial it):** For a pilot of consenting households known to the founder
+> personally, Well Kept accepts the current controls — the 36-check authz
+> probe, live payload-guard and floor-bypass assertions in CI, vault
+> encryption with audited reveals, enforced CSP, rate limits, and the
+> completed self-review that found and fixed a real MFA bypass — in place
+> of an independent penetration test. An outside review is REQUIRED before
+> onboarding any household beyond the pilot cohort, before any household
+> not personally known to the founder, and in any case before the fleet
+> reaches five. Signed: ______ Date: ______
 ADR-001 gates real *sensitive* (s3) values on a review. What exists: the full
 authz probe (36 checks), a self-review that found+fixed a real MFA-bypass, CSP
 enforced, vault encryption, rate limits, audited reveals. What's missing: an
@@ -80,7 +91,17 @@ Free tiers can throttle or pause mid-visit. Confirm billing on: **Neon**,
 **Upstash** (Redis), **Railway** (worker), **Resend** (mail). A paused Redis or
 worker degrades quietly.
 
-### 2.4 Decide the off-Neon backup question 🧑⚖️ ⬜ (G-02, refiled from the counsel packet — G-18)
+### 2.4 Decide the off-Neon backup question 🧑⚖️ ⬜ (G-02/G-18; draft below, unsigned)
+
+> **PROPOSED DECISION (drafted 2026-07-27 — not in force until you date and
+> initial it):** At pilot scale, NO off-Neon dump. Neon PITR (≥7 days,
+> confirmed) plus the restore drill proven in the custody sitting is the
+> recovery story, on the reasoning the register itself gives: any off-Neon
+> copy also holds vault ciphertext and photos the daily purge cannot
+> reach, silently defeating the retention policy counsel is blessing.
+> Revisit at five households or the first non-pilot client, whichever
+> comes first — and if the answer changes, counsel owns the backup's own
+> retention rule (packet item 7). Signed: ______ Date: ______
 Neon PITR is currently the ONLY copy of every playbook, vault row, audit
 event, incident, and photo in the business. Whether that is adequate at
 pilot scale (with the §1.2 restore drill proven) or whether you also want a
@@ -91,7 +112,17 @@ here, on purpose. IF the answer is yes, counsel then owns the backup's own
 retention rule (the pointer stays in the §3 packet).
 
 ### 2.3 Health signal 🤖 ✅
-`/api/health` reports DB up/down (already live and green).
+`/api/health` reports DB up/down (already live and green). `/api/build-id`
+reports the running build (the G-37 skew heartbeat's server half).
+
+### 2.5 Two five-minute chores 🧑 ⬜ (from the 2026-07-27 run)
+- **Rename the dormant Vercel project** `well-kept-web` →
+  `wellkept-pr-builds` (project → Settings → General). It is kept ON
+  PURPOSE as the only pre-merge production-build check (G-35) — the rename
+  stops it posing as production during the next incident.
+- **Add the DMARC record** at your DNS host: TXT at `_dmarc` with
+  `v=DMARC1; p=none; rua=mailto:lettersrachel@gmail.com` — monitoring
+  only, improves sign-in email inbox placement over time (G-30's tail).
 
 ---
 

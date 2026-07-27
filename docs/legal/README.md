@@ -67,6 +67,13 @@ Three documents, one per audience:
   record for money). Note: time entries are attributed to the staff member
   who worked them — this is also STAFF data, and it belongs in the G-13
   staff-facing disclosure when that is written.
+- **Commercial record** (added 2026-07-27) — how the household found Well
+  Kept (referral channel, with an optional note), and the membership
+  history as dated events: start, tier change, pause, resume, cancellation
+  — each with the tier and price where they apply, and cancellations
+  always with a reason and who initiated. Corporate-only; append-only.
+  Records that state changed, never that money moved (ADR-004 — QuickBooks
+  is the billing system of record).
 - **Registries** — important dates, vendors, appliances, subscriptions.
 - **Account & activity** — email, role, and an append-only audit log of who
   accessed or changed what.

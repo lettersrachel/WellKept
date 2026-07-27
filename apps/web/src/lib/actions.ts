@@ -897,3 +897,71 @@ export async function createCostEntry(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
 }
+
+/**
+ * Capture session 3: the referral channel, recorded once per household
+ * (corrections re-record; the audit trail keeps the prior value). Founder
+ * taxonomy 2026-07-27. Corporate only - this is commercial data.
+ */
+export async function setReferralSource(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const source = String(formData.get("referralSource") ?? "");
+  const SOURCES = ["client_referral", "professional_referral", "personal_network", "community", "press_or_search", "other"] as const;
+  if (!householdId) refuse(null, "bad-input");
+  if (!(SOURCES as readonly string[]).includes(source)) refuse(householdId, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden");
+  const [prior] = await db.select().from(household).where(eq(household.id, householdId));
+  if (!prior) refuse(null, "missing");
+  const note = String(formData.get("referralNote") ?? "").trim().slice(0, 300) || null; // s2
+  await db.update(household)
+    .set({ referralSource: source as (typeof SOURCES)[number], referralNote: note, updatedAt: new Date() })
+    .where(eq(household.id, householdId));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "referral_recorded", detail: { from: prior.referralSource, to: source },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}
+
+/**
+ * Capture session 3: a membership state change as an append-only event.
+ * The brief's done-when is enforced here: a cancellation REQUIRES a reason
+ * and an initiator. Price in integer cents; tier only meaningful on start
+ * and tier_change. ADR-004: records that state changed, never that money
+ * moved - QuickBooks bills.
+ */
+export async function recordMembershipEvent(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const kind = String(formData.get("kind") ?? "");
+  const KINDS = ["start", "tier_change", "pause", "resume", "cancel"] as const;
+  if (!householdId) refuse(null, "bad-input");
+  if (!(KINDS as readonly string[]).includes(kind)) refuse(householdId, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden");
+  const effectiveOn = String(formData.get("effectiveOn") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveOn)) refuse(householdId, "bad-input");
+  const TIERS = ["essential", "family_ops", "concierge"] as const;
+  const tierRaw = String(formData.get("tier") ?? "");
+  const tier = (TIERS as readonly string[]).includes(tierRaw) ? (tierRaw as (typeof TIERS)[number]) : null;
+  if ((kind === "start" || kind === "tier_change") && !tier) refuse(householdId, "bad-input");
+  const priceRaw = String(formData.get("price") ?? "").trim();
+  const price = Number.parseFloat(priceRaw);
+  const priceCents = Number.isFinite(price) && price > 0 && price <= 1_000_000 ? Math.round(price * 100) : null;
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || null; // s2
+  const initiatedByRaw = String(formData.get("initiatedBy") ?? "");
+  const initiatedBy = ["client", "corporate"].includes(initiatedByRaw) ? initiatedByRaw : null;
+  // The done-when: cancellations carry a reason and an initiator. Refused
+  // visibly, not silently - G-29 applies to new actions too.
+  if (kind === "cancel" && (!reason || !initiatedBy)) refuse(householdId, "gate-unmet");
+  const { membershipEvent } = await import("@wellkept/schema");
+  await db.insert(membershipEvent).values({
+    id: randomUUID(), householdId, kind: kind as (typeof KINDS)[number],
+    effectiveOn, tier, priceCents, reason, initiatedBy, recordedBy: principal.userId,
+  });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "membership_event", detail: { eventKind: kind, effectiveOn, tier, initiatedBy },
+  });
+  revalidatePath(`/oversight/${householdId}`);
+}
