@@ -10,6 +10,7 @@ import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
 import { ProvisionList } from "../../ProvisionList";
+import { RefusalBanner } from "@/components/RefusalBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,13 @@ function outcomeLabel(o: { outcome: string; wasNews: boolean | null; dismissReas
  * deliverable; it will reuse @wellkept/close-flow and @wellkept/offline-queue
  * unchanged.
  */
-export default async function VisitPage() {
+export default async function VisitPage({ searchParams }: {
+  // G-29 completion: time/cost verdicts land HERE when submitted here -
+  // recorded=<what> on success (with a nonce r that remounts the selects,
+  // G-39), refused=<reason> on refusal.
+  searchParams: Promise<{ recorded?: string; refused?: string; r?: string }>;
+}) {
+  const { recorded, refused, r } = await searchParams;
   const { hh, principal } = await getFieldHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
@@ -132,6 +139,12 @@ export default async function VisitPage() {
         </>
       )}
 
+      <RefusalBanner reason={refused} />
+      {recorded && (
+        <div className="card" role="status" style={{ borderColor: "#2E6B3F", marginBottom: 10 }}>
+          <strong>Recorded:</strong> {recorded}.
+        </div>
+      )}
       <VisitAlerts />
       <PushRegister />
 
@@ -307,9 +320,10 @@ export default async function VisitPage() {
       </div>
       <form action={createTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
         <input type="hidden" name="householdId" value={hh.id} />
+        <input type="hidden" name="returnTo" value="/visit" />
         <span>
           <label htmlFor="te-cat">Time</label>
-          <select id="te-cat" name="category" defaultValue="travel" className="inline">
+          <select key={`te-${r ?? "0"}`} id="te-cat" name="category" defaultValue="travel" className="inline">
             {["travel", "intake", "admin", "training", "delivery"].map((c) => <option key={c}>{c}</option>)}
           </select>
         </span>
@@ -325,9 +339,10 @@ export default async function VisitPage() {
       </form>
       <form action={createCostEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end", marginTop: 6 }}>
         <input type="hidden" name="householdId" value={hh.id} />
+        <input type="hidden" name="returnTo" value="/visit" />
         <span>
           <label htmlFor="ce-cat">Cost</label>
-          <select id="ce-cat" name="category" defaultValue="supplies" className="inline">
+          <select key={`ce-${r ?? "0"}`} id="ce-cat" name="category" defaultValue="supplies" className="inline">
             {["supplies", "materials", "mileage", "other"].map((c) => <option key={c}>{c}</option>)}
           </select>
         </span>

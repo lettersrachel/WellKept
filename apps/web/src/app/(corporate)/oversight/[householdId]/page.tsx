@@ -305,13 +305,13 @@ export default async function Oversight({ params, searchParams }: {
         )}
         <form action={createIncident} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
           <input type="hidden" name="householdId" value={hh.id} />
-          <select name="kind" defaultValue="complaint" className="inline" aria-label="Incident kind">
+          <select key={`ik-${incidents.length}`} name="kind" defaultValue="complaint" className="inline" aria-label="Incident kind">
             {["complaint", "breakage", "injury", "near_miss", "other"].map((k) => <option key={k} value={k}>{k.replace(/_/g, " ")}</option>)}
           </select>
-          <select name="severity" defaultValue="low" className="inline" aria-label="Severity">
+          <select key={`is-${incidents.length}`} name="severity" defaultValue="low" className="inline" aria-label="Severity">
             {["low", "medium", "high"].map((s) => <option key={s}>{s}</option>)}
           </select>
-          <select name="reportedVia" defaultValue="client_call" className="inline" aria-label="Reported via">
+          <select key={`iv-${incidents.length}`} name="reportedVia" defaultValue="client_call" className="inline" aria-label="Reported via">
             {["client_call", "client_email", "hm_visit", "corporate", "other"].map((v) => <option key={v} value={v}>{v.replace(/_/g, " ")}</option>)}
           </select>
           <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
@@ -362,7 +362,8 @@ export default async function Oversight({ params, searchParams }: {
         )}
         <form action={createTimeEntry} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
           <input type="hidden" name="householdId" value={hh.id} />
-          <select name="category" defaultValue="intake" className="inline" aria-label="Time category">
+          <input type="hidden" name="returnTo" value={`/oversight/${hh.id}`} />
+          <select key={`tcat-${timeRows.length}`} name="category" defaultValue="intake" className="inline" aria-label="Time category">
             {["intake", "admin", "training", "travel", "delivery"].map((c) => <option key={c}>{c}</option>)}
           </select>
           <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
@@ -375,7 +376,8 @@ export default async function Oversight({ params, searchParams }: {
         </form>
         <form action={createCostEntry} className="row" style={{ marginTop: 6, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
           <input type="hidden" name="householdId" value={hh.id} />
-          <select name="category" defaultValue="supplies" className="inline" aria-label="Cost category">
+          <input type="hidden" name="returnTo" value={`/oversight/${hh.id}`} />
+          <select key={`ccat-${recentCosts.length}`} name="category" defaultValue="supplies" className="inline" aria-label="Cost category">
             {["supplies", "materials", "mileage", "other"].map((c) => <option key={c}>{c}</option>)}
           </select>
           <input name="amount" aria-label="Amount in dollars" inputMode="decimal" placeholder="$ amount" required style={{ marginTop: 0, width: 90 }} />
@@ -449,7 +451,7 @@ export default async function Oversight({ params, searchParams }: {
           <form action={assignRole} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
             <input type="hidden" name="householdId" value={hh.id} />
             <input name="email" type="email" aria-label="Email address to add" placeholder="person@example.com" required style={{ flex: 2, marginTop: 0 }} />
-            <select name="role" defaultValue="client" className="inline">
+            <select key={`ar-${members.length}`} name="role" defaultValue="client" className="inline">
               {ROLE_OPTIONS.map((r) => (
                 <option key={r} value={r}>{r.replace("_", " ")}</option>
               ))}
@@ -616,11 +618,11 @@ export default async function Oversight({ params, searchParams }: {
         {isAdmin && (
           <form action={createAnticipationExclusion} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap" }}>
             <input type="hidden" name="householdId" value={hh.id} />
-            <select name="scope" defaultValue="topic" className="inline" aria-label="Exclusion scope">
+            <select key={`xs-${exclusions.length}`} name="scope" defaultValue="topic" className="inline" aria-label="Exclusion scope">
               {["rule", "topic", "person", "field", "all"].map((s) => <option key={s}>{s}</option>)}
             </select>
             <input name="target" aria-label="Exclusion target" placeholder="rule id, topic, person, or field ref" style={{ flex: 2, marginTop: 0 }} />
-            <select name="requestedBy" defaultValue="client" className="inline" aria-label="Requested by">
+            <select key={`xr-${exclusions.length}`} name="requestedBy" defaultValue="client" className="inline" aria-label="Requested by">
               {["client", "house_manager", "corporate"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
             </select>
             <input name="reason" aria-label="Reason (internal, s2)" placeholder="reason (internal, s2)" style={{ flex: 2, marginTop: 0 }} />
