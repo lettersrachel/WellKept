@@ -804,6 +804,15 @@ over-logging, the conservative direction, but it degrades the trail's
 evidentiary value. Reproduce, then decide: is the row from a re-fired fetch
 (client bug) or a server-side render path that logs (design bug)?
 
+**CLOSED 2026-07-27 as unreproducible mis-observation** (review round two,
+session E, POST_DEPLOY_FINDINGS_E_I.md Q6). Grounds: one writer in the
+tree, firing only on explicit client action; no render, refresh, or retry
+path exists (sessions A + E, repo-wide); the observation came from the
+same day that produced multiple screen-reports later retracted against
+the database, and no logs were running. **Reopen condition, explicit:**
+any recurrence observed WITH a log stream running is investigated
+immediately as unaccounted-for.
+
 ### G-34. One reveal wrote no audit row, unexplained (2026-07-26)
 A fresh-page reveal on 2026-07-26 showed the value with no row landing; the
 identical action on 2026-07-27 wrote its row correctly (check 5 PASS). No log
@@ -954,6 +963,23 @@ pass. Standing rule for every future data category: the erasure tool is
 part of the definition of done — a category ships with its erasure
 treatment or it does not ship.
 
+**ADDENDUM 2026-07-27 (review round two, sessions H and J).** The
+standing rule is now a GUARD, not a policy:
+`packages/schema/src/erasure-coverage.test.ts` fails CI whenever a
+household-referencing table is absent from `erase-household.mjs`
+(allowlist entries require a written reason). Run before it was first
+committed, the guard immediately found four tables the remembered rule
+had already missed — `anticipation_exclusion`, `notification`,
+`field_event_outbox`, `trigger_rule` — proving the reviewer's point that
+the rule depended on someone remembering. All four are now handled:
+exclusion reasons/targets blanked, notification and outbox rows deleted,
+household-scoped trigger rules emptied and disabled. Session H's split
+also landed: `referral_source` RETAINED (channel is acquisition history;
+clearing it would silently bias LTV/CAC toward retained households),
+`referral_note` CLEARED (frequently names a person). Packet rev 5
+describes both and asks counsel to confirm (section 2a, questions a and
+d).
+
 ### G-41. Personnel data captured without a staff disclosure
 `time_entry` records hours against a named House Manager; the G-13
 staff-facing disclosure is unwritten. Nothing has gone wrong because the
@@ -1003,3 +1029,8 @@ expenses generally wants date (have), business purpose and destination
 would add `purpose text` and `destination text` on mileage rows, or the
 founder may direct that the note field carries both by convention.
 NOT added — the field list is the founder's call, per the session brief.
+The G-40 interaction (destination fields exist to survive scrutiny years
+later, yet a destination usually names the erased household's address) is
+routed to counsel per the round-two decision: packet rev 5, section 2a
+question (e), to be answered at the custody sitting BEFORE any columns
+are added.

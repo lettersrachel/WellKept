@@ -30,7 +30,7 @@ it — this is the checklist, not the deed.
 Fill the brackets in `docs/adr/005-key-custody.md`, date it, and move it
 from "Accepted in part" to Accepted.
 
-## Same sitting, after the meeting — the two drills
+## Same sitting, after the meeting — the three drills
 
 **Rewrap drill (proves the key can rotate and BOTH custodies update):**
 
@@ -44,6 +44,28 @@ from "Accepted in part" to Accepted.
   line on --commit says "update BOTH custody copies (ADR-005)" — on the
   drill this is rehearsal; on a real rotation it is the law.
 
+**Erasure flag drill (review round two, session F — proves the two
+destructive erasure flags do what the dry-run plan says, on the SAME
+throwaway branch):**
+
+    # dry run first — read the plan it prints, note the row counts
+    cd apps/web
+    DATABASE_URL=<throwaway branch> node scripts/erase-household.mjs <smoke-fixture-household-id> --erase-time-and-costs --erase-membership-history
+    # then commit AGAINST THE THROWAWAY BRANCH ONLY
+    DATABASE_URL=<throwaway branch> node scripts/erase-household.mjs <smoke-fixture-household-id> --erase-time-and-costs --erase-membership-history --commit
+
+  This is the ONE authorized exception to "never run the erasure tool
+  with --commit," it applies to a throwaway Neon branch only, and it does
+  not generalize. Verify four things, per the session F brief: (1) the
+  destroyed row counts match the dry run's plan; (2) the erasure audit
+  row records both flags that were passed; (3) nothing outside the target
+  household changed (spot-check another household's time/cost/membership
+  counts before and after); (4) the open-incident refusal still fires
+  with the flags present — log an incident on the branch, run again with
+  both flags, and expect the refusal, because a new flag is exactly how a
+  guard gets bypassed by accident. One branch serves all the drills;
+  delete it when they are done.
+
 **Restore drill (LAUNCH §1.2 — proves recovery is a path, not a theory):**
 
   Neon dashboard → project → Branches → "Restore" a new branch to a
@@ -55,5 +77,6 @@ from "Accepted in part" to Accepted.
 ## Done when
 
 ADR-005 has no brackets, the sealed copy exists somewhere that is not
-your password manager, both drills have run once, and the ADR-005
-guardrail lifts: real s3 values may then enter the vault.
+your password manager, all three drills have run once (and the throwaway
+branch is deleted), and the ADR-005 guardrail lifts: real s3 values may
+then enter the vault.

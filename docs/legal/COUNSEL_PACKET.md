@@ -1,13 +1,19 @@
 # Counsel engagement packet: Well Kept pilot
 
-Assembled 25 July 2026; rev 4, 27 July 2026. Per the gap register's
+Assembled 25 July 2026; rev 5, 27 July 2026. Per the gap register's
 one-engagement consolidation. Every "What exists" claim was verified against
 the codebase on 2026-07-25 (see COUNSEL_PACKET_VERIFICATION.md); the four
-corrections that verification produced are incorporated. Rev 4 adds the data
+corrections that verification produced are incorporated. Rev 4 added the data
 categories shipped after that verification (section 2a below and the addendum
 paragraph in section 0), the erasure tool's treatment of them, and two audit
 wording refinements from the 2026-07-27 audit-invariant review
-(POST_DEPLOY_FINDINGS_A_B.md, session A).
+(POST_DEPLOY_FINDINGS_A_B.md, session A). Rev 5, same day, follows the
+second review round (POST_DEPLOY_FINDINGS_E_I.md): section 2a's retention
+question is reframed as an obligation for counsel to confirm rather than a
+preference to bless, the erasure defaults now describe the referral split
+and four further tables, a mileage-substantiation question is added ahead
+of any schema change, and the key-rotation disclosure sentence is added to
+the data-minimisation note.
 
 Hand counsel this file plus the three drafts beside it: `household-consent.md`,
 `privacy-notice.md`, `staff-confidentiality.md`. Each attachment states what
@@ -141,18 +147,39 @@ for counsel to confirm).** On a household erasure: time and cost rows are
 KEPT (employer and business records) with their free-text notes blanked,
 deletable by an explicit flag; membership events are KEPT (commercial
 history) with cancellation reasons blanked, deletable by an explicit flag;
-the referral source and note are CLEARED (personal data with no
-business-record claim once the household is erased); receipt photos purge
-with the photo pass.
+the referral record is SPLIT: the channel category (how the household
+found us, one of six fixed values) is RETAINED as acquisition history
+about our marketing, while the free-text referral note is CLEARED because
+it frequently names a person, possibly a current client; receipt photos
+purge with the photo pass. The pass also blanks the reasons and subjects
+on "please don't raise this" preference records, deletes the household's
+queued notifications and transient delivery rows, and empties and
+disables any reminder rules scoped to the household. A continuous
+integration check now fails any change that adds a household-linked table
+without naming its erasure treatment, so a new data category cannot ship
+without one.
 
-**Questions.** (a) Are the keep-by-default choices right - in particular,
-may staff-attributed time survive a household deletion request as an
-employer record? (b) Staff-attributed time is a personnel record: we
+**Questions.** (a) Time and cost records: our understanding is that we
+are REQUIRED to retain these rather than merely choosing to. As we
+understand it, federal wage and hour rules require retention of time and
+payroll records for a period of years, and tax substantiation drives the
+same answer for cost records. That is the founder's understanding, not a
+settled legal position; please correct it where it is wrong. Confirm the
+required period, and whether a household deletion request changes it.
+(b) Staff-attributed time is a personnel record: we
 believe the staff-facing disclosure (item 7's document family) must exist
 and be acknowledged before any non-founder logs an hour. Confirm, and tell
 us what that disclosure must contain about time records. (c) Does the
 client-facing notice's "Service time & costs" row say enough, given the
 staff half is disclosed in the staff document rather than the notice?
+(d) Is retaining the referral channel category after an erasure
+acceptable, given it carries no identifying detail once the note is
+cleared? (e) A question to settle BEFORE the fields exist: mileage rows
+may gain business-purpose and destination fields for IRS substantiation.
+Those fields would exist precisely to survive scrutiny years later, yet
+the destination will usually be the erased household's address, which is
+what erasure exists to remove. Which obligation wins, and should the
+fields be added at all?
 
 ## 3. The recovery window is the true floor on erasure latency
 
@@ -351,7 +378,13 @@ that adds it to the notice's retention section.
   decrypted, and a failed log write aborts the reveal: the log is
   load-bearing, not advisory. A revealed value remains on screen for sixty
   seconds and re-displays within that window without an additional entry;
-  the trail records reveal actions, not seconds of viewing.
+  the trail records reveal actions, not seconds of viewing. One
+  administrative operation also touches plaintext: key rotation verifies
+  that every secured value decrypts correctly under the new key, so the
+  values pass through server memory during the operation and are neither
+  displayed to anyone nor logged as reveals. A rotation is a founder-run
+  maintenance act, not a view of the data, and no person sees a value
+  during it.
 
 ---
 

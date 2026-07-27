@@ -16,7 +16,7 @@
 | Visit records | tasks, hours, notes, photos | service delivery + accountability |
 | Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |
 | Practical data | important dates, vendors, appliances, subscriptions | to anticipate needs |
-| Service time & costs | time spent serving your household by activity, and costs incurred in serving it (supplies, materials, mileage) | accurate cost and quality of your service |
+| Service time & costs | time spent serving your household by activity, and costs incurred in serving it (supplies, materials, mileage); a receipt photo, where one is captured, is stored and retained exactly like a visit photo | accurate cost and quality of your service |
 | Account & activity | name, email, role, sign-in and access logs | to run and secure accounts |
 | Membership record | how you found us, your membership tier and its history (start, pauses, changes, cancellation) | to run your membership |
 
@@ -48,7 +48,14 @@ notification commitment.⟩
 ## How long we keep it
 
 We retain records for the life of your service and, for continuity and
-accountability, may keep archived (tombstoned) copies afterward. ⟨State your
+accountability, may keep archived (tombstoned) copies afterward. Some records
+we keep by default even when a household asks us to delete its information,
+because they are our business and employment records: the append-only access
+log, incident and complaint records, records of the time our staff spent
+serving your household and the costs of doing so, your membership history,
+and the general category of how you found us. When we act on a deletion
+request, the free-text notes those retained records carry are removed along
+with everything else personal to your household. ⟨State your
 concrete retention period and your erasure process — reconcile the tombstone
 model with any legal right to deletion; this needs counsel.⟩
 

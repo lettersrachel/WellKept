@@ -7,11 +7,15 @@
 > right-to-erasure** (the system tombstones rather than hard-deletes — but an
 > executable erasure tool now exists: `apps/web/scripts/erase-household.mjs`
 > crypto-shreds the vault, purges photo bytes (receipts included), blanks
-> free text across every table including service-time/cost notes and
-> membership cancellation reasons, clears the referral record, and keeps
+> free text across every table including service-time/cost notes,
+> membership cancellation reasons, and preference-exclusion reasons,
+> clears the referral note while keeping the referral channel category
+> (acquisition history), deletes queued notifications and transient
+> delivery rows, empties household-scoped reminder rules, and keeps
 > business/employer rows and the audit trail by default (counsel-directed
-> flags go further); counsel decides when it applies and what must be
-> retained) and
+> flags go further); a CI check fails any new household-linked table that
+> lacks an erasure treatment; counsel decides when it applies and what
+> must be retained) and
 > **which privacy laws apply** (state, GDPR if any client/staff is in the EU/UK).
 
 **For the engagement itself:** [`COUNSEL_PACKET.md`](COUNSEL_PACKET.md)
