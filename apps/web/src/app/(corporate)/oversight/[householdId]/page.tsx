@@ -15,6 +15,12 @@ import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
 
 export const dynamic = "force-dynamic";
+// Headroom over Vercel's ~10s default: this page makes many sequential DB
+// round-trips, and a slowed dependency (2026-07-27: an over-quota Redis)
+// pushed it past the ceiling — the function is killed MID-STREAM, so the
+// page silently truncates instead of erroring. 60s keeps a slow render
+// alive; the real fix is batching the queries (gap register).
+export const maxDuration = 60;
 
 const TAGS = ["STEADY", "ONBOARDING-90", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW", "CHAMPION"];
 

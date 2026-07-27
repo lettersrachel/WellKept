@@ -41,7 +41,13 @@ Project settings:
 | `WK_KMS_KEY` | `openssl rand -base64 32` — vault KEK; production refuses to boot the vault without it |
 | `AUTH_EMAIL_FROM` | `Well Kept <signin@yourdomain.com>` (the domain you verified in Resend) |
 
-Then point your domain (e.g. `app.wellkept.com`) at the Vercel project.
+Then point your domain at the Vercel project — when you have one. As of
+2026-07-27 NO custom domain is configured (`vercel domains ls` shows zero);
+production is served at the project's `*.vercel.app` alias. Note the team
+carries a second, dormant Vercel project (`well-kept-web`, git-connected,
+zero env vars, auto-deploys on every push) — the live project is
+`wellkept`, the one holding all ten env vars. Don't debug against the
+wrong one.
 
 ## 3. Worker (Railway / Render / Fly — any Docker host)
 
@@ -53,11 +59,15 @@ Seed the trigger library once: `DATABASE_URL=... pnpm --filter @wellkept/worker 
 
 ## 4. Smoke checklist (after every deploy; extended 2026-07-25 for the rev-4 surfaces)
 
-**The write-heavy items (6, 7, 9, 11, 13) run against the SMOKE TEST
+**The write-heavy items (3, 6, 7, 9, 11, 13) run against the SMOKE TEST
 FIXTURE, never a client household** (G-23 — the incident register is
 append-only by design, so a checklist incident on a real household is
-permanent). Setup is one idempotent command (safe to re-run every deploy;
-prints the FIXTURE_UUID the checklist needs):
+permanent; the 2026-07-27 run proved this bites in practice — the operator
+naturally acts on whichever drill-in is already open, so every item below
+names the fixture explicitly). Setup is one idempotent command (safe to
+re-run every deploy; prints the FIXTURE_UUID the checklist needs, and
+seeds the checklist's props: a cascade-bound `medication` field with a
+pending client edit for item 3, and a visit photo for item 11):
 
     cd apps/web && DATABASE_URL=... WK_ADMIN_EMAIL=<your corporate login> node scripts/ensure-smoke-fixture.mjs
 
@@ -76,17 +86,25 @@ manual ones:
 1. `https://app.yourdomain.com/api/health` → `{"ok":true,"db":"up"}`
 2. `/signin` → request a link for your own email → it arrives via Resend →
    clicking lands you per your role assignment
-3. As corporate: approve any pending client edit on a bound field → the
-   worker host's logs show the field-change job → the anticipation panel
-   gains items
+3. On the FIXTURE drill-in: approve the seeded pending client edit on the
+   `medication` field (the fixture script re-seeds one each run) → a
+   `field_write` row lands in `audit_event` → the worker host's logs show
+   the field-change job → the fixture's anticipation panel gains meds-day
+   items. If the approval visibly does nothing, do NOT count pre-existing
+   panel items as a pass: the approval action silently no-ops when the
+   edit is no longer pending or your role on that household isn't
+   corporate_admin — the `field_write` row is the proof, not the panel
 4. Dev-gated surfaces are actually gated — BOTH return 404 in production:
    `/dev/last-email` AND `/api/dev/trigger-pass` (POST). Standing rule:
    every new dev-gated surface gets its own 404 line here (G-15)
 5. An s3 reveal → audit row present in `audit_event`
 6. A household drill-in shows the **Household consent card** — red
    NO-CONSENT banner on any household without a recorded consent
-7. Log a test incident (kind `other`, low) → it appears open on the
-   drill-in AND flags red in the fleet board's Queues column. LEAVE IT
+7. On the FIXTURE drill-in: log a test incident (kind `other`, low) → it
+   appears open on the drill-in, and the fleet board's dimmed fixture row
+   gains "· 1 open (checklist 13b resolves it)". (Fixtures are excluded
+   from the main table, so the Queues-column red flag can NEVER appear
+   for the fixture — that flag is for client households only.) LEAVE IT
    OPEN — item 13a needs it; it's resolved at 13b
 8. **CEO previews**: drill-in → View as client and View as HM both render
    (the client preview running without error IS the live payload-guard
@@ -95,7 +113,10 @@ manual ones:
    text stops appearing in newly generated prompts; end the exclusion
 10. Both briefing surfaces show the "Last year at this time" section (its
     empty-state note counts — recall is dark until a year of history)
-11. A visit photo shows the Hold and Reuse toggles (corporate_admin);
+11. On the FIXTURE drill-in: the seeded visit photo shows the Hold and
+    Reuse toggles (you hold corporate_admin there by the fixture script's
+    grant — on households where your role is house_manager the toggles
+    are correctly absent, which is authorization working, not a defect);
     toggling each writes an audit row
 12. `app_setting` rows exist in production with intended values:
     `photo_retention` (`{"days":90}`) and `rule_health`
@@ -110,8 +131,27 @@ manual ones:
     b. Resolve item 7's incident with a note (flag clears on the fleet
        board), dry-run again → now read the plan it prints (counts, hold
        handling). Do NOT `--commit`
-14. `/oversight/triggers` shows the health line on every rule (zeros are
-    fine pre-pilot)
+14. `/oversight/triggers` shows the health line on every rule (the
+    denominator is the 3 seeded cascades, not the six trigger families;
+    zeros are fine pre-pilot)
+
+Sharp edges the 2026-07-27 run paid for (symptoms → causes):
+
+- **A page that ends abruptly** (cards you know exist just aren't there,
+  Cmd+F finds nothing, no error anywhere) is a serverless function killed
+  at its time ceiling MID-STREAM — the browser keeps whatever HTML
+  arrived. Nothing throws; Vercel logs `responseStatusCode: -1`. The
+  oversight pages now export `maxDuration = 60` for headroom, but a slow
+  dependency (that day: an over-quota Upstash Redis inflating every
+  request) can still do this. Suspect the infrastructure before the
+  feature.
+- **After every deploy, refresh open tabs** (and tell any active user to)
+  — a tab loaded before the deploy carries dead client JS and stale
+  server-action IDs: buttons that do nothing, forms that silently no-op.
+- **A magic link that never arrives can still return the success page** —
+  the failing Resend send has been observed returning the normal
+  `/verify-request` redirect. Retry once before debugging; check the
+  Resend dashboard's delivery log before blaming the app.
 
 ## Not covered here (later tiers)
 

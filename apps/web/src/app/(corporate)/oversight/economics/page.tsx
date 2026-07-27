@@ -9,6 +9,9 @@ import { setMonthlyRate } from "@/lib/actions";
 import { getPrincipal } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+// Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
+// dependency must degrade the page, not silently truncate it mid-stream.
+export const maxDuration = 60;
 
 const DAY = 24 * 60 * 60 * 1000;
 const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;

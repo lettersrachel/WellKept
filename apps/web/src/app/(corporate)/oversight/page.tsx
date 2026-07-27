@@ -7,6 +7,9 @@ import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+// Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
+// dependency must degrade the page, not silently truncate it mid-stream.
+export const maxDuration = 60;
 
 /**
  * REQ-043: the fleet board. One row per household the signed-in corporate
