@@ -825,3 +825,17 @@ libpq semantics where `require` skips certificate verification. Change the
 connection strings (Vercel, Railway, `.neon-connection`) to
 `sslmode=verify-full` before any pg major bump — a one-line change that
 prevents a silent TLS downgrade.
+
+### G-37. Stale server-action IDs fail with no feedback at all
+Split out of G-29 at the fixer's suggestion, because it is a different
+disease: G-29's guards run and refuse; a page loaded BEFORE a deploy posts
+a server-action ID the new build no longer knows, and that request dies
+before any application code runs — no guard, no banner, no error, nothing.
+It produced the two costliest false failures of the 2026-07-27 smoke run
+(checks 3 and 11) and cannot be fixed by anything inside the actions.
+Candidate fixes, in preference order: (a) Next.js deployment-skew
+protection, so old pages keep resolving against the build that served
+them; (b) a build-id heartbeat — the client compares its build id against
+the server's and overlays "this page is from before the last deploy —
+refresh" the moment they diverge. Until one lands, the operational rule
+holds: hard-refresh after every deploy (DEPLOY §4 step zero).
