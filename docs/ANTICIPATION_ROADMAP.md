@@ -16,6 +16,13 @@ session brief per item; paste one section into Claude Code, never the file.
 Six items, keyed to the six gaps. Table names follow existing convention;
 column names are suggestions. Migration numbers assume 0017 lands first.
 
+> **Numbering correction (2026-07-26, per
+> [CORPORATE_CAPTURE_SESSIONS.md](CORPORATE_CAPTURE_SESSIONS.md)):** the
+> specific migration numbers below (0018–0023) are void. Migration numbers
+> are allocated at build time, not reserved in advance — the next migration
+> written takes the next number, whichever document's session builds first.
+> Read the numbers below as item labels only.
+
 ---
 
 ## A. Separate "you told me something" from "I already knew"
