@@ -178,7 +178,7 @@ try {
     [householdId],
   );
   await c.query("UPDATE playbook_field SET value='', note='', tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId]);
-  await c.query("UPDATE registry_entry SET label=$2, detail='{}', tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId, E]);
+  await c.query("UPDATE registry_entry SET label=$2, detail='{}', installed_at=NULL, lifespan_months=NULL, maintenance_interval_months=NULL, last_serviced_at=NULL, tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE dot SET verbatim=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE visit SET changes_noticed=NULL, signal_detail=NULL, zone_drift_notes='', report_sentence_1='', report_sentence_2='', report_sentence_3='', updated_at=now() WHERE household_id=$1", [householdId]);
   await c.query("UPDATE visit_command SET payload='{}', reason=NULL WHERE household_id=$1", [householdId]);

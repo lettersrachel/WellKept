@@ -21,6 +21,12 @@ export interface RegistryEntryLike {
   label: string;
   keyDate: Date | null;
   cadence: string | null;
+  // G-49 part two: typed horizon-derivation inputs. Optional so existing
+  // callers and fixtures stay valid; null/absent means "not collected".
+  installedAt?: Date | null;
+  lifespanMonths?: number | null;
+  maintenanceIntervalMonths?: number | null;
+  lastServicedAt?: Date | null;
 }
 
 // Synthetic rule ids: sweep items carry a stable per-family "rule" so the
@@ -30,6 +36,7 @@ export const SWEEP_RULE_IDS: Record<string, string> = {
   commitment: "01980000-0000-7000-8000-000000000d02",
   subscription: "01980000-0000-7000-8000-000000000d03",
   horizon: "01980000-0000-7000-8000-000000000d04",
+  appliance: "01980000-0000-7000-8000-000000000d06", // d05 = observances
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -72,7 +79,52 @@ const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
     annual: false,
     windows: [{ offsetDays: 30, text: (l, w) => `Transition ahead: ${l} (${w}).` }],
   },
+  appliance: {
+    annual: false,
+    windows: [{ offsetDays: 14, text: (l, w) => `Maintenance due: ${l} (${w}) — the service interval has elapsed.` }],
+  },
 };
+
+/** Calendar-aware month addition, day clamped (Jan 31 + 1mo → Feb 28/29). */
+export function addMonthsUTC(d: Date, months: number): Date {
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1, 13, 0, 0));
+  const daysInMonth = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(d.getUTCDate(), daysInMonth), 13, 0, 0));
+}
+
+/** Next service-due date on/after now: lastServiced + k·interval, smallest k ≥ 1.
+ * Recurring by nature — an unserviced appliance re-prompts every cycle;
+ * recording a service (updating last_serviced_at) moves the whole series. */
+export function nextIntervalOccurrence(lastServiced: Date, intervalMonths: number, now: Date): Date {
+  let k = 1;
+  let due = addMonthsUTC(lastServiced, intervalMonths);
+  while (due.getTime() < now.getTime() - DAY && k < 600) {
+    k += 1;
+    due = addMonthsUTC(lastServiced, k * intervalMonths);
+  }
+  return due;
+}
+
+/**
+ * G-49 part two: the dated events an entry implies. An explicit key_date
+ * wins for the entry's own kind (the operator said so); the typed inputs
+ * fill in what no one maintains — end-of-life from installed + lifespan,
+ * maintenance from last-serviced + interval. Derived from facts that only
+ * change when the world does, so these dates cannot rot.
+ */
+export function entryEvents(entry: RegistryEntryLike, now: Date): { occurrence: Date; windowsKey: string }[] {
+  const events: { occurrence: Date; windowsKey: string }[] = [];
+  const spec = WINDOWS[entry.kind];
+  if (entry.keyDate && spec) {
+    events.push({ occurrence: spec.annual ? nextAnnualOccurrence(entry.keyDate, now) : entry.keyDate, windowsKey: entry.kind });
+  } else if (!entry.keyDate && (entry.kind === "horizon" || entry.kind === "appliance") && entry.installedAt && entry.lifespanMonths) {
+    events.push({ occurrence: addMonthsUTC(entry.installedAt, entry.lifespanMonths), windowsKey: "horizon" });
+  }
+  if (entry.kind === "appliance" && entry.lastServicedAt && entry.maintenanceIntervalMonths) {
+    events.push({ occurrence: nextIntervalOccurrence(entry.lastServicedAt, entry.maintenanceIntervalMonths, now), windowsKey: "appliance" });
+  }
+  return events;
+}
 
 export interface SweepDraft extends PromptPackItemDraft { occurrence: string }
 
@@ -85,24 +137,25 @@ export function sweepRegistryDates(
   const suppressed = opts.statusTag === "LIFE-EVENT";
   const out: SweepDraft[] = [];
   for (const entry of entries) {
-    if (!entry.keyDate) continue;
-    const spec = WINDOWS[entry.kind];
-    if (!spec) continue;
-    const occurrence = spec.annual ? nextAnnualOccurrence(entry.keyDate, now) : entry.keyDate;
-    if (occurrence.getTime() < now.getTime() - DAY) continue; // one-shot already past
-    for (const w of spec.windows) {
-      const windowOpens = new Date(occurrence.getTime() - w.offsetDays * DAY);
-      if (windowOpens.getTime() > now.getTime()) continue; // not yet in window
-      if (occurrence.getTime() < now.getTime()) continue; // occurrence passed
-      out.push({
-        householdId: entry.householdId,
-        triggerRuleId: SWEEP_RULE_IDS[entry.kind] ?? SWEEP_RULE_IDS.dates!,
-        packName: `${entry.kind}-radar`,
-        itemText: w.text(entry.label, fmt(occurrence, timezone)),
-        fireAt: clampOutOfQuietHours(new Date(Math.max(windowOpens.getTime(), now.getTime())), timezone),
-        suppressedByTag: suppressed,
-        occurrence: occurrence.toISOString(),
-      });
+    for (const ev of entryEvents(entry, now)) {
+      const spec = WINDOWS[ev.windowsKey];
+      if (!spec) continue;
+      const occurrence = ev.occurrence;
+      if (occurrence.getTime() < now.getTime() - DAY) continue; // one-shot already past
+      for (const w of spec.windows) {
+        const windowOpens = new Date(occurrence.getTime() - w.offsetDays * DAY);
+        if (windowOpens.getTime() > now.getTime()) continue; // not yet in window
+        if (occurrence.getTime() < now.getTime()) continue; // occurrence passed
+        out.push({
+          householdId: entry.householdId,
+          triggerRuleId: SWEEP_RULE_IDS[ev.windowsKey] ?? SWEEP_RULE_IDS.dates!,
+          packName: `${ev.windowsKey}-radar`,
+          itemText: w.text(entry.label, fmt(occurrence, timezone)),
+          fireAt: clampOutOfQuietHours(new Date(Math.max(windowOpens.getTime(), now.getTime())), timezone),
+          suppressedByTag: suppressed,
+          occurrence: occurrence.toISOString(),
+        });
+      }
     }
   }
   return out;
