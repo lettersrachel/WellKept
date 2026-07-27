@@ -33,7 +33,7 @@ export function RefusalBanner({ reason }: { reason?: string }) {
   // An unknown reason still surfaces — a refusal we forgot to describe is
   // still a refusal, and silence is the bug this component exists to kill.
   return (
-    <div className="card" role="status" style={{ borderColor: "#8B2E2E", marginBottom: 12 }}>
+    <div className="card" role="status" style={{ borderColor: "#8B2E2E", marginBottom: 12, position: "sticky", top: 0, zIndex: 900 }}>
       <strong>Action refused.</strong>{" "}
       {message ?? `The action was refused (${reason}) and nothing was changed.`}
     </div>

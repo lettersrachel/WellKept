@@ -30,10 +30,10 @@ export default async function Oversight({ params, searchParams }: {
   params: Promise<{ householdId: string }>;
   // G-29: actions redirect here with ?refused=<reason> instead of returning
   // silently, so a declined click is legible instead of looking broken.
-  searchParams: Promise<{ refused?: string }>;
+  searchParams: Promise<{ refused?: string; recorded?: string }>;
 }) {
   const { householdId } = await params;
-  const { refused } = await searchParams;
+  const { refused, recorded } = await searchParams;
   const { hh, principal } = await getHouseholdAndPrincipalById(householdId);
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
@@ -105,6 +105,14 @@ export default async function Oversight({ params, searchParams }: {
   return (
     <>
       <RefusalBanner reason={refused} />
+      {/* Success made legible (2026-07-27, round two of G-29's lesson): a
+          write that landed SAYS so. No green line = it did not happen —
+          the table's existing rows can no longer impersonate a new one. */}
+      {recorded && (
+        <div className="card" role="status" style={{ borderColor: "#2E6B3F", marginBottom: 12 }}>
+          <strong>Recorded:</strong> {recorded} — it is in the table below and in the audit trail.
+        </div>
+      )}
       <div className="card">
         <div className="row" style={{ alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <h2 style={{ flex: 1 }}>
@@ -466,7 +474,7 @@ export default async function Oversight({ params, searchParams }: {
         {isAdmin && (
           <form action={setReferralSource} className="row" style={{ marginTop: 6, gap: 6, flexWrap: "wrap" }}>
             <input type="hidden" name="householdId" value={hh.id} />
-            <select name="referralSource" defaultValue={hh.referralSource ?? "client_referral"} className="inline" aria-label="Referral source">
+            <select key={hh.referralSource ?? "unset"} name="referralSource" defaultValue={hh.referralSource ?? "client_referral"} className="inline" aria-label="Referral source">
               {["client_referral", "professional_referral", "personal_network", "community", "press_or_search", "other"].map((s) => (
                 <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
               ))}
@@ -501,18 +509,23 @@ export default async function Oversight({ params, searchParams }: {
         {isAdmin && (
           <form action={recordMembershipEvent} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
             <input type="hidden" name="householdId" value={hh.id} />
-            <select name="kind" defaultValue="start" className="inline" aria-label="Event kind">
+            {/* key: an uncontrolled select keeps its DOM value across
+                server-action re-renders (the statusTag select learned this
+                first) — remount after every recorded event so a stale
+                choice can never ride into the next submission. It already
+                mis-kinded two fixture rows on 2026-07-27. */}
+            <select key={`kind-${membershipEvents.length}`} name="kind" defaultValue="start" className="inline" aria-label="Event kind">
               {["start", "tier_change", "pause", "resume", "cancel"].map((k) => <option key={k} value={k}>{k.replace(/_/g, " ")}</option>)}
             </select>
             <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
               Effective <input type="date" name="effectiveOn" required style={{ marginTop: 0 }} />
             </label>
-            <select name="tier" defaultValue="" className="inline" aria-label="Tier (start and tier change)">
+            <select key={`tier-${membershipEvents.length}`} name="tier" defaultValue="" className="inline" aria-label="Tier (start and tier change)">
               <option value="">tier…</option>
               {["essential", "family_ops", "concierge"].map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
             </select>
             <input name="price" aria-label="Price in dollars" inputMode="decimal" placeholder="$ price" style={{ marginTop: 0, width: 90 }} />
-            <select name="initiatedBy" defaultValue="" className="inline" aria-label="Initiated by (required on cancel)">
+            <select key={`init-${membershipEvents.length}`} name="initiatedBy" defaultValue="" className="inline" aria-label="Initiated by (required on cancel)">
               <option value="">initiated by…</option>
               <option value="client">client</option>
               <option value="corporate">corporate</option>

@@ -905,3 +905,23 @@ defeats it. See G-37 — the app detecting version skew and forcing its own
 reload is the durable answer, and this ticket is the fourth data point for
 it. If a card ever reads empty against present data again, capture the log
 BEFORE reloading: that is the one measurement this round could not take.
+
+### G-39. Uncontrolled selects retain stale choices across action re-renders
+Found 2026-07-27 by the fixture (doing its job): the membership `kind`
+select kept `tier_change` across server-action re-renders — React applies
+`defaultValue` on mount only and reuses the DOM node afterwards — so two
+fixture events were recorded with the wrong kind while the operator
+reasonably believed the form had reset. The `statusTag` select had already
+learned this (its `key` remount guard); the lesson had not propagated.
+**FIXED this commit for the commercial card** (key guards on kind, tier,
+initiated-by, referral), **plus the deeper fix: success is now as legible
+as refusal** — `recordMembershipEvent` and `setReferralSource` redirect
+with `?recorded=…` and the drill-in renders a green confirmation; no green
+line means no write, ending the phantom-row ambiguity that burned three
+diagnostic rounds. The refusal banner is sticky now too — a mid-page
+operator can't miss either verdict. REMAINING: the same key-guard sweep
+for the app's other uncontrolled selects (time/cost categories, incident
+forms, exclusion forms) — same trap, lower stakes since none of those
+selects change a record's MEANING; apply on next touch of each surface.
+The two mis-kinded fixture rows stay (append-only; they are fixture test
+data and harmless).
