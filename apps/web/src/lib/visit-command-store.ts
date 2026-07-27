@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { visitCommand } from "@wellkept/schema";
+import { visitCommand, timeEntry } from "@wellkept/schema";
 import { db } from "./db";
 
 const dayOf = (isoString: string) => new Date(isoString).toISOString().slice(0, 10);
@@ -59,6 +60,30 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
     await tx.insert(visitCommand).values({
       id: idempotencyKey, type, householdId: payload.householdId, payload, status, reason,
     });
+
+    // Capture session 1: an applied visit's hours BECOME a categorized
+    // delivery time entry, in the same transaction — visit hours are now
+    // derived from entries, and because the entry rides the idempotent
+    // command apply, it survives offline sync with no client changes.
+    if (type === "visit.submit" && status === "applied") {
+      const hours = (payload as { hours?: { startedAt?: string; endedAt?: string } }).hours;
+      const submittedBy = (payload as { submittedBy?: string }).submittedBy;
+      const start = hours?.startedAt ? new Date(hours.startedAt) : null;
+      const end = hours?.endedAt ? new Date(hours.endedAt) : null;
+      if (submittedBy && start && end && !Number.isNaN(+start) && !Number.isNaN(+end) && +end > +start) {
+        await tx.insert(timeEntry).values({
+          id: randomUUID(),
+          householdId: payload.householdId,
+          userId: submittedBy,
+          category: "delivery",
+          startedAt: start,
+          endedAt: end,
+          minutes: Math.round((+end - +start) / 60_000),
+          source: "visit_close",
+          visitCommandId: idempotencyKey,
+        });
+      }
+    }
     return status === "conflict" ? { conflict: true as const, reason } : { conflict: false as const };
   });
 }

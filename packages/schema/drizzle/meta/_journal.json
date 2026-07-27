@@ -141,6 +141,20 @@
       "when": 1785154270569,
       "tag": "0019_mysterious_marvel_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785161085429,
+      "tag": "0020_wooden_stepford_cuckoos",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785161106097,
+      "tag": "0021_thankful_luckman",
+      "breakpoints": true
     }
   ]
 }

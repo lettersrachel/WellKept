@@ -5,7 +5,7 @@ import { bindProvisions } from "@wellkept/schema";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -293,6 +293,62 @@ export default async function VisitPage() {
           </div>
         </>
       )}
+
+      {/* Capture sessions 1+2: after-the-fact time and cost entry (founder
+          decisions 2026-07-27). The visit close already produces the
+          delivery entry automatically — these forms cover everything else:
+          travel, intake, admin, training, and the costs. Hours in, never
+          pay out (ADR-004). */}
+      <div className="eyebrow">Time &amp; costs — after the fact</div>
+      <div className="note">
+        Your visit&apos;s delivery hours record themselves when you close. Log travel and
+        anything else here; costs go to the household&apos;s record (QuickBooks stays the
+        book of record for money).
+      </div>
+      <form action={createTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <input type="hidden" name="householdId" value={hh.id} />
+        <span>
+          <label htmlFor="te-cat">Time</label>
+          <select id="te-cat" name="category" defaultValue="travel" className="inline">
+            {["travel", "intake", "admin", "training", "delivery"].map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </span>
+        <span>
+          <label htmlFor="te-start">From</label>
+          <input id="te-start" name="startedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+        </span>
+        <span>
+          <label htmlFor="te-end">To</label>
+          <input id="te-end" name="endedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+        </span>
+        <button className="act subtle">Log time</button>
+      </form>
+      <form action={createCostEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end", marginTop: 6 }}>
+        <input type="hidden" name="householdId" value={hh.id} />
+        <span>
+          <label htmlFor="ce-cat">Cost</label>
+          <select id="ce-cat" name="category" defaultValue="supplies" className="inline">
+            {["supplies", "materials", "mileage", "other"].map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </span>
+        <span>
+          <label htmlFor="ce-amt">Amount ($)</label>
+          <input id="ce-amt" name="amount" inputMode="decimal" placeholder="12.50" required style={{ marginTop: 0, width: 90 }} />
+        </span>
+        <span>
+          <label htmlFor="ce-date">Date</label>
+          <input id="ce-date" name="incurredOn" type="date" required style={{ marginTop: 0 }} />
+        </span>
+        <span>
+          <label htmlFor="ce-miles">Miles (mileage only)</label>
+          <input id="ce-miles" name="miles" inputMode="numeric" placeholder="—" style={{ marginTop: 0, width: 80 }} />
+        </span>
+        <span style={{ flex: 1, minWidth: 140 }}>
+          <label htmlFor="ce-note">Note</label>
+          <input id="ce-note" name="note" placeholder="optional" style={{ marginTop: 0 }} />
+        </span>
+        <button className="act subtle">Log cost</button>
+      </form>
 
       <div className="eyebrow">Close the visit</div>
       <VisitWizard householdId={hh.id} />

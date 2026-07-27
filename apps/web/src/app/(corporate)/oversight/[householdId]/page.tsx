@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
-import { visitCommand, triggerRule, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { and, eq, gte, desc } from "drizzle-orm";
+import { visitCommand, triggerRule, timeEntry, costEntry, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -45,6 +45,19 @@ export default async function Oversight({ params }: { params: Promise<{ househol
   // Session B: the resolve form's optional related-rule picker.
   const ruleRows = await db.select().from(triggerRule);
   const ruleOptions = ruleRows.map((r) => ({ id: r.id, packName: (r.definition as { packName?: string }).packName ?? r.id.slice(0, 8) }));
+  // Capture sessions 1+2: trailing-30-day hours by category and costs.
+  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const timeRows = await db.select({ category: timeEntry.category, minutes: timeEntry.minutes })
+    .from(timeEntry)
+    .where(and(eq(timeEntry.householdId, hh.id), gte(timeEntry.startedAt, since30)));
+  const minutesByCat = new Map<string, number>();
+  for (const t of timeRows) minutesByCat.set(t.category, (minutesByCat.get(t.category) ?? 0) + t.minutes);
+  const timeByCategory = Array.from(minutesByCat, ([category, minutes]) => ({ category, minutes }))
+    .sort((a, b) => b.minutes - a.minutes);
+  const recentCosts = await db.select().from(costEntry)
+    .where(and(eq(costEntry.householdId, hh.id), gte(costEntry.incurredOn, since30.toISOString().slice(0, 10))))
+    .orderBy(desc(costEntry.incurredOn))
+    .limit(20);
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>
@@ -286,6 +299,76 @@ export default async function Oversight({ params }: { params: Promise<{ househol
           <input name="description" aria-label="What happened" placeholder="what happened (s2, internal)" required style={{ flex: 2, marginTop: 0 }} />
           <button className="act">Log incident</button>
         </form>
+      </div>
+
+      {/* Capture sessions 1+2: hours by category and non-labor cost,
+          trailing 30 days. The read that makes travel separable from
+          delivery; the full unit-economics surface is session 4, gated on
+          real data. ADR-004: hours and costs in, never pay or invoices. */}
+      <div className="card">
+        <h2>Time &amp; costs — trailing 30 days</h2>
+        {timeByCategory.length === 0 && recentCosts.length === 0 ? (
+          <div className="note">
+            Nothing recorded yet. Delivery hours record themselves when a visit closes;
+            travel/intake/admin/training and costs are logged after the fact on the
+            visit surface (or the forms below at need).
+          </div>
+        ) : (
+          <>
+            <div className="prov">
+              {timeByCategory.length === 0 ? "no time entries" : timeByCategory
+                .map((t) => `${t.category} ${(t.minutes / 60).toFixed(1)}h`)
+                .join(" · ")}
+            </div>
+            {recentCosts.length > 0 && (
+              <table className="panel" style={{ marginTop: 6 }}>
+                <thead>
+                  <tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th></tr>
+                </thead>
+                <tbody>
+                  {recentCosts.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.incurredOn}</td>
+                      <td>{c.category}{c.miles !== null ? ` (${c.miles} mi)` : ""}</td>
+                      <td>${(c.amountCents / 100).toFixed(2)}</td>
+                      <td className="prov">{c.note ?? ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
+        <form action={createTimeEntry} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <select name="category" defaultValue="intake" className="inline" aria-label="Time category">
+            {["intake", "admin", "training", "travel", "delivery"].map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+            From <input type="datetime-local" name="startedAt" required style={{ marginTop: 0 }} />
+          </label>
+          <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+            To <input type="datetime-local" name="endedAt" required style={{ marginTop: 0 }} />
+          </label>
+          <button className="act subtle">Log time</button>
+        </form>
+        <form action={createCostEntry} className="row" style={{ marginTop: 6, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <select name="category" defaultValue="supplies" className="inline" aria-label="Cost category">
+            {["supplies", "materials", "mileage", "other"].map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <input name="amount" aria-label="Amount in dollars" inputMode="decimal" placeholder="$ amount" required style={{ marginTop: 0, width: 90 }} />
+          <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+            On <input type="date" name="incurredOn" required style={{ marginTop: 0 }} />
+          </label>
+          <input name="miles" aria-label="Miles, mileage only" inputMode="numeric" placeholder="miles" style={{ marginTop: 0, width: 70 }} />
+          <input name="note" aria-label="Note" placeholder="note (optional, s2)" style={{ flex: 1, marginTop: 0, minWidth: 120 }} />
+          <button className="act subtle">Log cost</button>
+        </form>
+        <div className="note" style={{ marginTop: 6 }}>
+          Capture, not accounting: QuickBooks remains the book of record for money
+          (ADR-004). Mileage is entered, never derived from travel time.
+        </div>
       </div>
 
       <div className="card">
