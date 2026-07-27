@@ -538,6 +538,15 @@ export async function recordPromptOutcome(formData: FormData) {
   if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
   const answeredAt = new Date();
   const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null; // s2
+  // Session A: was_news only means something on acted ("Good catch" true /
+  // "Already on it" false); dismiss_reason only on dismissed. Any other
+  // combination is dropped to null, never coerced — the metric ignores nulls.
+  const wasNewsRaw = String(formData.get("wasNews") ?? "");
+  const wasNews = outcome === "acted" && (wasNewsRaw === "true" || wasNewsRaw === "false")
+    ? wasNewsRaw === "true" : null;
+  const dismissReasonRaw = String(formData.get("dismissReason") ?? "");
+  const dismissReason = outcome === "dismissed" && ["wrong", "bad_timing"].includes(dismissReasonRaw)
+    ? (dismissReasonRaw as "wrong" | "bad_timing") : null;
   // lead_days: answered_at to the prompt's own target (A2 finding 8 — null
   // for event-driven prompts, and rule health states the sample size).
   let leadDays: number | null = null;
@@ -559,6 +568,8 @@ export async function recordPromptOutcome(formData: FormData) {
     targetDate: item.targetDate,
     leadDays,
     note,
+    wasNews,
+    dismissReason,
   }).onConflictDoNothing({ target: [promptOutcome.promptId, promptOutcome.userId] });
   revalidatePath("/visit");
   revalidatePath("/oversight/triggers");
@@ -644,12 +655,24 @@ export async function resolveIncident(formData: FormData) {
   if (!inc || inc.status !== "open") return;
   const principal = await getPrincipal(inc.householdId);
   if (principal?.role !== "corporate_admin") return; // closing is a corporate call
+  // Session B: the back-link question, answered by the resolver or left
+  // blank (skippable — founder decision 2026-07-27). NEVER inferred: an
+  // inferred link would manufacture a false-negative stream out of guesses.
+  const PREVENTABLE = ["fired_and_ignored", "fired_too_late", "no_prompt_existed", "not_preventable", "unclear"] as const;
+  const preventableRaw = String(formData.get("preventableByPrompt") ?? "");
+  const preventableByPrompt = (PREVENTABLE as readonly string[]).includes(preventableRaw)
+    ? (preventableRaw as (typeof PREVENTABLE)[number]) : null;
+  const ruleIdRaw = String(formData.get("relatedRuleId") ?? "");
+  const relatedRuleId = /^[0-9a-f-]{36}$/i.test(ruleIdRaw) ? ruleIdRaw : null;
   await db.update(incidentReport)
-    .set({ status: "resolved", resolutionNote, resolvedBy: principal.userId, resolvedAt: new Date(), updatedAt: new Date() })
+    .set({
+      status: "resolved", resolutionNote, resolvedBy: principal.userId, resolvedAt: new Date(), updatedAt: new Date(),
+      preventableByPrompt, relatedRuleId,
+    })
     .where(eq(incidentReport.id, incidentId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: inc.householdId, actorUser: principal.userId, actorRole: principal.role,
-    kind: "incident_resolved", detail: { incidentId, incidentKind: inc.kind },
+    kind: "incident_resolved", detail: { incidentId, incidentKind: inc.kind, preventableByPrompt },
   });
   revalidatePath(`/oversight/${inc.householdId}`);
   revalidatePath("/oversight");

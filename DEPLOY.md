@@ -78,6 +78,12 @@ if no live fixture exists. It is not a client and never will be. Before
 go-live the demo households serve; after go-live the fixture is the only
 safe target.
 
+**Step zero, before ANY manual check: hard-refresh every open tab of the
+app (Cmd+Shift+R), and again after every redeploy mid-run.** A page loaded
+before a deploy carries dead client JS and stale server-action IDs — its
+buttons and forms fail with NO feedback, indistinguishable from the silent
+no-op gates. This cost the 2026-07-27 run two false failures (G-29).
+
 **Checks 1, 4, and 12 are scripted** — run them first, then work the
 manual ones:
 
@@ -122,7 +128,9 @@ manual ones:
     `photo_retention` (`{"days":90}`) and `rule_health`
     (`{"actRateFloor":0.25,"minHouseholds":3,"minUsers":2}`) — insert
     them if absent; a missing key is a missing knob, defaults only cover
-    code paths that read them
+    code paths that read them. (`rule_health` may later gain an optional
+    `informativeRateFloor` — Session A, founder sets it after real pilot
+    numbers; its ABSENCE is intentional and means no retirement flag)
 13. The erasure tool, twice, against the household carrying item 7's
     still-open incident (G-15 — the guard must FIRE, not just exist):
     a. Dry-run it now → the tool must REFUSE with the open-incident

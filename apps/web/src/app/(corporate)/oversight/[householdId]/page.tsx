@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { visitCommand, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -42,6 +42,9 @@ export default async function Oversight({ params }: { params: Promise<{ househol
     getUpcomingPackItems(hh.id, 10),
   ]);
   const [gestures, strangerTests, members, exclusions, incidents] = await Promise.all([getGestures(hh.id), getStrangerTests(hh.id), getHouseholdMembers(hh.id), getExclusions(hh.id), getIncidents(hh.id)]);
+  // Session B: the resolve form's optional related-rule picker.
+  const ruleRows = await db.select().from(triggerRule);
+  const ruleOptions = ruleRows.map((r) => ({ id: r.id, packName: (r.definition as { packName?: string }).packName ?? r.id.slice(0, 8) }));
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>
@@ -225,16 +228,40 @@ export default async function Oversight({ params }: { params: Promise<{ househol
                   <td>
                     {i.status === "open" ? (
                       isAdmin ? (
-                        <form action={resolveIncident} className="row" style={{ gap: 4 }}>
+                        <form action={resolveIncident} className="row" style={{ gap: 4, flexWrap: "wrap" }}>
                           <input type="hidden" name="incidentId" value={i.id} />
                           <input name="resolutionNote" aria-label="Resolution note" placeholder="resolution note" required style={{ marginTop: 0, fontSize: 12 }} />
+                          {/* Session B: the back-link question. Skippable on
+                              purpose (founder decision) — blank means
+                              unanswered, never guessed. */}
+                          <select name="preventableByPrompt" aria-label="Could a prompt have prevented this?" defaultValue="" className="inline" style={{ fontSize: 12 }}>
+                            <option value="">preventable by a prompt? (skip)</option>
+                            <option value="fired_and_ignored">prompt fired, was ignored</option>
+                            <option value="fired_too_late">prompt fired too late</option>
+                            <option value="no_prompt_existed">no prompt existed</option>
+                            <option value="not_preventable">not preventable</option>
+                            <option value="unclear">unclear</option>
+                          </select>
+                          <select name="relatedRuleId" aria-label="Related rule, if one applies" defaultValue="" className="inline" style={{ fontSize: 12 }}>
+                            <option value="">related rule (none)</option>
+                            {ruleOptions.map((r) => (
+                              <option key={r.id} value={r.id}>{r.packName}</option>
+                            ))}
+                          </select>
                           <button className="act subtle">Resolve</button>
                         </form>
                       ) : (
                         <span className="tag CAUTION">OPEN</span>
                       )
                     ) : (
-                      "resolved"
+                      <span>
+                        resolved
+                        {i.preventableByPrompt && (
+                          <span className="prov" style={{ display: "block" }}>
+                            {i.preventableByPrompt.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </span>
                     )}
                   </td>
                 </tr>
