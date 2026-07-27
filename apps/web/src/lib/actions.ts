@@ -39,6 +39,25 @@ function refuse(householdId: string | null | undefined, reason: RefusalReason): 
   refuseTo(householdId ? `/oversight/${householdId}` : "/oversight", reason);
 }
 
+/**
+ * G-29 completion for dual-surface actions: verdicts land where the
+ * operator stands. The allowlist is exact - /visit, or the drill-in of
+ * the SAME household the form names; anything else falls back to the
+ * drill-in. Never a raw redirect target.
+ */
+function resolveReturnTo(raw: string, householdId: string): string {
+  if (raw === "/visit") return "/visit";
+  if (householdId && raw === `/oversight/${householdId}`) return raw;
+  return householdId ? `/oversight/${householdId}` : "/oversight";
+}
+
+/** Success made legible: redirect with what was recorded + a nonce that
+ * remounts the form's selects (an uncontrolled select keeps its DOM value
+ * across re-renders - G-39). */
+function recordedTo(path: string, what: string): never {
+  redirect(`${path}?recorded=${encodeURIComponent(what)}&r=${randomUUID().slice(0, 8)}`);
+}
+
 /** The reasons a drill-in action can refuse. Keep in sync with REFUSALS in the drill-in page. */
 export type RefusalReason =
   | "bad-input"      // the form arrived incomplete or malformed
@@ -687,6 +706,7 @@ export async function createIncident(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/oversight");
+  recordedTo(`/oversight/${householdId}`, `${kind.replace(/_/g, " ")} incident (open)`);
 }
 
 /** Resolving stamps the note and closer; the row itself never changes. */
@@ -845,16 +865,21 @@ export async function createTriggerRule(formData: FormData) {
  */
 export async function createTimeEntry(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
+  // G-29 completion: this action submits from TWO surfaces (/visit and the
+  // drill-in), so its verdicts - refusal AND success - must land on the
+  // page the operator is standing on. returnTo is allowlisted, never
+  // trusted raw: an HM's refusal must not strand them on a corporate URL.
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
   const category = String(formData.get("category") ?? "");
   const CATEGORIES = ["delivery", "travel", "intake", "admin", "training"] as const;
-  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) return;
+  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
   const start = new Date(String(formData.get("startedAt") ?? ""));
   const end = new Date(String(formData.get("endedAt") ?? ""));
-  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) return;
+  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) refuseTo(returnTo, "bad-input");
   const minutes = Math.round((+end - +start) / 60_000);
-  if (minutes > 24 * 60) return; // a single entry over a day is a typo, not a shift
+  if (minutes > 24 * 60) refuseTo(returnTo, "bad-input"); // an entry over a day is a typo, not a shift
   const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
   const { timeEntry } = await import("@wellkept/schema");
   await db.insert(timeEntry).values({
@@ -864,6 +889,7 @@ export async function createTimeEntry(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
+  recordedTo(returnTo, `${category} time, ${minutes} min`);
 }
 
 /**
@@ -874,18 +900,19 @@ export async function createTimeEntry(formData: FormData) {
  */
 export async function createCostEntry(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
   const category = String(formData.get("category") ?? "");
   const CATEGORIES = ["supplies", "materials", "mileage", "other"] as const;
-  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) return;
+  if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
   // Money in integer cents (DEV-004 S3); accept "12.50" style input.
   const amountRaw = String(formData.get("amount") ?? "").trim();
   const amount = Number.parseFloat(amountRaw);
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000) return;
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000) refuseTo(returnTo, "bad-input");
   const amountCents = Math.round(amount * 100);
   const incurredOn = String(formData.get("incurredOn") ?? "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(incurredOn)) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(incurredOn)) refuseTo(returnTo, "bad-input");
   const milesRaw = String(formData.get("miles") ?? "").trim();
   const miles = category === "mileage" && /^\d{1,4}$/.test(milesRaw) ? Number.parseInt(milesRaw, 10) : null;
   const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
@@ -896,6 +923,7 @@ export async function createCostEntry(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
+  recordedTo(returnTo, `${category} cost, $${(amountCents / 100).toFixed(2)}`);
 }
 
 /**

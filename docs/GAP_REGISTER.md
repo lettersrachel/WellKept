@@ -919,9 +919,16 @@ as refusal** — `recordMembershipEvent` and `setReferralSource` redirect
 with `?recorded=…` and the drill-in renders a green confirmation; no green
 line means no write, ending the phantom-row ambiguity that burned three
 diagnostic rounds. The refusal banner is sticky now too — a mid-page
-operator can't miss either verdict. REMAINING: the same key-guard sweep
-for the app's other uncontrolled selects (time/cost categories, incident
-forms, exclusion forms) — same trap, lower stakes since none of those
-selects change a record's MEANING; apply on next touch of each surface.
+operator can't miss either verdict. The sweep landed the same day:
+key guards on the drill-in's time/cost/incident/exclusion/assign-role
+selects and the visit page's time/cost selects (nonce-remounted via the
+success redirect); createTimeEntry/createCostEntry gained an allowlisted
+returnTo so verdicts — refusal AND success — land on the surface the
+operator is standing on (an HM's refusal no longer redirects to a
+corporate URL they cannot see), and createIncident gained the green
+confirmation. G-29's still-deferred surfaces after this: proposeEdit
+(client page — needs client-appropriate language, not the corporate
+banner), recordPromptOutcome (its answered-state is already visible
+inline), and setMonthlyRate (economics page).
 The two mis-kinded fixture rows stay (append-only; they are fixture test
 data and harmless).
