@@ -17,6 +17,15 @@ export default async function VerifyRequest({
       <div className="note">
         A sign-in link is on its way. The link and code expire in 1 hour and work once.
       </div>
+      {/* G-30: a delivered email can still land in spam or arrive late —
+          observed 2026-07-25 (Resend showed delivered; the inbox didn't).
+          Requesting again is safe and cheap; say so instead of leaving a
+          waiting user to conclude sign-in is broken. */}
+      <div className="note">
+        Nothing after two minutes? Check your spam or promotions folder, then request
+        another link from the <Link href="/signin">sign-in page</Link> — it happens, and
+        a fresh request is always safe.
+      </div>
       {error === "bad-code" && (
         <div className="note" style={{ color: "var(--brick)" }}>
           That code did not work. Codes are used up by a click on the link, and expire after an

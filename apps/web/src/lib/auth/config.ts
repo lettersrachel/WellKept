@@ -90,6 +90,12 @@ async function sendMagicLink({ identifier, url, token }: { identifier: string; u
   if (!res.ok) {
     throw new Error(`magic-link email failed: ${res.status} ${await res.text().catch(() => "")}`);
   }
+  // G-30: log Resend's message id (no recipient — the id looks up the full
+  // record in the Resend dashboard). The 2026-07-25 "silent drop" turned
+  // out to be delivered-but-not-seen; this line makes the next report
+  // diagnosable in one dashboard search instead of a day of guessing.
+  const { id } = (await res.json().catch(() => ({}))) as { id?: string };
+  console.log(`magic-link accepted by resend: id=${id ?? "(no id returned)"}`);
 }
 
 const DEV_SECRET = "dev-only-secret-do-not-use-in-production-000000";
