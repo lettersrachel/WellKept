@@ -11,8 +11,9 @@ it — this is the checklist, not the deed.
    sealed envelope you prepare the same day (copy the values from your
    password manager; never email or message them; shred any working paper).
 2. **The counsel packet**: `docs/legal/COUNSEL_PACKET.md` printed or
-   shared, plus the three drafts (`household-consent.md`,
-   `privacy-notice.md`, `staff-confidentiality.md`).
+   shared, plus the four drafts (`household-consent.md`,
+   `privacy-notice.md`, `staff-confidentiality.md`,
+   `staff-records-disclosure.md`).
 3. **A laptop that can reach Neon and the repo** — the rewrap drill and
    the restore drill happen the same afternoon, while everything is fresh.
 
