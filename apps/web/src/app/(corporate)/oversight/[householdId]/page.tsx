@@ -65,11 +65,6 @@ export default async function Oversight({ params, searchParams }: {
     .where(and(eq(costEntry.householdId, hh.id), gte(costEntry.incurredOn, since30.toISOString().slice(0, 10))))
     .orderBy(desc(costEntry.incurredOn))
     .limit(20);
-  // TEMP diagnostic (G-38, 2026-07-27): the deployed card rendered its
-  // empty state while this exact query verifiably returns rows. Log what
-  // THIS render sees so the next log capture names the mechanism instead
-  // of guessing. Remove once G-38 closes.
-  console.log(`[g38] tc-card hh=${hh.id} timeRows=${timeRows.length} costs=${recentCosts.length} since=${since30.toISOString()}`);
   // Addendum A1 T4: corporate sees every bound provision, source notes included.
   const seedReviewed = await standardsSeedReviewed();
   const provisionsFor = (f: Record<string, unknown>) =>

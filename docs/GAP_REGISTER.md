@@ -853,3 +853,35 @@ contradiction is unexplained and deliberately not guessed at. A TEMP
 `[g38]` diagnostic log line now rides the page render; the next log
 capture during a drill-in load should name the mechanism. Remove the log
 line when this closes.
+
+**CLOSED 2026-07-27 — not a code defect; the card is correct.** The log
+capture on dpl_C3BeJdVm (main e6872af) answered it in one load:
+
+    [g38] tc-card hh=8a4b9786-… timeRows=2 costs=1 since=2026-06-27T15:22:02.056Z
+    [g38] tc-card hh=7ed45b9b-… timeRows=2 costs=0 since=2026-06-27T15:22:13.167Z
+
+The render sees the rows, and on that same freshly loaded page both cards
+displayed their hours — the fixture `intake 4.0h`, matching 241 minutes in
+the database exactly. No errors under either render. The query, the
+connection, the `Map` fold, and the empty-state ternary are all sound; two
+theories floated during triage (a missing `revalidatePath`, then the fold
+dropping rows) were both wrong. TEMP log line removed this commit.
+
+**What the empty readings were is NOT established, and the ticket is kept
+for that reason.** They were real and repeated, across two households and
+two deployments. Everything measured is consistent with the browser
+holding pre-deploy state, which would make this the FOURTH instance in one
+session after G-29's approval clicks, the photo toggles, and the first
+time entry. One difference matters: those three were stale *writes* (dead
+server-action ids, submissions discarded), while this was a stale *read* —
+correct data, correct query, stale pixels, nothing submitted at all. G-29's
+refusal banners cannot catch it, because nothing was refused.
+
+The uncomfortable part is that step zero WAS performed before the readings
+that came back empty, exactly as in check 11 where the first hard reload
+did not take and the second did. Step zero is a human procedure and it is
+not reliably achieving what it asks for; a background tab or bfcache
+defeats it. See G-37 — the app detecting version skew and forcing its own
+reload is the durable answer, and this ticket is the fourth data point for
+it. If a card ever reads empty against present data again, capture the log
+BEFORE reloading: that is the one measurement this round could not take.
