@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     <div className="card" style={{ maxWidth: 640, margin: "40px auto" }}>
       <h2>Privacy notice</h2>
       <div className="note">
-        Pilot edition, last updated July 24, 2026. Well Kept Home Operations
+        Pilot edition, last updated July 27, 2026. Well Kept Home Operations
         Management LLC (&ldquo;Well Kept,&rdquo; &ldquo;we&rdquo;). Contact:
         lettersrachel@gmail.com.
       </div>
@@ -20,8 +20,14 @@ export default function PrivacyPage() {
         Household operating details (routines, preferences, standards, layout) to run your
         household; secured details (access codes, alarm info) to care for the home, held
         encrypted with every access logged; visit records (tasks, hours, notes, photos) for
-        service delivery and accountability; practical data (important dates, vendors,
-        appliances, subscriptions) to anticipate needs; and account activity (name, email,
+        service delivery and accountability; service records (incident and complaint
+        records, and staff responses to service reminders) for accountability and service
+        quality; practical data (important dates, vendors,
+        appliances, subscriptions) to anticipate needs; service time and costs (time spent
+        serving your household by activity, and costs incurred in serving it; a receipt
+        photo, where one is captured, is stored and retained exactly like a visit photo);
+        your membership record (how you found us, and your membership history); and
+        account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product
         is not designed to hold them.
@@ -53,7 +59,13 @@ export default function PrivacyPage() {
       <h2 style={{ marginTop: 18 }}>How long we keep it</h2>
       <div className="fval">
         We retain records for the life of your service and, for continuity and
-        accountability, may keep archived copies afterward. To ask about retention or
+        accountability, may keep archived copies afterward. Some records we keep by
+        default even when a household asks us to delete its information, because they are
+        our business and employment records: the access log, incident and complaint
+        records, records of staff time and service costs, your membership history, and the
+        general category of how you found us. When we act on a deletion request, the
+        free-text notes those retained records carry are removed along with everything
+        else personal to your household. To ask about retention or
         request deletion, contact us at the address above.
       </div>
 

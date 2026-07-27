@@ -44,9 +44,20 @@
  *  - membership_event: rows KEPT by default (commercial history is a
  *    business record); cancellation reasons (free text) are blanked.
  *    --erase-membership-history deletes the rows if counsel directs.
- *  - household.referral_source / referral_note: CLEARED by default - how a
- *    household found us is personal data with no business-record claim
- *    once the household is erased.
+ *  - household.referral_note: CLEARED (frequently names a third party).
+ *    referral_source is RETAINED (founder decision 2026-07-27, session H):
+ *    the channel is a fact about our marketing with no identifying
+ *    detail, and clearing it would silently bias acquisition history
+ *    toward retained households. Counsel confirms the split.
+ *  - anticipation_exclusion: rows kept (structure), reason and target
+ *    blanked - both are personal (what not to raise, and about whom).
+ *  - notification: DELETED - ephemeral UX rows whose titles carry the
+ *    household name; no business-record claim.
+ *  - field_event_outbox: DELETED - transient trigger-delivery rows whose
+ *    payloads carry actual field values.
+ *  - trigger_rule (household-scoped only): kept and disabled, definition
+ *    replaced with an erased stub (rules never hard-delete; fleet-level
+ *    rules are untouched).
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -74,7 +85,7 @@ const householdId = args.find((a) => !a.startsWith("--"));
 const url = process.env.DATABASE_URL;
 if (!url) { console.error("Set DATABASE_URL."); process.exit(1); }
 if (!householdId || !/^[0-9a-f-]{36}$/i.test(householdId)) {
-  console.error("Usage: node scripts/erase-household.mjs <household-uuid> [--commit] [--erase-incidents] [--scrub-audit-detail] [--override-holds] [--despite-open-incidents]");
+  console.error("Usage: node scripts/erase-household.mjs <household-uuid> [--commit] [--erase-incidents] [--scrub-audit-detail] [--override-holds] [--despite-open-incidents] [--erase-time-and-costs] [--erase-membership-history]");
   process.exit(1);
 }
 
@@ -119,6 +130,10 @@ const counts = {
   timeEntries: await count("SELECT count(*) n FROM time_entry WHERE household_id=$1"),
   costEntries: await count("SELECT count(*) n FROM cost_entry WHERE household_id=$1"),
   membershipEvents: await count("SELECT count(*) n FROM membership_event WHERE household_id=$1"),
+  exclusions: await count("SELECT count(*) n FROM anticipation_exclusion WHERE household_id=$1"),
+  notifications: await count("SELECT count(*) n FROM notification WHERE household_id=$1"),
+  outbox: await count("SELECT count(*) n FROM field_event_outbox WHERE household_id=$1"),
+  scopedRules: await count("SELECT count(*) n FROM trigger_rule WHERE household_id=$1"),
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
@@ -136,7 +151,8 @@ console.log(`  incident reports: ${ERASE_INCIDENTS ? `${counts.incidents} descri
 console.log(`  audit events: ${SCRUB_AUDIT ? "detail payloads WILL be scrubbed (--scrub-audit-detail)" : "kept intact (hashes, no values)"}`);
   console.log(`  time/cost entries: ${ERASE_TIME_COSTS ? `${counts.timeEntries}/${counts.costEntries} rows WILL be deleted (--erase-time-and-costs)` : `${counts.timeEntries}/${counts.costEntries} KEPT, notes blanked (employer/business records; receipt photos purge with photos above)`}`);
   console.log(`  membership events: ${ERASE_MEMBERSHIP ? `${counts.membershipEvents} rows WILL be deleted (--erase-membership-history)` : `${counts.membershipEvents} KEPT, cancellation reasons blanked (commercial history is a business record)`}`);
-  console.log(`  referral source + note: cleared (personal data, no business-record claim)`);
+  console.log(`  referral note: cleared (names third parties); referral CHANNEL retained (marketing fact, founder decision - counsel confirms)`);
+  console.log(`  exclusions: ${counts.exclusions} kept, reason+target blanked · notifications: ${counts.notifications} deleted · outbox rows: ${counts.outbox} deleted · household-scoped rules: ${counts.scopedRules} disabled+stubbed`);
 console.log(`  role assignments to delete (sessions revoked):             ${counts.roles}`);
 
 if (!COMMIT) {
@@ -182,6 +198,12 @@ try {
   } else {
     await c.query("UPDATE membership_event SET reason=NULL, updated_at=now() WHERE household_id=$1 AND reason IS NOT NULL", [householdId]);
   }
+  // Coverage guard additions (2026-07-27): the four tables the mechanical
+  // check found missing the day it was written (G-40 addendum).
+  await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
+  await c.query("DELETE FROM field_event_outbox WHERE household_id=$1", [householdId]);
+  await c.query(`UPDATE trigger_rule SET enabled=false, definition='{\"packName\":\"[erased]\",\"items\":[]}', updated_at=now() WHERE household_id=$1`, [householdId]);
   if (ERASE_INCIDENTS) {
     await c.query("UPDATE incident_report SET description=$2, resolution_note=CASE WHEN resolution_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   }
@@ -195,7 +217,7 @@ try {
     const { rows: [left] } = await c.query("SELECT count(*) n FROM household_role_assignment WHERE user_id=$1", [r.user_id]);
     if (Number(left.n) === 0) await c.query("DELETE FROM auth_session WHERE user_id=$1", [r.user_id]);
   }
-  await c.query("UPDATE household SET name=$2, membership_terms=NULL, referral_source=NULL, referral_note=NULL, archived_at=now(), updated_at=now() WHERE id=$1", [householdId, `Erased household ${householdId.slice(0, 8)}`]);
+  await c.query("UPDATE household SET name=$2, membership_terms=NULL, referral_note=NULL, archived_at=now(), updated_at=now() WHERE id=$1", [householdId, `Erased household ${householdId.slice(0, 8)}`]);
   // The erasure itself is the last audit entry the household ever gets.
   await c.query(
     `INSERT INTO audit_event (id, household_id, actor_user, actor_role, kind, detail, created_at, updated_at)
