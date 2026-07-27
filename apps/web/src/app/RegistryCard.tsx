@@ -18,6 +18,11 @@ interface Entry {
   keyDate: Date | null;
   cadence: string | null;
   sensitivity: string;
+  // G-49 part two: typed horizon inputs (optional; sweep derives dates).
+  installedAt?: Date | null;
+  lifespanMonths?: number | null;
+  maintenanceIntervalMonths?: number | null;
+  lastServicedAt?: Date | null;
 }
 
 interface Observation {
@@ -62,6 +67,10 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
                 d.window && `${d.window}`,
                 e.keyDate && fmt(e.keyDate),
                 e.cadence,
+                e.installedAt && `installed ${fmt(e.installedAt)}`,
+                e.lifespanMonths && `${e.lifespanMonths}mo lifespan`,
+                e.lastServicedAt && `serviced ${fmt(e.lastServicedAt)}`,
+                e.maintenanceIntervalMonths && `service every ${e.maintenanceIntervalMonths}mo`,
               ].filter(Boolean);
               // G-49: a series reads as its trajectory — "condition 4 → 3"
               // is the prediction a single state can never be.

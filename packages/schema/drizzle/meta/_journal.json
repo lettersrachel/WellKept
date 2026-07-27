@@ -169,6 +169,13 @@
       "when": 1785194306679,
       "tag": "0023_strange_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785194771937,
+      "tag": "0024_magical_vulcan",
+      "breakpoints": true
     }
   ]
 }

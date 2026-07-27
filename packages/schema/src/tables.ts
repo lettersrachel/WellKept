@@ -501,6 +501,14 @@ export const registryEntry = pgTable("registry_entry", {
   detail: jsonb("detail").notNull().default({}),
   keyDate: timestamp("key_date", { withTimezone: true }),
   cadence: text("cadence"),
+  // G-49 part two (intake-capture review §1): the horizon-derivation
+  // inputs the instruments collect. A maintained key_date rots the first
+  // time nobody updates it; these compute the same dates from facts that
+  // only change when the world does. key_date, when set, still wins.
+  installedAt: timestamp("installed_at", { withTimezone: true }),
+  lifespanMonths: integer("lifespan_months"),
+  maintenanceIntervalMonths: integer("maintenance_interval_months"),
+  lastServicedAt: timestamp("last_serviced_at", { withTimezone: true }),
   sensitivity: sensitivityEnum("sensitivity").notNull().default("s1"),
   sourceFieldId: uuid("source_field_id"),
   tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }), // tombstone, never delete

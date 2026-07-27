@@ -82,3 +82,66 @@ test("load signal: exactly three consecutive drift reports, none breaks the run 
   assert.equal(detectLoadSignal(["a", "b", "c", "none"]), true); // older held visit is history
   assert.equal(detectLoadSignal([]), false);
 });
+
+// --- G-49 part two: derived dates from typed inputs (nothing to rot) ---
+
+const D = (kind: string, label: string, extra: Partial<RegistryEntryLike>): RegistryEntryLike =>
+  ({ id: label, householdId: "hh-1", kind, label, keyDate: null, cadence: null, ...extra });
+
+test("appliance maintenance derives from last_serviced + interval and enters the T-14 window", () => {
+  // Serviced 2026-01-25, 6-month interval → due 2026-07-25, six days from NOW.
+  const drafts = sweepRegistryDates(
+    [D("appliance", "HVAC", { lastServicedAt: new Date("2026-01-25T13:00:00Z"), maintenanceIntervalMonths: 6 })],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(drafts.length, 1);
+  assert.match(drafts[0]!.itemText, /Maintenance due: HVAC \(July 25\)/);
+  assert.equal(drafts[0]!.packName, "appliance-radar");
+});
+
+test("an overdue service interval rolls to the NEXT due date instead of vanishing", () => {
+  // Serviced 2025-01-10, 6-month interval: 2025-07-10 and 2026-01-10 have
+  // passed; the next cycle (2026-07-10 → wait, also past NOW 07-19)… the
+  // derivation must land on 2027-01-10, which is beyond T-14, so no draft
+  // yet — but the occurrence itself must be in the future, never skipped.
+  const drafts = sweepRegistryDates(
+    [D("appliance", "Water heater", { lastServicedAt: new Date("2025-01-10T13:00:00Z"), maintenanceIntervalMonths: 6 })],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(drafts.length, 0); // next due 2027-01-10, not in window yet
+});
+
+test("horizon end-of-life derives from installed + lifespan when no key_date is maintained", () => {
+  // Installed 2016-08-10, 120-month lifespan → 2026-08-10, 22 days out: inside T-30.
+  const drafts = sweepRegistryDates(
+    [D("horizon", "Roof (asphalt)", { installedAt: new Date("2016-08-10T13:00:00Z"), lifespanMonths: 120 })],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(drafts.length, 1);
+  assert.match(drafts[0]!.itemText, /Transition ahead: Roof \(asphalt\) \(August 10\)/);
+});
+
+test("an appliance with installed + lifespan derives end-of-life too; explicit key_date still wins for the entry's own kind", () => {
+  const eol = sweepRegistryDates(
+    [D("appliance", "Dishwasher", { installedAt: new Date("2016-08-01T13:00:00Z"), lifespanMonths: 120 })],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(eol.length, 1);
+  assert.equal(eol[0]!.packName, "horizon-radar");
+  // With an explicit key_date on a horizon entry, typed inputs do not add a
+  // second, contradictory end-of-life date.
+  const explicit = sweepRegistryDates(
+    [{ ...D("horizon", "Boiler", { installedAt: new Date("2016-08-01T13:00:00Z"), lifespanMonths: 120 }), keyDate: new Date("2026-08-05T13:00:00Z") }],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(explicit.length, 1);
+  assert.match(explicit[0]!.itemText, /August 5/); // the maintained date, not the derived one
+});
+
+test("typed inputs alone never fire for kinds that do not imply dates", () => {
+  const drafts = sweepRegistryDates(
+    [D("vendor", "Plumber", { installedAt: new Date("2016-08-01T13:00:00Z"), lifespanMonths: 120 })],
+    { now: NOW, statusTag: "STEADY" },
+  );
+  assert.equal(drafts.length, 0);
+});
