@@ -742,6 +742,27 @@ operator sees a click that does nothing and cannot distinguish "refused" from
 now warns about it (this commit); the action itself still needs a visible
 refusal (redirect with an error param, matching the signin pattern).
 
+**FIXED this commit, for the two corporate surfaces.** `refuse()` /
+`refuseTo()` in `actions.ts` replace the bare `return` with a redirect
+carrying `?refused=<reason>`; `<RefusalBanner>` renders it. Reasons are a
+typed union (`bad-input`, `forbidden`, `not-pending`, `missing`,
+`gate-unmet`, `self-target`) so a new guard cannot invent an undescribed
+one. Fail-closed behaviour is UNCHANGED — every guard still refuses and no
+refusal path writes; only the operator's feedback changed. Covered: every
+action on the drill-in (`reviewEdit`, `setStatusTag`, `setVaultValue`,
+`queueGesture`, `gestureGate`, `executeGesture`, `assignRole`, `revokeRole`,
+`promoteDot`, `forceSignOut`, `resetTotp`, `recordHouseholdConsent`,
+`createAnticipationExclusion`, `endAnticipationExclusion`, `createIncident`,
+`resolveIncident`, `setPhotoRetentionHold`, `setPhotoReuseAllowed`) and both
+on `/oversight/triggers`.
+
+**Still silent, deliberately deferred:** `proposeEdit` (client page),
+`logStrangerTest` / `captureField` / `recordPromptOutcome` (visit page),
+`setMonthlyRate` (economics page), and `createTimeEntry` / `createCostEntry`
+(rendered on BOTH the visit page and the drill-in, so the refusal target is
+ambiguous and needs a `returnTo` before it can be wired). Each needs a
+banner on its own surface; the helper is written to extend to them.
+
 ### G-30. A dropped Resend send returns the success page
 Observed live: the first magic-link request produced no email AND no
 `error=send-failed` — the failing send returned the normal `/verify-request`

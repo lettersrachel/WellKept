@@ -13,6 +13,7 @@ import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, ge
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
+import { RefusalBanner } from "@/components/RefusalBanner";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default: this page makes many sequential DB
@@ -25,8 +26,14 @@ export const maxDuration = 60;
 const TAGS = ["STEADY", "ONBOARDING-90", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW", "CHAMPION"];
 
 /** Corporate oversight (REQ-041..046): full record, fully audited. */
-export default async function Oversight({ params }: { params: Promise<{ householdId: string }> }) {
+export default async function Oversight({ params, searchParams }: {
+  params: Promise<{ householdId: string }>;
+  // G-29: actions redirect here with ?refused=<reason> instead of returning
+  // silently, so a declined click is legible instead of looking broken.
+  searchParams: Promise<{ refused?: string }>;
+}) {
   const { householdId } = await params;
+  const { refused } = await searchParams;
   const { hh, principal } = await getHouseholdAndPrincipalById(householdId);
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
@@ -92,6 +99,7 @@ export default async function Oversight({ params }: { params: Promise<{ househol
 
   return (
     <>
+      <RefusalBanner reason={refused} />
       <div className="card">
         <div className="row" style={{ alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <h2 style={{ flex: 1 }}>

@@ -2,6 +2,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
@@ -13,17 +14,51 @@ import { isClientEditable } from "./client-allowlist";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
+/**
+ * G-29: a refused action must SAY it refused.
+ *
+ * These guards used to `return` silently. A silent return is
+ * indistinguishable from a broken button — the operator sees a click that
+ * does nothing and cannot tell "the system declined this" from "the system
+ * is down". That ambiguity cost the 2026-07-27 smoke run three false
+ * failures and two days of misdiagnosis, so refusal is now visible.
+ *
+ * Convention mirrors the signin routes' `?error=`: redirect back to the
+ * surface the operator is standing on, carrying a reason the page renders.
+ * `redirect()` throws by design — it must not be called inside a try/catch,
+ * and its `never` return type is what lets these replace a bare `return`.
+ *
+ * Fail-closed behaviour is UNCHANGED: every guard still refuses, and no
+ * refusal path writes. Only the operator's feedback changes.
+ */
+function refuseTo(path: string, reason: RefusalReason): never {
+  redirect(`${path}?refused=${reason}`);
+}
+
+function refuse(householdId: string | null | undefined, reason: RefusalReason): never {
+  refuseTo(householdId ? `/oversight/${householdId}` : "/oversight", reason);
+}
+
+/** The reasons a drill-in action can refuse. Keep in sync with REFUSALS in the drill-in page. */
+export type RefusalReason =
+  | "bad-input"      // the form arrived incomplete or malformed
+  | "forbidden"      // the actor lacks the role this action requires
+  | "not-pending"    // the target was already reviewed/executed by someone else
+  | "missing"        // the target row no longer exists
+  | "gate-unmet"     // a precondition gate (cultural fit, HM notified) is not satisfied
+  | "self-target";   // refused to act on your own account (lockout guard)
+
 /** Corporate sets the household status tag (REQ-041); every change audited. */
 export async function setStatusTag(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
-  if (!householdId) return;
+  if (!householdId) refuse(null, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden"); // fail closed
   const tag = String(formData.get("statusTag") ?? "");
   const VALID = ["ONBOARDING-90", "STEADY", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW", "CHAMPION"] as const;
-  if (!(VALID as readonly string[]).includes(tag)) return;
+  if (!(VALID as readonly string[]).includes(tag)) refuse(householdId, "bad-input");
   const prior = await db.select().from(household).where(eq(household.id, householdId));
-  if (!prior[0]) return;
+  if (!prior[0]) refuse(householdId, "missing");
   await db.update(household)
     .set({ statusTag: tag as (typeof VALID)[number], updatedAt: new Date() })
     .where(eq(household.id, householdId));
@@ -87,16 +122,19 @@ export async function proposeEdit(formData: FormData) {
 export async function reviewEdit(formData: FormData) {
   const editId = String(formData.get("editId") ?? "");
   const decision = String(formData.get("decision") ?? "");
-  if (!editId || (decision !== "approved" && decision !== "declined")) return;
+  if (!editId || (decision !== "approved" && decision !== "declined")) refuse(null, "bad-input");
   const rows = await db.select().from(clientEdit).where(eq(clientEdit.id, editId));
   const edit = rows[0];
-  if (!edit || edit.status !== "pending") return;
+  if (!edit) refuse(null, "missing");
+  // The case that bit the smoke run: the edit was already reviewed (often by
+  // a second click, or a stale page re-submitting), so this call is a no-op.
+  if (edit.status !== "pending") refuse(edit.householdId, "not-pending");
   const principal = await getPrincipal(edit.householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(edit.householdId, "forbidden");
   if (decision === "approved") {
     const frows = await db.select().from(playbookField).where(eq(playbookField.id, edit.fieldId));
     const f = frows[0];
-    if (!f) return;
+    if (!f) refuse(edit.householdId, "missing");
     const event = {
       householdId: f.householdId, fieldId: f.id, fieldName: f.name,
       section: f.section, newValue: edit.proposedValue, changedAt: new Date().toISOString(),
@@ -133,12 +171,13 @@ export async function reviewEdit(formData: FormData) {
 export async function setVaultValue(formData: FormData) {
   const fieldId = String(formData.get("fieldId") ?? "");
   const value = String(formData.get("vaultValue") ?? "").trim();
-  if (!fieldId || !value) return;
+  if (!fieldId || !value) refuse(null, "bad-input");
   const rows = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
   const f = rows[0];
-  if (!f || f.sensitivity !== "s3") return; // the vault accepts s3 only
+  if (!f) refuse(null, "missing");
+  if (f.sensitivity !== "s3") refuse(f.householdId, "bad-input"); // the vault accepts s3 only
   const principal = await getPrincipal(f.householdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuse(f.householdId, "forbidden"); // fail closed
   await vaultWrite(f.householdId, fieldId, value);
   await db.insert(auditEvent).values({
     id: randomUUID(),
@@ -183,9 +222,9 @@ export async function queueGesture(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
   const idea = String(formData.get("idea") ?? "").trim();
   const sourceDotId = String(formData.get("dotId") ?? "");
-  if (!householdId || !idea) return;
+  if (!householdId || !idea) refuse(householdId || null, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden");
   await db.insert(gesture).values({
     id: randomUUID(),
     householdId,
@@ -199,13 +238,14 @@ export async function queueGesture(formData: FormData) {
 export async function gestureGate(formData: FormData) {
   const gestureId = String(formData.get("gestureId") ?? "");
   const gate = String(formData.get("gate") ?? "");
-  if (!gestureId || (gate !== "cultural_fit" && gate !== "hm_notified")) return;
+  if (!gestureId || (gate !== "cultural_fit" && gate !== "hm_notified")) refuse(null, "bad-input");
   const [g] = await db.select().from(gesture).where(eq(gesture.id, gestureId));
-  if (!g || g.executedAt) return;
+  if (!g) refuse(null, "missing");
+  if (g.executedAt) refuse(g.householdId, "not-pending");
   const principal = await getPrincipal(g.householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(g.householdId, "forbidden");
   // HM notification only after cultural fit passed (the gate ORDER is the rule)
-  if (gate === "hm_notified" && !g.culturalFitChecked) return;
+  if (gate === "hm_notified" && !g.culturalFitChecked) refuse(g.householdId, "gate-unmet");
   await db.update(gesture)
     .set(gate === "cultural_fit" ? { culturalFitChecked: true, updatedAt: new Date() } : { hmNotified: true, updatedAt: new Date() })
     .where(eq(gesture.id, gestureId));
@@ -216,12 +256,13 @@ export async function gestureGate(formData: FormData) {
 export async function executeGesture(formData: FormData) {
   const gestureId = String(formData.get("gestureId") ?? "");
   const costCents = Math.round(Number(formData.get("costDollars") ?? 0) * 100);
-  if (!gestureId) return;
+  if (!gestureId) refuse(null, "bad-input");
   const [g] = await db.select().from(gesture).where(eq(gesture.id, gestureId));
-  if (!g || g.executedAt) return;
+  if (!g) refuse(null, "missing");
+  if (g.executedAt) refuse(g.householdId, "not-pending");
   const principal = await getPrincipal(g.householdId);
-  if (principal?.role !== "corporate_admin") return;
-  if (!g.culturalFitChecked || !g.hmNotified) return; // both gates or nothing
+  if (principal?.role !== "corporate_admin") refuse(g.householdId, "forbidden");
+  if (!g.culturalFitChecked || !g.hmNotified) refuse(g.householdId, "gate-unmet"); // both gates or nothing
   await db.update(gesture)
     .set({ executedAt: new Date(), costCents: Number.isFinite(costCents) ? costCents : null, updatedAt: new Date() })
     .where(eq(gesture.id, gestureId));
@@ -241,15 +282,15 @@ export async function assignRole(formData: FormData) {
   const role = String(formData.get("role") ?? "");
   const ndaApproved = formData.get("ndaApproved") === "on";
   const VALID_ROLES = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
-  if (!householdId || !email || !VALID_ROLES.includes(role)) return;
+  if (!householdId || !email || !VALID_ROLES.includes(role)) refuse(householdId || null, "bad-input");
   const actor = await getPrincipal(householdId);
-  if (actor?.role !== "corporate_admin") return; // only admins provision
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+  if (actor?.role !== "corporate_admin") refuse(householdId, "forbidden"); // only admins provision
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) refuse(householdId, "bad-input");
 
   const { authUser, householdRoleAssignment } = await import("@wellkept/schema");
   await db.insert(authUser).values({ id: randomUUID(), email, name: null }).onConflictDoNothing({ target: authUser.email });
   const [user] = await db.select().from(authUser).where(eq(authUser.email, email));
-  if (!user) return;
+  if (!user) refuse(householdId, "missing");
   // One role per (user, household): update in place if the row exists.
   const existing = await db.select().from(householdRoleAssignment)
     .where(and(eq(householdRoleAssignment.userId, user.id), eq(householdRoleAssignment.householdId, householdId)));
@@ -272,13 +313,13 @@ export async function assignRole(formData: FormData) {
 export async function revokeRole(formData: FormData) {
   const assignmentId = String(formData.get("assignmentId") ?? "");
   const householdId = String(formData.get("householdId") ?? "");
-  if (!assignmentId || !householdId) return;
+  if (!assignmentId || !householdId) refuse(householdId || null, "bad-input");
   const actor = await getPrincipal(householdId);
-  if (actor?.role !== "corporate_admin") return;
+  if (actor?.role !== "corporate_admin") refuse(householdId, "forbidden");
   const { householdRoleAssignment } = await import("@wellkept/schema");
   const [row] = await db.select().from(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
-  if (!row || row.householdId !== householdId) return;
-  if (row.userId === actor.userId) return; // never revoke your own admin here (lockout guard)
+  if (!row || row.householdId !== householdId) refuse(householdId, "missing");
+  if (row.userId === actor.userId) refuse(householdId, "self-target"); // never revoke your own admin here (lockout guard)
   await db.delete(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
@@ -297,15 +338,16 @@ export async function promoteDot(formData: FormData) {
   const dotId = String(formData.get("dotId") ?? "");
   const fieldId = String(formData.get("fieldId") ?? "");
   const value = String(formData.get("value") ?? "").trim();
-  if (!dotId || !fieldId || !value) return;
+  if (!dotId || !fieldId || !value) refuse(null, "bad-input");
   const { dot, playbookField } = await import("@wellkept/schema");
   const [d] = await db.select().from(dot).where(eq(dot.id, dotId));
-  if (!d || d.promotedFieldId) return;
+  if (!d) refuse(null, "missing");
+  if (d.promotedFieldId) refuse(d.householdId, "not-pending");
   const actor = await getPrincipal(d.householdId);
-  if (actor?.role !== "corporate_admin") return;
+  if (actor?.role !== "corporate_admin") refuse(d.householdId, "forbidden");
   const [f] = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
-  if (!f || f.householdId !== d.householdId) return;
-  if (f.sensitivity === "s3") return; // s3 goes through the vault, never a dot merge
+  if (!f || f.householdId !== d.householdId) refuse(d.householdId, "missing");
+  if (f.sensitivity === "s3") refuse(d.householdId, "bad-input"); // s3 goes through the vault, never a dot merge
 
   const event = {
     householdId: d.householdId, fieldId: f.id, fieldName: f.name,
@@ -336,10 +378,10 @@ export async function promoteDot(formData: FormData) {
 export async function forceSignOut(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
   const targetUserId = String(formData.get("userId") ?? "");
-  if (!householdId || !targetUserId) return;
+  if (!householdId || !targetUserId) refuse(householdId || null, "bad-input");
   const actor = await getPrincipal(householdId);
-  if (actor?.role !== "corporate_admin") return;
-  if (targetUserId === actor.userId) return; // don't sign yourself out here
+  if (actor?.role !== "corporate_admin") refuse(householdId, "forbidden");
+  if (targetUserId === actor.userId) refuse(householdId, "self-target"); // don't sign yourself out here
   const { authSession } = await import("@wellkept/schema");
   const killed = await db.delete(authSession).where(eq(authSession.userId, targetUserId)).returning({ t: authSession.sessionToken });
   await db.insert(auditEvent).values({
@@ -358,9 +400,9 @@ export async function forceSignOut(formData: FormData) {
 export async function resetTotp(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
   const targetUserId = String(formData.get("userId") ?? "");
-  if (!householdId || !targetUserId) return;
+  if (!householdId || !targetUserId) refuse(householdId || null, "bad-input");
   const actor = await getPrincipal(householdId);
-  if (actor?.role !== "corporate_admin") return;
+  if (actor?.role !== "corporate_admin") refuse(householdId, "forbidden");
   const { userTotp, userBackupCode, authSession } = await import("@wellkept/schema");
   await db.delete(userBackupCode).where(eq(userBackupCode.userId, targetUserId));
   await db.delete(userTotp).where(eq(userTotp.userId, targetUserId));
@@ -472,12 +514,14 @@ export async function setTriggerRuleEnabled(formData: FormData) {
   const ruleId = String(formData.get("ruleId") ?? "");
   const enabled = String(formData.get("enabled") ?? "") === "true";
   const anchorHouseholdId = String(formData.get("anchorHouseholdId") ?? "");
-  if (!ruleId || !anchorHouseholdId) return;
+  // This action lives on /oversight/triggers, not a drill-in — refuse back
+  // to the page the operator is actually standing on.
+  if (!ruleId || !anchorHouseholdId) refuseTo("/oversight/triggers", "bad-input");
   const principal = await getPrincipal(anchorHouseholdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuseTo("/oversight/triggers", "forbidden"); // fail closed
   const { triggerRule } = await import("@wellkept/schema");
   const [rule] = await db.select().from(triggerRule).where(eq(triggerRule.id, ruleId));
-  if (!rule) return;
+  if (!rule) refuseTo("/oversight/triggers", "missing");
   await db.update(triggerRule).set({ enabled, updatedAt: new Date() }).where(eq(triggerRule.id, ruleId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: anchorHouseholdId, actorUser: principal.userId, actorRole: principal.role,
@@ -495,16 +539,16 @@ export async function setTriggerRuleEnabled(formData: FormData) {
  */
 export async function recordHouseholdConsent(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
-  if (!householdId) return;
+  if (!householdId) refuse(null, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden"); // fail closed
   const signedAtRaw = String(formData.get("signedAt") ?? "");
   const docVersion = String(formData.get("docVersion") ?? "").trim().slice(0, 80);
   const signedAt = new Date(signedAtRaw);
-  if (!signedAtRaw || Number.isNaN(signedAt.getTime()) || !docVersion) return;
-  if (signedAt.getTime() > Date.now()) return; // consent is a fact, not a plan
+  if (!signedAtRaw || Number.isNaN(signedAt.getTime()) || !docVersion) refuse(householdId, "bad-input");
+  if (signedAt.getTime() > Date.now()) refuse(householdId, "bad-input"); // consent is a fact, not a plan
   const [hh] = await db.select().from(household).where(eq(household.id, householdId));
-  if (!hh) return;
+  if (!hh) refuse(householdId, "missing");
   await db.update(household)
     .set({ consentSignedAt: signedAt, consentDocVersion: docVersion, consentRecordedBy: principal.userId, updatedAt: new Date() })
     .where(eq(household.id, householdId));
@@ -582,17 +626,17 @@ export async function recordPromptOutcome(formData: FormData) {
  */
 export async function createAnticipationExclusion(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
-  if (!householdId) return;
+  if (!householdId) refuse(null, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (principal?.role !== "corporate_admin") return; // approval is corporate only, always
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden"); // approval is corporate only, always
   const SCOPES = ["rule", "topic", "person", "field", "all"];
   const REQUESTERS = ["client", "house_manager", "corporate"];
   const scope = String(formData.get("scope") ?? "");
   const target = String(formData.get("target") ?? "").trim().slice(0, 200);
   const requestedBy = String(formData.get("requestedBy") ?? "");
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || null; // s2
-  if (!SCOPES.includes(scope) || !REQUESTERS.includes(requestedBy)) return;
-  if (scope !== "all" && target.length < 2) return; // an empty target excludes nothing
+  if (!SCOPES.includes(scope) || !REQUESTERS.includes(requestedBy)) refuse(householdId, "bad-input");
+  if (scope !== "all" && target.length < 2) refuse(householdId, "bad-input"); // an empty target excludes nothing
   const { anticipationExclusion } = await import("@wellkept/schema");
   const id = randomUUID();
   await db.insert(anticipationExclusion).values({
@@ -616,9 +660,9 @@ export async function createAnticipationExclusion(formData: FormData) {
  */
 export async function createIncident(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
-  if (!householdId) return;
+  if (!householdId) refuse(null, "bad-input");
   const principal = await getPrincipal(householdId);
-  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuse(householdId, "forbidden");
   const KINDS = ["complaint", "breakage", "injury", "near_miss", "other"] as const;
   const SEVERITIES = ["low", "medium", "high"];
   const VIA = ["client_call", "client_email", "hm_visit", "corporate", "other"];
@@ -628,9 +672,9 @@ export async function createIncident(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim().slice(0, 2000);
   const occurredRaw = String(formData.get("occurredAt") ?? "");
   const occurredAt = new Date(occurredRaw);
-  if (!(KINDS as readonly string[]).includes(kind) || !SEVERITIES.includes(severity) || !VIA.includes(reportedVia)) return;
-  if (!description || !occurredRaw || Number.isNaN(occurredAt.getTime())) return;
-  if (occurredAt.getTime() > Date.now()) return; // an incident is a fact, not a forecast
+  if (!(KINDS as readonly string[]).includes(kind) || !SEVERITIES.includes(severity) || !VIA.includes(reportedVia)) refuse(householdId, "bad-input");
+  if (!description || !occurredRaw || Number.isNaN(occurredAt.getTime())) refuse(householdId, "bad-input");
+  if (occurredAt.getTime() > Date.now()) refuse(householdId, "bad-input"); // an incident is a fact, not a forecast
   const { incidentReport } = await import("@wellkept/schema");
   const id = randomUUID();
   await db.insert(incidentReport).values({
@@ -649,12 +693,13 @@ export async function createIncident(formData: FormData) {
 export async function resolveIncident(formData: FormData) {
   const incidentId = String(formData.get("incidentId") ?? "");
   const resolutionNote = String(formData.get("resolutionNote") ?? "").trim().slice(0, 2000);
-  if (!incidentId || !resolutionNote) return; // a resolution needs the outcome named
+  if (!incidentId || !resolutionNote) refuse(null, "bad-input"); // a resolution needs the outcome named
   const { incidentReport } = await import("@wellkept/schema");
   const [inc] = await db.select().from(incidentReport).where(eq(incidentReport.id, incidentId));
-  if (!inc || inc.status !== "open") return;
+  if (!inc) refuse(null, "missing");
+  if (inc.status !== "open") refuse(inc.householdId, "not-pending");
   const principal = await getPrincipal(inc.householdId);
-  if (principal?.role !== "corporate_admin") return; // closing is a corporate call
+  if (principal?.role !== "corporate_admin") refuse(inc.householdId, "forbidden"); // closing is a corporate call
   // Session B: the back-link question, answered by the resolver or left
   // blank (skippable — founder decision 2026-07-27). NEVER inferred: an
   // inferred link would manufacture a false-negative stream out of guesses.
@@ -686,13 +731,14 @@ export async function resolveIncident(formData: FormData) {
 export async function setPhotoRetentionHold(formData: FormData) {
   const photoId = String(formData.get("photoId") ?? "");
   const hold = String(formData.get("hold") ?? "") === "true";
-  if (!photoId) return;
+  if (!photoId) refuse(null, "bad-input");
   const { visitPhoto } = await import("@wellkept/schema");
   const [p] = await db.select({ id: visitPhoto.id, householdId: visitPhoto.householdId, purgedAt: visitPhoto.purgedAt })
     .from(visitPhoto).where(eq(visitPhoto.id, photoId));
-  if (!p || p.purgedAt) return;
+  if (!p) refuse(null, "missing");
+  if (p.purgedAt) refuse(p.householdId, "not-pending");
   const principal = await getPrincipal(p.householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(p.householdId, "forbidden");
   await db.update(visitPhoto).set({ retentionHold: hold }).where(eq(visitPhoto.id, photoId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: p.householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -710,16 +756,18 @@ export async function setPhotoRetentionHold(formData: FormData) {
 export async function setPhotoReuseAllowed(formData: FormData) {
   const photoId = String(formData.get("photoId") ?? "");
   const allow = String(formData.get("allow") ?? "") === "true";
-  if (!photoId) return;
+  if (!photoId) refuse(null, "bad-input");
   const { visitPhoto } = await import("@wellkept/schema");
   const [p] = await db.select({ id: visitPhoto.id, householdId: visitPhoto.householdId, purgedAt: visitPhoto.purgedAt })
     .from(visitPhoto).where(eq(visitPhoto.id, photoId));
-  if (!p || p.purgedAt) return; // nothing reusable about a purged photo
+  if (!p) refuse(null, "missing");
+  if (p.purgedAt) refuse(p.householdId, "not-pending"); // nothing reusable about a purged photo
   const principal = await getPrincipal(p.householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(p.householdId, "forbidden");
   if (allow) {
     const [hh] = await db.select({ isNda: household.isNda }).from(household).where(eq(household.id, p.householdId));
-    if (!hh || hh.isNda) return; // NDA household media is never reusable
+    if (!hh) refuse(p.householdId, "missing");
+    if (hh.isNda) refuse(p.householdId, "gate-unmet"); // NDA household media is never reusable
   }
   await db.update(visitPhoto).set({ reuseAllowed: allow }).where(eq(visitPhoto.id, photoId));
   await db.insert(auditEvent).values({
@@ -732,12 +780,13 @@ export async function setPhotoReuseAllowed(formData: FormData) {
 /** Ending an exclusion sets effective_to — nothing hard-deletes. Audited. */
 export async function endAnticipationExclusion(formData: FormData) {
   const exclusionId = String(formData.get("exclusionId") ?? "");
-  if (!exclusionId) return;
+  if (!exclusionId) refuse(null, "bad-input");
   const { anticipationExclusion } = await import("@wellkept/schema");
   const [x] = await db.select().from(anticipationExclusion).where(eq(anticipationExclusion.id, exclusionId));
-  if (!x || x.effectiveTo) return;
+  if (!x) refuse(null, "missing");
+  if (x.effectiveTo) refuse(x.householdId, "not-pending");
   const principal = await getPrincipal(x.householdId);
-  if (principal?.role !== "corporate_admin") return;
+  if (principal?.role !== "corporate_admin") refuse(x.householdId, "forbidden");
   await db.update(anticipationExclusion).set({ effectiveTo: new Date() }).where(eq(anticipationExclusion.id, exclusionId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: x.householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -749,9 +798,9 @@ export async function endAnticipationExclusion(formData: FormData) {
 
 export async function createTriggerRule(formData: FormData) {
   const anchorHouseholdId = String(formData.get("anchorHouseholdId") ?? "");
-  if (!anchorHouseholdId) return;
+  if (!anchorHouseholdId) refuseTo("/oversight/triggers", "bad-input");
   const principal = await getPrincipal(anchorHouseholdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuseTo("/oversight/triggers", "forbidden"); // fail closed
 
   const { provisionIdSchema } = await import("@wellkept/schema");
   const FAMILIES = ["roster_age", "calendar", "threshold", "signal", "relationship", "external"];
@@ -765,14 +814,14 @@ export async function createTriggerRule(formData: FormData) {
   for (const line of String(formData.get("items") ?? "").split("\n").map((l) => l.trim()).filter(Boolean)) {
     const [days, text, ref] = line.split("|").map((p) => p.trim());
     const offsetDays = Number(days);
-    if (!Number.isInteger(offsetDays) || offsetDays < 0 || offsetDays > 365) return;
-    if (!text || text.length < 8 || text.includes("\u2014")) return;
-    if (ref && !provisionIdSchema.safeParse(ref).success) return;
+    if (!Number.isInteger(offsetDays) || offsetDays < 0 || offsetDays > 365) refuseTo("/oversight/triggers", "bad-input");
+    if (!text || text.length < 8 || text.includes("\u2014")) refuseTo("/oversight/triggers", "bad-input");
+    if (ref && !provisionIdSchema.safeParse(ref).success) refuseTo("/oversight/triggers", "bad-input");
     items.push({ offsetDays, text, ...(ref ? { methodRef: ref } : {}) });
   }
-  if (!FAMILIES.includes(family)) return;
-  if (bindsToFieldName.length < 2 || packName.length < 2 || !/^[a-z0-9-]+$/.test(packName)) return;
-  if (items.length < 1 || items.length > 10) return;
+  if (!FAMILIES.includes(family)) refuseTo("/oversight/triggers", "bad-input");
+  if (bindsToFieldName.length < 2 || packName.length < 2 || !/^[a-z0-9-]+$/.test(packName)) refuseTo("/oversight/triggers", "bad-input");
+  if (items.length < 1 || items.length > 10) refuseTo("/oversight/triggers", "bad-input");
 
   const { triggerRule } = await import("@wellkept/schema");
   const ruleId = randomUUID();
