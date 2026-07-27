@@ -9,6 +9,9 @@ import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { RegistryCard } from "@/app/RegistryCard";
 
 export const dynamic = "force-dynamic";
+// Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
+// dependency must degrade the page, not silently truncate it mid-stream.
+export const maxDuration = 60;
 
 /**
  * The CEO master view: preview a household THROUGH another role's projection

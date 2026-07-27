@@ -725,3 +725,69 @@ real household," which is where LAUNCH already puts it.
 | G-26 | **DONE this commit, first half:** ADR-005 is now "Accepted in part" — the Guardrails section (including the no-real-s3 refusal) binds as of 2026-07-25; the custody brackets remain Proposed. **Second half was already satisfied:** `db:rewrap-kek`'s final line on a successful `--commit` has printed "update BOTH custody copies (ADR-005)" since it was built — the reviewer had the zip, not the source. |
 | G-27 | **Verified and tightened this commit.** Confirmed: the dump carries NO vault material at all — s3 values are structurally absent from field rows (vault law), so not even ciphertext leaves the DB. Still a plaintext record: the procedure now writes to /tmp, ends with `rm`, both dump filenames are gitignored, and the tool's header says who runs it and why it dies after the diff. |
 | G-28 | **Noted for the next brief.** The brief lives in the handoff zip, not the repo; rev 7's brief moves `seed:rules` to "with the deploy" and Neon retention/drill/paid tiers to "before the first real household," matching LAUNCH. |
+
+---
+
+## Deploy-run addendum (2026-07-27) — gaps the first production smoke run surfaced
+
+Found during the 2026-07-25/27 deploy session (migrations 0014–0017 live,
+12 of 14 checks passing at time of writing). Fixed-this-commit items say so;
+the rest are filed, not fixed.
+
+### G-29. Approval actions fail silently
+`reviewEdit` (and its siblings) early-return with NO user feedback when the
+edit is no longer pending, the role is wrong, or the input is invalid. The
+operator sees a click that does nothing and cannot distinguish "refused" from
+"broken" — this cost the smoke run two days of misdiagnosis. Checklist item 3
+now warns about it (this commit); the action itself still needs a visible
+refusal (redirect with an error param, matching the signin pattern).
+
+### G-30. A dropped Resend send returns the success page
+Observed live: the first magic-link request produced no email AND no
+`error=send-failed` — the failing send returned the normal `/verify-request`
+redirect. For magic-link-only auth this is a silent lockout. Needs
+investigation against Resend's delivery log (was the API call accepted then
+dropped, or did the response mis-report?) before the first real household
+signs in.
+
+### G-31. Page truncation is silent at every layer
+A function killed at its time ceiling mid-stream renders a partial page: no
+error client-side, no exception server-side, `responseStatusCode: -1`. The
+oversight pages now export `maxDuration = 60` (this commit) and DEPLOY §4
+documents the symptom, but nothing MONITORS for it — a `-1` status spike is
+invisible unless someone is reading raw logs. Candidate: surface it in the
+uptime check.
+
+### G-32. The corporate drill-in is ~9 sequential DB round-trips, uncached
+Fine at pilot scale; it is what let a slow Redis push the render past 10s.
+Batch the queries (single SQL with joins, or parallelize the remaining
+sequential awaits) before the fleet reaches double digits.
+
+### G-33. A page refresh appears to write an s3_corporate_view audit row
+Observed once (10:10:28 row during a reload, no click). If drill-in renders
+re-log corporate views, the audit trail inflates with phantom reveals —
+over-logging, the conservative direction, but it degrades the trail's
+evidentiary value. Reproduce, then decide: is the row from a re-fired fetch
+(client bug) or a server-side render path that logs (design bug)?
+
+### G-34. One reveal wrote no audit row, unexplained (2026-07-26)
+A fresh-page reveal on 2026-07-26 showed the value with no row landing; the
+identical action on 2026-07-27 wrote its row correctly (check 5 PASS). No log
+stream was running on the 26th, so there is no evidence either way. Recorded
+as an open anomaly against the audit trail rather than tidied away —
+counsel's packet describes the audit insert as load-bearing, so a recurrence
+WITH logs running must be investigated immediately.
+
+### G-35. The dormant second Vercel project
+`well-kept-web`: git-connected, auto-deploys on every push to main, zero env
+vars, serves nothing anyone uses. It burned hours of incident time as a
+decoy and its auto-deploys will eventually confuse someone into "fixing" it.
+Decision, founder's: delete the project, or wire it as an intentional
+staging target. Either is fine; dormant-and-unexplained is not.
+
+### G-36. `sslmode=require` weakens in pg v9
+Today it resolves to verify-full; pg v9 / pg-connection-string v3 adopt
+libpq semantics where `require` skips certificate verification. Change the
+connection strings (Vercel, Railway, `.neon-connection`) to
+`sslmode=verify-full` before any pg major bump — a one-line change that
+prevents a silent TLS downgrade.

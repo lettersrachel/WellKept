@@ -9,6 +9,9 @@ import { getPrincipal } from "@/lib/session";
 import { setTriggerRuleEnabled, createTriggerRule } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
+// Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
+// dependency must degrade the page, not silently truncate it mid-stream.
+export const maxDuration = 60;
 
 interface RuleDef { packName?: string; items?: { offsetDays: number; text: string; methodRef?: string | null }[] }
 

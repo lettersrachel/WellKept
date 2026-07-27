@@ -61,5 +61,51 @@ if (email) {
   }
 }
 
+// Checklist props (2026-07-27): item 3 needs a cascade-bound field with a
+// pending client edit (each smoke run's approval consumes it, so a missing
+// pending edit is re-seeded next run); item 11 needs a photo to toggle.
+const FIELD_NAME = "medication"; // binds the meds-day cascade -> panel items
+let { rows: [field] } = await c.query(
+  "SELECT id FROM playbook_field WHERE household_id=$1 AND name=$2",
+  [hh.id, FIELD_NAME],
+);
+if (!field) {
+  const id = randomUUID();
+  await c.query(
+    `INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, created_at, updated_at)
+     VALUES ($1, $2, 16, $3, 'Fixture vitamin, one daily (smoke-test value)', 's2', now(), now())`,
+    [id, hh.id, FIELD_NAME],
+  );
+  field = { id };
+  console.log(`Playbook field "${FIELD_NAME}" seeded (cascade-bound, checklist item 3).`);
+}
+const { rows: pend } = await c.query(
+  "SELECT id FROM client_edit WHERE field_id=$1 AND status='pending'",
+  [field.id],
+);
+if (pend.length === 0) {
+  await c.query(
+    `INSERT INTO client_edit (id, household_id, field_id, proposed_value, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'pending', now(), now())`,
+    [randomUUID(), hh.id, field.id,
+     `Fixture vitamin, one daily; refill rhythm confirmed ${new Date().toISOString().slice(0, 10)} (smoke-test edit)`],
+  );
+  console.log("Pending client edit seeded (checklist item 3 approves this).");
+}
+// A 1x1 transparent PNG: enough for the Hold/Reuse toggles, nothing to purge.
+const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+const { rows: photos } = await c.query(
+  "SELECT id FROM visit_photo WHERE household_id=$1 AND uploaded_by='smoke-fixture'",
+  [hh.id],
+);
+if (photos.length === 0) {
+  await c.query(
+    `INSERT INTO visit_photo (id, household_id, content_type, data, bytes, uploaded_by, created_at)
+     VALUES ($1, $2, 'image/png', $3, $4, 'smoke-fixture', now())`,
+    [randomUUID(), hh.id, PNG, Buffer.from(PNG, "base64").length],
+  );
+  console.log("Visit photo seeded (checklist item 11 toggles this).");
+}
+
 console.log(`\nFIXTURE_UUID = ${hh.id}\n`);
 await c.end();
