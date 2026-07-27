@@ -17,6 +17,13 @@ import path from "node:path";
  * must be NAMED in erase-household.mjs — mentioning it is the floor, and
  * forces the author to decide its treatment. Deliberate exceptions go in
  * the allowlist below WITH A WRITTEN REASON; an empty-reason entry fails.
+ *
+ * The match is word-bounded, not substring: underscore is a word
+ * character, so `visit_photo` cannot vicariously satisfy `visit`, and a
+ * comment naming the table counts exactly as much as a query does (the
+ * floor is being NAMED — the treatment decision — not a particular SQL
+ * shape). Verified to fire: blanking every standalone mention of one
+ * table turns the suite red.
  */
 const ALLOWLIST: Record<string, string> = {
   // (none today — the tool names every household-referencing table.
@@ -45,7 +52,7 @@ test("every household-referencing table appears in the erasure tool", () => {
       );
       continue;
     }
-    if (!toolSrc.includes(table)) missing.push(table);
+    if (!new RegExp(`\\b${table}\\b`).test(toolSrc)) missing.push(table);
   }
   assert.deepEqual(
     missing,
