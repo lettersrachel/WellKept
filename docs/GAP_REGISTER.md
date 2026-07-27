@@ -839,3 +839,17 @@ them; (b) a build-id heartbeat — the client compares its build id against
 the server's and overlays "this page is from before the last deploy —
 refresh" the moment they diverge. Until one lands, the operational rule
 holds: hard-refresh after every deploy (DEPLOY §4 step zero).
+
+### G-38. The trailing-30-day time & costs card renders empty against present data
+Observed 2026-07-27 on dpl_5x4uPWSZ (main 1265067): the drill-in's "Time &
+costs" card shows its "Nothing recorded yet" empty state for EVERY
+household, while the exact query the page runs — verified by executing
+drizzle's generated SQL with the same parameters against production —
+returns the rows (fixture: two intake entries, 241 minutes; Fernbrook: one
+121-minute entry). The writes work (the entries were created through the
+app), the reads work externally, the page is force-dynamic, and the same
+build's other new surfaces (refusal banner, capture forms) work. The
+contradiction is unexplained and deliberately not guessed at. A TEMP
+`[g38]` diagnostic log line now rides the page render; the next log
+capture during a drill-in load should name the mechanism. Remove the log
+line when this closes.
