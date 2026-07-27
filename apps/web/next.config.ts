@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Workspace packages ship TS source (main: src/index.ts); Next transpiles them.
   transpilePackages: ["@wellkept/schema", "@wellkept/permissions", "@wellkept/close-flow", "@wellkept/offline-queue", "@wellkept/vault", "@wellkept/trigger-engine", "@wellkept/totp"],
+  // G-37: one id baked into BOTH halves of a build (server runtime and
+  // client bundle). The commit sha means "skew" = "different code"; the
+  // timestamp fallback covers local/CI builds outside Vercel.
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA ?? `dev-${Date.now().toString(36)}`,
+  },
   // Sprint-10 hardening baseline (REQ-070). Full CSP needs nonce plumbing;
   // queued for the pen-review pass.
   async headers() {

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { getHouseholdAndPrincipal, getFieldHouseholdAndPrincipal } from "@/lib/data";
 import { ServiceWorker } from "./ServiceWorker";
+import { SkewWatch } from "@/components/SkewWatch";
 
 export const metadata: Metadata = {
   title: "Well Kept",
@@ -50,6 +51,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <ServiceWorker />
+        {/* G-37: version-skew heartbeat — a page from before the last deploy announces itself. */}
+        <SkewWatch />
         <header className="masthead">
           <h1>WELL KEPT{hh && principal ? <> &nbsp;|&nbsp; {hh.name}</> : null}</h1>
           {principal ? (

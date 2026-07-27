@@ -156,6 +156,9 @@ Sharp edges the 2026-07-27 run paid for (symptoms → causes):
 - **After every deploy, refresh open tabs** (and tell any active user to)
   — a tab loaded before the deploy carries dead client JS and stale
   server-action IDs: buttons that do nothing, forms that silently no-op.
+  Since 2026-07-27 the app also detects this itself (G-37): a stale page
+  overlays a red "refresh now" banner within a minute or on tab refocus,
+  via `/api/build-id`. The manual refresh stays as belt-and-braces.
 - **A magic link that never arrives can still return the success page** —
   the failing Resend send has been observed returning the normal
   `/verify-request` redirect. Retry once before debugging; check the
