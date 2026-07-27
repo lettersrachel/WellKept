@@ -750,6 +750,19 @@ investigation against Resend's delivery log (was the API call accepted then
 dropped, or did the response mis-report?) before the first real household
 signs in.
 
+**RESOLVED 2026-07-27 — the app is exonerated.** Resend's delivery log shows
+the Jul 25 send as **delivered**: the app sent it, Resend delivered it, and
+Gmail filed or delayed it (spam/promotions — normal for a young sending
+domain). Not a code defect and not a Resend defect; the "success page on a
+dropped send" framing was wrong — the send succeeded. Hardened anyway, same
+day: the send path logs Resend's message id (one dashboard search now
+settles any future report), and the check-your-email page tells a waiting
+user to check spam and that re-requesting is safe. Remaining, founder-side
+and optional: add a DMARC record for `wellkepthomeops.com` if one doesn't
+exist (start with `v=DMARC1; p=none;` + a monitoring address — improves
+inbox placement over time), and mark any spam-filed sign-in email "not
+spam" to train the mailbox.
+
 ### G-31. Page truncation is silent at every layer
 A function killed at its time ceiling mid-stream renders a partial page: no
 error client-side, no exception server-side, `responseStatusCode: -1`. The
