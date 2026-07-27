@@ -922,6 +922,7 @@ export async function setReferralSource(formData: FormData) {
     kind: "referral_recorded", detail: { from: prior.referralSource, to: source },
   });
   revalidatePath(`/oversight/${householdId}`);
+  redirect(`/oversight/${householdId}?recorded=${encodeURIComponent("referral source")}`);
 }
 
 /**
@@ -955,13 +956,20 @@ export async function recordMembershipEvent(formData: FormData) {
   // visibly, not silently - G-29 applies to new actions too.
   if (kind === "cancel" && (!reason || !initiatedBy)) refuse(householdId, "gate-unmet");
   const { membershipEvent } = await import("@wellkept/schema");
-  await db.insert(membershipEvent).values({
-    id: randomUUID(), householdId, kind: kind as (typeof KINDS)[number],
-    effectiveOn, tier, priceCents, reason, initiatedBy, recordedBy: principal.userId,
-  });
-  await db.insert(auditEvent).values({
-    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
-    kind: "membership_event", detail: { eventKind: kind, effectiveOn, tier, initiatedBy },
+  // One transaction: an audit row without its event (or vice versa) must be
+  // impossible. And success is now as legible as refusal (the 2026-07-27
+  // lesson, round two): redirect with ?recorded= so the page SAYS it landed
+  // - no green banner, no write, no ambiguity.
+  await db.transaction(async (tx) => {
+    await tx.insert(membershipEvent).values({
+      id: randomUUID(), householdId, kind: kind as (typeof KINDS)[number],
+      effectiveOn, tier, priceCents, reason, initiatedBy, recordedBy: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "membership_event", detail: { eventKind: kind, effectiveOn, tier, initiatedBy },
+    });
   });
   revalidatePath(`/oversight/${householdId}`);
+  redirect(`/oversight/${householdId}?recorded=${encodeURIComponent(`membership ${kind}`)}`);
 }
