@@ -186,6 +186,27 @@ export async function getRegistries(householdId: string, role: string) {
   return rows.filter((r) => readDecision(role, r.sensitivity) !== "denied");
 }
 
+/**
+ * G-49: recent observation series per registry entry (staff surfaces
+ * only — the series is s2 by nature and never reaches client views).
+ * Returns newest-first per (entry, measure), capped so the drill-in stays
+ * a glance: enough points to show a trend, not the full history.
+ */
+export async function getObjectObservations(householdId: string, perSeries = 5) {
+  const { objectObservation } = await import("@wellkept/schema");
+  const { desc: descOp } = await import("drizzle-orm");
+  const rows = await db.select().from(objectObservation)
+    .where(eq(objectObservation.householdId, householdId))
+    .orderBy(descOp(objectObservation.observedAt));
+  const bySeries = new Map<string, typeof rows>();
+  for (const r of rows) {
+    const key = `${r.registryEntryId}:${r.measure}`;
+    const list = bySeries.get(key) ?? [];
+    if (list.length < perSeries) { list.push(r); bySeries.set(key, list); }
+  }
+  return bySeries;
+}
+
 /** People assigned to a household (provisioning surface, REQ-002). */
 export async function getHouseholdMembers(householdId: string) {
   const { householdRoleAssignment, authUser } = await import("@wellkept/schema");

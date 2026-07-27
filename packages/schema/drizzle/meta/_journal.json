@@ -162,6 +162,13 @@
       "when": 1785168797840,
       "tag": "0022_high_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785194306679,
+      "tag": "0023_strange_serpent_society",
+      "breakpoints": true
     }
   ]
 }

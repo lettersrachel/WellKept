@@ -20,10 +20,25 @@ interface Entry {
   sensitivity: string;
 }
 
+interface Observation {
+  measure: string;
+  value: number;
+  observedAt: Date;
+}
+
 /** REQ-014: one renderer for the structured registries, shared by the
  * client and corporate surfaces — what differs is only the (already
- * permission-filtered) rows each receives. */
-export function RegistryCard({ entries, showSensitivity = false }: { entries: Entry[]; showSensitivity?: boolean }) {
+ * permission-filtered) rows each receives. The observation series and its
+ * entry form (G-49) appear ONLY when a staff surface passes them; client
+ * pages pass neither, so the series never renders there. */
+export function RegistryCard({ entries, showSensitivity = false, series, observe, returnTo, householdId }: {
+  entries: Entry[];
+  showSensitivity?: boolean;
+  series?: Map<string, Observation[]>;
+  observe?: (formData: FormData) => Promise<void>;
+  returnTo?: string;
+  householdId?: string;
+}) {
   if (entries.length === 0) return null;
   const kinds = [...new Set(entries.map((e) => e.kind))];
   const fmt = (d: Date) =>
@@ -48,6 +63,14 @@ export function RegistryCard({ entries, showSensitivity = false }: { entries: En
                 e.keyDate && fmt(e.keyDate),
                 e.cadence,
               ].filter(Boolean);
+              // G-49: a series reads as its trajectory — "condition 4 → 3"
+              // is the prediction a single state can never be.
+              const trend = (["condition", "fill_level"] as const).map((m) => {
+                const obs = series?.get(`${e.id}:${m}`) ?? [];
+                if (obs.length === 0) return null;
+                const path = [...obs].reverse().map((o) => o.value).join(" → ");
+                return `${m === "condition" ? "condition" : "fill"} ${path}${m === "fill_level" ? "%" : "/5"}`;
+              }).filter(Boolean);
               return (
                 <div key={e.id} className="field">
                   <span className="fname">
@@ -57,6 +80,23 @@ export function RegistryCard({ entries, showSensitivity = false }: { entries: En
                     )}
                   </span>
                   <div className="fval sans" style={{ fontSize: 13 }}>{bits.join(" · ")}</div>
+                  {trend.length > 0 && (
+                    <div className="fval sans" style={{ fontSize: 12, opacity: 0.85 }}>{trend.join(" · ")}</div>
+                  )}
+                  {observe && householdId && (
+                    <form action={observe} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                      <input type="hidden" name="householdId" value={householdId} />
+                      <input type="hidden" name="registryEntryId" value={e.id} />
+                      {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+                      <select key={`om-${e.id}-${(series?.get(`${e.id}:condition`)?.length ?? 0) + (series?.get(`${e.id}:fill_level`)?.length ?? 0)}`} name="measure" defaultValue="condition" className="inline" aria-label="Measure">
+                        <option value="condition">condition 1-5</option>
+                        <option value="fill_level">fill %</option>
+                      </select>
+                      <input name="value" aria-label="Value" placeholder="value" inputMode="numeric" style={{ width: 64, marginTop: 0 }} />
+                      <input name="note" aria-label="Note (internal, s2)" placeholder="note (optional, s2)" style={{ flex: 1, marginTop: 0 }} />
+                      <button className="act">Log look</button>
+                    </form>
+                  )}
                 </div>
               );
             })}

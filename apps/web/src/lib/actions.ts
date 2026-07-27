@@ -1001,3 +1001,43 @@ export async function recordMembershipEvent(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   redirect(`/oversight/${householdId}?recorded=${encodeURIComponent(`membership ${kind}`)}`);
 }
+
+/**
+ * G-49 (intake-capture review §2): one look at one object. Condition is
+ * the rubric's 1-5 scale; fill level is percent 0-100. Repeated rows are
+ * the point - the series is the record, so this never updates, only
+ * inserts. Staff surfaces only (the series is s2 by nature); refusals and
+ * successes are legible per G-29/G-39.
+ */
+export async function recordObjectObservation(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const registryEntryId = String(formData.get("registryEntryId") ?? "");
+  const measure = String(formData.get("measure") ?? "");
+  const MEASURES = ["condition", "fill_level"] as const;
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(registryEntryId)) refuseTo(returnTo, "bad-input");
+  if (!(MEASURES as readonly string[]).includes(measure)) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const valueRaw = String(formData.get("value") ?? "").trim();
+  const value = /^\d{1,3}$/.test(valueRaw) ? Number.parseInt(valueRaw, 10) : NaN;
+  const inRange = measure === "condition" ? value >= 1 && value <= 5 : value >= 0 && value <= 100;
+  if (!Number.isFinite(value) || !inRange) refuseTo(returnTo, "bad-input");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
+  const { objectObservation, registryEntry } = await import("@wellkept/schema");
+  const { isNull } = await import("drizzle-orm");
+  // The object must be this household's own live registry entry - an
+  // observation against a tombstoned or foreign entry is a bad request,
+  // not a write.
+  const [entry] = await db.select({ id: registryEntry.id, label: registryEntry.label })
+    .from(registryEntry)
+    .where(and(eq(registryEntry.id, registryEntryId), eq(registryEntry.householdId, householdId), isNull(registryEntry.tombstonedAt)))
+    .limit(1);
+  if (!entry) refuseTo(returnTo, "missing");
+  await db.insert(objectObservation).values({
+    id: randomUUID(), householdId, registryEntryId, measure: measure as (typeof MEASURES)[number],
+    value, note, observedAt: new Date(), recordedBy: principal.userId,
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `${measure === "condition" ? "condition" : "fill"} ${value}${measure === "fill_level" ? "%" : "/5"}: ${entry.label}`);
+}
