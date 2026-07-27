@@ -19,17 +19,26 @@ This ADR applies the same reasoning to the key that protects the vault.
 
 ## Decision
 
+> The four brackets below carry PROPOSED text (drafted 2026-07-27, per the
+> custody-sitting kit) so the sitting confirms rather than composes. None
+> of it is in force until the sitting dates it and the sealed copy exists;
+> strike and replace anything that does not match what is actually done.
+
 1. A second custodian holds a sealed copy of `WK_KMS_KEY` and `AUTH_SECRET`:
-   ⟨name - Kelly, as co-founder/CFO, is the obvious candidate and holds no
-   key material today⟩.
-2. The mechanism: ⟨e.g. a sealed copy in the custodian's own password
-   manager, or a sealed physical envelope in a location both parties can
-   name; pick one and write it here⟩.
+   ⟨PROPOSED: engagement counsel — the meeting that reviews the packet
+   makes the custody exist the same day. Recorded alternative: Kelly, as
+   co-founder/CFO, who holds no key material today⟩.
+2. The mechanism: ⟨PROPOSED: a sealed physical envelope in counsel's safe,
+   tamper marks initialed by both parties at the meeting; the envelope is
+   prepared the same day from the password-manager copy and every working
+   paper is shredded before leaving⟩.
 3. The retrieval condition - when the second copy may be opened:
-   ⟨e.g. Rachel unavailable for N days, or her written request; name it⟩.
+   ⟨PROPOSED: Rachel's written request; or her documented incapacity plus
+   a written request from a corporate officer. Opening under any other
+   circumstance is an incident (Guardrails below)⟩.
 4. Verification cadence: the second copy is confirmed readable
-   ⟨quarterly / at every key rotation⟩, and this check is a LAUNCH-style
-   line item, not a memory.
+   ⟨PROPOSED: at every key rotation, and at least annually⟩, and this
+   check is a LAUNCH-style line item, not a memory.
 5. Key rotation updates BOTH copies in the same sitting, or it did not
    happen.
 
