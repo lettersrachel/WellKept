@@ -22,7 +22,7 @@
 assembles the seven attachments — what the software does today, and the
 specific question per item — so one engagement closes all of them.
 
-Three documents, one per audience:
+Four documents, one per audience and direction:
 
 - [`household-consent.md`](household-consent.md) — what a client agrees to
   before their household's information goes into Well Kept.
@@ -31,6 +31,11 @@ Three documents, one per audience:
 - [`staff-confidentiality.md`](staff-confidentiality.md) — what a house manager
   or corporate user acknowledges before they get access. (The app already has
   an `nda_approved` flag per person in the People & access panel.)
+- [`staff-records-disclosure.md`](staff-records-disclosure.md) — the reverse
+  direction: what the software records ABOUT staff, disclosed to them before
+  their first logged hour (the G-13 document; gap register G-41 gates hiring
+  on it). Drafted 2026-07-27 from the session I inventory; founder review
+  pending, then counsel.
 
 ## What the software actually collects (ground truth for all three)
 

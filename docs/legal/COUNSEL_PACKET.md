@@ -15,8 +15,9 @@ and four further tables, a mileage-substantiation question is added ahead
 of any schema change, and the key-rotation disclosure sentence is added to
 the data-minimisation note.
 
-Hand counsel this file plus the three drafts beside it: `household-consent.md`,
-`privacy-notice.md`, `staff-confidentiality.md`. Each attachment states what
+Hand counsel this file plus the four drafts beside it: `household-consent.md`,
+`privacy-notice.md`, `staff-confidentiality.md`,
+`staff-records-disclosure.md`. Each attachment states what
 exists in the software today and the specific question only counsel can answer.
 
 The drafts were re-verified against the schema on 2026-07-25 and describe the
@@ -283,9 +284,13 @@ routinely record our staff inside client homes. What, if anything, do we owe
 employees by way of notice, and should the client consent document address
 recording of our staff?
 
-Related and small: the system keeps an append-only record of staff actions,
-secured-item reveals and hours. A short paragraph disclosing this to staff is
-queued. Counsel may prefer to fold it into this document.
+Related and no longer small: the system keeps an append-only record of staff
+actions, secured-item reveals and hours, and the enclosed
+`staff-records-disclosure.md` now discloses the full inventory to staff (it
+gates hiring; see section 2a question (b)). Please review it alongside this
+document, including its bracketed staff-records retention period, and advise
+whether it should stand alone or be folded into the confidentiality
+acknowledgment.
 
 ---
 

@@ -989,6 +989,16 @@ a real House Manager enters a single row. Cross-referenced from
 CORPORATE_CAPTURE_SESSIONS.md session 1, whose "deploy clean" gate should
 have carried this condition. Also queued as packet rev 4 question (b).
 
+**DRAFTED 2026-07-27**: `docs/legal/staff-records-disclosure.md`, built
+from the session I inventory, states the three facts session I said an
+honest disclosure must state (the permanent attributed action log; that
+prompt outcomes could support performance inference, that no surface
+performs it, and the commitment not to build one without its own review;
+and a bracketed staff-records retention period for counsel). The gate
+STANDS until the founder approves the draft, counsel reviews it, and the
+hire acknowledges it — what existed before this draft was nothing; what
+exists now is a reviewable document.
+
 ### G-42. After-the-fact time entry meets W-2 recordkeeping
 No live clock is fine while a founder logs their own time. It becomes an
 employer recordkeeping question the moment a non-exempt employee
