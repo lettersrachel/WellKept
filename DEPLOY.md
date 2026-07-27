@@ -173,6 +173,20 @@ Sharp edges the 2026-07-27 run paid for (symptoms → causes):
   Since 2026-07-27 the app also detects this itself (G-37): a stale page
   overlays a red "refresh now" banner within a minute or on tab refocus,
   via `/api/build-id`. The manual refresh stays as belt-and-braces.
+- **`/api/build-id` can serve one stale reading mid-alias-flip** — a curl
+  fired within seconds of the deploy can catch the old build while the
+  alias switches, reporting a mismatch for a deploy that succeeded. A
+  false negative here opens a diagnostic round into a non-problem (the
+  G-38 shape). Re-read a mismatch once, a few seconds later, before
+  believing it; only a mismatch that persists is real.
+- **A deploy order is only executable against a named main sha.** Three
+  times in the 2026-07-27 runs, the commit a deploy expected was still in
+  an unmerged PR when the order was read; migrating on the first pull
+  would have left the database ahead of (or behind) the code the deploy
+  shipped. Rule both directions: whoever orders a deploy names the merge
+  commit; whoever runs it confirms `git log --oneline -1` shows that sha
+  BEFORE `db:migrate` — the migrate-then-deploy coupling is exactly where
+  a premature pull turns into code querying tables that do not exist.
 - **`npx vercel --yes` from an unlinked directory creates a NEW project**
   rather than failing — the flag exists to skip confirmations, and the
   confirmation it skips is "set up and deploy this directory?". Deploy
