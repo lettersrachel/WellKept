@@ -8,6 +8,10 @@
  * the WK_ADMIN_EMAIL env var — no personal address hardcoded anywhere:
  *   DATABASE_URL="<url>" node scripts/ensure-smoke-fixture.mjs [admin-email]
  *   DATABASE_URL="<url>" WK_ADMIN_EMAIL=you@example.com node scripts/ensure-smoke-fixture.mjs
+ *
+ * WK_KMS_KEY (the same KEK the app runs on) additionally seeds the s3 value
+ * checklist item 5 reveals. Without it every other prop still seeds and the
+ * s3 step says so — it is never sealed under a fallback key.
  */
 import { randomUUID } from "node:crypto";
 import pg from "pg";
@@ -105,6 +109,64 @@ if (photos.length === 0) {
     [randomUUID(), hh.id, PNG, Buffer.from(PNG, "base64").length],
   );
   console.log("Visit photo seeded (checklist item 11 toggles this).");
+}
+
+// Checklist item 5 needs a revealable s3 value (2026-07-28): the fixture had
+// no s3 field and no vault item, so the reveal check could only ever run on a
+// demo household — the fourth time a checklist item was routed at the fixture
+// and the prop was missing.
+//
+// Sealed with the SAME KEK the app reads (WK_KMS_KEY), in the same storage
+// shape as lib/vault's vaultWrite: ciphertext = the sealed box JSON, key_ref =
+// the household's KMS-wrapped data key. If WK_KMS_KEY is absent we SKIP rather
+// than fall back to a dev key — a vault item sealed under the wrong KEK is
+// worse than no vault item, because the reveal fails at the moment someone is
+// trying to verify that reveals work.
+//
+// The value is deliberately fake. ADR-001 guardrail 2: no real s3 values
+// before the vault sprint, and a fixture is never an exception.
+const S3_FIELD_NAME = "alarm code";
+const kek = process.env.WK_KMS_KEY;
+if (!kek) {
+  console.log("s3 value NOT seeded: set WK_KMS_KEY to seal it (checklist item 5 needs this).");
+} else {
+  let { rows: [s3field] } = await c.query(
+    "SELECT id FROM playbook_field WHERE household_id=$1 AND name=$2",
+    [hh.id, S3_FIELD_NAME],
+  );
+  if (!s3field) {
+    const id = randomUUID();
+    // playbook_field.value stays EMPTY for s3 — the plaintext lives only in
+    // the vault (vault law); the field row is the handle the UI reveals from.
+    await c.query(
+      `INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, created_at, updated_at)
+       VALUES ($1, $2, 16, $3, '', 's3', now(), now())`,
+      [id, hh.id, S3_FIELD_NAME],
+    );
+    s3field = { id };
+    console.log(`Playbook field "${S3_FIELD_NAME}" seeded (s3, checklist item 5 reveals this).`);
+  }
+  const { rows: vaulted } = await c.query(
+    "SELECT id FROM vault_item WHERE household_id=$1 AND field_id=$2",
+    [hh.id, s3field.id],
+  );
+  if (vaulted.length === 0) {
+    const { LocalKms, sealValue } = await import("@wellkept/vault");
+    // Reuse the household's existing wrapped data key if one exists, exactly
+    // as vaultWrite does — one data key per household, not one per value.
+    const { rows: [keyed] } = await c.query(
+      "SELECT key_ref FROM vault_item WHERE household_id=$1 AND key_ref IS NOT NULL LIMIT 1",
+      [hh.id],
+    );
+    const sealed = sealValue(new LocalKms(kek), keyed ? JSON.parse(keyed.key_ref) : null,
+      "0000 (smoke-test value, not a real code)");
+    await c.query(
+      `INSERT INTO vault_item (id, household_id, field_id, ciphertext, key_ref, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, now(), now())`,
+      [randomUUID(), hh.id, s3field.id, JSON.stringify(sealed.box), JSON.stringify(sealed.wrappedKey)],
+    );
+    console.log("Vault value sealed (checklist item 5 reveals this; audit row is the proof).");
+  }
 }
 
 console.log(`\nFIXTURE_UUID = ${hh.id}\n`);
