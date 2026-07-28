@@ -39,6 +39,15 @@ const WANT = {
   photo_retention: { days: 90 },
   rule_health: { actRateFloor: 0.25, minHouseholds: 3, minUsers: 2 },
 };
+// FOUNDER_SET knobs: the VALUE is the founder's, so the script asserts
+// presence and shape but never repairs — inserting a value here would be
+// the script choosing a threshold. Turning one off is setting its field
+// to null ({"gapDays": null}), never deleting the row, so once set (the
+// visit_reconciliation knob: founder, 2026-07-28) an absent row means a
+// LOST knob, which is exactly the failure this check exists to catch.
+const FOUNDER_SET = {
+  visit_reconciliation: ["gapDays"],
+};
 const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await c.connect();
 let bad = 0;
@@ -51,6 +60,17 @@ for (const [key, want] of Object.entries(WANT)) {
     console.log(`         ${key}: REPAIRED — was absent, inserted intended value`);
   } else {
     const missing = Object.keys(want).filter((k) => !(k in row.value));
+    if (missing.length) { console.log(`         ${key}: exists but lacks ${missing.join(", ")}`); bad = 1; }
+    else console.log(`         ${key}: present (${JSON.stringify(row.value)})`);
+  }
+}
+for (const [key, fields] of Object.entries(FOUNDER_SET)) {
+  const { rows: [row] } = await c.query("SELECT value FROM app_setting WHERE key=$1", [key]);
+  if (!row) {
+    console.log(`         ${key}: ABSENT — founder-set knob lost; restore it by hand (the script never chooses its value)`);
+    bad = 1;
+  } else {
+    const missing = fields.filter((k) => !(k in row.value));
     if (missing.length) { console.log(`         ${key}: exists but lacks ${missing.join(", ")}`); bad = 1; }
     else console.log(`         ${key}: present (${JSON.stringify(row.value)})`);
   }

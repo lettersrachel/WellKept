@@ -164,7 +164,11 @@ manual ones:
     them if absent; a missing key is a missing knob, defaults only cover
     code paths that read them. (`rule_health` may later gain an optional
     `informativeRateFloor` — Session A, founder sets it after real pilot
-    numbers; its ABSENCE is intentional and means no retirement flag)
+    numbers; its ABSENCE is intentional and means no retirement flag.)
+    `visit_reconciliation` is FOUNDER-SET (2026-07-28, `{"gapDays":10}`):
+    the script asserts its presence and shape but never repairs it — the
+    value is the founder's, and turning it off is `{"gapDays":null}`,
+    never a deleted row, so an absent row means a lost knob and fails.
 13. The erasure tool, twice, against the household carrying item 7's
     still-open incident (G-15 — the guard must FIRE, not just exist):
     a. Dry-run it now → the tool must REFUSE with the open-incident
