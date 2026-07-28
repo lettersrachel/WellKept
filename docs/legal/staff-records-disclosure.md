@@ -1,12 +1,13 @@
 # Staff records disclosure — Well Kept
 
-> **DRAFT — founder review pending, then counsel review before use.** This is
-> the G-13 document (gap register G-41): it must exist and be acknowledged
-> before any non-founder staff member logs their first hour. Built from the
-> 2026-07-27 staff-data inventory (POST_DEPLOY_FINDINGS_E_I.md, session I),
-> which lists every record with its audience and retention. Counsel may
-> prefer to fold this into the confidentiality acknowledgment (counsel
-> packet, section 7). Fill the ⟨brackets⟩.
+> **FOUNDER-APPROVED 2026-07-28; counsel review required before use.**
+> This is the G-13 document (gap register G-41): it must exist and be
+> acknowledged before any non-founder staff member logs their first hour.
+> Built from the 2026-07-27 staff-data inventory
+> (POST_DEPLOY_FINDINGS_E_I.md, session I), which lists every record with
+> its audience and retention; approved by the founder as written. Counsel
+> may prefer to fold this into the confidentiality acknowledgment (counsel
+> packet, section 7), and sets the retention bracket. Fill the ⟨brackets⟩.
 
 **Name:** ⟨staff member⟩   **Role:** ⟨house manager / corporate⟩   **Date:** ⟨date⟩
 
