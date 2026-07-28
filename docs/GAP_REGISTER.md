@@ -1180,3 +1180,17 @@ fresh fixture and the passing direction is testable in the same sitting.
 Failing that, DEPLOY §4 must state that these two resolutions require a
 back-dated row and are not same-day checks — silence currently reads as "run
 it", and it cannot be run.
+
+**Reclassified 2026-07-28 (session AI, SYNC_DEFECT_SESSIONS): a DEFECT,
+and client-facing, not a verification gap.** AB's premise is the
+noticed-then-handled story; a deferral completed early had no way to say
+so, and a six-month deferral finished next week would sit on the client's
+card as open for six months, visible and false. Fixed: resolution is
+available whenever a deferral is open ("Deferrals on record" on the visit
+page); the revisit date drives overdue surfacing (the tag, the briefing),
+never the ability to resolve. One factual correction to the entry above:
+the paused decision's resolve controls were never overdue-gated (the
+visit-page card maps every open item; only the TIMING ARRIVED tag and the
+briefing array key on the date), so the fix applies to the deferral side
+alone. The fixture's pre-overdue seeds remain useful for exercising the
+overdue path itself.

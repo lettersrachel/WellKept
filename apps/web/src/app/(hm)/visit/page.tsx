@@ -219,18 +219,29 @@ export default async function VisitPage({ searchParams }: {
           </div>
         ))
       )}
-      {overdueDeferrals.length > 0 && (
-        <div className="card" style={{ borderColor: "var(--gold-bright)" }}>
-          <h2>Past their planned timing</h2>
+      {openDeferrals.length > 0 && (
+        <div className="card" style={overdueDeferrals.length > 0 ? { borderColor: "var(--gold-bright)" } : undefined}>
+          {/* AI (sync-defect sessions): resolution is available whenever a
+              deferral is OPEN, independent of the revisit date; the date
+              drives the overdue surfacing (the tag, the briefing), never
+              the ability to resolve. Early completion is completion, and
+              an open card the client can see must be closable the day the
+              work is done. Overdue items sort first; nothing happens
+              automatically either way. */}
+          <h2>Deferrals on record</h2>
           <p className="note" style={{ marginTop: 0 }}>
-            These were deferred with a date that has passed and no resolution.
-            You decide what each one means; nothing happens automatically.
+            Noticed and left on purpose, still open. Resolve one whenever the
+            work happens; a passed date only raises it here, you decide what
+            it means.
           </p>
-          {overdueDeferrals.map((d) => (
+          {[...overdueDeferrals, ...openDeferrals.filter((d) => !overdueDeferrals.some((o) => o.id === d.id))].map((d) => (
             <div key={d.id} className="field">
-              <span className="fname">{d.noticed}</span>
+              <span className="fname">
+                {d.noticed}
+                {overdueDeferrals.some((o) => o.id === d.id) && <span className="tag CRITICAL">PAST ITS TIMING</span>}
+              </span>
               <div className="fval sans" style={{ fontSize: 13 }}>{d.reason}</div>
-              <div className="prov">planned for {d.revisitDate}</div>
+              <div className="prov">planned for {d.revisitDate ?? d.revisitCondition}</div>
               <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                 {(["done", "no_longer_needed", "superseded"] as const).map((r) => (
                   <form key={r} action={resolveDeferral} style={{ display: "inline" }}>

@@ -21,12 +21,22 @@ export default async function FleetBoard() {
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
 
+  // AH (sync-defect sessions): the reconciliation floor's knob. Nothing
+  // surfaces while gapDays is null (shipped default; founder sets it).
+  // The check observes the server's own record, the one signal a broken
+  // client cannot fake: a stuck queue, a lost device, an evicted browser
+  // store all look identical from here, and all deserve a question.
+  const { appSetting } = await import("@wellkept/schema");
+  const [reconKnob] = await db.select({ value: appSetting.value }).from(appSetting)
+    .where(eq(appSetting.key, "visit_reconciliation"));
+  const gapDaysKnob = (reconKnob?.value as { gapDays?: number | null } | undefined)?.gapDays ?? null;
+
   const rowsAll = await Promise.all(
     corporate.map(async ({ hh }) => {
       const [fields, commands, tests, pending, held, openIncidents] = await Promise.all([
         db.select({ confirmed: playbookField.confirmed, sensitivity: playbookField.sensitivity })
           .from(playbookField).where(eq(playbookField.householdId, hh.id)),
-        db.select({ type: visitCommand.type, status: visitCommand.status })
+        db.select({ type: visitCommand.type, status: visitCommand.status, receivedAt: visitCommand.receivedAt })
           .from(visitCommand).where(eq(visitCommand.householdId, hh.id)),
         db.select().from(strangerTest).where(eq(strangerTest.householdId, hh.id)),
         db.select({ id: clientEdit.id }).from(clientEdit)
@@ -37,12 +47,20 @@ export default async function FleetBoard() {
           .where(and(eq(incidentReport.householdId, hh.id), eq(incidentReport.status, "open"))),
       ]);
       const lastTest = tests[tests.length - 1];
+      // AH: the gap counts from the last applied visit, or the household's
+      // creation when none ever applied (the first-visit-never case).
+      const applied = commands.filter((c) => c.type === "visit.submit" && c.status === "applied");
+      const lastAppliedAt = applied.reduce<Date | null>(
+        (max, c) => (max === null || +c.receivedAt > +max ? c.receivedAt : max), null);
+      const visitGapDays = Math.floor((Date.now() - +(lastAppliedAt ?? hh.createdAt)) / 86_400_000);
       return {
         hh,
         confirmed: fields.filter((f) => f.confirmed).length,
         total: fields.length,
-        visits: commands.filter((c) => c.type === "visit.submit" && c.status === "applied").length,
+        visits: applied.length,
         conflicts: commands.filter((c) => c.status === "conflict").length,
+        visitGapDays,
+        missingVisit: gapDaysKnob !== null && visitGapDays > gapDaysKnob,
         stranger: lastTest
           ? `${lastTest.passed ? "PASS" : "FRICTION"} ${lastTest.createdAt.toISOString().slice(5, 10)}`
           : "never",
@@ -96,7 +114,17 @@ export default async function FleetBoard() {
                   </span>
                 </td>
                 <td>{r.confirmed}/{r.total} confirmed</td>
-                <td>{r.visits} applied{r.conflicts ? ` · ${r.conflicts} conflict` : ""}</td>
+                <td>
+                  {r.visits} applied{r.conflicts ? ` · ${r.conflicts} conflict` : ""}
+                  {/* AH: the record not holding a recent visit is exactly
+                      what a stuck client cannot report about itself. */}
+                  {r.missingVisit && (
+                    <>
+                      {" · "}
+                      <span className="tag CRITICAL">no visit in {r.visitGapDays}d</span>
+                    </>
+                  )}
+                </td>
                 <td>{r.stranger}</td>
                 <td>
                   {r.pendingEdits} edits · {r.scheduled} prompts
