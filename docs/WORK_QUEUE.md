@@ -16,10 +16,12 @@ in a session prompt.
 
 ## State
 
-Production serves `a27bdf9` (2026-07-28, second clean run through
-tooling/deploy.sh's full gate; 0028 deployed, counts 29/29/29, build id
-verified three times). Eight CI guards. Gap register at G-49. G-13
-founder-approved, awaiting counsel review and the hire's acknowledgment.
+Production serves `ae553fd` (2026-07-28, third clean run through
+tooling/deploy.sh's full gate and the first through the round-seven
+argument-independent sha gate; 0029 deployed, counts 30/30/30, build id
+verified three times; W-5 condition flags live). Nine CI guards. Gap
+register at G-49. G-13 founder-approved, awaiting counsel review and the
+hire's acknowledgment.
 
 The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
 confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
