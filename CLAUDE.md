@@ -68,6 +68,7 @@ row here fails CI, so the table cannot silently go stale.
 | `guards-manifest.test.ts` | the guard set exists, is wired into CI, and matches this table | a test file that exists but asserts nothing |
 | `frozen-records.test.ts` | the four dated evidentiary records are byte-identical to manifest hashes | records not yet declared frozen |
 | `seed-binding.test.ts` | cascade field bindings, the observance field prefix, and the no-drift vocabulary resolve against the seed template and sibling packages | fields renamed in live playbook data after intake |
+| `staff-disclosure.test.ts` | every staff-attributed surface computed from the schema is named in the G-13 disclosure or excused in writing | the founder's pending disclosure lines; prose accuracy beyond the mapped phrases |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
