@@ -112,7 +112,6 @@ export default async function StandardsLibrary({
                 <div className="ptext">{p.text}</div>
                 <div className="psource">
                   {p.scope.join(" · ")}
-                  {p.membershipTierGate ? ` · ${p.membershipTierGate}+` : ""}
                   {p.sourceNote ? ` · Source: ${p.sourceNote}` : ""}
                   {` · effective ${p.effectiveDate}`}
                 </div>
