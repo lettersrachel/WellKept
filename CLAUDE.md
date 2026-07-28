@@ -127,6 +127,13 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   A substring match that matched anything was green until it was tested in
   the failing direction; the deploy gate was red until it was tested in the
   passing one.
+- **Proving a guard red and green tests its logic, not its inputs.** A guard
+  that takes an argument can be defeated by the argument while passing every
+  case written for it; the sha gate ran as a no-op when handed
+  $(git rev-parse HEAD), its own answer. Where a guard can compute its own
+  input, it should, rather than trusting a caller to supply a real one.
+  Where it cannot, one of its proof cases must be a plausible bad input,
+  not only a bad state.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
 
