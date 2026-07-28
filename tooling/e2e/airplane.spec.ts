@@ -63,7 +63,7 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
 
   // ---- go offline ----
   await context.setOffline(true);
-  await expect(page.getByText(/Offline — your work is saved/)).toBeVisible();
+  await expect(page.getByText(/Offline; your work is saved/)).toBeVisible();
 
   // Tasks: check all four.
   for (const cb of await page.locator('input[type=checkbox]').all()) await cb.check();
