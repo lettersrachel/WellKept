@@ -13,9 +13,15 @@ in a session prompt.
 
 ## State
 
-Production serves `d15972f`. 27 migrations (0000 to 0026). Four CI guards.
-Gap register at G-49. G-13 founder-approved, awaiting counsel review and the
-hire's acknowledgment.
+Production serves `b7026dd` (2026-07-28, the first deploy through
+tooling/deploy.sh's full gate). 28 migrations (0000 to 0027). Seven CI
+guards. Gap register at G-49. G-13 founder-approved, awaiting counsel review
+and the hire's acknowledgment.
+
+The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
+confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
+copy is live from the worker as well. No Railway CLI or config exists in the
+repo; the dashboard is the only control surface.
 
 **Nothing has a real household yet.** Every gate below that says "pilot" or
 "first household" is genuinely closed, not deferred.
@@ -184,9 +190,11 @@ was pruned and why.
   is an IDENTIFIER, not display-only: exclusions.ts:53 matches exclusion
   targets against it, so a rename changes which exclusions fire. The fix
   is a display-name-vs-key split; its own session, not yet authorized.
-- **G3 (founder):** push one trivial docs change through tooling/deploy.sh
-  on purpose before a real change rides on it - the happy path has
-  executed zero times.
+- **G3: CLOSED 2026-07-28.** The happy path executed for real: deploy.sh
+  ran its full sequence clean deploying `b7026dd`, migrations agreeing
+  three ways (28/28/28), the link check passing against the pinned project
+  id, and the build id verified three times with JSON extraction. Both
+  guards fixed after the first run's wrongful refusal did their jobs.
 
 ### Briefs already written
 
