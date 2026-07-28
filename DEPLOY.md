@@ -50,7 +50,13 @@ zero env vars, auto-deploys on every push) — the live project is
 wrong one.
 
 **Deploying** (the live project does NOT auto-deploy; every production
-deploy is manual): from the REPO ROOT of an up-to-date `main` checkout,
+deploy is manual): `DATABASE_URL=... bash tooling/deploy.sh <expected-main-sha>`
+runs the whole mechanical sequence as a gate - named-sha check, its own
+cd to the repo root, migrate, three-way migration-count assertion,
+deploy, expected-project verification, triple build-id read, mechanical
+smoke checks - refusing non-zero at the first mismatch. `--selftest`
+proves the refusals fire. The manual form remains for reference: from
+the REPO ROOT of an up-to-date `main` checkout,
 run `npx vercel --prod --yes`. Always the repo root — never from
 `apps/web`, even though that is the project's configured Root Directory:
 `apps/web` has no `.vercel` link, so `--yes` there suppresses the only
