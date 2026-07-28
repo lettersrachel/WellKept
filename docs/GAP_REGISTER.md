@@ -999,6 +999,13 @@ STANDS until the founder approves the draft, counsel reviews it, and the
 hire acknowledges it — what existed before this draft was nothing; what
 exists now is a reviewable document.
 
+**FOUNDER-APPROVED 2026-07-28**, as written. Two of the gate's three
+conditions remain: counsel reviews it (it is enclosed in the packet as
+the fourth draft; section 7 asks the standalone-vs-folded question and
+sets the retention bracket), and the hire acknowledges it before their
+first logged hour. Capture session 5 stays gated on that acknowledgment,
+which requires the hire to exist.
+
 ### G-42. After-the-fact time entry meets W-2 recordkeeping
 No live clock is fine while a founder logs their own time. It becomes an
 employer recordkeeping question the moment a non-exempt employee

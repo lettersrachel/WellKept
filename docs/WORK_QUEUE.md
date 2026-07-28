@@ -198,7 +198,9 @@ Listed so it does not vanish into a build queue.
 3. Insurance: workers' compensation, which attaches from the point of employment
    in Virginia, plus the G-48 hired and non-owned auto question. Same broker
    call. Before the first pilot signature.
-4. Approve the G-13 staff disclosure. It gates the hire's first logged hour.
+4. ~~Approve the G-13 staff disclosure.~~ **Founder-approved 2026-07-28.**
+   What still gates the hire's first logged hour: counsel's review of the
+   disclosure (with the packet) and the hire's signed acknowledgment.
 5. Hire a House Manager. Recruit and consent the first household.
 6. Chores (Upstash budget alert, Vercel project rename, DMARC), the pilot
    protocol's friction-log brackets, the two LAUNCH signatures with §2.4 after
