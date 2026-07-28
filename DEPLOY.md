@@ -50,12 +50,23 @@ zero env vars, auto-deploys on every push) — the live project is
 wrong one.
 
 **Deploying** (the live project does NOT auto-deploy; every production
-deploy is manual): `DATABASE_URL=... bash tooling/deploy.sh <expected-main-sha>`
+deploy is manual): `bash tooling/deploy.sh <sha-from-the-merged-PR>`
 runs the whole mechanical sequence as a gate - named-sha check, its own
 cd to the repo root, migrate, three-way migration-count assertion,
 deploy, expected-project verification, triple build-id read, mechanical
 smoke checks - refusing non-zero at the first mismatch. `--selftest`
-proves the refusals fire. The manual form remains for reference: from
+proves the refusals fire. Two invocation rules, both learned 2026-07-28:
+
+- **Name the sha from the merged PR** (copy the merge commit GitHub
+  shows). Never pass `$(git rev-parse HEAD)`: that compares HEAD to
+  itself and turns the gate into a no-op exactly when a big pull most
+  needs confirming.
+- **The connection resolves inside the script.** It uses `DATABASE_URL`
+  from the environment or reads `.neon-connection` at the repo root,
+  after its own cd, so a caller shell sitting in `apps/web` cannot make
+  a `$(cat ...)` miss and pass an empty value (the cwd-drift failure,
+  second occurrence). Setting `DATABASE_URL=...` inline still works and
+  still wins. The manual form remains for reference: from
 the REPO ROOT of an up-to-date `main` checkout,
 run `npx vercel --prod --yes`. Always the repo root — never from
 `apps/web`, even though that is the project's configured Root Directory:
