@@ -130,42 +130,58 @@ const kek = process.env.WK_KMS_KEY;
 if (!kek) {
   console.log("s3 value NOT seeded: set WK_KMS_KEY to seal it (checklist item 5 needs this).");
 } else {
-  let { rows: [s3field] } = await c.query(
-    "SELECT id FROM playbook_field WHERE household_id=$1 AND name=$2",
-    [hh.id, S3_FIELD_NAME],
-  );
-  if (!s3field) {
-    const id = randomUUID();
-    // playbook_field.value stays EMPTY for s3 — the plaintext lives only in
-    // the vault (vault law); the field row is the handle the UI reveals from.
-    await c.query(
-      `INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, created_at, updated_at)
-       VALUES ($1, $2, 16, $3, '', 's3', now(), now())`,
-      [id, hh.id, S3_FIELD_NAME],
+  const { LocalKms, sealValue } = await import("@wellkept/vault");
+  // Validate the KEK BEFORE any write: the 32-byte check throws at
+  // construction, so a malformed key fails here with the database
+  // untouched. The first version inserted the field first and validated
+  // after, which on a bad key left exactly the orphan this block claims
+  // to prevent (an s3 field whose Reveal button cannot succeed).
+  const kms = new LocalKms(kek);
+  // Belt and braces: the field and its vault item land in one
+  // transaction, so no failure between the two inserts can leave a
+  // half-state either.
+  await c.query("BEGIN");
+  try {
+    let { rows: [s3field] } = await c.query(
+      "SELECT id FROM playbook_field WHERE household_id=$1 AND name=$2",
+      [hh.id, S3_FIELD_NAME],
     );
-    s3field = { id };
-    console.log(`Playbook field "${S3_FIELD_NAME}" seeded (s3, checklist item 5 reveals this).`);
-  }
-  const { rows: vaulted } = await c.query(
-    "SELECT id FROM vault_item WHERE household_id=$1 AND field_id=$2",
-    [hh.id, s3field.id],
-  );
-  if (vaulted.length === 0) {
-    const { LocalKms, sealValue } = await import("@wellkept/vault");
-    // Reuse the household's existing wrapped data key if one exists, exactly
-    // as vaultWrite does — one data key per household, not one per value.
-    const { rows: [keyed] } = await c.query(
-      "SELECT key_ref FROM vault_item WHERE household_id=$1 AND key_ref IS NOT NULL LIMIT 1",
-      [hh.id],
+    if (!s3field) {
+      const id = randomUUID();
+      // playbook_field.value stays EMPTY for s3 — the plaintext lives only in
+      // the vault (vault law); the field row is the handle the UI reveals from.
+      await c.query(
+        `INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, created_at, updated_at)
+         VALUES ($1, $2, 16, $3, '', 's3', now(), now())`,
+        [id, hh.id, S3_FIELD_NAME],
+      );
+      s3field = { id };
+      console.log(`Playbook field "${S3_FIELD_NAME}" seeded (s3, checklist item 5 reveals this).`);
+    }
+    const { rows: vaulted } = await c.query(
+      "SELECT id FROM vault_item WHERE household_id=$1 AND field_id=$2",
+      [hh.id, s3field.id],
     );
-    const sealed = sealValue(new LocalKms(kek), keyed ? JSON.parse(keyed.key_ref) : null,
-      "0000 (smoke-test value, not a real code)");
-    await c.query(
-      `INSERT INTO vault_item (id, household_id, field_id, ciphertext, key_ref, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, now(), now())`,
-      [randomUUID(), hh.id, s3field.id, JSON.stringify(sealed.box), JSON.stringify(sealed.wrappedKey)],
-    );
-    console.log("Vault value sealed (checklist item 5 reveals this; audit row is the proof).");
+    if (vaulted.length === 0) {
+      // Reuse the household's existing wrapped data key if one exists, exactly
+      // as vaultWrite does — one data key per household, not one per value.
+      const { rows: [keyed] } = await c.query(
+        "SELECT key_ref FROM vault_item WHERE household_id=$1 AND key_ref IS NOT NULL LIMIT 1",
+        [hh.id],
+      );
+      const sealed = sealValue(kms, keyed ? JSON.parse(keyed.key_ref) : null,
+        "0000 (smoke-test value, not a real code)");
+      await c.query(
+        `INSERT INTO vault_item (id, household_id, field_id, ciphertext, key_ref, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, now(), now())`,
+        [randomUUID(), hh.id, s3field.id, JSON.stringify(sealed.box), JSON.stringify(sealed.wrappedKey)],
+      );
+      console.log("Vault value sealed (checklist item 5 reveals this; audit row is the proof).");
+    }
+    await c.query("COMMIT");
+  } catch (err) {
+    await c.query("ROLLBACK");
+    throw err;
   }
 }
 
