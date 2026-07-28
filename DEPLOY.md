@@ -190,8 +190,15 @@ Sharp edges the 2026-07-27 run paid for (symptoms → causes):
 - **`npx vercel --yes` from an unlinked directory creates a NEW project**
   rather than failing — the flag exists to skip confirmations, and the
   confirmation it skips is "set up and deploy this directory?". Deploy
-  from the repo root only (§2). A surprise fourth project appearing in
-  the dashboard means someone deployed from the wrong directory.
+  from the repo root only (§2). This fired for real on 2026-07-28: a
+  deploy chained after a `cd packages/schema` used for a migration check
+  silently created a third project. The rule is narrower than "check the
+  directory": **a `cd` inside a chained command persists into everything
+  after it**, so a deploy gets its OWN invocation with an explicit
+  `cd` to the repo root, never appended to a chain that moved elsewhere.
+  Cleanup note: `vercel project rm <name>` prompts even with
+  `--non-interactive`; pipe `y` to it. Verify the target holds only the
+  stray deployment before removing.
 - **A docs-only merge still moves the build id** — the G-37 skew banner
   keys on the commit sha, so any deploy of any merge makes parked tabs
   prompt for a refresh, code change or not. Correct behaviour; don't

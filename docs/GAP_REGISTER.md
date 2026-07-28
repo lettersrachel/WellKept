@@ -827,6 +827,11 @@ vars, serves nothing anyone uses. It burned hours of incident time as a
 decoy and its auto-deploys will eventually confuse someone into "fixing" it.
 Decision, founder's: delete the project, or wire it as an intentional
 staging target. Either is fine; dormant-and-unexplained is not.
+2026-07-28 addendum: a stray third project ("schema", created by a deploy
+chained after a cd, DEPLOY.md sharp edges) was caught and deleted the
+same hour. The episode is a live argument for resolving this: an
+unexplained project in the list is exactly what makes a stray one hard
+to notice. Decision remains the founder's.
 
 ### G-36. `sslmode=require` weakens in pg v9
 Today it resolves to verify-full; pg v9 / pg-connection-string v3 adopt
