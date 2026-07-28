@@ -29,14 +29,25 @@ cd "$(dirname "$0")/.."
 if [[ "${1:-}" == "--selftest" ]]; then
   # Prove the refusals, red before green (guard-must-fire).
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/4: wrong sha refused"
+  echo "selftest 1/6: wrong sha refused"
   WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/4: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  echo "selftest 2/6: migration-count mismatch refused (the assertion itself, migrate skipped)"
   WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/4: unexpected project refused"
+  echo "selftest 3/6: unexpected project refused"
   WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/4: absent/wrong project link refused BEFORE deploy"
-  echo "selftest PASSED: all four refusals fire"
+  echo "selftest 4/6: absent project link refused BEFORE deploy"
+  # GREEN paths - a guard suite that only proves its refusals passes while
+  # refusing everything (learned live, first happy-path attempt).
+  if [[ -f .vercel/project.json ]]; then
+    WK_DEPLOY_TEST_STOP_AFTER_LINK=1 WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" >/dev/null 2>&1 || { echo "SELFTEST FAIL: a REAL link was refused"; exit 1; }
+    echo "selftest 5/6: real link accepted (green path)"
+  else
+    echo "selftest 5/6: SKIPPED (no .vercel link in this environment; run on the deploy machine for the full green path)"
+  fi
+  EX=$(echo '{"id":"abc123"}' | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id??String(d).trim())}catch{console.log(String(d).trim())}})")
+  [[ "$EX" == "abc123" ]] || { echo "SELFTEST FAIL: build-id JSON extraction broken"; exit 1; }
+  echo "selftest 6/6: build-id extracted from JSON (green path)"
+  echo "selftest PASSED: four refusals fire, two green paths accept"
   exit 0
 fi
 
@@ -75,22 +86,26 @@ else
   # with an absent or wrong link file CREATING a project, so the check
   # after the deploy catches the stray only after it exists. Before is
   # the guard; the post-hoc read below is proof the guard worked.
-  if [[ "${WK_DEPLOY_TEST_LINK:-}" == "absent" ]]; then LINKED=""; else
-  LINKED=$(node -e "console.log(require('./.vercel/project.json').projectName ?? '')" 2>/dev/null || echo ""); fi
-  [[ "$LINKED" == "$EXPECTED_PROJECT" ]] || fail "repo root is linked to '${LINKED:-nothing}', expected '$EXPECTED_PROJECT'. Refusing before a deploy can create a stray project. Run npx vercel link."
+  # The link file carries projectId/orgId only (no name) - checked live
+  # 2026-07-28 after the first run refused every deploy on a fantasy key.
+  if [[ "${WK_DEPLOY_TEST_LINK:-}" == "absent" ]]; then LINKED_ID=""; else
+  LINKED_ID=$(node -e "console.log(require('./.vercel/project.json').projectId ?? '')" 2>/dev/null || echo ""); fi
+  [[ -n "$LINKED_ID" ]] || fail "repo root has no Vercel link (.vercel/project.json absent or empty). Refusing before --yes can create a stray project. Run npx vercel link and select '$EXPECTED_PROJECT'."
+  [[ -n "${WK_DEPLOY_TEST_STOP_AFTER_LINK:-}" ]] && { echo "link check passed (test stop)"; exit 0; }
   npx vercel --prod --yes
-  # 6. The deployment must have landed on the expected project, by name,
-  # not merely succeeded (the stray-project failure a script would
-  # otherwise inherit unchanged).
-  PROJECT=$(node -e "console.log(require('./.vercel/project.json').projectName ?? '')" 2>/dev/null || echo "UNLINKED")
+  # 6. Proof the guard worked: a stray creation REWRITES the link file
+  # with the new project id, so an unchanged projectId means the deploy
+  # landed on the project we were linked to.
+  PROJECT=$(node -e "console.log(require('./.vercel/project.json').projectId ?? '')" 2>/dev/null || echo "UNLINKED")
 fi
-[[ "$PROJECT" == "$EXPECTED_PROJECT" ]] || fail "deploy landed on project '$PROJECT', expected '$EXPECTED_PROJECT'. Investigate before anything else; a stray project may exist."
+if [[ -n "${WK_DEPLOY_TEST_PROJECT:-}" ]]; then EXPECT_ID="$EXPECTED_PROJECT"; else EXPECT_ID="$LINKED_ID"; fi
+[[ "$PROJECT" == "$EXPECT_ID" ]] || fail "the Vercel link changed during the deploy ('$PROJECT' vs '$EXPECT_ID') - a stray project was likely created. Investigate before anything else."
 
 # 7. Build id: three reads, all must equal the deployed sha (one stale
 # read mid-alias-flip is known; three agreeing reads are the bar).
 for i in 1 2 3; do
   sleep 5
-  GOT=$(curl -fsS "$PROD_HOST/api/build-id")
+  GOT=$(curl -fsS "$PROD_HOST/api/build-id" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id??String(d).trim())}catch{console.log(String(d).trim())}})")
   [[ "$GOT" == "$HEAD_SHA" ]] || fail "build-id read $i returned $GOT, expected $HEAD_SHA (re-run to retry; a persisting mismatch is real)"
 done
 echo "build-id verified x3: $HEAD_SHA"
