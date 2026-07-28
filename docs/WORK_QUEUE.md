@@ -354,6 +354,32 @@ was pruned and why.
   SAW, falling back to the store, never the base seed. Re-proven:
   exactly the decided change versioned, the keep row untouched.
 
+### W-5 follow-on items (brief external, founder-signed)
+
+- **X, the G-13 surface guard: CLOSED 2026-07-28
+  (staff-disclosure.test.ts, the tenth guard).** The surface set was
+  DETERMINED from the schema first, per the brief: 24 tables carry staff
+  attribution; 19 map to specific phrases the approved disclosure
+  contains, and 5 are allowlisted with written reasons. **The survey
+  found two NEW drifts beyond the reported condition_flag gap:
+  assignment history (household_role_assignment) and photo-upload
+  attribution (visit_photo.uploaded_by) are recorded per staff member
+  and unnamed in the approved text.** Both are founder line candidates
+  for the next revision, alongside "condition flags you raise"; the
+  remaining two allowlist entries (exclusion approval, provision
+  versions) are corporate-generic judgment calls, decisions rather than
+  drifts. The guard computes its own input (the inputs doctrine: a
+  broken detection returning a tiny set fails rather than passing
+  vacuously) and generic action-log coverage is deliberately not a
+  valid mapping target for new surfaces. The census itself was caught
+  once before landing: three FK-less attribution columns (visit_photo,
+  household consent, incident_report) evaded the first detection
+  pattern, found by recounting against the schema; the fixed pattern
+  names FK-less staff columns explicitly and the count floor (>= 20)
+  is what catches the next such miss. Proven green, red three ways
+  (unclassified surface; phrase absent; broken detection), green. The
+  approved text was not edited.
+
 ### Briefs already written
 
 | Item | Brief | Gate |
