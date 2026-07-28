@@ -231,6 +231,31 @@ was pruned and why.
   sanitizeSummary's own regex). Members 1-id (sweep id text-keying and
   the W-9 real object key) stay gated on the calibration read; member 4
   is data-side, recorded in K.
+- **R, floor-review merge script: CLOSED 2026-07-28
+  (tooling/import/wk_floor_review.py).** The workbook's DECISION
+  vocabulary reaches the tested loader through a disposable merge script,
+  never a loader extension. The three rules are enforced and were each
+  proven by refusal: unsure never imports (listed as a queue with current
+  tier and text); blank is not keep (a partial import requires
+  --allow-partial); seed_reviewed flips only via --flip-reviewed at zero
+  blanks and zero unsure across all three tabs. Dry run is the default;
+  every tier change goes through load-provisions.ts --supersede so
+  provision_versions records it. Proven against synthetic workbooks in
+  the brief's shape on the local session P database, including the case
+  the first proof run caught: undecided rows now carry the STORE's
+  current tier, so an import can never silently revert a row the review
+  made no decision about. The connection comes from DATABASE_URL or
+  .neon-connection, by name, never printed.
+  **Review-stamp answer (report only, per the brief): no per-provision
+  place exists to record who reviewed a row and when.** standard_provision
+  has review_date (future scheduling) and provision_versions has
+  actor_user, but a keep produces no write, so a 341-row review's only
+  durable evidence is the store-level seed_reviewed boolean. Adding one
+  would touch: a migration (reviewed_at, reviewed_by on
+  standard_provision), the loader or this script's write path, the
+  standards page if displayed, and the S3 column-list encoding in
+  standards.test.ts plus the founder's matching Addendum A1 S3 edit (the
+  W-11 pattern). Not added; a decision.
 - **S, the M baseline: dispositioned.** `.neon-connection` does not exist
   in the cloud container (gitignored, founder's machine only), so the two
   production reads fall to the founder's local session; per the close-out
