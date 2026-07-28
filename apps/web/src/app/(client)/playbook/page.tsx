@@ -25,7 +25,7 @@ async function StewardshipCard({ householdId }: { householdId: string }) {
       <h2>What we hold for you</h2>
       <div className="note">
         Everything Well Kept keeps about your household, by category. Your working details and every
-        secured item stay behind the protections the app enforces — shown here as counts, never
+        secured item stay behind the protections the app enforces, shown here as counts and never
         printed.
       </div>
       <div className="row" style={{ gap: 10, flexWrap: "wrap", margin: "6px 0 12px" }}>
@@ -37,7 +37,7 @@ async function StewardshipCard({ householdId }: { householdId: string }) {
       </div>
       <div className="prov" style={{ marginBottom: 10 }}>
         {s.lastVaultAccess
-          ? `Your secured items were last accessed on ${fmt(s.lastVaultAccess)} — every access is logged.`
+          ? `Your secured items were last accessed on ${fmt(s.lastVaultAccess)}. Every access is logged.`
           : "Nothing secured has ever been accessed. Every future access will be logged."}
       </div>
       {s.sections.map((sec) => (
@@ -207,13 +207,13 @@ export default async function ClientPlaybook({
         </div>
         {query && (
           <div className="note">
-            {captured.length} match(es) for &ldquo;{q}&rdquo; — <a href="/playbook">clear</a>
+            {captured.length} match(es) for &ldquo;{q}&rdquo; · <a href="/playbook">clear</a>
           </div>
         )}
         {rest.length === 0 && !summary && flagged.length === 0 ? (
           <div className="note">
-            Your Playbook fills in as your house manager captures your household&apos;s details —
-            entries appear here as they&apos;re confirmed.
+            Your Playbook fills in as your house manager captures your household&apos;s details.
+            Entries appear here as they&apos;re confirmed.
           </div>
         ) : (
           [...new Set(rest.map((f) => f.section as number))].sort((a, b) => a - b).map((sec) => (

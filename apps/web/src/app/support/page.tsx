@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /** Public support page (App Store listing requirement). */
-export const metadata = { title: "Support — Well Kept" };
+export const metadata = { title: "Support · Well Kept" };
 
 export default function SupportPage() {
   return (

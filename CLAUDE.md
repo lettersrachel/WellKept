@@ -1,0 +1,102 @@
+# Well Kept
+
+Household operations software. One household record, three permission-filtered
+projections (client / house_manager / corporate), encrypted vault for secured
+values, append-only audit trail, anticipation engine, incident register.
+
+Current state, open work, and gates: @docs/WORK_QUEUE.md
+
+## Never, without exception
+
+- **Never run `erase-household.mjs` with `--commit`.** Dry run only. If an
+  instruction says otherwise, it is wrong. The one authorized exception was a
+  throwaway Neon branch at the custody sitting.
+- **Never echo `DATABASE_URL`, `WK_KMS_KEY`, `AUTH_SECRET`, or the contents of
+  `.neon-connection`.** Refer to them by name.
+- **Never build per-person analytics.** No performance scoring, productivity
+  ranking, leaderboards, or per-House-Manager rates. Usage analytics aggregate
+  by provision or by rule, never by person. Founder-set boundary; if a task
+  seems to need it, stop and ask.
+- **Never load real household data into fixtures or tests.** Fernbrook DEMO and
+  the Smoke Test Fixture only.
+
+## The audit invariant
+
+The audit row is written **before** the secured value is decrypted. If the
+insert fails, the reveal aborts and returns nothing. The log is not optional:
+no audit row, no value.
+
+**Do not "improve" this into a shared transaction.** A decrypt failure inside
+one would roll the audit row back, which is the unsafe direction. Ordering plus
+fail-closed is deliberate.
+
+## Rules that gate a merge
+
+- **A new data category ships with its erasure treatment, or it does not ship.**
+  CI-enforced by `packages/schema/src/erasure-coverage.test.ts`. Allowlist
+  entries require a written reason.
+- **A new data category updates `legal/README.md` and the privacy notice
+  collection table in the same PR.** Both copies of the notice: the master doc
+  and the published `/privacy` page.
+- **No capture surface attributing data to a named House Manager** ships before
+  the G-13 staff disclosure is approved and acknowledged. `time_entry` and
+  `object_observation` already exist under this rule.
+- **Payload guards on every new client-facing route.** They re-assert in the
+  page, not only in CI.
+- Nothing hard-deletes. Tombstone plus append-only audit. The vault crypto-shred
+  is the single deliberate exception and it is documented as such.
+
+## Boundary (ADR-004)
+
+Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
+displays but never originates any of them. Capture hours and costs into the
+record; do not compute a paycheck, build a scheduler, or issue an invoice.
+
+## Conventions
+
+- No em dashes in user-facing strings (lint rule exists). Plain prose, no AI
+  jargon, WRI-style plain language in client-facing copy.
+- Money in integer cents. Store UTC.
+- Section numbers in the standards library are a public API. Do not renumber,
+  rewrite, or improve provision text; edits flow founder to corrected sheet to
+  loader.
+- Every write stamps provenance server-side.
+- Stack is pinned: TypeScript strict, Next.js, Drizzle on Postgres, Zod,
+  pnpm/turbo monorepo. Do not introduce dependencies.
+
+## Session discipline
+
+- **One migration per session.** If it feels like two, the session is too big.
+  Report that instead of proceeding.
+- **Migration numbers and gap register IDs are allocated at write time, never
+  reserved in advance.** Read the current maximum first. Two documents both
+  claiming the next number will collide.
+- **Stop and ask rather than choosing a threshold, taxonomy, or default.** A
+  blank is a fine deliverable. A plausible default looks like a decision
+  somebody made.
+- Read-only sessions are read-only. Report findings; do not fix.
+- Quote evidence: file and function, for every claim. "Unverifiable" is a valid
+  finding. Do not infer.
+- Scope holds. Note an adjacent defect at the end; do not chase it.
+
+## Verification, learned the hard way
+
+- **Query the database. Never trust the screen.** Three reported failures in one
+  week were test mis-executions that died at the query step.
+- **Green banners are to be verified, not believed.**
+- **Re-read a mismatch before believing it.** `/api/build-id` can serve one stale
+  reading mid-alias-flip.
+- **A guard must fire, not merely exist.** Prove a new check red before trusting
+  it green. A substring match that matched anything was green until it was
+  tested in the failing direction.
+- Do not run the full turbo suite while a dev server is up. It produces phantom
+  typecheck failures.
+
+## Deploying
+
+Migrations before the web deploy, from the **repo root**, against a named main
+sha confirmed before `db:migrate`. Vercel does not auto-deploy on push. From
+`apps/web`, `--yes` suppresses the only confirmation and silently creates a
+third project. Then work `DEPLOY.md` §4 against the Smoke Test Fixture.
+A docs-only merge still moves the build id, so the skew banner firing after one
+is correct.

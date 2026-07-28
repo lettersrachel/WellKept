@@ -23,7 +23,7 @@ export default async function VerifyRequest({
           waiting user to conclude sign-in is broken. */}
       <div className="note">
         Nothing after two minutes? Check your spam or promotions folder, then request
-        another link from the <Link href="/signin">sign-in page</Link> — it happens, and
+        another link from the <Link href="/signin">sign-in page</Link>; it happens, and
         a fresh request is always safe.
       </div>
       {error === "bad-code" && (
