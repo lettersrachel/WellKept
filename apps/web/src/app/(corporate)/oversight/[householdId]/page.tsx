@@ -110,14 +110,14 @@ export default async function Oversight({ params, searchParams }: {
           the table's existing rows can no longer impersonate a new one. */}
       {recorded && (
         <div className="card" role="status" style={{ borderColor: "#2E6B3F", marginBottom: 12 }}>
-          <strong>Recorded:</strong> {recorded} — it is in the table below and in the audit trail.
+          <strong>Recorded:</strong> {recorded}; it is in the table below and in the audit trail.
         </div>
       )}
       <div className="card">
         <div className="row" style={{ alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <h2 style={{ flex: 1 }}>
             <Link href="/oversight" style={{ color: "var(--grey)", textDecoration: "none" }}>Fleet</Link> → {hh.name}
-            {hh.isFixture && <span className="tag s2" style={{ marginLeft: 8 }}>FIXTURE — not a client</span>}
+            {hh.isFixture && <span className="tag s2" style={{ marginLeft: 8 }}>FIXTURE; not a client</span>}
           </h2>
           {/* CEO master view: read-only previews through the other roles' projections. */}
           {isAdmin && <Link className="pill" href={`/oversight/${hh.id}/preview/hm`}>View as HM</Link>}
@@ -188,7 +188,7 @@ export default async function Oversight({ params, searchParams }: {
         <h2>Visit photos</h2>
         <div className="note">
           Image bytes purge on a rolling window (default 90 days; `photo_retention`
-          setting) — the record survives as a tombstone. A hold exempts a photo
+          setting); the record survives as a tombstone. A hold exempts a photo
           (open incident or dispute) until released.
         </div>
         {visitPhotos.length === 0 ? (
@@ -237,7 +237,7 @@ export default async function Oversight({ params, searchParams }: {
       <div className="card">
         <h2>Incidents &amp; complaints</h2>
         <div className="note">
-          A complaint, breakage, injury, or near-miss — in a dispute, the most important
+          A complaint, breakage, injury, or near-miss; in a dispute, the most important
           record in the business. Append-only: no edits; corrections are new entries,
           outcomes are resolution notes. Every entry and resolution is audited.
         </div>
@@ -266,7 +266,7 @@ export default async function Oversight({ params, searchParams }: {
                           <input type="hidden" name="incidentId" value={i.id} />
                           <input name="resolutionNote" aria-label="Resolution note" placeholder="resolution note" required style={{ marginTop: 0, fontSize: 12 }} />
                           {/* Session B: the back-link question. Skippable on
-                              purpose (founder decision) — blank means
+                              purpose (founder decision); blank means
                               unanswered, never guessed. */}
                           <select name="preventableByPrompt" aria-label="Could a prompt have prevented this?" defaultValue="" className="inline" style={{ fontSize: 12 }}>
                             <option value="">preventable by a prompt? (skip)</option>
@@ -327,7 +327,7 @@ export default async function Oversight({ params, searchParams }: {
           delivery; the full unit-economics surface is session 4, gated on
           real data. ADR-004: hours and costs in, never pay or invoices. */}
       <div className="card">
-        <h2>Time &amp; costs — trailing 30 days</h2>
+        <h2>Time &amp; costs; trailing 30 days</h2>
         {timeByCategory.length === 0 && recentCosts.length === 0 ? (
           <div className="note">
             Nothing recorded yet. Delivery hours record themselves when a visit closes;
@@ -398,7 +398,7 @@ export default async function Oversight({ params, searchParams }: {
         <h2>People &amp; access (REQ-002)</h2>
         <div className="note">
           One role per person per household; no fleet-wide wildcard (REQ-001). Assigning an email
-          that has never signed in creates the account — they get in with a magic link.
+          that has never signed in creates the account; they get in with a magic link.
         </div>
         <table className="panel">
           <thead>
@@ -411,9 +411,9 @@ export default async function Oversight({ params, searchParams }: {
               <tr key={m.id}>
                 <td>{m.email}</td>
                 <td>{m.role.replace("_", " ")}</td>
-                <td>{m.ndaApproved ? "approved" : "—"}</td>
+                <td>{m.ndaApproved ? "approved" : "–"}</td>
                 <td title={staff ? "Staff roles require a TOTP second factor (REQ-003)" : "Clients sign in by magic link only"}>
-                  {!staff ? "—" : totpEnrolled.has(m.userId) ? <span className="prov">on</span> : <span className="prov" style={{ opacity: 0.6 }}>pending</span>}
+                  {!staff ? "–" : totpEnrolled.has(m.userId) ? <span className="prov">on</span> : <span className="prov" style={{ opacity: 0.6 }}>pending</span>}
                 </td>
                 {isAdmin && (
                   <td>
@@ -466,12 +466,12 @@ export default async function Oversight({ params, searchParams }: {
 
       {/* Capture session 3: commercial attributes. Referral recorded once
           (corrections re-record, audited); membership history as append-only
-          events. ADR-004: QuickBooks bills — this records state, not money. */}
+          events. ADR-004: QuickBooks bills; this records state, not money. */}
       <div className="card">
         <h2>Commercial record (capture session 3)</h2>
         <div className="prov">
           Referral: {hh.referralSource ? hh.referralSource.replace(/_/g, " ") : "not recorded"}
-          {hh.referralNote && ` — ${hh.referralNote}`}
+          {hh.referralNote && `; ${hh.referralNote}`}
         </div>
         {isAdmin && (
           <form action={setReferralSource} className="row" style={{ marginTop: 6, gap: 6, flexWrap: "wrap" }}>
@@ -488,7 +488,7 @@ export default async function Oversight({ params, searchParams }: {
         {membershipEvents.length === 0 ? (
           <div className="note" style={{ marginTop: 8 }}>
             No membership events. The history starts with a &ldquo;start&rdquo; event when
-            the household signs — record it the day it happens, with the tier and price.
+            the household signs; record it the day it happens, with the tier and price.
           </div>
         ) : (
           <table className="panel" style={{ marginTop: 8 }}>
@@ -513,7 +513,7 @@ export default async function Oversight({ params, searchParams }: {
             <input type="hidden" name="householdId" value={hh.id} />
             {/* key: an uncontrolled select keeps its DOM value across
                 server-action re-renders (the statusTag select learned this
-                first) — remount after every recorded event so a stale
+                first); remount after every recorded event so a stale
                 choice can never ride into the next submission. It already
                 mis-kinded two fixture rows on 2026-07-27. */}
             <select key={`kind-${membershipEvents.length}`} name="kind" defaultValue="start" className="inline" aria-label="Event kind">
@@ -538,7 +538,7 @@ export default async function Oversight({ params, searchParams }: {
         )}
         <div className="note" style={{ marginTop: 6 }}>
           Append-only: corrections add a superseding event. QuickBooks remains the
-          billing system of record (ADR-004) — this records that state changed.
+          billing system of record (ADR-004); this records that state changed.
         </div>
       </div>
 
@@ -553,7 +553,7 @@ export default async function Oversight({ params, searchParams }: {
           <div className="banner">
             NO CONSENT ON RECORD. Written consent is the precondition for real household
             data (ADR-001 guardrail 3). Sign legal/household-consent.md, file the paper,
-            and record it here — the client-side counterpart of the staff NDA flag.
+            and record it here; the client-side counterpart of the staff NDA flag.
           </div>
         )}
         {isAdmin && (
@@ -568,7 +568,7 @@ export default async function Oversight({ params, searchParams }: {
         )}
         <div className="note" style={{ marginTop: 6 }}>
           The paper stays the artifact; this records that it exists, when, and which
-          version. Corrections re-record — the audit trail keeps every prior value.
+          version. Corrections re-record; the audit trail keeps every prior value.
         </div>
       </div>
 
@@ -709,7 +709,7 @@ export default async function Oversight({ params, searchParams }: {
       <div className="card">
         <h2>Gesture queue (REQ-042: two gates, then quiet)</h2>
         <div className="note">
-          Cultural fit first, HM notified second, executed third — the order is enforced in the
+          Cultural fit first, HM notified second, executed third; the order is enforced in the
           action layer, not the buttons.
         </div>
         {pendingGestures.length === 0 ? (
@@ -734,7 +734,7 @@ export default async function Oversight({ params, searchParams }: {
                   <form action={executeGesture} className="row" style={{ gap: 6 }}>
                     <input type="hidden" name="gestureId" value={g.id} />
                     <input name="costDollars" aria-label="Cost in dollars" className="inline" placeholder="$" style={{ width: 70 }} />
-                    <button className="act">Executed — to the quiet log</button>
+                    <button className="act">Executed; to the quiet log</button>
                   </form>
                 )}
               </div>
@@ -831,7 +831,7 @@ export default async function Oversight({ params, searchParams }: {
         {[...sections.entries()].map(([sec, fields]) => (
           <details key={sec} className="section" open={fields.some((f) => f.sensitivity === "s3")}>
             <summary>
-              S{sec} · {SECTION_NAMES[sec] ?? "—"} <span className="pill">{fields.length}</span>
+              S{sec} · {SECTION_NAMES[sec] ?? "–"} <span className="pill">{fields.length}</span>
             </summary>
             {fields.map((f) => (
               <div key={String(f.id)} className={`field ${f.flag && f.flag !== "none" ? f.flag : ""}`}>

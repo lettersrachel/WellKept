@@ -141,7 +141,7 @@ export default async function ExhibitPage({
           </div></div>
         <div className="field"><span className="fname">Status changes</span>
           <div className="fval">
-            {tagChanges.length === 0 ? `None — steady at ${hh.statusTag} all window.`
+            {tagChanges.length === 0 ? `None; steady at ${hh.statusTag} all window.`
               : tagChanges.map((c) => {
                   const d = c.detail as { from?: string; to?: string };
                   return `${day(c.createdAt)}: ${d.from} → ${d.to}`;

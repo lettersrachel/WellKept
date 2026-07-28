@@ -63,7 +63,7 @@ export function SkewWatch() {
         textAlign: "center", fontSize: 14,
       }}
     >
-      This page is from before the latest update — buttons may silently do nothing.
+      This page is from before the latest update; buttons may silently do nothing.
       <button
         onClick={() => window.location.reload()}
         style={{ marginLeft: 10, padding: "4px 12px", cursor: "pointer", fontSize: 14 }}

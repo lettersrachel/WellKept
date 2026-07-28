@@ -56,7 +56,7 @@ function fmt(d: Date, timezone: string): string {
 
 interface SweepWindow { offsetDays: number; text: (label: string, when: string) => string }
 
-const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
+export const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
   dates: {
     annual: true,
     windows: [
@@ -68,7 +68,7 @@ const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
     annual: true,
     windows: [
       { offsetDays: 14, text: (l, w) => `Prep window opens: ${l} (${w}).` },
-      { offsetDays: 3, text: (l, w) => `Final prep: ${l} is ${w}.` },
+      { offsetDays: 3, text: (l, w) => `Final prep: ${l} (${w}).` },
     ],
   },
   subscription: {
@@ -124,6 +124,15 @@ export function entryEvents(entry: RegistryEntryLike, now: Date): { occurrence: 
     events.push({ occurrence: nextIntervalOccurrence(entry.lastServicedAt, entry.maintenanceIntervalMonths, now), windowsKey: "appliance" });
   }
   return events;
+}
+
+/**
+ * F1 (round five): the W-9 object collapse, shared so the display and the
+ * guard test use ONE definition. Date position in templates is a
+ * load-bearing convention; the template-collapse test enforces it.
+ */
+export function collapseItemText(t: string): string {
+  return t.replace(/\s*\(([^)]*)\)|\son\s.+$/g, "").trim();
 }
 
 export interface SweepDraft extends PromptPackItemDraft { occurrence: string }

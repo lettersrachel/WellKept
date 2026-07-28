@@ -175,6 +175,19 @@ was pruned and why.
   keys, not objects; "radar" renders to House Managers via packName and
   two prompt texts. Each fix its own session, none yet authorized.
 
+### Round-five follow-ups (ROUND5_SESSIONS.md)
+
+- **Real object key for W-9 + fired dedup:** gated together on the first
+  calibration read against real household data. Until then multi-window
+  families' count is labeled "series" (F2), which is what it is.
+- **packName rename (F3): REPORTED AND STOPPED per the brief** - packName
+  is an IDENTIFIER, not display-only: exclusions.ts:53 matches exclusion
+  targets against it, so a rename changes which exclusions fire. The fix
+  is a display-name-vs-key split; its own session, not yet authorized.
+- **G3 (founder):** push one trivial docs change through tooling/deploy.sh
+  on purpose before a real change rides on it - the happy path has
+  executed zero times.
+
 ### Briefs already written
 
 | Item | Brief | Gate |

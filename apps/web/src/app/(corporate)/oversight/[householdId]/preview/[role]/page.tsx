@@ -37,7 +37,7 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
   const switcher = (
     <div className="card" style={{ background: "var(--green)", color: "#fff" }}>
       <div className="sans" style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--sage)" }}>
-        MASTER VIEW — READ-ONLY PREVIEW OF THE {role === "client" ? "CLIENT" : "HOUSE-MANAGER"} PROJECTION.
+        MASTER VIEW; READ-ONLY PREVIEW OF THE {role === "client" ? "CLIENT" : "HOUSE-MANAGER"} PROJECTION.
         SAME SERVER-SIDE MATRIX AS THE REAL SURFACE; NOTHING HERE IS WRITABLE.
       </div>
       <div style={{ fontSize: 20, marginTop: 4 }}>{hh.name}</div>
@@ -161,7 +161,7 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
   return (
     <>
       {switcher}
-      {hh.isNda && <div className="note">NDA household — previewed as an NDA-approved house manager; an unapproved cover sees less.</div>}
+      {hh.isNda && <div className="note">NDA household; previewed as an NDA-approved house manager; an unapproved cover sees less.</div>}
       <div className="eyebrow">Flags first</div>
       {flaggedHm.length === 0 ? (
         <div className="note">No flagged fields on this record yet.</div>
@@ -201,7 +201,7 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
           </div>
         ))
       )}
-      <div className="eyebrow">Coming up — the anticipation engine</div>
+      <div className="eyebrow">Coming up; the anticipation engine</div>
       {lifeEvent ? (
         <div className="note">Held. LIFE-EVENT pauses every prompt; nothing is deleted.</div>
       ) : radar.length === 0 ? (
@@ -214,7 +214,7 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
           </div>
         ))
       )}
-      <div className="eyebrow">Last year at this time — repeat-season memory</div>
+      <div className="eyebrow">Last year at this time; repeat-season memory</div>
       {recall.length === 0 ? (
         <div className="note">
           Builds from this household&apos;s own record: recall lines appear once there is a
@@ -245,7 +245,7 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
       )}
       <div className="note">
         The close flow, stranger-test form, and prompt answers exist only on the real
-        field surfaces — this preview shows what the HM reads, not what they do.
+        field surfaces; this preview shows what the HM reads, not what they do.
       </div>
     </>
   );
