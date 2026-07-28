@@ -27,6 +27,8 @@
  */
 const randomUUID = () => globalThis.crypto.randomUUID();
 
+export { rehydrate, type HandoffStore, type PersistedRecord } from "./handoff";
+
 export interface QueueCommand {
   type: string;
   idempotencyKey: string;

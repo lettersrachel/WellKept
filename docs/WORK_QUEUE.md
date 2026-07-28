@@ -568,6 +568,21 @@ was pruned and why.
   recorded in the register: the paused decision was NEVER overdue-gated
   (AD's card maps every open item; only the tag and the briefing array
   key on the date), so the fix applies to the deferral side alone.
+- **AK, the atomic tab handoff: CLOSED 2026-07-28 (authorized by the
+  founder the same night G-52 settled).** The claim-by-delete window is
+  closed: rehydration is put-new-THEN-delete-old with idempotencyKey
+  dedupe, so a durable copy of every command exists at every instant; a
+  crash inside the window now leaves a safe duplicate instead of a
+  loss, and duplicates dedupe on the next claim. The handoff moved into
+  @wellkept/offline-queue behind an injected store contract so the
+  invariant is PROVEN in the suite (replay-the-log durable-copy check,
+  dedupe, crash-before-durable loses nothing, attempts/dead survive).
+  **The rewrite found a second latent stuck-queue path, fixed in the
+  same change: conflict-marker records were re-enqueued as pending
+  commands on reload; the server 400s the unknown type and the thrown
+  transport error blocked the queue head forever. Markers now stay on
+  disk as the conflict record and never enter the queue.** G-52's
+  remaining-exposure paragraph is superseded by this entry.
 - **AJ, the one-role constraint: REPORTED 2026-07-28 (report only, no
   index change, per the brief).** What breaks under dual roles is
   RESOLUTION, not the index: getPrincipal takes THE row for (user,
