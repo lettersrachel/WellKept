@@ -18,12 +18,10 @@ tooling/deploy.sh's full gate). 28 migrations (0000 to 0027). Seven CI
 guards. Gap register at G-49. G-13 founder-approved, awaiting counsel review
 and the hire's acknowledgment.
 
-**Worker redeploy pending (founder):** the Railway worker builds the sweep
-templates from packages/trigger-engine, so the swept prompt copy does not
-ship until the worker service redeploys. Railway dashboard, Deployments,
-Redeploy on the worker service; or first check whether the service is
-Git-connected and auto-deployed `b7026dd` already. No Railway CLI or config
-exists in the repo, so this is a dashboard action, not a build.
+The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
+confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
+copy is live from the worker as well. No Railway CLI or config exists in the
+repo; the dashboard is the only control surface.
 
 **Nothing has a real household yet.** Every gate below that says "pilot" or
 "first household" is genuinely closed, not deferred.
