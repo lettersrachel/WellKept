@@ -539,6 +539,14 @@ export const objectObservation = pgTable("object_observation", {
   note: text("note"), // s2, optional ("left rear burner weak")
   observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
   recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+  // W-1 (WORK_QUEUE): an observation is a claim about the world, and a
+  // claim can be wrong. Supersede, never delete — the row stays, marked
+  // with who corrected it and when, and every derivation excludes
+  // superseded rows. Same shape as provision versioning. A fat-fingered
+  // 1 on a pristine object is exactly the cliff STD-016's promotion
+  // logic looks for, so "the next look averages it out" does not hold.
+  supersededAt: timestamp("superseded_at", { withTimezone: true }),
+  supersededBy: text("superseded_by").references(() => authUser.id),
 }, (t) => [
   index("object_observation_household_idx").on(t.householdId),
   index("object_observation_series_idx").on(t.registryEntryId, t.measure, t.observedAt),

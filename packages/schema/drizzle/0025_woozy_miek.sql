@@ -1,0 +1,3 @@
+ALTER TABLE "object_observation" ADD COLUMN "superseded_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "object_observation" ADD COLUMN "superseded_by" text;--> statement-breakpoint
+ALTER TABLE "object_observation" ADD CONSTRAINT "object_observation_superseded_by_auth_user_id_fk" FOREIGN KEY ("superseded_by") REFERENCES "public"."auth_user"("id") ON DELETE no action ON UPDATE no action;

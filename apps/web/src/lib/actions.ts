@@ -1041,3 +1041,31 @@ export async function recordObjectObservation(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `${measure === "condition" ? "condition" : "fill"} ${value}${measure === "fill_level" ? "%" : "/5"}: ${entry.label}`);
 }
+
+/**
+ * W-1 (WORK_QUEUE): correct a wrong observation by superseding it, never
+ * deleting it. The row stays with who corrected it and when; every read
+ * that feeds a display or derivation excludes superseded rows. The audit
+ * posture differs from events on purpose: an event happened, an
+ * observation is a claim about the world, and a claim can be wrong.
+ */
+export async function supersedeObjectObservation(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const observationId = String(formData.get("observationId") ?? "");
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(observationId)) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { objectObservation } = await import("@wellkept/schema");
+  const { isNull } = await import("drizzle-orm");
+  const [row] = await db.select({ id: objectObservation.id, value: objectObservation.value, measure: objectObservation.measure })
+    .from(objectObservation)
+    .where(and(eq(objectObservation.id, observationId), eq(objectObservation.householdId, householdId), isNull(objectObservation.supersededAt)))
+    .limit(1);
+  if (!row) refuseTo(returnTo, "missing"); // absent, foreign, or already superseded
+  await db.update(objectObservation)
+    .set({ supersededAt: new Date(), supersededBy: principal.userId, updatedAt: new Date() })
+    .where(eq(objectObservation.id, observationId));
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `superseded ${row.measure === "condition" ? "condition" : "fill"} ${row.value} (row kept, excluded from the series)`);
+}

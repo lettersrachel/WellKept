@@ -194,9 +194,11 @@ export async function getRegistries(householdId: string, role: string) {
  */
 export async function getObjectObservations(householdId: string, perSeries = 5) {
   const { objectObservation } = await import("@wellkept/schema");
-  const { desc: descOp } = await import("drizzle-orm");
+  const { desc: descOp, isNull, and: andOp } = await import("drizzle-orm");
+  // W-1: superseded rows are excluded from every read a derivation or
+  // display could consume — the correction IS the exclusion.
   const rows = await db.select().from(objectObservation)
-    .where(eq(objectObservation.householdId, householdId))
+    .where(andOp(eq(objectObservation.householdId, householdId), isNull(objectObservation.supersededAt)))
     .orderBy(descOp(objectObservation.observedAt));
   const bySeries = new Map<string, typeof rows>();
   for (const r of rows) {
