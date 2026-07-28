@@ -82,15 +82,28 @@ if [[ "${1:-}" == "--preflight" ]]; then PREFLIGHT=1; shift; fi
 SHA="${1:-}"
 [[ -n "$SHA" ]] || fail "expected main sha is a required argument"
 
-# 1. The named-sha gate.
+# 1. The named-sha gate. NAME the sha from the merged PR (the merge commit
+# GitHub shows), never derive it from the tree being deployed:
+# $(git rev-parse HEAD) compares HEAD to itself and turns this gate into a
+# no-op, which the 2026-07-28 0028 deploy demonstrated.
 HEAD_SHA=$(git rev-parse HEAD)
 [[ "$HEAD_SHA" == "$SHA"* ]] || fail "HEAD is $HEAD_SHA, expected $SHA. Pull and confirm the merge before deploying."
+
+# The connection comes from the environment or, failing that, from
+# .neon-connection at the repo root - read HERE, after this script's own cd,
+# so a caller's working directory can never resolve it wrong (the cwd-drift
+# failure, second occurrence 2026-07-28: $(cat .neon-connection) in the
+# caller's shell resolved in apps/web and came through empty). By name,
+# never echoed.
+if [[ -z "${DATABASE_URL:-}" && -f .neon-connection ]]; then
+  DATABASE_URL="$(cat .neon-connection)"; export DATABASE_URL
+fi
 
 # Required for the real path (migrate, and the database side of the count).
 # Only the selftest hooks — which skip BOTH — may waive it; any real
 # invocation, --preflight included, still refuses without it.
 if [[ -z "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" || -z "${WK_DEPLOY_TEST_DB_COUNT:-}" ]]; then
-  [[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is not set (never echo it; set it inline)"
+  [[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is not set and .neon-connection is absent (never echo it)"
 fi
 
 # 3. Migrate (before the web deploy, always).
