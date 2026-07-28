@@ -14,7 +14,12 @@ import { RefusalBanner } from "@/components/RefusalBanner";
 
 export const dynamic = "force-dynamic";
 
-const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
+// AJ decision (founder, 2026-07-28, option 2): corporate_admin may run
+// the field surfaces when covering a visit - a founder-run pilot means
+// the administrator plausibly IS the cover. The audit row records
+// actorRole honestly, so "the admin closed this visit" stays a true and
+// visible statement. corporate_ops deliberately not included.
+const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
 
 /**
  * Session A: one answer = one tap, with the second dimension (was it news?

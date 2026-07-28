@@ -73,7 +73,10 @@ async function alertCorporateOnWatch(
 }
 
 const TYPES = new Set(["visit.submit", "dot.create", "signal.route"]);
-const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
+// AJ decision (founder, 2026-07-28, option 2): corporate_admin may
+// submit visit commands when covering a visit; actorRole on the audit
+// trail attributes it honestly. corporate_ops deliberately not included.
+const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
 
 /**
  * The drain target for @wellkept/offline-queue. Only field roles submit
