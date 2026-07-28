@@ -6,6 +6,7 @@
  */
 import pg from "pg";
 import { composeFleetDigest, sendResendEmail, type DigestHousehold } from "@wellkept/mail";
+import { DEFAULT_FLAG_PROMOTION, isPromotionCandidate, type FlagLook } from "@wellkept/schema";
 
 const CORP_ROLES = new Set(["corporate_admin"]);
 
@@ -33,20 +34,37 @@ export async function runFleetDigest(pool: pg.Pool) {
     );
     if (hh.length === 0) continue;
 
+    // W-5: the promotion knob, read once per run; nothing promotes while
+    // rateThreshold is null (the shipped default).
+    const { rows: knobRows } = await pool.query("SELECT value FROM app_setting WHERE key='flag_promotion'");
+    const knob = { ...DEFAULT_FLAG_PROMOTION, ...((knobRows[0]?.value as object | undefined) ?? {}) };
+
     const households: DigestHousehold[] = [];
     for (const h of hh) {
-      const [{ rows: fields }, { rows: edits }, { rows: prompts }, { rows: tests }] = await Promise.all([
+      const [{ rows: fields }, { rows: edits }, { rows: prompts }, { rows: tests }, { rows: flagRows }] = await Promise.all([
         pool.query("SELECT count(*)::int total, count(*) FILTER (WHERE NOT confirmed)::int unconfirmed FROM playbook_field WHERE household_id=$1", [h.id]),
         pool.query("SELECT count(*)::int n FROM client_edit WHERE household_id=$1 AND status='pending'", [h.id]),
         pool.query("SELECT count(*)::int n FROM prompt_pack_item WHERE household_id=$1 AND fired_at IS NULL AND NOT suppressed_by_tag", [h.id]),
         pool.query("SELECT passed, created_at FROM stranger_test WHERE household_id=$1 ORDER BY created_at DESC LIMIT 1", [h.id]),
+        pool.query(`SELECT f.id, o.value, o.observed_at FROM condition_flag f
+                    LEFT JOIN object_observation o ON o.condition_flag_id = f.id
+                      AND o.measure = 'condition' AND o.superseded_at IS NULL
+                    WHERE f.household_id=$1 AND f.status='open' ORDER BY o.observed_at`, [h.id]),
       ]);
       const t = tests[0];
+      const flagLooks = new Map<string, FlagLook[]>();
+      for (const r of flagRows) {
+        const list = flagLooks.get(r.id) ?? [];
+        if (r.value !== null) list.push({ value: r.value, observedAt: new Date(r.observed_at) });
+        flagLooks.set(r.id, list);
+      }
+      const promotedFlags = [...flagLooks.values()].filter((looks) => isPromotionCandidate(looks, knob)).length;
       households.push({
         name: h.name, tier: h.tier, statusTag: h.status_tag,
         total: fields[0].total, unconfirmed: fields[0].unconfirmed,
         pendingEdits: edits[0].n, upcomingPrompts: prompts[0].n,
         lastStranger: t ? `${t.passed ? "PASS" : "FRICTION"} ${new Date(t.created_at).toISOString().slice(5, 10)}` : "never",
+        openFlags: flagLooks.size, promotedFlags,
       });
     }
 

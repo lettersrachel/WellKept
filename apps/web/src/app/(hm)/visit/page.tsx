@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes } from "@/lib/data";
+import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -64,13 +64,15 @@ export default async function VisitPage({ searchParams }: {
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
 
-  const [allFields, dots, packItems, lastVisit, seedReviewed, recall] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed, recall, openFlags, registries] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
     standardsSeedReviewed(),
     getSeasonRecall(hh.id),
+    getOpenConditionFlags(hh.id),
+    getRegistries(hh.id, "house_manager"),
   ]);
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
@@ -163,6 +165,72 @@ export default async function VisitPage({ searchParams }: {
           </div>
         ))
       )}
+
+      {/* W-5 (STD-016 S5): flagged conditions are re-observed at EVERY
+          visit, not only on the revisit date - the standard asks for more
+          than the obvious mechanism, so open flags live in the briefing
+          itself. Promotion candidates rise to the top; promotion raises
+          attention, never a prompt. */}
+      <div className="eyebrow">Flagged for revisit</div>
+      {openFlags.length === 0 ? (
+        <div className="note">No open condition flags. Notice something on the way through? Flag it below.</div>
+      ) : (
+        openFlags.map((f) => (
+          <div key={f.id} className="card field">
+            <span className="fname">
+              {f.subject}
+              {f.promotionCandidate && <span className="tag CRITICAL">MOVING FASTER THAN ASSUMED</span>}
+            </span>
+            <div className="fval sans" style={{ fontSize: 13 }}>{f.location}; {f.concern}</div>
+            <div className="prov">
+              revisit {f.revisitDate ?? f.revisitCondition}
+              {f.looks.length > 0 && <> · condition {f.looks.map((l) => l.value).join(" then ")}</>}
+              {f.ratePer30Days !== null && f.ratePer30Days > 0 && <> · losing {f.ratePer30Days.toFixed(1)} points per 30 days</>}
+            </div>
+            <form action={recordFlagLook} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+              <input type="hidden" name="householdId" value={hh.id} />
+              <input type="hidden" name="flagId" value={f.id} />
+              <input type="hidden" name="returnTo" value="/visit" />
+              <input name="value" aria-label="Condition 1-5" placeholder="condition 1-5" inputMode="numeric" style={{ width: 110, marginTop: 0 }} />
+              <input name="note" aria-label="Look note (internal)" placeholder="note (optional)" style={{ flex: 1, marginTop: 0 }} />
+              <button className="act">Log look</button>
+            </form>
+            <form action={closeConditionFlag} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+              <input type="hidden" name="householdId" value={hh.id} />
+              <input type="hidden" name="flagId" value={f.id} />
+              <input type="hidden" name="returnTo" value="/visit" />
+              <input name="closeReason" aria-label="Close reason" placeholder="close: what resolved it" style={{ flex: 1, marginTop: 0 }} />
+              <button className="act subtle">Close flag</button>
+            </form>
+          </div>
+        ))
+      )}
+      <div className="card">
+        <h2>Flag a condition</h2>
+        <p className="note" style={{ marginTop: 0 }}>
+          Something worth watching, in your own words. Every flag needs a revisit
+          plan: a date, or the condition that would bring you back to it.
+        </p>
+        <form action={createConditionFlag}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <input type="hidden" name="returnTo" value="/visit" />
+          <input name="subject" aria-label="What" placeholder="what (grout, rear shower wall)" />
+          <input name="location" aria-label="Where" placeholder="where (guest bathroom)" />
+          <input name="concern" aria-label="Concern" placeholder="the concern, as you would say it" />
+          <select name="registryEntryId" aria-label="Registry object (optional)" defaultValue="" className="inline">
+            <option value="">no registry object (a surface, a room)</option>
+            {registries.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+            <input name="revisitDate" aria-label="Revisit date" type="date" style={{ marginTop: 0 }} />
+            <span className="note">or</span>
+            <input name="revisitCondition" aria-label="Revisit condition" placeholder="revisit when (after the next deep clean)" style={{ flex: 1, marginTop: 0 }} />
+          </div>
+          <p><button className="act">Raise the flag</button></p>
+        </form>
+      </div>
 
       <div className="eyebrow">Changed since last visit</div>
       {deltas.length === 0 ? (

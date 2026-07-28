@@ -136,6 +136,11 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
     if (has("outcome", "promptId") || has("outcome", "prompt_id")) {
       throw new Error(`SEVERE: a prompt_outcome row reached a client payload at ${path}`);
     }
+    // W-5: a condition flag is a staff observation about the household's
+    // property (s2 by nature); it never reaches a client payload.
+    if (has("concern", "raisedBy") || has("concern", "raised_by")) {
+      throw new Error(`SEVERE: a condition_flag row reached a client payload at ${path}`);
+    }
     for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
       assertNoAnticipationRows(v, `${path}.${k}`);
     }

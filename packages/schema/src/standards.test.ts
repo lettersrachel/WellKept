@@ -159,4 +159,15 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     () => assertNoAnticipationRows({ rows: [{ outcome: "acted", promptId: "p-1" }] }),
     /prompt_outcome/,
   );
+  // W-5: a condition_flag row fails loud, both casings; a payload merely
+  // MENTIONING a concern in prose does not (the pair is the signature).
+  assert.throws(
+    () => assertNoAnticipationRows({ rows: [{ concern: "cracking grout", raisedBy: "u-1" }] }),
+    /condition_flag/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows([{ concern: "cracking grout", raised_by: "u-1" }]),
+    /condition_flag/,
+  );
+  assert.ok(assertNoAnticipationRows([{ note: "client mentioned a concern about scheduling" }]));
 });

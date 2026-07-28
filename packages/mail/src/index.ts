@@ -36,6 +36,10 @@ export interface DigestHousehold {
   pendingEdits: number;
   upcomingPrompts: number;
   lastStranger: string; // "PASS 06-11" | "FRICTION 07-19" | "never"
+  // W-5: open condition flags, and how many are moving faster than their
+  // flag assumed (promotion marks the digest; it never creates a prompt).
+  openFlags: number;
+  promotedFlags: number;
 }
 
 const BRAND = { green: "#1c3d2e", gold: "#b08d2a", grey: "#6b6b6b", brick: "#8c2f22" };
@@ -54,7 +58,7 @@ export function composeFleetDigest(
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Georgia,serif">${h.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${tagColor};font-weight:700">${h.statusTag}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.total - h.unconfirmed}/${h.total} confirmed</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts${h.openFlags ? ` · ${h.openFlags} flag${h.openFlags === 1 ? "" : "s"}` : ""}${h.promotedFlags ? ` <span style="color:${BRAND.brick};font-weight:700">(${h.promotedFlags} moving fast)</span>` : ""}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.lastStranger}</td>
       </tr>`;
     })

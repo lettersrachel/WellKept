@@ -5,7 +5,16 @@ import { composeFleetDigest, type DigestHousehold } from "./index";
 const H = (over: Partial<DigestHousehold> = {}): DigestHousehold => ({
   name: "Fernbrook", tier: "family_ops", statusTag: "STEADY",
   unconfirmed: 226, total: 258, pendingEdits: 0, upcomingPrompts: 4, lastStranger: "PASS 06-11",
+  openFlags: 0, promotedFlags: 0,
   ...over,
+});
+
+test("W-5: open flags render in the queues column; promoted flags carry the moving-fast mark", () => {
+  const d = composeFleetDigest("R", [H({ openFlags: 2, promotedFlags: 1 })], "Jul 27");
+  assert.ok(d.html.includes("2 flags"));
+  assert.ok(d.html.includes("1 moving fast"));
+  const calm = composeFleetDigest("R", [H()], "Jul 27");
+  assert.ok(!calm.html.includes("flags"), "a fleet with no open flags renders no flag copy");
 });
 
 test("subject and banner flag households that need eyes", () => {

@@ -1071,3 +1071,102 @@ export async function supersedeObjectObservation(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `superseded ${row.measure === "condition" ? "condition" : "fill"} ${row.value} (row kept, excluded from the series)`);
 }
+
+/**
+ * W-5 (STD-016 S5): raise a condition flag. The revisit trigger (a date or
+ * a stated condition) is required here AND by the database CHECK - the
+ * standard's strongest sentence, enforced twice. An optional registry
+ * reference links the flag to an existing series; without one the flag
+ * stands on its own subject and location (the standard's caulk example).
+ * Staff surfaces only; the concern is s2 by nature.
+ */
+export async function createConditionFlag(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const subject = String(formData.get("subject") ?? "").trim().slice(0, 120);
+  const location = String(formData.get("location") ?? "").trim().slice(0, 120);
+  const concern = String(formData.get("concern") ?? "").trim().slice(0, 500);
+  const revisitDateRaw = String(formData.get("revisitDate") ?? "").trim();
+  const revisitCondition = String(formData.get("revisitCondition") ?? "").trim().slice(0, 200) || null;
+  const registryEntryId = String(formData.get("registryEntryId") ?? "").trim();
+  if (!householdId || subject.length < 2 || location.length < 2 || concern.length < 4) refuseTo(returnTo, "bad-input");
+  if ([subject, location, concern, revisitCondition ?? ""].some((s) => s.includes("\u2014"))) refuseTo(returnTo, "bad-input");
+  const revisitDate = /^\d{4}-\d{2}-\d{2}$/.test(revisitDateRaw) ? revisitDateRaw : null;
+  // A flag without a revisit trigger is worse than no flag (STD-016).
+  if (!revisitDate && !revisitCondition) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { conditionFlag, registryEntry } = await import("@wellkept/schema");
+  let entryId: string | null = null;
+  if (registryEntryId) {
+    if (!/^[0-9a-f-]{36}$/i.test(registryEntryId)) refuseTo(returnTo, "bad-input");
+    const { isNull } = await import("drizzle-orm");
+    const [entry] = await db.select({ id: registryEntry.id }).from(registryEntry)
+      .where(and(eq(registryEntry.id, registryEntryId), eq(registryEntry.householdId, householdId), isNull(registryEntry.tombstonedAt)))
+      .limit(1);
+    if (!entry) refuseTo(returnTo, "missing");
+    entryId = registryEntryId;
+  }
+  await db.insert(conditionFlag).values({
+    id: randomUUID(), householdId, registryEntryId: entryId, subject, location, concern,
+    raisedBy: principal.userId, raisedAt: new Date(), revisitDate, revisitCondition,
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `flagged: ${subject} (${location})`);
+}
+
+/**
+ * W-5: one look at a flagged condition. Lands in object_observation so the
+ * flag's series and (when the flag references an object) the object's
+ * series are the same series. Condition only: promotion is rate math and
+ * a rate needs numbers.
+ */
+export async function recordFlagLook(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const flagId = String(formData.get("flagId") ?? "");
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(flagId)) refuseTo(returnTo, "bad-input");
+  const valueRaw = String(formData.get("value") ?? "").trim();
+  const value = /^\d$/.test(valueRaw) ? Number.parseInt(valueRaw, 10) : NaN;
+  if (!Number.isFinite(value) || value < 1 || value > 5) refuseTo(returnTo, "bad-input");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { conditionFlag, objectObservation } = await import("@wellkept/schema");
+  const [flag] = await db.select({ id: conditionFlag.id, registryEntryId: conditionFlag.registryEntryId, subject: conditionFlag.subject })
+    .from(conditionFlag)
+    .where(and(eq(conditionFlag.id, flagId), eq(conditionFlag.householdId, householdId), eq(conditionFlag.status, "open")))
+    .limit(1);
+  if (!flag) refuseTo(returnTo, "missing"); // absent, foreign, or closed
+  await db.insert(objectObservation).values({
+    id: randomUUID(), householdId, registryEntryId: flag.registryEntryId, conditionFlagId: flag.id,
+    measure: "condition", value, note, observedAt: new Date(), recordedBy: principal.userId,
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `condition ${value}/5: ${flag.subject}`);
+}
+
+/**
+ * W-5: resolution is a state change with a reason and who closed it,
+ * never a delete. The close_is_reasoned CHECK backs this at the database.
+ */
+export async function closeConditionFlag(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const flagId = String(formData.get("flagId") ?? "");
+  const closeReason = String(formData.get("closeReason") ?? "").trim().slice(0, 300);
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(flagId) || closeReason.length < 4) refuseTo(returnTo, "bad-input");
+  if (closeReason.includes("\u2014")) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { conditionFlag } = await import("@wellkept/schema");
+  const [flag] = await db.select({ id: conditionFlag.id, subject: conditionFlag.subject }).from(conditionFlag)
+    .where(and(eq(conditionFlag.id, flagId), eq(conditionFlag.householdId, householdId), eq(conditionFlag.status, "open")))
+    .limit(1);
+  if (!flag) refuseTo(returnTo, "missing");
+  await db.update(conditionFlag)
+    .set({ status: "closed", closedAt: new Date(), closedBy: principal.userId, closeReason, updatedAt: new Date() })
+    .where(eq(conditionFlag.id, flagId));
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `flag closed: ${flag.subject}`);
+}
