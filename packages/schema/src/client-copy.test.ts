@@ -26,6 +26,19 @@ const CLIENT_FACING_ROOTS = [
   "verify-request",
 ];
 
+// Item 4 (founder 2026-07-28): every guard scope carries a sanctioned
+// escape hatch - an allowlist entry with a written reason - so the first
+// legitimate exception is a reviewed line here, never a commented-out
+// guard. Keys are paths relative to the scanned root.
+const PAGE_ALLOWLIST: Record<string, string> = {};
+const SOURCE_ALLOWLIST: Record<string, string> = {};
+
+function allowlisted(list: Record<string, string>, key: string): boolean {
+  if (!(key in list)) return false;
+  if (list[key]!.trim().length <= 10) throw new Error(`allowlist entry for ${key} needs a real written reason`);
+  return true;
+}
+
 // W-10: the rule is unqualified — staff prompt text and email/notification
 // copy are user-facing too, and templated copy is the surface most at risk
 // of drifting into machine voice. These files' STRING LITERALS are checked
@@ -83,6 +96,7 @@ test("client-facing pages contain no em dashes outside comments", () => {
       continue; // a root may not exist in a future layout; absence is not a failure
     }
     for (const file of files) {
+      if (allowlisted(PAGE_ALLOWLIST, path.relative(webApp, file))) continue;
       const lines = stripComments(readFileSync(file, "utf8")).split("\n");
       lines.forEach((line, i) => {
         if (line.includes("—")) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
@@ -99,6 +113,7 @@ test("client-facing pages contain no em dashes outside comments", () => {
 test("templated staff/email copy sources contain no em dashes outside comments", () => {
   const offenders: string[] = [];
   for (const rel of COPY_SOURCES) {
+    if (allowlisted(SOURCE_ALLOWLIST, path.basename(rel))) continue;
     const file = path.join(here, rel);
     const lines = stripComments(readFileSync(file, "utf8")).split("\n");
     lines.forEach((line, i) => {

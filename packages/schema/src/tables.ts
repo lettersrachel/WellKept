@@ -519,7 +519,8 @@ export const registryEntry = pgTable("registry_entry", {
   // must never be client-visible by default. The column default stays s1
   // (right for dates/vendors); this constraint makes the unsafe combo
   // impossible at the database, which is the safer place than a write
-  // surface remembering to.
+  // surface remembering to. The sanctioned exception path is a reviewed
+  // migration that alters this constraint - never dropping it in place.
   check("registry_sizes_not_client_visible", sql`${t.kind} <> 'sizes' OR ${t.sensitivity} <> 's1'`),
 ]);
 
