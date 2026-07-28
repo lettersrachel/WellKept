@@ -1,0 +1,40 @@
+import { test } from "vitest";
+import assert from "node:assert";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { registryKindEnum } from "./tables";
+
+/**
+ * W-14 (founder decision 2026-07-28): child data is a NAMED SET of
+ * registry kinds with a safe default, not a per-kind afterthought. Every
+ * kind must be classified below; an unclassified kind fails CI, so a new
+ * kind cannot ship without someone deciding which set it belongs to.
+ * Every child-data kind must be covered by a database CHECK forbidding
+ * s1, the way `sizes` is (migration 0026) - when a kind moves into
+ * CHILD_DATA_KINDS, extend the constraint in the same change.
+ */
+const CHILD_DATA_KINDS = ["sizes"];
+const CLIENT_SAFE_KINDS = [
+  "dates", "appliance", "vendor", "subscription", "commitment", "horizon",
+];
+
+test("every registry kind is classified child-data or client-safe", () => {
+  const all = registryKindEnum.enumValues as readonly string[];
+  const classified = new Set([...CHILD_DATA_KINDS, ...CLIENT_SAFE_KINDS]);
+  const unclassified = all.filter((k) => !classified.has(k));
+  const stale = [...classified].filter((k) => !all.includes(k));
+  assert.deepEqual(unclassified, [],
+    `unclassified registry kind(s): ${unclassified.join(", ")} - add each to CHILD_DATA_KINDS or CLIENT_SAFE_KINDS (W-14)`);
+  assert.deepEqual(stale, [], `classified kinds no longer in the enum: ${stale.join(", ")}`);
+  const overlap = CHILD_DATA_KINDS.filter((k) => CLIENT_SAFE_KINDS.includes(k));
+  assert.deepEqual(overlap, [], `kind in both sets: ${overlap.join(", ")}`);
+});
+
+test("every child-data kind has a CHECK forbidding client-visible sensitivity", () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const tables = readFileSync(path.join(here, "tables.ts"), "utf8");
+  const missing = CHILD_DATA_KINDS.filter((k) => !new RegExp(`kind[^\\n]*'${k}'[^\\n]*sensitivity`).test(tables));
+  assert.deepEqual(missing, [],
+    `child-data kind(s) without a sensitivity CHECK in tables.ts: ${missing.join(", ")} - extend the constraint (W-14)`);
+});
