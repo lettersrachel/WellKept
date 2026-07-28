@@ -51,18 +51,25 @@ fail-closed is deliberate.
 - Nothing hard-deletes. Tombstone plus append-only audit. The vault crypto-shred
   is the single deliberate exception and it is documented as such.
 
-## The four CI guards, and what they do not cover
+## The CI guards, and what they do not cover
 
 Each enforces part of a rule. **The rule is always wider than its guard.** Do
-not read a green suite as compliance.
+not read a green suite as compliance. This table is asserted against the
+guard manifest (guards-manifest.test.ts): a guard added or moved without a
+row here fails CI, so the table cannot silently go stale.
 
 | Guard | Enforces | Not covered |
 |---|---|---|
-| payload guards | client responses never carry staff-only rows | new routes until wired |
+| payload guards (`permissions.test.ts`) | client responses never carry staff-only rows | new routes until wired |
 | `erasure-coverage.test.ts` | household-referencing tables named in the erasure tool | whether the treatment is correct |
-| `client-copy.test.ts` | no em dashes in client-visible page strings | staff prompt text, email and notification copy, every document |
-| `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind |
+| `client-copy.test.ts` (three scopes) | no em dashes in client pages, templated staff/email copy, or legal documents | anything outside the scanned roots and source list |
+| `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind until classified |
+| `child-data-kinds.test.ts` | every registry kind classified child-data or client-safe; child kinds carry a CHECK; CHILD_DATA.md covers every surface | free-text content a database cannot read |
+| `guards-manifest.test.ts` | the guard set exists, is wired into CI, and matches this table | a test file that exists but asserts nothing |
 
+Every guard carries a sanctioned escape hatch (an allowlist with a written
+reason, a reviewed manifest edit, or a reviewed migration); the first
+legitimate exception is a reviewed line, never a commented-out guard.
 Adding a guard is the preferred fix for anything currently held by memory.
 Prove it red before trusting it green.
 

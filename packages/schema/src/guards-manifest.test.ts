@@ -56,3 +56,16 @@ test("CI runs the suites the guards live in", () => {
   assert.equal(rootPkg.scripts.test, "turbo run test",
     "root `pnpm test` no longer fans out via turbo — package suites may not run in CI");
 });
+
+test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
+  // Two copies of the same list drifting independently is the /privacy vs
+  // master-doc failure; the stale copy would be the one that loads into
+  // every session. Each guard the manifest knows must have a row.
+  const claudeMd = readFileSync(path.join(root, "CLAUDE.md"), "utf8");
+  for (const named of [
+    "permissions.test.ts", "erasure-coverage.test.ts", "client-copy.test.ts",
+    "child-data-kinds.test.ts", "guards-manifest.test.ts", "`sizes` CHECK",
+  ]) {
+    assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
+  }
+});
