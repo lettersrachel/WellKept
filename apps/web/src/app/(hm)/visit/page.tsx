@@ -5,7 +5,7 @@ import { bindProvisions } from "@wellkept/schema";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, createDeferral, resolveDeferral } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, resolveDeferral } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -242,29 +242,6 @@ export default async function VisitPage({ searchParams }: {
           ))}
         </div>
       )}
-
-      <div className="card">
-        {/* W-6: a deferral is a decision, not an observation, and the
-            client reads the reason. The label wording below is REPORTED
-            to the founder as the proposed copy, not silently chosen. */}
-        <h2>Noticed and left, on purpose</h2>
-        <p className="note" style={{ marginTop: 0 }}>
-          Something you saw and decided not to act on. The client sees what you
-          noticed, your reason, and when it will be looked at again.
-        </p>
-        <form action={createDeferral}>
-          <input type="hidden" name="householdId" value={hh.id} />
-          <input type="hidden" name="returnTo" value="/visit" />
-          <input name="noticed" aria-label="What you noticed" placeholder="what you noticed" />
-          <input name="reason" aria-label="Why it was left, in words the client will read" placeholder="why it was left, in words the client will read" />
-          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
-            <input name="revisitDate" aria-label="Come back by" type="date" style={{ marginTop: 0 }} />
-            <span className="note">or</span>
-            <input name="revisitCondition" aria-label="Come back when" placeholder="come back when (at the fall weatherproofing visit)" style={{ flex: 1, marginTop: 0 }} />
-          </div>
-          <p><button className="act">Record the deferral</button></p>
-        </form>
-      </div>
 
       <div className="card">
         <h2>Flag a condition</h2>

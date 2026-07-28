@@ -1,0 +1,1 @@
+ALTER TABLE "deferral" ADD COLUMN "visit_command_id" text;
