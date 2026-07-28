@@ -6,6 +6,11 @@ values, append-only audit trail, anticipation engine, incident register.
 
 Current state, open work, and gates: @docs/WORK_QUEUE.md
 
+**Every factual claim in this file is a claim about the codebase.** It loads as
+premise into every session and nothing re-reads it critically. If one is false,
+either make the codebase true or fix this file. Never proceed on a false
+premise found here.
+
 ## Never, without exception
 
 - **Never run `erase-household.mjs` with `--commit`.** Dry run only. If an
@@ -46,6 +51,21 @@ fail-closed is deliberate.
 - Nothing hard-deletes. Tombstone plus append-only audit. The vault crypto-shred
   is the single deliberate exception and it is documented as such.
 
+## The four CI guards, and what they do not cover
+
+Each enforces part of a rule. **The rule is always wider than its guard.** Do
+not read a green suite as compliance.
+
+| Guard | Enforces | Not covered |
+|---|---|---|
+| payload guards | client responses never carry staff-only rows | new routes until wired |
+| `erasure-coverage.test.ts` | household-referencing tables named in the erasure tool | whether the treatment is correct |
+| `client-copy.test.ts` | no em dashes in client-visible page strings | staff prompt text, email and notification copy, every document |
+| `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind |
+
+Adding a guard is the preferred fix for anything currently held by memory.
+Prove it red before trusting it green.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
@@ -54,8 +74,11 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 ## Conventions
 
-- No em dashes in user-facing strings (lint rule exists). Plain prose, no AI
-  jargon, WRI-style plain language in client-facing copy.
+- **No em dashes anywhere.** The founder's standing rule covers every document
+  and every string, staff-facing and client-facing alike. The rule exists to
+  keep copy sounding human, so read for voice, not only for punctuation.
+  `client-copy.test.ts` enforces a subset; the rest is on you.
+- Plain prose, no AI jargon. WRI-style plain language in client-facing copy.
 - Money in integer cents. Store UTC.
 - Section numbers in the standards library are a public API. Do not renumber,
   rewrite, or improve provision text; edits flow founder to corrected sheet to

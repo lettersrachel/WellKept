@@ -16,7 +16,7 @@ of any schema change, and the key-rotation disclosure sentence is added to
 the data-minimisation note. Rev 6, same day, adds two questions from the
 intake-capture review (docs/INTAKE_CAPTURE_GAP_REVIEW.md): children's data
 handling in section 6, and a prospective AI-transcription subprocessor in
-section 8 — both asked BEFORE the relevant capability is built.
+section 8; both asked BEFORE the relevant capability is built.
 
 Hand counsel this file plus the four drafts beside it: `household-consent.md`,
 `privacy-notice.md`, `staff-confidentiality.md`,
@@ -268,7 +268,7 @@ beyond photographs: school names and schedules, activity rosters, and
 clothing sizes, held internally and never shown outside the service team.
 Our internal rule already treats these as child data requiring care. Does
 Virginia law (or a duty of care you would advise regardless) require
-handling beyond internal-only access for this material — and does the
+handling beyond internal-only access for this material; and does the
 answer change what the consent document must say about children?
 
 ---
@@ -431,7 +431,7 @@ is destroyed and the fact that a photo was taken survives.
 
 ## Founder checklist before sending
 
-- ✅ Run the "What exists" verification session against the codebase — DONE
+- ✅ Run the "What exists" verification session against the codebase; DONE
   2026-07-25 (`COUNSEL_PACKET_VERIFICATION.md`): 15 claims confirmed, 2
   overstated (corrected in this revision), one missing vendor (Sentry, added)
   and two outbound flows (disclosed above).

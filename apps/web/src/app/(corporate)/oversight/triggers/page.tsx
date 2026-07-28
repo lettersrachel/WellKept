@@ -20,7 +20,16 @@ interface RuleHealth {
   fired: number; answered: number; acted: number; notApplicable: number;
   alreadyDone: number; actedNews: number; actedNewsKnown: number;
   leads: number[]; households: Set<string>; users: Set<string>;
+  // W-9: for derived (sweep) families, repeat firings are NOT deduplicated
+  // (by design, until real numbers exist), so `fired` alone can read as
+  // breadth when it is one delinquent object re-firing. These make the
+  // number legible without changing any metric.
+  firedHouseholds: Set<string>; firedObjects: Set<string>;
 }
+
+// Sweep families share this synthetic-rule-id prefix (registry-sweep.ts
+// SWEEP_RULE_IDS); only they derive recurring occurrences per object.
+const SWEEP_RULE_PREFIX = "01980000-0000-7000-8000-000000000d";
 
 /**
  * A2/REQ-055 rule health, trailing 90 days. fired_count reads the PROMPT
@@ -30,7 +39,7 @@ interface RuleHealth {
  */
 async function ruleHealthByRule(now: Date) {
   const since = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  const fired = await db.select({ ruleId: promptPackItem.triggerRuleId })
+  const fired = await db.select({ ruleId: promptPackItem.triggerRuleId, householdId: promptPackItem.householdId, itemText: promptPackItem.itemText })
     .from(promptPackItem)
     .where(and(gte(promptPackItem.fireAt, since), lte(promptPackItem.fireAt, now), eq(promptPackItem.suppressedByTag, false)));
   const answers = await db.select().from(promptOutcome).where(gte(promptOutcome.answeredAt, since));
@@ -47,10 +56,18 @@ async function ruleHealthByRule(now: Date) {
   const health = new Map<string, RuleHealth>();
   const get = (ruleId: string) => {
     let h = health.get(ruleId);
-    if (!h) { h = { fired: 0, answered: 0, acted: 0, notApplicable: 0, alreadyDone: 0, actedNews: 0, actedNewsKnown: 0, leads: [], households: new Set(), users: new Set() }; health.set(ruleId, h); }
+    if (!h) { h = { fired: 0, answered: 0, acted: 0, notApplicable: 0, alreadyDone: 0, actedNews: 0, actedNewsKnown: 0, leads: [], households: new Set(), users: new Set(), firedHouseholds: new Set(), firedObjects: new Set() }; health.set(ruleId, h); }
     return h;
   };
-  for (const f of fired) get(f.ruleId).fired += 1;
+  for (const f of fired) {
+    const h = get(f.ruleId);
+    h.fired += 1;
+    h.firedHouseholds.add(f.householdId);
+    // The object identity: a sweep item's text is its template with the
+    // label fixed and only the occurrence date varying, so stripping the
+    // parenthesized/on-date part collapses cycles of the same object.
+    h.firedObjects.add(f.itemText.replace(/\s*\(([^)]*)\)|\son\s.+$/g, "").trim());
+  }
   for (const a of answers) {
     const h = get(a.ruleId);
     h.answered += 1;
@@ -189,7 +206,10 @@ export default async function TriggersPage({ searchParams }: {
             {/* A2/REQ-055 rule health, trailing 90d. Retirement is evidence
                 for the founder's decision, never an automatic act. */}
             <div className="prov">
-              health 90d: fired {h?.fired ?? 0} · answered {h?.answered ?? 0}
+              health 90d: fired {h?.fired ?? 0}
+              {r.id.startsWith(SWEEP_RULE_PREFIX) && (h?.fired ?? 0) > 0 &&
+                ` (across ${h!.firedHouseholds.size} household${h!.firedHouseholds.size === 1 ? "" : "s"}, ${h!.firedObjects.size} object${h!.firedObjects.size === 1 ? "" : "s"})`}
+              {" · "}answered {h?.answered ?? 0}
               {" · "}informative {pct(h?.actedNews ?? 0, h?.fired ?? 0)}
               {(h?.acted ?? 0) > (h?.actedNewsKnown ?? 0) && ` (news data on ${h!.actedNewsKnown} of ${h!.acted} acted)`}
               {" · "}act {pct(h?.acted ?? 0, h?.answered ?? 0)}

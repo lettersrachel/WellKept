@@ -26,6 +26,24 @@ const CLIENT_FACING_ROOTS = [
   "verify-request",
 ];
 
+// W-10: the rule is unqualified — staff prompt text and email/notification
+// copy are user-facing too, and templated copy is the surface most at risk
+// of drifting into machine voice. These files' STRING LITERALS are checked
+// (comments stripped); add a file here when a new templated-copy source
+// appears.
+const COPY_SOURCES = [
+  "../../../packages/trigger-engine/src/registry-sweep.ts",
+  "../../../packages/trigger-engine/src/engine.ts",
+  "../../../services/worker/src/seed-rules.ts",
+  "../../../services/worker/src/digest.ts",
+  "../../../packages/mail/src/index.ts",
+  "../../../apps/web/src/lib/push.ts",
+];
+
+// W-13: the rule covers documents. The legal drafts travel to counsel and
+// clients; they carry the same voice rule as the app.
+const DOC_DIRS = ["../../../docs/legal"];
+
 function tsxFiles(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
@@ -66,4 +84,32 @@ test("client-facing pages contain no em dashes outside comments", () => {
     [],
     `em dash in client-facing copy (CLAUDE.md: plain prose, no em dashes): ${offenders.join(", ")}`,
   );
+});
+
+test("templated staff/email copy sources contain no em dashes outside comments", () => {
+  const offenders: string[] = [];
+  for (const rel of COPY_SOURCES) {
+    const file = path.join(here, rel);
+    const lines = stripComments(readFileSync(file, "utf8")).split("\n");
+    lines.forEach((line, i) => {
+      if (line.includes("—")) offenders.push(`${path.basename(file)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    `em dash in templated copy (W-10; the rule is unqualified): ${offenders.join(", ")}`);
+});
+
+test("legal documents contain no em dashes", () => {
+  const offenders: string[] = [];
+  for (const rel of DOC_DIRS) {
+    for (const name of readdirSync(path.join(here, rel))) {
+      if (!name.endsWith(".md")) continue;
+      const file = path.join(here, rel, name);
+      readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+        if (line.includes("—")) offenders.push(`${name}:${i + 1}`);
+      });
+    }
+  }
+  assert.deepEqual(offenders, [],
+    `em dash in a legal document (W-13; every document carries the rule): ${offenders.join(", ")}`);
 });

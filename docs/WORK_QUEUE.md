@@ -1,6 +1,6 @@
 # Work queue
 
-Updated 27 July 2026. Supersedes the open-item lists in
+Updated 28 July 2026. Supersedes the open-item lists in
 `ANTICIPATION_SESSIONS.md`, `CORPORATE_CAPTURE_SESSIONS.md`,
 `POST_DEPLOY_SESSIONS.md` and `POST_DEPLOY_SESSIONS_2.md`. Those four remain in
 `docs/` as the detailed briefs; **this file is the index of what is open.** Paste
@@ -13,157 +13,148 @@ in a session prompt.
 
 ## State
 
-Production serves `19b8410`. 25 migrations (0000 to 0024). The 14-point smoke
-checklist passed 14/14 on 27 July. Gap register at G-49.
+Production serves `d15972f`. 27 migrations (0000 to 0026). Four CI guards.
+Gap register at G-49. G-13 founder-approved, awaiting counsel review and the
+hire's acknowledgment.
 
 **Nothing has a real household yet.** Every gate below that says "pilot" or
 "first household" is genuinely closed, not deferred.
 
 ---
 
-## Open now: no gate but the deploy
+## Closed
 
-### W-1. Observation series write posture
-
-`object_observation` is insert-only with no correction path. The reasoning was
-that the next look corrects a bad one and the series absorbs noise. That holds
-for averaging and fails for what the series is actually for: STD-016 asks for
-promotion of anything degrading faster than its flag assumed, so the derivation
-is looking for a cliff, and one fat-fingered `1` on a pristine object is exactly
-a cliff.
-
-The audit trail records events, which stay true. An observation is a claim about
-the world, which can be wrong.
-
-**Do:** supersede rather than delete. Keep the row, mark it superseded with who
-corrected it and when, exclude superseded rows from any derivation. Same shape
-as `provision_versions`.
-
-**Why now:** nothing yet computes rate of change from the series, so no
-derivation depends on the current posture. That stops being true with the first
-consumer.
-
-### W-2. Health denominator dedup for recurring maintenance prompts
-
-The derived maintenance prompt rolls forward every cycle. An appliance nobody
-services re-fires forever, and each firing enters the act-rate and
-informative-rate denominators for its rule. One delinquent household could drag
-a sound rule toward retirement-candidate.
-
-A2's three-household minimum guards this at fleet scale and does not guard it
-during a small pilot.
-
-**Do:** confirm whether repeat firings on the same household against the same
-object are deduplicated in the health denominators, the way the threshold family
-dedupes at 14 days. Report before changing anything.
-
-**ANSWERED 2026-07-28 (read-only, nothing changed).** They are NOT
-deduplicated: `ruleHealthByRule` (oversight/triggers/page.tsx) counts every
-non-suppressed `prompt_pack_item` in the trailing 90 days once toward
-`fired` — a monthly-interval unserviced appliance adds three denominator
-entries per household per window, and each cycle is a distinct occurrence
-so the deterministic sweep id does not collapse them. Three mitigations
-stand between that and a wrong retirement: the flag keys ONLY to
-`informativeRateFloor`, which is deliberately unset (no rule can be
-flagged today); `minHouseholds >= 3` and `minUsers >= 2` guard the flag —
-but both count from ANSWERS, so they do not stop one delinquent
-household's repeat firings from sagging the DISPLAYED informative rate,
-which is exactly the pilot-scale exposure this item predicted. Disposition
-when a fix is wanted: dedupe `fired` per (rule, household, registry entry)
-within the window for the derived families only — but that is a change to
-founder-visible metrics and waits for the founder to see real numbers
-first, per the informative-floor precedent.
-
-### W-3. Cascade-shape read, before accepting G-47's framing
-
-Tier gating as the documents describe it is about what happens **when a trigger
-fires**: Essential logs, Family Operations acts, Concierge runs the full
-cascade. That is a property of the cascade step, not of a provision. How to fold
-a towel does not vary by tier; what a grade change produces does.
-
-If that is right, `membership_tier_gate` on 1,146 provisions is an expensive
-place to express a concept belonging to a much smaller number of cascade steps,
-and G-47's authoring burden mostly evaporates.
-
-**Do:** read the cascade step shape and report whether the gate belongs there
-instead. One hour. Do not build.
-
-**ANSWERED 2026-07-28 (read-only, nothing built): the hypothesis is
-right, and the migration cost is zero.** The cascade step is
-`definition.items[]` on `trigger_rule` — `{text, offsetDays, methodRef}`
-(engine.ts:31-36), emitted per-item by run.ts. Tier gating as the
-documents describe it ("Essential logs, Family Operations acts, Concierge
-runs the full cascade") is a property of WHICH ITEMS a household
-receives, so the gate belongs as an optional per-item field
-(`tierGate?`) in the definition JSON — no schema migration, since
-`definition` is jsonb; the engine filters items against the household's
-tier at emission (household.tier is already on the row the runner
-holds). The authoring burden collapses from 1,146 provision gates to a
-handful of pack items across three seeded cascades plus the sweep
-families. `standard_provision.membership_tier_gate` then stays for the
-rare provision that genuinely does not apply below a tier — likely none,
-per "how to fold a towel does not vary by tier" — and G-47's loader
-update-set fix rides along whenever that column is next touched. G-47's
-trigger unchanged; when it trips, build the per-item gate, not the
-per-provision authoring project.
-
-### W-4. Two small ones
-
-- **`sizes` registry kind defaults to s1.** Filing a rule that a future write
-  surface will set s2 does not change today's default. Children's sizes are
-  child data; fix the default, which is the safer place.
-- **The condition scale has no documented direction.** Two House Managers
-  reading "3 of 5" oppositely is the calibration failure the Stranger Test
-  exists to surface. Document it at the point of entry, in the form label, not
-  only in a doc.
+- **W-1 observation supersede posture** (0025). Landed inside its window.
+- **W-2 health denominator dedup.** Answered: repeat firings are not
+  deduplicated, and both minimums count from answers, so they do not protect the
+  displayed rate at pilot scale. Superseded by W-9 below rather than by a dedup.
+- **W-3 cascade-shape read.** Answered: the gate belongs on
+  `definition.items[]`, needs no migration, and authoring collapses to a handful
+  of pack items. Follow-through is W-11.
+- **W-4 sizes default and scale direction** (0026).
+- **W-9 firing visibility** (2026-07-28). Derived families' health line now
+  reads "fired N (across H households, O objects)"; households from the
+  item rows, objects by collapsing each item text's varying date. No metric
+  changed.
+- **W-10 + W-13 copy guard widened and documents swept** (2026-07-28). The
+  two prompt-text and two digest-subject em dashes rewritten; docs/legal
+  swept (76 instances); the guard now covers client pages, six templated
+  copy sources, and every docs/legal document. The rewrites were
+  punctuation-level; a true voice pass over prompt copy remains a good
+  session once real prompts have fired for a while.
+- **W-12 guard manifest** (2026-07-28). guards-manifest.test.ts asserts the
+  guard files exist, the sizes CHECK survives in the latest migration
+  snapshot, and ci.yml still runs the fan-out entrypoints. Proved red on
+  its own first run (a wrong manifest path) before going green.
 
 ---
 
-## Open, unanswered from the standards and triggers review
+## Open now: no gate
 
-`STANDARDS_TRIGGERS_GAP_REVIEW.md` has not been dispositioned. `object_observation`
-supplies the series these depend on; none of them is built.
+### W-9. Make the firing artifact visible, without changing the metric (CLOSED, see above)
 
-### W-5. Flags (the largest single gap)
+W-2 confirmed that one delinquent object re-firing monthly enters `fired`
+repeatedly. Deferring the dedup until real numbers exist is right, but the
+displayed rate **is the calibration input** for `informativeRateFloor`, which is
+deliberately unset so it can be set from real data. A rate systematically
+depressed by a single object, at one-to-three household scale, sets that floor
+wrong permanently and under-retires forever.
+
+**Do:** alongside `fired`, show the distinct household and distinct registry
+entry counts for derived families. "Fired 12 times across 2 objects" changes no
+metric and makes the number readable. Smaller than the dedup, and it preserves
+seeing real numbers first.
+
+### W-10. Widen the copy guard, and cover the gap both readings missed (CLOSED, see above)
+
+The standing rule is unqualified: no em dashes in any document or string. The
+guard covers client-visible pages only.
+
+- Widen to staff-facing prompt text, including the sweep's radar items. A House
+  Manager is a user, and templated prompt copy is the surface most at risk of
+  drifting into machine voice. While rewriting, read for voice rather than
+  punctuation: STD-016's fourth pruning question is whether a House Manager
+  still trusts the prompts a year in.
+- **Neither reading covers the client report email or notification text.** Not
+  pages, not staff-facing, reaches clients, currently unguarded.
+
+### W-11. Drop `membership_tier_gate`, with its spec
+
+An always-null column that looks like a feature is worse than an absent one: a
+reader concludes provision-level tier gating exists, which is a false claim
+about the system living in the schema. The loader's update-set omission is
+corroboration that it was never really adopted.
+
+**Condition:** update WK-APP-003 Addendum A1 §S3 in the same change, or the
+drift moves from schema to spec rather than closing.
+
+### W-12. Does CI notice when a guard stops running? (CLOSED, see above)
+
+Four guards now hold what used to be memory. A renamed job, a moved file, or a
+test quietly dropping out of collection turns four guards back into four
+memories, and nothing would say so. The guard-must-fire doctrine applied one
+level up.
+
+**Do:** assert the expected guard set is present and collected, and fail if one
+is missing.
+
+### W-13. Em-dash sweep over documents (CLOSED, see above)
+
+The sweep covered pages. The rule covers documents. `docs/legal/`, counsel
+packet rev 6, and the G-13 disclosure were all written or revised after the last
+manual pass.
+
+### W-14. Decide whether child data is a kind or a category
+
+**Decision first, then build.** The `sizes` CHECK covers `kind = 'sizes'`.
+School names, schedules and rosters are the Phase 0 child-data categories in
+packet §6(g), and each new child-related kind would need its own constraint,
+which is the depends-on-remembering pattern again.
+
+Decide before the Phase 0 form creates three more of them: is child data a
+property of a kind, or a named set of kinds with a safe default?
+
+---
+
+## Gated
+
+### W-5. Flags. The unlock for three other items
 
 STD-016 §5: every sentinel check produces a flag; every flag carries a revisit
 trigger, a date or a condition, set at the moment of flagging; flagged
-conditions are re-observed at every visit, not only on their date; anything
-degrading faster than its flag assumed is promoted.
+conditions are re-observed at every visit; anything degrading faster than its
+flag assumed is promoted.
 
-No flag entity exists. Nothing enforces a revisit. Nothing promotes. The series
-built in migration 0023 currently has no consumer, and this is the consumer.
+No flag entity exists. `object_observation` supplies the series and currently
+has no consumer. **This is the consumer.**
 
 **Gate:** before a House Manager starts noticing things, or the pilot's first
 months of observations have nowhere to live.
 
-### W-6. Deliberate deferral
+### W-6 and W-7 are downstream of W-5, not independent
 
-"Report what was noticed and deliberately left, with the reason and the intended
-timing." Distinct from a dot: a dot is an observation, this is a recorded
-decision not to act, and it is meant to reach the client. Probably the most
-client-visible item in either review. Small.
+Correcting the previous version of this file, which implied all of W-5 through
+W-8 were independently gated.
 
-### W-7. Paused decisions
+- **W-6 deliberate deferral** ("noticed and left, with the reason and the
+  intended timing") needs an intended timing, which is a revisit trigger, which
+  is W-5's mechanism. It is small and the most client-visible item in either
+  review, but it is not buildable first.
+- **W-7 paused decisions** needs the same revisit mechanism.
 
-Research done and then paused, logged with its own revisit trigger so it is not
-lost to time. Small, and it pairs with W-5's revisit mechanism.
+### W-8 is independent, and has no gate at all
 
-### W-8. Pruning questions 2 and 3
+Also correcting the previous version. Trigger overlap detection and consequence
+weighting need neither flags nor the series. They are buildable now, and worth
+little until enough rules have fired to have overlaps and consequences to
+weigh. Left here rather than above for that reason, not because anything blocks
+them.
 
-- **Trigger overlap detection.** Two rules firing on one event should be merged;
-  nothing surfaces the pair.
-- **Consequence weighting.** Density should track consequence, not completeness.
-  Stronger than the `priority` rank proposed for the briefing budget: a rule
-  firing twice a year that catches a failing water heater outranks a frequent
-  low-stakes one regardless of act rate.
-- Also confirm **rule retirement is versioned and attributed** the way
-  `provision_versions` is, since the standard requires a later reader to see
-  what was pruned and why.
+Also confirm rule retirement is versioned and attributed the way
+`provision_versions` is, since STD-016 §7 requires a later reader to see what
+was pruned and why.
 
----
-
-## Gated, with briefs already written
+### Briefs already written
 
 | Item | Brief | Gate |
 |---|---|---|
@@ -172,11 +163,11 @@ lost to time. Small, and it pairs with W-5's revisit mechanism.
 | Anticipation E (external signals) | ANTICIPATION_SESSIONS | none; school and activity calendars first, ahead of weather |
 | Anticipation F (cold start) | ANTICIPATION_SESSIONS | D shipped, 3+ households |
 | Capture 4 (unit economics) | CORPORATE_CAPTURE_SESSIONS | ~1 month of time and cost data |
-| Capture 5 (HM entity) | CORPORATE_CAPTURE_SESSIONS | **G-13 approved and acknowledged** |
+| Capture 5 (HM entity) | CORPORATE_CAPTURE_SESSIONS | G-13 **acknowledgment**, not approval |
 | Capture 6, 7 (continuity, turnover) | CORPORATE_CAPTURE_SESSIONS | capture 5, second HM |
 | Capture 8, 9 (satisfaction, declined requests) | CORPORATE_CAPTURE_SESSIONS | 60 days of a real household |
-| G-47 tier gating | register | see W-3 first |
-| Phase 0 portal form | INTAKE_CAPTURE_GAP_REVIEW §3 | counsel on children's data (packet §6g) |
+| G-47 tier gating | register | when it trips, build the per-item gate (W-3) |
+| Phase 0 portal form | INTAKE_CAPTURE_GAP_REVIEW §3 | counsel on children's data (packet §6g), and W-14 |
 | Transcript ingestion | INTAKE_CAPTURE_GAP_REVIEW §4 | counsel on the AI subprocessor (packet §8) |
 | Kits, object relationships, override taxonomy | INTAKE_CAPTURE_GAP_REVIEW | pilot makes them concrete |
 | Mileage `purpose` and `destination` | G-46 | founder field list, plus the erasure interaction |
@@ -186,26 +177,21 @@ lost to time. Small, and it pairs with W-5's revisit mechanism.
 
 ## Not software
 
-Listed so it does not vanish into a build queue.
-
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
-   for anyone. The workbook's own instructions say to filter column E and review
-   the floor rows: 189 `floor_1` plus 111 `floor_2`. An afternoon, not a week.
-   **Every provision-related thing built so far is dark behind this.**
+   for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111
+   `floor_2`. An afternoon, not a week. **Everything provision-related is dark
+   behind this.**
 2. Counsel outreach, then the custody sitting (three drills, one throwaway
    branch). Lifts the no-real-s3 guardrail.
 3. Insurance: workers' compensation, which attaches from the point of employment
    in Virginia, plus the G-48 hired and non-owned auto question. Same broker
    call. Before the first pilot signature.
-4. ~~Approve the G-13 staff disclosure.~~ **Founder-approved 2026-07-28.**
-   What still gates the hire's first logged hour: counsel's review of the
-   disclosure (with the packet) and the hire's signed acknowledgment.
-5. Hire a House Manager. Recruit and consent the first household.
-6. Chores (Upstash budget alert, Vercel project rename, DMARC), the pilot
-   protocol's friction-log brackets, the two LAUNCH signatures with §2.4 after
-   the restore drill.
-7. **Consider putting one pilot household on a non-Concierge tier.** If every
+4. Hire a House Manager. Recruit and consent the first household.
+5. Chores (Upstash budget alert, Vercel project rename, DMARC, and the
+   `tsbuildinfo` untrack), the pilot protocol's friction-log brackets, the two
+   LAUNCH signatures with §2.4 after the restore drill.
+6. **Consider putting one pilot household on a non-Concierge tier.** If every
    pilot household runs the same tier, the pilot ends with no evidence about
    tier differentiation, and the tiers are load-bearing in the revenue model.
    A recruiting decision, not a build.

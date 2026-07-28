@@ -79,7 +79,7 @@ export function composeFleetDigest(
     <p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${BRAND.grey};margin-top:14px">Open the fleet board to act on any of these. Well Kept</p>
   </div>`;
   const subject = needsEyes.length
-    ? `Fleet digest — ${needsEyes.length} need attention (week of ${weekOf})`
-    : `Fleet digest — all steady (week of ${weekOf})`;
+    ? `Fleet digest: ${needsEyes.length} need attention (week of ${weekOf})`
+    : `Fleet digest: all steady (week of ${weekOf})`;
   return { subject, html };
 }
