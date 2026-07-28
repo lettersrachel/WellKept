@@ -581,6 +581,37 @@ export const conditionFlag = pgTable("condition_flag", {
     sql`${t.status} <> 'closed' OR (${t.closeReason} IS NOT NULL AND ${t.closedBy} IS NOT NULL)`),
 ]);
 
+// W-6 (STD-016): deliberate deferral. A RECORDED DECISION NOT TO ACT,
+// meant to reach the client - a clean bathroom demonstrates nothing about
+// attention; "noticed and left, with the reason and the intended timing"
+// does. Distinct from a dot (an observation the client never sees) and
+// from a condition_flag (a concern watched over time): this is a single
+// judgment made on a visit. The intended timing is a revisit trigger,
+// which is why this follows W-5.
+export const deferral = pgTable("deferral", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  noticed: text("noticed").notNull(), // what was seen
+  // The reason reaches the client; its capture label invites an explanation
+  // a client would find reassuring, never an internal note.
+  reason: text("reason").notNull(),
+  revisitDate: date("revisit_date"),
+  revisitCondition: text("revisit_condition"),
+  decidedBy: text("decided_by").notNull().references(() => authUser.id),
+  decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+  // The visit it belongs to, when the capture path knows it. The current
+  // surface captures DURING the visit, before the applied visit row
+  // exists, so association is by decided_at until capture moves into the
+  // close flow; reported, not hidden.
+  visitId: uuid("visit_id").references(() => visit.id),
+}, (t) => [
+  index("deferral_household_idx").on(t.householdId, t.decidedAt),
+  // Same structural sentence as condition_flag: an intended timing is not
+  // optional, and the database is where that lives.
+  check("deferral_has_revisit_trigger",
+    sql`${t.revisitDate} IS NOT NULL OR ${t.revisitCondition} IS NOT NULL`),
+]);
+
 export const objectObservation = pgTable("object_observation", {
   ...stamps,
   householdId: uuid("household_id").notNull().references(() => household.id),

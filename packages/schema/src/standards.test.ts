@@ -170,4 +170,11 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /condition_flag/,
   );
   assert.ok(assertNoAnticipationRows([{ note: "client mentioned a concern about scheduling" }]));
+  // W-6: the deferral CONTENT is client-facing; the staff attribution is
+  // not. The projected client shape passes; an unprojected row fails.
+  assert.throws(
+    () => assertNoAnticipationRows([{ noticed: "hairline crack", decidedBy: "u-1" }]),
+    /unprojected deferral/,
+  );
+  assert.ok(assertNoAnticipationRows([{ noticed: "hairline crack", reason: "stable and cosmetic", revisitDate: "2026-10-01" }]));
 });

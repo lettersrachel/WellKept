@@ -1,4 +1,4 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { household, playbookField, auditEvent, clientEdit } from "@wellkept/schema";
 import { db } from "./db";
 
@@ -113,6 +113,30 @@ export async function getOpenConditionFlags(householdId: string) {
     };
   });
   return out.sort((a, b) => Number(b.promotionCandidate) - Number(a.promotionCandidate));
+}
+
+/** W-6: deferrals, newest first. Staff read (full rows). */
+export async function getDeferrals(householdId: string, limit = 12) {
+  const { deferral } = await import("@wellkept/schema");
+  return db.select().from(deferral)
+    .where(eq(deferral.householdId, householdId))
+    .orderBy(desc(deferral.decidedAt))
+    .limit(limit);
+}
+
+/** W-6: the CLIENT projection of deferrals - the content is for them by
+ * design (noticed, the reason, the intended timing); the staff attribution
+ * never rides along. The page re-asserts this with the payload guard. */
+export async function getClientDeferrals(householdId: string, limit = 12) {
+  const { deferral } = await import("@wellkept/schema");
+  return db.select({
+    id: deferral.id, noticed: deferral.noticed, reason: deferral.reason,
+    revisitDate: deferral.revisitDate, revisitCondition: deferral.revisitCondition,
+    decidedAt: deferral.decidedAt,
+  }).from(deferral)
+    .where(eq(deferral.householdId, householdId))
+    .orderBy(desc(deferral.decidedAt))
+    .limit(limit);
 }
 
 export async function getOpenDots(householdId: string) {

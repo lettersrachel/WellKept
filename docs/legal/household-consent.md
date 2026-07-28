@@ -24,7 +24,9 @@ we'll hold and asks your permission to hold it.
 - **Secured items**; things like access codes, alarm details, and where
   valuables are kept. These are **encrypted**, shown only to authorized team
   members, and every time one is viewed it's **logged**.
-- **Visit records**, what was done, hours, notes, and (when enabled) photos.
+- **Visit records**, what was done, hours, notes, what was noticed and
+  deliberately set aside for later (with the reason and the planned
+  timing), and (when enabled) photos.
 - **Practical dates and vendors**, so we can anticipate what your home needs.
 
 We do **not** need, and ask you not to provide, government IDs, bank or card
