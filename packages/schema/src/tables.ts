@@ -604,11 +604,10 @@ export const deferral = pgTable("deferral", {
   revisitCondition: text("revisit_condition"),
   decidedBy: text("decided_by").notNull().references(() => authUser.id),
   decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
-  // Z's visit_id could NEVER be filled: nothing writes the legacy `visit`
-  // table (applied visits are visit_command rows). Kept momentarily so
-  // AC's migration is a clean ADD; the drop is its own one-line reviewed
-  // migration, queued in WORK_QUEUE (the W-11 always-null-column lesson).
-  visitId: uuid("visit_id").references(() => visit.id),
+  // 0034 dropped Z's visit_id: it could NEVER be filled - nothing writes
+  // the legacy `visit` table (applied visits are visit_command rows) -
+  // and an always-null FK is a false claim about the system living in
+  // the schema (the W-11 lesson).
   // AC: the visit it belongs to, BY CONSTRUCTION - deferral capture is a
   // close-flow step and the row is created when the visit.submit command
   // applies, carrying that command's id (the same association time_entry

@@ -49,10 +49,11 @@ local-queue time by design, a failed drain is silent except the
 pending counter, the command persists in IndexedDB and redelivers on
 reload) and two production queries decide whether any data was lost.
 
-A queued follow-up migration (its own session, one line, reviewed):
-DROP the legacy `deferral.visit_id` column, which references the
-never-written `visit` table and can never be filled (the W-11
-always-null-column class).
+The queued `deferral.visit_id` DROP landed as migration 0034
+(2026-07-28, authorized with the night's batch): the always-null FK to
+the never-written `visit` table is gone, proven locally with sibling
+columns and existing rows intact. The next deploy's three-way count
+reads 35.
 
 The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
 confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
