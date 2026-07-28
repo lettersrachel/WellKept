@@ -588,6 +588,11 @@ export const conditionFlag = pgTable("condition_flag", {
 // from a condition_flag (a concern watched over time): this is a single
 // judgment made on a visit. The intended timing is a revisit trigger,
 // which is why this follows W-5.
+// AB: how a deferral resolves. Three ways out, none of them silence.
+export const deferralResolutionEnum = pgEnum("deferral_resolution", [
+  "done", "no_longer_needed", "superseded",
+]);
+
 export const deferral = pgTable("deferral", {
   ...stamps,
   householdId: uuid("household_id").notNull().references(() => household.id),
@@ -604,12 +609,25 @@ export const deferral = pgTable("deferral", {
   // exists, so association is by decided_at until capture moves into the
   // close flow; reported, not hidden.
   visitId: uuid("visit_id").references(() => visit.id),
+  // AB (W-6 follow-on): the lifecycle. "Noticed, and planned for later"
+  // is a commitment; without a resolved state the client card makes a
+  // promise the data model cannot honor. Resolution keeps the evidence
+  // rather than deleting it: the done story ("noticed in March, fixed in
+  // May") is exactly the attention STD-016 says a clean bathroom fails
+  // to demonstrate.
+  resolution: deferralResolutionEnum("resolution"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedBy: text("resolved_by").references(() => authUser.id),
 }, (t) => [
   index("deferral_household_idx").on(t.householdId, t.decidedAt),
   // Same structural sentence as condition_flag: an intended timing is not
   // optional, and the database is where that lives.
   check("deferral_has_revisit_trigger",
     sql`${t.revisitDate} IS NOT NULL OR ${t.revisitCondition} IS NOT NULL`),
+  // A resolution is whole or absent: by whom, when, and how travel
+  // together, so a half-resolved row cannot exist.
+  check("deferral_resolution_is_whole",
+    sql`(${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL) OR (${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL)`),
 ]);
 
 export const objectObservation = pgTable("object_observation", {
