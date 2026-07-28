@@ -31,6 +31,11 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   // M (round six): the no-drift vocabulary comes from the engine constant,
   // never from copy an HM was taught to type; the button below writes it.
   const [zoneAnswer, setZoneAnswer] = useState<string>(ZONE_DRIFT_NONE);
+  // AC (W-6): deferral capture inputs; the flow validates and holds them.
+  const [deferralNoticed, setDeferralNoticed] = useState("");
+  const [deferralReason, setDeferralReason] = useState("");
+  const [deferralDate, setDeferralDate] = useState("");
+  const [deferralCondition, setDeferralCondition] = useState("");
   const [zonePhoto, setZonePhoto] = useState("");
   const [reportSentences, setReportSentences] = useState(["", "", ""]);
   const [lifeChange, setLifeChange] = useState<boolean | null>(null);
@@ -330,6 +335,27 @@ export function VisitWizard({ householdId }: { householdId: string }) {
             <input aria-label="Zone drift photo id" value={zonePhoto} onChange={(e) => setZonePhoto(e.target.value)} placeholder="photo id (required unless no drift)" />
             <p><button className="act subtle" type="button" onClick={() => run((f) => f.setZoneDrift({ answer: zoneAnswer, photoId: zonePhoto || null }))}>Save</button></p>
             {state.zoneDrift && <div className="prov">Saved: {state.zoneDrift.answer}</div>}
+          </div>
+
+          <div className="card">
+            {/* AC (W-6): deferral capture lives IN the close flow, so what
+                was noticed and left belongs to this visit by construction.
+                Optional; the client reads the reason. */}
+            <h2>Noticed and left, on purpose (optional)</h2>
+            <div className="note">
+              Something you saw and decided not to act on. The client sees what
+              you noticed, your reason, and when it will be looked at again.
+            </div>
+            <input aria-label="What you noticed" value={deferralNoticed} onChange={(e) => setDeferralNoticed(e.target.value)} placeholder="what you noticed" />
+            <input aria-label="Why it was left, in words the client will read" value={deferralReason} onChange={(e) => setDeferralReason(e.target.value)} placeholder="why it was left, in words the client will read" />
+            <div className="row" style={{ gap: 6 }}>
+              <input aria-label="Come back by" type="date" value={deferralDate} onChange={(e) => setDeferralDate(e.target.value)} style={{ marginTop: 0 }} />
+              <input aria-label="Come back when" style={{ flex: 1, marginTop: 0 }} value={deferralCondition} onChange={(e) => setDeferralCondition(e.target.value)} placeholder="or: come back when (at the fall weatherproofing visit)" />
+              <button className="act subtle" type="button" onClick={() => { run((f) => f.addDeferral({ noticed: deferralNoticed, reason: deferralReason, revisitDate: deferralDate || null, revisitCondition: deferralCondition || null })); setDeferralNoticed(""); setDeferralReason(""); setDeferralDate(""); setDeferralCondition(""); }}>Record</button>
+            </div>
+            {state.deferrals.map((d) => (
+              <div key={d.id} className="prov">deferred: {d.noticed}; revisit {d.revisitDate ?? d.revisitCondition}</div>
+            ))}
           </div>
 
           <div className="card">

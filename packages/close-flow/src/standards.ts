@@ -24,6 +24,16 @@ export class FloorNotOverridable extends CloseFlowError {
   }
 }
 
+/** AC (W-6 follow-on): a deferral is not a route around a floor. If the
+ * standard's floor language means what it says, deferring floor-backed
+ * work refuses the same way adapting it does. */
+export class FloorNotDeferrable extends CloseFlowError {
+  constructor(provisionId: string) {
+    super(`${provisionId} is a floor and the work it backs cannot be deferred`);
+    this.name = "FloorNotDeferrable";
+  }
+}
+
 /** The structured event the corporate signal inbox receives (Addendum A1 S5). */
 export interface FloorConflictEvent {
   type: "floor_conflict";

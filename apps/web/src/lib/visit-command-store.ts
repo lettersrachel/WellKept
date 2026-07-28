@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { visitCommand, timeEntry } from "@wellkept/schema";
+import { visitCommand, timeEntry, deferral } from "@wellkept/schema";
 import { db } from "./db";
 
 const dayOf = (isoString: string) => new Date(isoString).toISOString().slice(0, 10);
@@ -82,6 +82,33 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
           source: "visit_close",
           visitCommandId: idempotencyKey,
         });
+      }
+      // AC (W-6 follow-on): deferrals captured in the close flow land in
+      // the same transaction as the visit they belong to, carrying this
+      // command's id - the association IS the requirement (STD-016:
+      // report what was noticed and left; the vehicle is the visit).
+      // The close flow validated each draft; this re-checks the
+      // structural minimum and skips (loudly) anything malformed rather
+      // than conflicting the whole visit.
+      const drafts = (payload as { deferrals?: unknown }).deferrals;
+      if (submittedBy && Array.isArray(drafts)) {
+        for (const d of drafts as Array<Record<string, unknown>>) {
+          const noticed = typeof d.noticed === "string" ? d.noticed.trim().slice(0, 200) : "";
+          const reason = typeof d.reason === "string" ? d.reason.trim().slice(0, 400) : "";
+          const revisitDate = typeof d.revisitDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.revisitDate) ? d.revisitDate : null;
+          const revisitCondition = typeof d.revisitCondition === "string" && d.revisitCondition.trim() ? d.revisitCondition.trim().slice(0, 200) : null;
+          if (noticed.length < 4 || reason.length < 8 || (!revisitDate && !revisitCondition)) {
+            console.error(`[visit-apply] malformed deferral draft skipped on ${idempotencyKey}`);
+            continue;
+          }
+          await tx.insert(deferral).values({
+            id: typeof d.id === "string" && /^[0-9a-f-]{36}$/i.test(d.id) ? d.id : randomUUID(),
+            householdId: payload.householdId,
+            noticed, reason, revisitDate, revisitCondition,
+            decidedBy: submittedBy, decidedAt: new Date(),
+            visitCommandId: idempotencyKey,
+          }).onConflictDoNothing();
+        }
       }
     }
     return status === "conflict" ? { conflict: true as const, reason } : { conflict: false as const };

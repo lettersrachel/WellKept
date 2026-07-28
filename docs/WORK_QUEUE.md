@@ -19,9 +19,14 @@ in a session prompt.
 Production serves `ae553fd` (2026-07-28, third clean run through
 tooling/deploy.sh's full gate and the first through the round-seven
 argument-independent sha gate; 0029 deployed, counts 30/30/30, build id
-verified three times; W-5 condition flags live). Nine CI guards. Gap
+verified three times; W-5 condition flags live). Ten CI guards. Gap
 register at G-49. G-13 founder-approved, awaiting counsel review and the
-hire's acknowledgment.
+hire's acknowledgment. Migrations 0030 (deferral), 0031 (lifecycle) and
+0032 (visit_command_id) are merged but not yet deployed: the next deploy
+carries them and the three-way count will read 33. A queued follow-up
+migration (its own session, one line, reviewed): DROP the legacy
+`deferral.visit_id` column, which references the never-written `visit`
+table and can never be filled (the W-11 always-null-column class).
 
 The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
 confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
@@ -420,6 +425,34 @@ was pruned and why.
   session exists for (a mapped phrase reworded, guard stays green),
   then red on a removed anchor, then green. The count floor and the
   no-vacuous-coverage rule survive unchanged.
+- **AB, deferral lifecycle: CLOSED 2026-07-28 (0031).** Resolution is
+  whole or absent (done, no_longer_needed, superseded, plus resolvedAt
+  and resolvedBy; the DATABASE CHECK proven red on a half-resolved row
+  and green on a whole one). The client card splits open from "Since
+  taken care of", so the noticed-in-March-fixed-in-May story renders
+  instead of accumulating; the projection carries resolution and
+  resolvedAt, never who. Overdue deferrals (date passed, unresolved)
+  surface on the visit page and in the mobile briefing, and the House
+  Manager decides; nothing promotes or fires automatically (report 2's
+  posture, held). Payload guard gained the resolvedBy signature, proven
+  both directions.
+- **AC, capture moves into the close flow: CLOSED 2026-07-28 (0032).**
+  The Z-era standalone visit-page form and its createDeferral action
+  are gone; a deferral is captured in the close-flow wizard, validated
+  by the state machine (noticed, client-readable reason, the STD-016
+  timing sentence at capture as well as at the CHECK), and lands in the
+  same transaction as its visit, carrying `visit_command_id`, the
+  timeEntry precedent. Association is by construction now, which was
+  report 3's ask. A deferral of standards-backed work takes an optional
+  methodRef and floor tiers refuse (FloorNotDeferrable, proven red on a
+  floor, green on a method tier, loud on an unknown ref, the
+  FloorNotOverridable pattern). **The legacy `visit_id` column is the
+  W-11 class: nothing writes the `visit` table (applied visits are
+  visit_command rows), so the FK could never be filled. It stays for
+  now with a queued one-line reviewed DROP migration as its own
+  session; 0032 is a pure ADD because one migration per session.**
+  Existing null-visit_command rows (fixture-only scale) keep their
+  decided_at association; no backfill.
 
 ### Briefs already written
 

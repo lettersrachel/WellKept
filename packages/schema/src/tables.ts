@@ -604,11 +604,16 @@ export const deferral = pgTable("deferral", {
   revisitCondition: text("revisit_condition"),
   decidedBy: text("decided_by").notNull().references(() => authUser.id),
   decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
-  // The visit it belongs to, when the capture path knows it. The current
-  // surface captures DURING the visit, before the applied visit row
-  // exists, so association is by decided_at until capture moves into the
-  // close flow; reported, not hidden.
+  // Z's visit_id could NEVER be filled: nothing writes the legacy `visit`
+  // table (applied visits are visit_command rows). Kept momentarily so
+  // AC's migration is a clean ADD; the drop is its own one-line reviewed
+  // migration, queued in WORK_QUEUE (the W-11 always-null-column lesson).
   visitId: uuid("visit_id").references(() => visit.id),
+  // AC: the visit it belongs to, BY CONSTRUCTION - deferral capture is a
+  // close-flow step and the row is created when the visit.submit command
+  // applies, carrying that command's id (the same association time_entry
+  // uses).
+  visitCommandId: text("visit_command_id"),
   // AB (W-6 follow-on): the lifecycle. "Noticed, and planned for later"
   // is a commitment; without a resolved state the client card makes a
   // promise the data model cannot honor. Resolution keeps the evidence

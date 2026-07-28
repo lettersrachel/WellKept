@@ -10,6 +10,7 @@
 const randomUUID = () => globalThis.crypto.randomUUID();
 
 import { CloseFlowError } from "./errors.ts";
+import { FLOOR_TIERS, FloorNotDeferrable, type ProvisionTier } from "./standards.ts";
 
 export { CloseFlowError };
 export * from "./standards.ts";
@@ -20,6 +21,17 @@ const nonBlank = (value: unknown): value is string =>
 export interface Dot { id: string; verbatim: string; heardAt: string }
 export interface Hours { startedAt: string; endedAt: string }
 export interface ZoneDrift { answer: string; photoId: string | null }
+/** AC: a deliberate deferral captured IN the close flow, so it belongs to
+ * this visit by construction (STD-016: the vehicle for reporting what was
+ * noticed and left is the visit report). */
+export interface DeferralDraft {
+  id: string;
+  noticed: string;
+  reason: string;
+  revisitDate: string | null; // yyyy-mm-dd
+  revisitCondition: string | null;
+  methodRef?: string | null; // provision id, when the deferred work is standards-backed
+}
 
 export interface CloseFlowState {
   id: string;
@@ -33,6 +45,7 @@ export interface CloseFlowState {
   dots: Dot[];
   lifeChangeSignal: boolean | null;
   zoneDrift: ZoneDrift | null;
+  deferrals: DeferralDraft[];
   report: [string, string, string];
   submittedAt: string | null;
 }
@@ -57,6 +70,7 @@ export interface CloseFlow {
   addDot(verbatim: string): void;
   setLifeChangeSignal(value: boolean): void;
   setZoneDrift(input: { answer: string; photoId?: string | null }): void;
+  addDeferral(input: { noticed: string; reason: string; revisitDate?: string | null; revisitCondition?: string | null; methodRef?: string | null }): void;
   setReportSentence(index: number, value: string): void;
   missingRequiredSteps(): MissingStep[];
   submit(): VisitCommand[];
@@ -66,10 +80,16 @@ export function createCloseFlow({
   householdId,
   requiredTaskIds,
   startedAt = new Date().toISOString(),
+  provisionTiers,
 }: {
   householdId: string;
   requiredTaskIds: string[];
   startedAt?: string;
+  /** AC: provision id -> tier, bundled with the briefing (never fetched
+   * live), so deferring floor-backed work can refuse offline the same way
+   * adapting it does. Optional: a flow without tiers simply cannot accept
+   * a methodRef-carrying deferral (unknown refs fail loudly either way). */
+  provisionTiers?: ReadonlyMap<string, ProvisionTier>;
 }): CloseFlow {
   if (!nonBlank(householdId) || !Array.isArray(requiredTaskIds) || requiredTaskIds.length === 0) {
     throw new CloseFlowError("household and required tasks are required");
@@ -86,6 +106,7 @@ export function createCloseFlow({
     dots: [],
     lifeChangeSignal: null,
     zoneDrift: null,
+    deferrals: [],
     report: ["", "", ""],
     submittedAt: null,
   };
@@ -131,6 +152,28 @@ export function createCloseFlow({
         throw new CloseFlowError("zone drift requires a photo");
       }
       state.zoneDrift = { answer: answer.trim(), photoId };
+    },
+    addDeferral({ noticed, reason, revisitDate = null, revisitCondition = null, methodRef = null }) {
+      if (!nonBlank(noticed) || !nonBlank(reason)) {
+        throw new CloseFlowError("a deferral needs what was noticed and the reason, in words the client will read");
+      }
+      // STD-016's structural sentence, enforced at capture as well as at
+      // the database: an intended timing is not optional.
+      const date = nonBlank(revisitDate) && /^\d{4}-\d{2}-\d{2}$/.test(revisitDate.trim()) ? revisitDate.trim() : null;
+      const condition = nonBlank(revisitCondition) ? revisitCondition.trim() : null;
+      if (!date && !condition) {
+        throw new CloseFlowError("a deferral needs its intended timing: a date or a stated condition");
+      }
+      if (methodRef !== null && nonBlank(methodRef)) {
+        const tier = provisionTiers?.get(methodRef);
+        if (!tier) throw new CloseFlowError(`unknown provision ${methodRef}`);
+        if (FLOOR_TIERS.includes(tier)) throw new FloorNotDeferrable(methodRef);
+      }
+      state.deferrals.push({
+        id: randomUUID(), noticed: noticed.trim(), reason: reason.trim(),
+        revisitDate: date, revisitCondition: condition,
+        methodRef: nonBlank(methodRef ?? "") ? methodRef : null,
+      });
     },
     setReportSentence(index, value) {
       if (!Number.isInteger(index) || index < 0 || index > 2 || !nonBlank(value)) {
