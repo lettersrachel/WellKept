@@ -47,30 +47,41 @@ extract_build_id() {
 cd "$(dirname "$0")/.."
 
 if [[ "${1:-}" == "--selftest" ]]; then
-  # Prove the refusals, red before green (guard-must-fire).
+  # Prove the refusals, red before green (guard-must-fire). Cases that are
+  # NOT about the origin/main gate pin it to HEAD via the selftest-only
+  # override, so a dev tree with unpushed commits can still prove them.
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/6: wrong sha refused"
-  WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/6: migration-count mismatch refused (the assertion itself, migrate skipped)"
-  WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/6: unexpected project refused"
-  WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/6: absent/wrong project link refused BEFORE deploy"
+  echo "selftest 1/7: wrong sha refused"
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
+  echo "selftest 2/7: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
+  echo "selftest 3/7: unexpected project refused"
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
+  echo "selftest 4/7: absent/wrong project link refused BEFORE deploy"
+
+  # Round seven, session T: the class case. A commit that EXISTS locally but
+  # is not on origin/main must be refused, however the argument was produced.
+  # This is the $(git rev-parse HEAD)-of-an-unpushed-tree failure, proven
+  # with a dangling commit so the worktree is untouched.
+  LOCAL_ONLY=$(git commit-tree "HEAD^{tree}" -p HEAD -m "deploy.sh selftest: local-only commit, never pushed")
+  WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$LOCAL_ONLY" 2>/dev/null \
+    && { echo "SELFTEST FAIL: a local-only sha (not on origin/main) was accepted"; exit 1; }
+  echo "selftest 5/7: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
   # guard suite that only tests red passes while refusing everything — which
   # is exactly how the projectName and build-id bugs shipped. These two prove
   # the checks ACCEPT what they are supposed to accept.
-  WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: correct sha + real project link REFUSED (green path broken)"; exit 1; }
-  echo "selftest 5/6: correct sha and real project link accepted"
+  echo "selftest 6/7: correct sha and real project link accepted"
 
   GREEN=$(printf '{"id":"%s"}' "$(git rev-parse HEAD)" | extract_build_id)
   [[ "$GREEN" == "$(git rev-parse HEAD)" ]] \
     || { echo "SELFTEST FAIL: build-id extraction returned '$GREEN'"; exit 1; }
-  echo "selftest 6/6: build-id extracted from its JSON body"
+  echo "selftest 7/7: build-id extracted from its JSON body"
 
-  echo "selftest PASSED: four refusals fire, two green paths accepted"
+  echo "selftest PASSED: five refusals fire, two green paths accepted"
   exit 0
 fi
 
@@ -82,12 +93,40 @@ if [[ "${1:-}" == "--preflight" ]]; then PREFLIGHT=1; shift; fi
 SHA="${1:-}"
 [[ -n "$SHA" ]] || fail "expected main sha is a required argument"
 
-# 1. The named-sha gate. NAME the sha from the merged PR (the merge commit
-# GitHub shows), never derive it from the tree being deployed:
-# $(git rev-parse HEAD) compares HEAD to itself and turns this gate into a
-# no-op, which the 2026-07-28 0028 deploy demonstrated.
+# 1. The named-sha gate, made independent of its argument (round seven T).
+# All three deploy failures were arguments computed in the caller's shell
+# defeating a correct script; this gate now verifies the named sha against
+# origin/main, an external source of truth since branch protection landed.
+# A sha that exists only locally (an unpushed HEAD, $(git rev-parse HEAD)
+# of a stray tree) cannot satisfy it however the argument was produced.
+# Being on origin/main also implies the required checks were green, since
+# branch protection refuses the merge without them: the check-status half
+# of the brief needs no API call and no token.
+#
+# WK_DEPLOY_TEST_ORIGIN_MAIN is honored ONLY in selftest mode (both skip
+# hooks set), so selftest cases about OTHER refusals can run on a dev tree
+# whose HEAD is not yet pushed; a real invocation always compares against
+# the real origin/main.
+SELFTEST_MODE=""
+[[ -n "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" && -n "${WK_DEPLOY_TEST_DB_COUNT:-}" ]] && SELFTEST_MODE=1
+MAIN_REF="origin/main"
+[[ -n "$SELFTEST_MODE" && -n "${WK_DEPLOY_TEST_ORIGIN_MAIN:-}" ]] && MAIN_REF="$WK_DEPLOY_TEST_ORIGIN_MAIN"
+
+FULL_SHA=$(git rev-parse --verify --quiet "${SHA}^{commit}") \
+  || fail "sha '$SHA' resolves to no commit here. Pull, then name the merge commit from the merged PR."
+if [[ -z "$SELFTEST_MODE" ]]; then
+  git fetch origin main --quiet || fail "could not fetch origin/main to verify the named sha"
+fi
+git merge-base --is-ancestor "$FULL_SHA" "$MAIN_REF" \
+  || fail "sha $FULL_SHA is not on $MAIN_REF. Name the merge commit from the merged PR; a locally derived sha cannot pass this gate."
 HEAD_SHA=$(git rev-parse HEAD)
-[[ "$HEAD_SHA" == "$SHA"* ]] || fail "HEAD is $HEAD_SHA, expected $SHA. Pull and confirm the merge before deploying."
+[[ "$HEAD_SHA" == "$FULL_SHA" ]] || fail "HEAD is $HEAD_SHA, expected $FULL_SHA. Pull and confirm the merge before deploying."
+# The deploy ships the WORKING TREE (vercel uploads the directory, not the
+# commit), so a dirty tree deploys unreviewed state under a clean sha.
+# Selftest mode skips this: a dev tree proving refusals is dirty by nature.
+if [[ -z "$SELFTEST_MODE" ]]; then
+  [[ -z "$(git status --porcelain)" ]] || fail "working tree is dirty; the deploy ships the tree, not the sha. Commit or stash first."
+fi
 
 # The connection comes from the environment or, failing that, from
 # .neon-connection at the repo root - read HERE, after this script's own cd,

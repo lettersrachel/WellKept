@@ -59,8 +59,11 @@ proves the refusals fire. Two invocation rules, both learned 2026-07-28:
 
 - **Name the sha from the merged PR** (copy the merge commit GitHub
   shows). Never pass `$(git rev-parse HEAD)`: that compares HEAD to
-  itself and turns the gate into a no-op exactly when a big pull most
-  needs confirming.
+  itself. Since round seven the gate ENFORCES this rather than trusting
+  it: it fetches and refuses any sha that is not on `origin/main` (which,
+  with branch protection, also means its required checks were green), and
+  refuses a dirty working tree, because the deploy ships the tree, not
+  the sha. A locally derived sha from an unpushed tree cannot pass.
 - **The connection resolves inside the script.** It uses `DATABASE_URL`
   from the environment or reads `.neon-connection` at the repo root,
   after its own cd, so a caller shell sitting in `apps/web` cannot make
