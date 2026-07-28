@@ -40,6 +40,14 @@ export interface DigestHousehold {
   // flag assumed (promotion marks the digest; it never creates a prompt).
   openFlags: number;
   promotedFlags: number;
+  // AH (sync-defect sessions): the reconciliation floor. Days since the
+  // last APPLIED visit.submit (null = never), and whether that gap
+  // exceeds the visit_reconciliation knob. The server observes what did
+  // not arrive, whatever the client did wrong: a stuck queue, a lost
+  // device, an evicted browser store. Nothing surfaces while the knob's
+  // gapDays is null (the shipped default; founder sets it).
+  visitGapDays?: number | null;
+  missingVisit?: boolean;
 }
 
 const BRAND = { green: "#1c3d2e", gold: "#b08d2a", grey: "#6b6b6b", brick: "#8c2f22" };
@@ -51,6 +59,7 @@ export function composeFleetDigest(
   weekOf: string,
 ): { subject: string; html: string } {
   const needsEyes = households.filter((h) => h.statusTag === "WATCH" || h.statusTag === "LIFE-EVENT");
+  const missing = households.filter((h) => h.missingVisit);
   const rows = households
     .map((h) => {
       const tagColor = h.statusTag === "LIFE-EVENT" ? BRAND.brick : h.statusTag === "WATCH" ? BRAND.gold : BRAND.grey;
@@ -58,7 +67,7 @@ export function composeFleetDigest(
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Georgia,serif">${h.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${tagColor};font-weight:700">${h.statusTag}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.total - h.unconfirmed}/${h.total} confirmed</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts${h.openFlags ? ` · ${h.openFlags} flag${h.openFlags === 1 ? "" : "s"}` : ""}${h.promotedFlags ? ` <span style="color:${BRAND.brick};font-weight:700">(${h.promotedFlags} moving fast)</span>` : ""}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts${h.openFlags ? ` · ${h.openFlags} flag${h.openFlags === 1 ? "" : "s"}` : ""}${h.promotedFlags ? ` <span style="color:${BRAND.brick};font-weight:700">(${h.promotedFlags} moving fast)</span>` : ""}${h.missingVisit ? ` <span style="color:${BRAND.brick};font-weight:700">(no visit in ${h.visitGapDays}d)</span>` : ""}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.lastStranger}</td>
       </tr>`;
     })
@@ -66,10 +75,17 @@ export function composeFleetDigest(
   const attention = needsEyes.length
     ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${needsEyes.length} household(s) need eyes this week: ${needsEyes.map((h) => h.name).join(", ")}.</p>`
     : `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.grey}">No households flagged for special attention this week.</p>`;
+  // AH: a household whose record shows no applied visit inside the set
+  // window gets its own line; the record not knowing about a visit is
+  // exactly what a stuck client cannot report about itself.
+  const missingLine = missing.length
+    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${missing.length} household(s) may be missing a visit record: ${missing.map((h) => `${h.name} (${h.visitGapDays}d)`).join(", ")}. Check with the House Manager; a device may be holding unsynced work.</p>`
+    : "";
   const html = `<div style="max-width:620px;margin:0 auto">
     <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.14em;color:${BRAND.gold};font-weight:700">WELL KEPT · FLEET DIGEST · WEEK OF ${weekOf}</p>
     <h2 style="font-family:Georgia,serif;color:${BRAND.green};margin:6px 0 12px">${households.length} household${households.length === 1 ? "" : "s"}${recipientName ? `, ${recipientName}` : ""}</h2>
     ${attention}
+    ${missingLine}
     <table style="width:100%;border-collapse:collapse;margin-top:10px">
       <thead><tr>
         <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.06em;color:${BRAND.grey};text-transform:uppercase">Household</th>
@@ -82,8 +98,10 @@ export function composeFleetDigest(
     </table>
     <p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${BRAND.grey};margin-top:14px">Open the fleet board to act on any of these. Well Kept</p>
   </div>`;
-  const subject = needsEyes.length
-    ? `Fleet digest: ${needsEyes.length} need attention (week of ${weekOf})`
+  // AH: a possibly-missing visit is attention, same as WATCH/LIFE-EVENT.
+  const attentionCount = new Set([...needsEyes, ...missing].map((h) => h.name)).size;
+  const subject = attentionCount
+    ? `Fleet digest: ${attentionCount} need attention (week of ${weekOf})`
     : `Fleet digest: all steady (week of ${weekOf})`;
   return { subject, html };
 }

@@ -38,10 +38,18 @@ export async function runFleetDigest(pool: pg.Pool) {
     // rateThreshold is null (the shipped default).
     const { rows: knobRows } = await pool.query("SELECT value FROM app_setting WHERE key='flag_promotion'");
     const knob = { ...DEFAULT_FLAG_PROMOTION, ...((knobRows[0]?.value as object | undefined) ?? {}) };
+    // AH (sync-defect sessions): the reconciliation floor's knob. Nothing
+    // surfaces while gapDays is null (the shipped default; founder sets
+    // it from the real visit rhythm). The expectation is deliberately
+    // weak, days since the last APPLIED visit.submit, because scheduling
+    // lives outside the boundary (ADR-004) and the server's own record
+    // is the one signal a broken client cannot fake.
+    const { rows: reconRows } = await pool.query("SELECT value FROM app_setting WHERE key='visit_reconciliation'");
+    const gapDays = (reconRows[0]?.value as { gapDays?: number | null } | undefined)?.gapDays ?? null;
 
     const households: DigestHousehold[] = [];
     for (const h of hh) {
-      const [{ rows: fields }, { rows: edits }, { rows: prompts }, { rows: tests }, { rows: flagRows }] = await Promise.all([
+      const [{ rows: fields }, { rows: edits }, { rows: prompts }, { rows: tests }, { rows: flagRows }, { rows: lastVisit }] = await Promise.all([
         pool.query("SELECT count(*)::int total, count(*) FILTER (WHERE NOT confirmed)::int unconfirmed FROM playbook_field WHERE household_id=$1", [h.id]),
         pool.query("SELECT count(*)::int n FROM client_edit WHERE household_id=$1 AND status='pending'", [h.id]),
         pool.query("SELECT count(*)::int n FROM prompt_pack_item WHERE household_id=$1 AND fired_at IS NULL AND NOT suppressed_by_tag", [h.id]),
@@ -50,6 +58,14 @@ export async function runFleetDigest(pool: pg.Pool) {
                     LEFT JOIN object_observation o ON o.condition_flag_id = f.id
                       AND o.measure = 'condition' AND o.superseded_at IS NULL
                     WHERE f.household_id=$1 AND f.status='open' ORDER BY o.observed_at`, [h.id]),
+        // AH: the gap counts from the last applied visit, or from the
+        // household's creation when none has ever applied (a first visit
+        // that never arrived is the case a baseline-only check misses).
+        pool.query(`SELECT floor(extract(epoch FROM now() - coalesce(
+                      (SELECT max(received_at) FROM visit_command
+                        WHERE household_id=$1 AND type='visit.submit' AND status='applied'),
+                      (SELECT created_at FROM household WHERE id=$1)
+                    )) / 86400)::int AS gap_days`, [h.id]),
       ]);
       const t = tests[0];
       const flagLooks = new Map<string, { raisedAt: Date; looks: FlagLook[] }>();
@@ -61,12 +77,15 @@ export async function runFleetDigest(pool: pg.Pool) {
       // Session Y: the rate window opens at raised_at, never earlier.
       const promotedFlags = [...flagLooks.values()]
         .filter(({ looks, raisedAt }) => isPromotionCandidate(looks, knob, raisedAt)).length;
+      const visitGapDays = lastVisit[0]?.gap_days ?? null;
       households.push({
         name: h.name, tier: h.tier, statusTag: h.status_tag,
         total: fields[0].total, unconfirmed: fields[0].unconfirmed,
         pendingEdits: edits[0].n, upcomingPrompts: prompts[0].n,
         lastStranger: t ? `${t.passed ? "PASS" : "FRICTION"} ${new Date(t.created_at).toISOString().slice(5, 10)}` : "never",
         openFlags: flagLooks.size, promotedFlags,
+        visitGapDays,
+        missingVisit: gapDays !== null && visitGapDays !== null && visitGapDays > gapDays,
       });
     }
 

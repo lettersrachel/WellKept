@@ -533,8 +533,58 @@ was pruned and why.
   Copy is a PROPOSAL for the founder's adjustment. The airplane e2e now
   proves both directions: offline submit shows the saved-on-device
   claim, and after reconnect-and-drain the card upgrades to submitted.
-- AH (reconciliation floor), AI (resolution available whenever open),
-  AJ (one-role constraint report): open, in the brief's order.
+- **AH, the reconciliation floor: CLOSED 2026-07-28.** Report first, as
+  briefed: NO structured expected-visit signal exists (membershipTerms
+  carries only monthlyRateCents; scheduling is Jobber under ADR-004;
+  registry cadence is object rhythm), but the weekly rhythm already
+  lives in code as an assumption (economics page, daysSinceVisit <= 9
+  hard-coded). The weakest useful version therefore needs no new data:
+  **days since the last APPLIED visit.submit (or household creation when
+  none ever applied, the first-visit-never case) exceeding an unset
+  knob**. Built: `visit_reconciliation` knob (`{"gapDays": null}`,
+  shipped default, founder sets it; nothing surfaces while null), the
+  fleet board's Visits cell gains a "no visit in Nd" mark, and the
+  weekly digest gains a missing-visit line plus the count in the
+  subject's attention number. The server observes what did not arrive,
+  whatever the client did wrong; fixtures excluded as everywhere. If a
+  structured expectation is ever wanted, membershipTerms.visitCadenceDays
+  set alongside the monthly rate is the natural home; a founder
+  decision, not assumed.
+- **AI, resolution available whenever open: CLOSED 2026-07-28, with a
+  register correction.** G-51 reclassified as a client-facing DEFECT per
+  the brief: early completion is completion, and an open card the client
+  sees must be closable the day the work is done. The visit page's
+  overdue-only deferral card became "Deferrals on record": every open
+  deferral resolves, overdue ones sort first with the PAST ITS TIMING
+  tag, and the revisit date drives surfacing only. Factual correction
+  recorded in the register: the paused decision was NEVER overdue-gated
+  (AD's card maps every open item; only the tag and the briefing array
+  key on the date), so the fix applies to the deferral side alone.
+- **AJ, the one-role constraint: REPORTED 2026-07-28 (report only, no
+  index change, per the brief).** What breaks under dual roles is
+  RESOLUTION, not the index: getPrincipal takes THE row for (user,
+  household) with no ORDER BY (session.ts:50), and every downstream
+  gate (page redirects, action role checks, filterFields, actorRole on
+  every audit row) keys on that single role, so two rows would mean a
+  nondeterministic identity per request, silently. The read case is
+  already covered: the CEO preview switcher renders both projections
+  from the drill-in (checklist item 8). The write case is narrower than
+  assumed: corporate roles can ALREADY log time, costs, flags,
+  deferral and paused-decision resolutions (the actions allow
+  corporate_admin/ops); the only field-role-exclusive writes are the
+  visit close itself (/visit redirect plus the drain sink's FIELD_ROLES)
+  and the mobile briefing. Three options for the founder: (1) keep the
+  constraint; covering a visit uses a second identity (the fixture's
+  plus-addressing pattern on a real household; audit then attributes to
+  the alter identity, same person, different user id); (2) widen the
+  visit-close surfaces to corporate_admin (smallest change; the audit
+  row already records actorRole honestly, so "the admin closed this
+  visit" is a true and visible statement); (3) allow dual rows, which
+  requires re-keying the unique index AND a deterministic role-
+  precedence rule in getPrincipal AND per-action role selection; the
+  most invasive, only worth it if the pilot shows the founder living in
+  both roles weekly. No per-person analytics implications in any
+  option. A decision, not made here.
 
 ### Briefs already written
 
