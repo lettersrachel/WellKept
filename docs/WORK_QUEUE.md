@@ -16,18 +16,35 @@ in a session prompt.
 
 ## State
 
-Production serves `1385a1e` (2026-07-28, fourth clean run through
-tooling/deploy.sh's full gate and the first carrying four migrations in
-one pass; 0030 through 0033 deployed, counts 34/34/34, build id verified
-three times; W-6 deferrals with lifecycle and close-flow capture, and
-W-7 paused decisions, live). Ten CI guards. Gap register at G-49. G-13
-founder-approved, awaiting counsel review and the hire's acknowledgment.
-The DEPLOY.md section 4 sitting for this batch is still owed: the new
-write paths (deferral through the close flow, resolve, paused decision)
-plus check 9 carried from session U. A queued follow-up
-migration (its own session, one line, reviewed): DROP the legacy
-`deferral.visit_id` column, which references the never-written `visit`
-table and can never be filled (the W-11 always-null-column class).
+Production serves `6fd8e3b` (2026-07-28 evening, fifth clean run through
+tooling/deploy.sh's full gate; a code-and-docs deploy, zero new
+migrations, counts 34/34/34; 0030 through 0033 went in with the earlier
+`1385a1e` deploy the same day). Ten CI guards. Gap register at G-51.
+G-13 founder-approved, awaiting counsel review and the hire's
+acknowledgment.
+
+The DEPLOY.md section 4 sitting for the 0030-0033 batch ran 2026-07-28:
+standing checklist 1 through 14 all PASS, and **check 9 genuinely ran
+against production for the first time** (created, enforced by
+generation, ended; the anomaly session U reconciled is closed). The
+flag loop passed in full, both guards firing. The deferral and paused
+decision each passed their refusal and creation steps; deferral
+visit_command_id association verified against a real applied command.
+Remainders from the sitting: check 5 re-run on the fixture (it ran on
+Fernbrook; G-23 discipline); both resolution paths and both client-view
+checks blocked by G-50 (no identity sees both ends) and G-51
+(resolution controls are time-gated; testable the day after capture);
+one stray active exclusion to end; and **the visit-close first-submit
+false green, unfiled pending the founder's filing decision** - the
+mechanism is identified in code (the submitted card renders at
+local-queue time by design, a failed drain is silent except the
+pending counter, the command persists in IndexedDB and redelivers on
+reload) and two production queries decide whether any data was lost.
+
+A queued follow-up migration (its own session, one line, reviewed):
+DROP the legacy `deferral.visit_id` column, which references the
+never-written `visit` table and can never be filled (the W-11
+always-null-column class).
 
 The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
 confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
