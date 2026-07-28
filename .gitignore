@@ -22,3 +22,7 @@ tooling/e2e/playwright-report/
 # weekly drift dumps (G-27): plaintext household records, never committed
 household_dump.json
 wk-drift-dump.json
+
+# TypeScript incremental build cache: regenerates on every typecheck,
+# never reviewable, dirtied every session (the WORK_QUEUE chore).
+*.tsbuildinfo
