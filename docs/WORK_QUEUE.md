@@ -135,29 +135,53 @@ property of a kind, or a named set of kinds with a safe default?
 
 ## Gated
 
-### W-5. Flags. The unlock for three other items
+### W-5. Flags: CLOSED 2026-07-28 (0029), on the corrected gate
 
-STD-016 §5: every sentinel check produces a flag; every flag carries a revisit
-trigger, a date or a condition, set at the moment of flagging; flagged
-conditions are re-observed at every visit; anything degrading faster than its
-flag assumed is promoted.
+The recorded gate was a deadline, not a prerequisite (the W-6/W-7 error
+class); the brief corrected it and the founder authorized proceeding on
+the four recommendations. Built as `condition_flag` ("flag" was already
+taken by playbook-field flags; the K naming collision, avoided at birth):
 
-No flag entity exists. `object_observation` supplies the series and currently
-has no consumer. **This is the consumer.**
+- No kinds. Subject, location, concern in the HM's words, status.
+- The revisit trigger (date or stated condition) is a DATABASE CHECK,
+  not a form rule; a reasoned close is a second CHECK. Both proven red
+  and green in SQL.
+- Nullable registry reference; `object_observation` generalized (one
+  series table, two subject types, cost reported before building): a
+  flag on an object shares the object's series, a flag without one
+  stands alone. Subject CHECK proven both directions; erasure treatment
+  DELETE with its series, guard proven red by the blanking method.
+- Promotion is computed, never stored, and NOTHING promotes while
+  `flag_promotion.rateThreshold` is null (shipped default; knob shape
+  `{"minObservations": 3, "rateThreshold": null}`). Proven in four
+  directions including the posture case. A candidate rises in the
+  briefing and marks the digest; it never creates a prompt, so the
+  uncalibrated health metrics stay clean.
+- Surfaces: visit page (flag, look, close), mobile briefing
+  (`conditionFlags`, candidates first), fleet digest (counts plus the
+  moving-fast mark). Payload guard extended with the condition_flag
+  signature, proven both ways.
+- Legal in the same PR: legal/README category, both privacy-notice
+  copies, CHILD_DATA row plus the guard's surface list. **G-13 check
+  (reported per the brief): the disclosure's internal-observations item
+  covers the category by plain reading, but its parenthetical examples
+  name only dots and object observations; the founder should add
+  "condition flags you raise" at the next revision of the approved
+  text.** Out of scope, as briefed: automatic flag creation from
+  sentinel provisions (gated on the floor review).
 
-**Gate:** before a House Manager starts noticing things, or the pilot's first
-months of observations have nowhere to live.
-
-### W-6 and W-7 are downstream of W-5, not independent
-
-Correcting the previous version of this file, which implied all of W-5 through
-W-8 were independently gated.
+### W-6 and W-7: unblocked by W-5, not yet built
 
 - **W-6 deliberate deferral** ("noticed and left, with the reason and the
-  intended timing") needs an intended timing, which is a revisit trigger, which
-  is W-5's mechanism. It is small and the most client-visible item in either
-  review, but it is not buildable first.
-- **W-7 paused decisions** needs the same revisit mechanism.
+  intended timing") now has its revisit mechanism. The most
+  client-visible item in either review; touches the client projection;
+  own session.
+- **W-7 paused decisions**, same mechanism, pairs with W-6 (separate
+  migrations per the brief).
+- **Anticipation E is also movable now** per the same brief: build the
+  external_signal mechanism on weather first (NWS alerts API is live,
+  free, keyed by zone, needs no household); school calendars become
+  configuration when a household exists.
 
 ### W-8 is independent, and has no gate at all
 

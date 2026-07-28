@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall } from "@/lib/data";
+import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
@@ -25,13 +25,14 @@ export async function GET(req: NextRequest) {
   }
   if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
 
-  const [allFields, dots, packItems, lastVisit, seedReviewed, recall] = await Promise.all([
+  const [allFields, dots, packItems, lastVisit, seedReviewed, recall, openConditionFlags] = await Promise.all([
     getFields(hh.id),
     getOpenDots(hh.id),
     getUpcomingPackItems(hh.id),
     latestAppliedVisit(hh.id),
     standardsSeedReviewed(),
     getSeasonRecall(hh.id), // A2/REQ-054: exclusion-filtered in the reader
+    getOpenConditionFlags(hh.id), // W-5: re-observed at every visit
   ]);
   const fields = filterFields(principal.role, allFields, { ndaMode: hh.isNda && !principal.ndaApproved });
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
@@ -72,9 +73,20 @@ export async function GET(req: NextRequest) {
   // is already field-role gated).
   const lastYear = recall.map((r) => ({ summary: r.summary, anchorKind: r.anchorKind, observedAt: r.observedAt }));
 
+  // W-5: open condition flags, promotion candidates first (they rise;
+  // they never create prompts). `flags` below remains the FIELD flags -
+  // distinct entity, distinct key, per the K naming survey.
+  const conditionFlags = openConditionFlags.map((f) => ({
+    id: f.id, subject: f.subject, location: f.location, concern: f.concern,
+    revisit: f.revisitDate ?? f.revisitCondition,
+    looks: f.looks.map((l) => l.value),
+    promotionCandidate: f.promotionCandidate,
+  }));
+
   return NextResponse.json({
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: principal.role === "backup_hm" },
     flags,
+    conditionFlags,
     changed,
     specials,
     radar,

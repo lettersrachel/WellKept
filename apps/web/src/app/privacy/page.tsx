@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         records, and staff responses to service reminders) for accountability and service
         quality; practical data (important dates, vendors,
         appliances, subscriptions, and the condition of items we care for, observed over
-        time) to anticipate needs; service time and costs (time spent
+        time, including conditions we flag to revisit) to anticipate needs; service time and costs (time spent
         serving your household by activity, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);
         your membership record (how you found us, and your membership history); and

@@ -541,10 +541,55 @@ export const observationMeasureEnum = pgEnum("observation_measure", [
   "condition", "fill_level",
 ]);
 
+// W-5 (STD-016 S5): the flag entity. Named condition_flag because "flag"
+// is already taken by playbook-field flags (fieldFlagEnum, the briefing's
+// "flags first" section) - the K-class naming collision, avoided at birth.
+// No kinds (founder decision 1: a taxonomy invented before a single real
+// flag exists shapes what people record). A flag is a subject, a concern
+// in the House Manager's own words, and a revisit trigger.
+export const conditionFlagStatusEnum = pgEnum("condition_flag_status", ["open", "closed"]);
+
+export const conditionFlag = pgTable("condition_flag", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  // Decision 2: nullable on purpose. The standard's own example (caulk in
+  // a guest bathroom) is a surface condition, not a registry object; with
+  // an object the flag reads its existing series, without one it stands
+  // on its own subject and location.
+  registryEntryId: uuid("registry_entry_id").references(() => registryEntry.id),
+  subject: text("subject").notNull(), // what, in the HM's words ("grout, rear shower wall")
+  location: text("location").notNull(), // where in the home ("guest bathroom")
+  concern: text("concern").notNull(), // the worry, verbatim; s2, staff-only
+  raisedBy: text("raised_by").notNull().references(() => authUser.id),
+  raisedAt: timestamp("raised_at", { withTimezone: true }).notNull().defaultNow(),
+  // The revisit trigger: a date or a stated condition, set at the moment
+  // of flagging. Enforced by the CHECK below, not a form.
+  revisitDate: date("revisit_date"),
+  revisitCondition: text("revisit_condition"),
+  status: conditionFlagStatusEnum("status").notNull().default("open"),
+  // Resolution is a state change, never a delete: a reason and who closed.
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  closedBy: text("closed_by").references(() => authUser.id),
+  closeReason: text("close_reason"),
+}, (t) => [
+  index("condition_flag_household_idx").on(t.householdId, t.status),
+  // STD-016's strongest sentence, structural: "a flag without a revisit
+  // trigger is worse than no flag." The database refuses one.
+  check("condition_flag_has_revisit_trigger",
+    sql`${t.revisitDate} IS NOT NULL OR ${t.revisitCondition} IS NOT NULL`),
+  check("condition_flag_close_is_reasoned",
+    sql`${t.status} <> 'closed' OR (${t.closeReason} IS NOT NULL AND ${t.closedBy} IS NOT NULL)`),
+]);
+
 export const objectObservation = pgTable("object_observation", {
   ...stamps,
   householdId: uuid("household_id").notNull().references(() => household.id),
-  registryEntryId: uuid("registry_entry_id").notNull().references(() => registryEntry.id),
+  // W-5 generalization (founder decision 2, cost reported first): one
+  // series table, two subject types. A flag against a registry object
+  // carries BOTH references, so the object's series and the flag's are
+  // the same series; a flag with no object carries only condition_flag_id.
+  registryEntryId: uuid("registry_entry_id").references(() => registryEntry.id),
+  conditionFlagId: uuid("condition_flag_id").references(() => conditionFlag.id),
   measure: observationMeasureEnum("measure").notNull(),
   value: integer("value").notNull(),
   note: text("note"), // s2, optional ("left rear burner weak")
@@ -561,6 +606,11 @@ export const objectObservation = pgTable("object_observation", {
 }, (t) => [
   index("object_observation_household_idx").on(t.householdId),
   index("object_observation_series_idx").on(t.registryEntryId, t.measure, t.observedAt),
+  index("object_observation_flag_series_idx").on(t.conditionFlagId, t.measure, t.observedAt),
+  // W-5: an observation observes SOMETHING - a registry object, a flagged
+  // condition, or (both set) a flagged registry object sharing one series.
+  check("object_observation_has_subject",
+    sql`${t.registryEntryId} IS NOT NULL OR ${t.conditionFlagId} IS NOT NULL`),
 ]);
 
 // Transactional outbox for field-change events (durable trigger delivery).

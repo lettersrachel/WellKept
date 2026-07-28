@@ -28,6 +28,7 @@ constraints where expressible.
 | `visit` reports | prose written FOR the client may mention their own children | client sees their own household's report content only | permission filtering |
 | `visit_photo` | a photo may capture a child | staff+management only, second factor on view, never in client views; 90-day byte purge | code + purge job |
 | `incident_report` | an incident may involve a child | internal; never shown in the app to clients | code + payload guards |
+| `condition_flag` (W-5, 2026-07-28) | a flagged condition's subject, location, or concern may mention a child's room or belongings | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guards (condition_flag signature) |
 
 ## The rules this document adds
 

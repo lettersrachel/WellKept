@@ -96,6 +96,14 @@ Four documents, one per audience and direction:
   (s2); never shown to the client; deleted with the household on erasure.
   Recorded by a named staff member, also STAFF data (the G-13
   disclosure's "written work" item covers it).
+- **Condition flags** (added 2026-07-28, W-5); a staff member's note that
+  some condition of the home is worth watching: what and where, the
+  concern in their own words, a revisit plan (a date or a stated
+  condition), repeated condition looks over time, and how it was
+  resolved. Internal (s2); never shown to the client; deleted with the
+  household on erasure. Recorded by a named staff member, also STAFF
+  data (the G-13 disclosure's internal-observations item covers the
+  category; its examples list should name flags at the next revision).
 - **Account & activity**, email, role, and an append-only audit log of who
   accessed or changed what.
 

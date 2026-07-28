@@ -60,6 +60,10 @@
  *    rules are untouched).
  *  - object_observation: rows DELETED - the condition/fill-level series
  *    describes the household's objects (G-49); no business-record claim.
+ *  - condition_flag (W-5, 2026-07-28): rows DELETED - a flag is a staff
+ *    observation about the household's property (subject, location,
+ *    concern), the same class as its series; deleted after the series
+ *    rows that reference it.
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -137,6 +141,7 @@ const counts = {
   outbox: await count("SELECT count(*) n FROM field_event_outbox WHERE household_id=$1"),
   scopedRules: await count("SELECT count(*) n FROM trigger_rule WHERE household_id=$1"),
   objectObservations: await count("SELECT count(*) n FROM object_observation WHERE household_id=$1"),
+  conditionFlags: await count("SELECT count(*) n FROM condition_flag WHERE household_id=$1"),
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
@@ -148,6 +153,7 @@ console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPho
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
 console.log(`  registry entries to clear + tombstone:                     ${counts.registries}`);
 console.log(`  object observations to DELETE (condition/fill series):     ${counts.objectObservations}`);
+console.log(`  condition flags to DELETE (W-5 staff observations):        ${counts.conditionFlags}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
 console.log(`  gestures / stranger tests / client edits to blank:         ${counts.gestures} / ${counts.stranger} / ${counts.edits}`);
 console.log(`  season observations / prompts / outcome notes to blank:    ${counts.season} / ${counts.prompts} / ${counts.outcomes}`);
@@ -211,6 +217,10 @@ try {
   // series describes the household's objects; operational data, no
   // business-record claim once the household is erased.
   await c.query("DELETE FROM object_observation WHERE household_id=$1", [householdId]);
+  // condition_flag (W-5, 2026-07-28): DELETED, same class as its series
+  // (staff observations about the household's property); after the series
+  // rows above, which reference it.
+  await c.query("DELETE FROM condition_flag WHERE household_id=$1", [householdId]);
   await c.query(`UPDATE trigger_rule SET enabled=false, definition='{\"packName\":\"[erased]\",\"items\":[]}', updated_at=now() WHERE household_id=$1`, [householdId]);
   if (ERASE_INCIDENTS) {
     await c.query("UPDATE incident_report SET description=$2, resolution_note=CASE WHEN resolution_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);

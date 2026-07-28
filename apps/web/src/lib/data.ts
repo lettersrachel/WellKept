@@ -79,6 +79,41 @@ export async function getPendingEdits(householdId: string) {
     .orderBy(asc(clientEdit.createdAt));
 }
 
+/**
+ * W-5: open condition flags with their live looks and the promotion
+ * verdict. Promotion is computed here from the series and the
+ * flag_promotion knob (rateThreshold ships null: nothing promotes until
+ * the founder sets it from real numbers). Candidates sort first, so a
+ * promoted flag RISES in the briefing rather than creating a prompt
+ * (founder decision 4).
+ */
+export async function getOpenConditionFlags(householdId: string) {
+  const { conditionFlag, objectObservation, appSetting, DEFAULT_FLAG_PROMOTION, isPromotionCandidate, conditionRatePer30Days } = await import("@wellkept/schema");
+  const { isNull, and, inArray, asc: ascOp } = await import("drizzle-orm");
+  const flags = await db.select().from(conditionFlag)
+    .where(and(eq(conditionFlag.householdId, householdId), eq(conditionFlag.status, "open")))
+    .orderBy(asc(conditionFlag.raisedAt));
+  if (flags.length === 0) return [];
+  const looks = await db.select({
+    conditionFlagId: objectObservation.conditionFlagId, value: objectObservation.value,
+    observedAt: objectObservation.observedAt, measure: objectObservation.measure,
+  }).from(objectObservation)
+    .where(and(inArray(objectObservation.conditionFlagId, flags.map((f) => f.id)), isNull(objectObservation.supersededAt)))
+    .orderBy(ascOp(objectObservation.observedAt));
+  const [knobRow] = await db.select().from(appSetting).where(eq(appSetting.key, "flag_promotion"));
+  const knob = { ...DEFAULT_FLAG_PROMOTION, ...((knobRow?.value as object | undefined) ?? {}) };
+  const out = flags.map((f) => {
+    const series = looks.filter((l) => l.conditionFlagId === f.id && l.measure === "condition");
+    return {
+      ...f,
+      looks: series.map((l) => ({ value: l.value, observedAt: l.observedAt })),
+      ratePer30Days: conditionRatePer30Days(series),
+      promotionCandidate: isPromotionCandidate(series, knob),
+    };
+  });
+  return out.sort((a, b) => Number(b.promotionCandidate) - Number(a.promotionCandidate));
+}
+
 export async function getOpenDots(householdId: string) {
   const { dot } = await import("@wellkept/schema");
   const { isNull, and } = await import("drizzle-orm");
