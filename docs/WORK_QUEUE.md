@@ -78,7 +78,7 @@ guard covers client-visible pages only.
 - **Neither reading covers the client report email or notification text.** Not
   pages, not staff-facing, reaches clients, currently unguarded.
 
-### W-11. Drop `membership_tier_gate`, with its spec
+### W-11. Drop `membership_tier_gate`, with its spec (CLOSED 2026-07-28, 0027)
 
 An always-null column that looks like a feature is worse than an absent one: a
 reader concludes provision-level tier gating exists, which is a false claim
@@ -87,6 +87,14 @@ corroboration that it was never really adopted.
 
 **Condition:** update WK-APP-003 Addendum A1 §S3 in the same change, or the
 drift moves from schema to spec rather than closing.
+
+**Done (0027).** Column dropped; zod, seed mapping, and the standards page
+display line removed with it; the loader's update-set omission is moot.
+The S3 column list's IN-REPO encoding (standards.test.ts) is updated in
+the same commit with a dated note. The Addendum A1 document itself is NOT
+in the repo (only SPEC_AUDIT references it), so the founder makes the
+matching one-line edit in her copy of WK-APP-003 Addendum A1 §S3: remove
+membership_tier_gate from the standard_provision column list.
 
 ### W-12. Does CI notice when a guard stops running? (CLOSED, see above)
 

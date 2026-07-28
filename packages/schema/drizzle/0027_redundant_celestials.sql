@@ -1,0 +1,1 @@
+ALTER TABLE "standard_provision" DROP COLUMN "membership_tier_gate";

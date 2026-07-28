@@ -61,7 +61,9 @@ test("floors are never overridable; the other three tiers are", () => {
 test("the pg tables carry the Addendum S3 columns", () => {
   for (const col of [
     "id", "document", "section", "ordinal", "text", "tier", "scope", "kind",
-    "membershipTierGate", "overridable", "version", "effectiveDate",
+    // membershipTierGate DROPPED 2026-07-28 (W-11): always-null column that
+    // looked like a feature; tier gating belongs on cascade items (W-3).
+    "overridable", "version", "effectiveDate",
     "supersededBy", "sourceNote", "pilotDefault", "reviewDate", "tombstonedAt",
   ]) assert.ok(col in standardProvision, `standard_provision missing ${col}`);
   for (const col of ["provisionId", "version", "snapshot", "effectiveDate", "recordedAt"]) {
@@ -99,7 +101,7 @@ test("standards store roles: client can never read, only corporate_admin writes"
 test("bindProvisions: the briefing render model enforces view, gate, and floor ordering (T4)", () => {
   const P = (id: string, tier: StandardProvision["tier"], sourceNote: string | null = null): StandardProvision => ({
     id, document: id.slice(0, 7), section: 1, ordinal: 1, text: `text for ${id}`,
-    tier, scope: ["universal"], kind: "rule", membershipTierGate: null,
+    tier, scope: ["universal"], kind: "rule",
     version: 1, effectiveDate: "2026-07-24", supersededBy: null, sourceNote,
     pilotDefault: false, reviewDate: null,
   });

@@ -610,7 +610,6 @@ export const standardProvision = pgTable("standard_provision", {
   tier: provisionTierEnum("tier").notNull(),
   scope: text("scope").array().notNull(), // room:kitchen, task:laundry, ...
   kind: provisionKindEnum("kind").notNull(),
-  membershipTierGate: tierEnum("membership_tier_gate"), // null = all tiers
   // Floors are enforced, not displayed: the close flow refuses to record a
   // floor as adapted-per-Playbook (floor_conflict event instead).
   overridable: boolean("overridable").notNull()
