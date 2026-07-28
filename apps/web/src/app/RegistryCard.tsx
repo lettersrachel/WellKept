@@ -26,6 +26,7 @@ interface Entry {
 }
 
 interface Observation {
+  id: string;
   measure: string;
   value: number;
   observedAt: Date;
@@ -36,11 +37,12 @@ interface Observation {
  * permission-filtered) rows each receives. The observation series and its
  * entry form (G-49) appear ONLY when a staff surface passes them; client
  * pages pass neither, so the series never renders there. */
-export function RegistryCard({ entries, showSensitivity = false, series, observe, returnTo, householdId }: {
+export function RegistryCard({ entries, showSensitivity = false, series, observe, supersede, returnTo, householdId }: {
   entries: Entry[];
   showSensitivity?: boolean;
   series?: Map<string, Observation[]>;
   observe?: (formData: FormData) => Promise<void>;
+  supersede?: (formData: FormData) => Promise<void>;
   returnTo?: string;
   householdId?: string;
 }) {
@@ -90,7 +92,26 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
                   </span>
                   <div className="fval sans" style={{ fontSize: 13 }}>{bits.join(" · ")}</div>
                   {trend.length > 0 && (
-                    <div className="fval sans" style={{ fontSize: 12, opacity: 0.85 }}>{trend.join(" · ")}</div>
+                    <div className="fval sans" style={{ fontSize: 12, opacity: 0.85 }}>
+                      {trend.join(" · ")}
+                      {/* W-1: the latest look is correctable — supersede, never
+                          delete. Only the newest row gets the control; older
+                          rows are history the next look already answered. */}
+                      {supersede && householdId && (["condition", "fill_level"] as const).map((m) => {
+                        const latest = series?.get(`${e.id}:${m}`)?.[0];
+                        if (!latest) return null;
+                        return (
+                          <form key={`sup-${e.id}-${m}`} action={supersede} style={{ display: "inline", marginLeft: 6 }}>
+                            <input type="hidden" name="householdId" value={householdId} />
+                            <input type="hidden" name="observationId" value={latest.id} />
+                            {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+                            <button className="act" style={{ fontSize: 11 }} title={`Mark the latest ${m === "condition" ? "condition" : "fill"} look (${latest.value}) as entered in error; the row is kept but leaves the series.`}>
+                              supersede last {m === "condition" ? "condition" : "fill"}
+                            </button>
+                          </form>
+                        );
+                      })}
+                    </div>
                   )}
                   {observe && householdId && (
                     <form action={observe} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
