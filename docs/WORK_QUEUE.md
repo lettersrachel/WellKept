@@ -16,15 +16,15 @@ in a session prompt.
 
 ## State
 
-Production serves `ae553fd` (2026-07-28, third clean run through
-tooling/deploy.sh's full gate and the first through the round-seven
-argument-independent sha gate; 0029 deployed, counts 30/30/30, build id
-verified three times; W-5 condition flags live). Ten CI guards. Gap
-register at G-49. G-13 founder-approved, awaiting counsel review and the
-hire's acknowledgment. Migrations 0030 (deferral), 0031 (lifecycle) and
-0032 (visit_command_id) are merged but not yet deployed: the next deploy
-carries them, with 0033 (paused_decision), and the three-way count will
-read 34. A queued follow-up
+Production serves `1385a1e` (2026-07-28, fourth clean run through
+tooling/deploy.sh's full gate and the first carrying four migrations in
+one pass; 0030 through 0033 deployed, counts 34/34/34, build id verified
+three times; W-6 deferrals with lifecycle and close-flow capture, and
+W-7 paused decisions, live). Ten CI guards. Gap register at G-49. G-13
+founder-approved, awaiting counsel review and the hire's acknowledgment.
+The DEPLOY.md section 4 sitting for this batch is still owed: the new
+write paths (deferral through the close flow, resolve, paused decision)
+plus check 9 carried from session U. A queued follow-up
 migration (its own session, one line, reviewed): DROP the legacy
 `deferral.visit_id` column, which references the never-written `visit`
 table and can never be filled (the W-11 always-null-column class).
