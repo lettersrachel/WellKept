@@ -1,3 +1,6 @@
+---
+status: living
+---
 # ADR-001: Build timing - build now, test on both paper and app
 
 Date: 2026-07-18 | Status: Accepted | Decider: Rachel Letters (founder)

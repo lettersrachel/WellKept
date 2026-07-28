@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Round four: Claude Code sessions
 
 Prepared 28 July 2026, from the review of `WK_SEVEN_ITEM_READOUT_20260728.md`.

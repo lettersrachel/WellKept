@@ -1,3 +1,6 @@
+---
+status: frozen
+---
 # Round four, session A: the W-9 object collapse, re-verified
 
 Run 2026-07-28 against main `079e930`, read-only, per ROUND4_SESSIONS.md.

@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Parallel Pilot Protocol: paper and app, side by side
 
 

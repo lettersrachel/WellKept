@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Well Kept staff records disclosure
 
 > **FOUNDER-APPROVED 2026-07-28; counsel review required before use.**

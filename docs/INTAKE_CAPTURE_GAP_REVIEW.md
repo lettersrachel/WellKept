@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Intake capture: what the record cannot hold
 
 Prepared 27 July 2026. Companion to `STANDARDS_TRIGGERS_GAP_REVIEW.md`.

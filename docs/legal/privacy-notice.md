@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Well Kept privacy notice
 
 > **DRAFT: review with counsel before publishing.** Adapt to the privacy laws

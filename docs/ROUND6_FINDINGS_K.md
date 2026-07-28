@@ -1,3 +1,6 @@
+---
+status: frozen
+---
 # Round six, session K: which rendered strings are also identifiers?
 
 Read-only survey, 28 July 2026, at main `b7026dd` plus the docs-only #62.

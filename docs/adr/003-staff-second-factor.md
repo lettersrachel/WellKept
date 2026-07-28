@@ -1,3 +1,6 @@
+---
+status: living
+---
 # ADR-003: Staff second factor is magic-link + TOTP, not password + TOTP
 
 Date: 2026-07-19 | Status: Accepted | Context: REQ-003

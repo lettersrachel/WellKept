@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Addendum A2: anticipation feedback, repeat-season memory, exclusions
 
 Prepared 25 July 2026. Scope: REQ-054 (existing, not built), plus REQ-055 and

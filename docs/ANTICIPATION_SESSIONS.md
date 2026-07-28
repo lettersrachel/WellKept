@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Anticipation roadmap: Claude Code session briefs
 
 Companion to ANTICIPATION_ROADMAP.md. That file is the design. This one is how

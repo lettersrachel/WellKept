@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Well Kept — Pilot launch readiness
 
 What stands between "built and working" and "a real household's data is in it."

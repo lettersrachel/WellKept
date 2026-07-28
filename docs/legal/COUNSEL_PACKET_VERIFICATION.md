@@ -1,3 +1,6 @@
+---
+status: frozen
+---
 # Counsel packet verification report; 2026-07-25
 
 > Editorial note: this record's findings are as of its stated date and are

@@ -1,3 +1,6 @@
+---
+status: living
+---
 # ADR-005: Master-key custody - a second custodian and a written recovery path
 
 Date: 2026-07-25 | Status: ACCEPTED IN PART (the Guardrails section binds as of 2026-07-25, G-26 — it costs nothing while no real s3 values exist and is the half that must bind immediately); the Decision section's brackets (custodian, mechanism, retrieval condition) remain Proposed | Decider: Rachel Letters (founder)

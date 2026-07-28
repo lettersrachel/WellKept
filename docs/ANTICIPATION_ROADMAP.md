@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Anticipation engine: what has to change
 
 Prepared 25 July 2026. Design spec, not a build order. The build handover

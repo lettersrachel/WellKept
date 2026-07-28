@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Corporate data capture: Claude Code session briefs
 
 Prepared 25 July 2026. Companion to the corporate capture review.

@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Counsel engagement packet: Well Kept pilot
 
 Assembled 25 July 2026; rev 5, 27 July 2026. Per the gap register's
