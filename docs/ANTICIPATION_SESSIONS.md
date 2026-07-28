@@ -64,7 +64,22 @@ section:
 ## Session A. News versus known
 
 > **BUILT 2026-07-27** (migration 0018), gate met — the deploy ran clean
-> 14/14 the same day. Founder decisions recorded: acted labels "Good
+> 14/14 the same day. [ANNOTATED 2026-07-28, round seven session U: the
+> 14/14 is overstated by at least check 9, which was never performed
+> against production. The founder confirmed this directly, and the
+> database proves it independently: production's anticipation_exclusion
+> table is empty, and ending an exclusion is an UPDATE setting
+> effective_to (actions.ts:810), never a delete, so a performed check 9
+> would have left a row. Of the other 13: checks 3, 5, and 7 leave
+> durable rows (client_edit, audit_event, incident_report) and remain
+> spot-checkable from the founder's session; check 12 was re-verified
+> during the 2026-07-28 deploys; the display-only checks (2, 4, 8, 10,
+> 11, 14) cannot be re-verified after the fact and their 27 July status
+> rests on the sitting's word. No other check is contradicted by
+> evidence; 9 is the one where absence IS evidence. Check 9 runs in the
+> next section 4 sitting, recorded as the first live exercise of
+> pack_key exclusion matching, an M verification, not a routine check.]
+> Founder decisions recorded: acted labels "Good
 > catch" / "Already on it"; dismiss reasons `wrong` ("Wrong for this
 > home") and `bad_timing` ("Bad timing") only — `not_applicable` and
 > `already_done` were already one-tap outcomes in the shipped enum (the

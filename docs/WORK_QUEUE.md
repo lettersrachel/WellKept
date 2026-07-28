@@ -293,6 +293,31 @@ was pruned and why.
   stated in the record (pattern-based; gitleaks adds entropy breadth if
   wanted).
 
+### Round-seven items (brief external, from the WK_ROUND6_CLOSEOUT_READOUT review)
+
+- **T, argument-independent sha gate: CLOSED 2026-07-28.** The gate
+  verifies the named sha against origin/main (fetch, resolve, is-ancestor,
+  HEAD equality) and refuses a dirty tree, since vercel ships the working
+  tree. Branch protection makes on-origin/main imply green required
+  checks, so the check-status half needed no API call. Proven red in real
+  mode three ways, and the literal 0028 no-op invocation, rev-parse HEAD
+  of an unpushed tree, is now refused. Selftest is 7 cases including the
+  class case (a local-only commit). The inputs doctrine is folded into
+  CLAUDE.md's verification section.
+- **U, checklist record reconciled: CLOSED 2026-07-28.** The 27 July
+  "14/14" note (ANTICIPATION_SESSIONS.md session A) is annotated in
+  place: check 9 never ran against production, confirmed by the founder
+  and proven by the empty anticipation_exclusion table (ending is
+  UPDATE-only, actions.ts:810). Checks 3, 5, 7 remain spot-checkable by
+  durable rows; 12 was re-verified during the 2026-07-28 deploys; the
+  display-only checks rest on the sitting's word. Check 9 goes into the
+  next section 4 sitting as an M verification.
+- **V, decided-row drift check: gated on the review-stamp decision**
+  (founder), since both touch wk_floor_review.py. The reviewer recommends
+  the frozen dated review record emitted by the script, not a schema
+  column; if that is the pick, V and the record ship together as one
+  small script change.
+
 ### Briefs already written
 
 | Item | Brief | Gate |
