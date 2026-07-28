@@ -1194,3 +1194,55 @@ visit-page card maps every open item; only the TIMING ARRIVED tag and the
 briefing array key on the date), so the fix applies to the deferral side
 alone. The fixture's pre-overdue seeds remain useful for exercising the
 overdue path itself.
+
+### G-52. The visit close reported success for a visit that was never delivered, and the command was lost client-side
+
+Observed 2026-07-28, section 4 sitting, Field Test Home
+(d05ab5a2-7d9c-4cff-919a-250adafa0355): the first close-flow submit showed
+the green "Visit submitted" card and wrote nothing server-side; a retry
+succeeded (d76b04a5, applied 19:45:20Z). Initially read as "the central
+write persists nothing," then narrowed by mechanism, then settled by
+observation.
+
+**Mechanism, in the code that shipped it.** The submitted card rendered at
+local-queue time by design (offline first); the drain retried only on page
+load and the browser online event; a failed drain was silent except a
+counter that could not distinguish waiting from stuck; a failed head broke
+the drain loop so nothing behind it could send. The command persisted in
+IndexedDB and should have redelivered on any reload.
+
+**Outcome, settled 2026-07-28 night.** After the fd1083c deploy, a hard
+reload of /visit in the affected browser showed ZERO queued commands, and
+the household still holds exactly one visit_command row (the applied
+retry). A drain at any point would have inserted a second row, applied or
+same-day conflict; none exists. Therefore the first submit's command left
+the browser's storage without ever being delivered: **lost client-side**,
+timing unknown. Consistent with the AE finding (the multi-tab rehydration
+handoff is claim-by-delete, with a window where the command exists only in
+one tab's memory) or with storage eviction; the "1+ queued" badge readings
+during the sitting are consistent with in-memory state outliving the disk
+record. Caveat: if the original submit ran in a different browser or
+profile than the one reloaded, the command may still exist there; the
+observed browser is believed to be the original. What was lost is
+fixture-scale test data; the mechanism is what matters.
+
+**Fixed the same day (sessions AF/AG/AH, live in fd1083c), each half
+proven:** the queue self-schedules retries with bounded backoff and
+dead-letters at a cap with operator retry-or-discard (discard writes the
+audit row first, server-side); the sync status distinguishes syncing,
+retrying, and stuck; the submitted card claims "saved on this device"
+until nothing waits; and the visit_reconciliation floor (knob set,
+gapDays 10) surfaces any household whose record shows no applied visit
+inside the window, whatever the client did wrong.
+
+**Remaining exposure, deliberately on the record.** The AE claim-by-delete
+window between tabs is UNFIXED: a crash between a rehydrating tab's delete
+and its re-put can still lose a command from disk, and divergent per-tab
+in-memory queues can still hold the same command twice. Its fix (an
+atomic handoff, or single-writer claim with the record kept until the
+new copy is durable) is its own session, not yet authorized. Until then
+the compensating controls are the retry loop, the honest card, the
+reconciliation floor, and the operational rule that the field client is
+opened from a home-screen install, not a browser tab (iOS evicts a
+tab's IndexedDB after seven days without a visit to the site, which is
+exactly the weekly-visit gap).
