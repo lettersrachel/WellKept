@@ -3,7 +3,7 @@
  * support page). Content follows docs/legal/privacy-notice.md; the pilot
  * banner stays until counsel signs off (their open items live in that doc).
  */
-export const metadata = { title: "Privacy — Well Kept" };
+export const metadata = { title: "Privacy · Well Kept" };
 
 export default function PrivacyPage() {
   return (

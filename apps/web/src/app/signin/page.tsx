@@ -12,11 +12,11 @@ export default async function SignIn({
       {error === "rate-limited" ? (
         <div className="banner">
           Too many sign-in requests. Wait an hour and try again, or use a link already in your
-          inbox — they stay valid for 24 hours.
+          inbox; links stay valid for 24 hours.
         </div>
       ) : error === "send-failed" ? (
         <div className="banner">
-          The sign-in email could not be sent — the mail provider is not configured or rejected
+          The sign-in email could not be sent; the mail provider is not configured or rejected
           the address. Contact your administrator.
         </div>
       ) : error ? (
