@@ -283,16 +283,13 @@ was pruned and why.
 
 ## Not software
 
-0. **Branch protection with required status checks, today.** PR #60 reached
-   mergeable with no CI run; the Actions API shows ZERO runs in any state
-   for its branch, so this was not an unapproved run waiting behind a
-   banner, it was genuinely no run created. Until required checks exist,
-   every guard is bypassable by a PR that never triggers CI. Repository
-   setting, five minutes. While in the dashboard: check whether the
-   dormant well-kept-web Vercel project carries environment variables,
-   specifically a production DATABASE_URL; it auto-builds every pushed
-   branch, and the answer decides G-35 (and, if uncomfortable, opens the
-   security review).
+0. **Branch protection: DONE 2026-07-28** (founder; gates and airplane
+   both required on main). The #60 hole is closed: a PR that never
+   triggers CI can no longer merge. Remaining from the same chore: check
+   whether the dormant well-kept-web Vercel project carries environment
+   variables, specifically a production DATABASE_URL; it auto-builds
+   every pushed branch, and the answer decides G-35 (and, if
+   uncomfortable, opens the security review).
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111
