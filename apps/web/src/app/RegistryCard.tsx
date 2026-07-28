@@ -119,8 +119,12 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
                       <input type="hidden" name="registryEntryId" value={e.id} />
                       {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
                       <select key={`om-${e.id}-${(series?.get(`${e.id}:condition`)?.length ?? 0) + (series?.get(`${e.id}:fill_level`)?.length ?? 0)}`} name="measure" defaultValue="condition" className="inline" aria-label="Measure">
-                        <option value="condition">condition 1-5</option>
-                        <option value="fill_level">fill %</option>
+                        {/* W-4: the direction is printed at the point of entry
+                            (founder decision 2026-07-28) — two HMs reading
+                            "3 of 5" oppositely is the calibration failure the
+                            Stranger Test exists to surface. */}
+                        <option value="condition">condition 1-5 (5 = like new, 1 = failing)</option>
+                        <option value="fill_level">fill % (100 = full)</option>
                       </select>
                       <input name="value" aria-label="Value" placeholder="value" inputMode="numeric" style={{ width: 64, marginTop: 0 }} />
                       <input name="note" aria-label="Note (internal, s2)" placeholder="note (optional, s2)" style={{ flex: 1, marginTop: 0 }} />
