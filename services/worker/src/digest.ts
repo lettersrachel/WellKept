@@ -46,19 +46,21 @@ export async function runFleetDigest(pool: pg.Pool) {
         pool.query("SELECT count(*)::int n FROM client_edit WHERE household_id=$1 AND status='pending'", [h.id]),
         pool.query("SELECT count(*)::int n FROM prompt_pack_item WHERE household_id=$1 AND fired_at IS NULL AND NOT suppressed_by_tag", [h.id]),
         pool.query("SELECT passed, created_at FROM stranger_test WHERE household_id=$1 ORDER BY created_at DESC LIMIT 1", [h.id]),
-        pool.query(`SELECT f.id, o.value, o.observed_at FROM condition_flag f
+        pool.query(`SELECT f.id, f.raised_at, o.value, o.observed_at FROM condition_flag f
                     LEFT JOIN object_observation o ON o.condition_flag_id = f.id
                       AND o.measure = 'condition' AND o.superseded_at IS NULL
                     WHERE f.household_id=$1 AND f.status='open' ORDER BY o.observed_at`, [h.id]),
       ]);
       const t = tests[0];
-      const flagLooks = new Map<string, FlagLook[]>();
+      const flagLooks = new Map<string, { raisedAt: Date; looks: FlagLook[] }>();
       for (const r of flagRows) {
-        const list = flagLooks.get(r.id) ?? [];
-        if (r.value !== null) list.push({ value: r.value, observedAt: new Date(r.observed_at) });
-        flagLooks.set(r.id, list);
+        const entry = flagLooks.get(r.id) ?? { raisedAt: new Date(r.raised_at), looks: [] };
+        if (r.value !== null) entry.looks.push({ value: r.value, observedAt: new Date(r.observed_at) });
+        flagLooks.set(r.id, entry);
       }
-      const promotedFlags = [...flagLooks.values()].filter((looks) => isPromotionCandidate(looks, knob)).length;
+      // Session Y: the rate window opens at raised_at, never earlier.
+      const promotedFlags = [...flagLooks.values()]
+        .filter(({ looks, raisedAt }) => isPromotionCandidate(looks, knob, raisedAt)).length;
       households.push({
         name: h.name, tier: h.tier, statusTag: h.status_tag,
         total: fields[0].total, unconfirmed: fields[0].unconfirmed,
