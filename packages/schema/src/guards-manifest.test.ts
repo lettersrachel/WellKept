@@ -30,6 +30,8 @@ test("the guard files exist where the manifest says they are", () => {
     "packages/schema/src/client-copy.test.ts",
     // the payload-guard suite (client responses never carry staff rows)
     "packages/permissions/src/permissions.test.ts",
+    "packages/schema/src/child-data-kinds.test.ts",
+    "packages/schema/src/frozen-records.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -65,6 +67,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
   for (const named of [
     "permissions.test.ts", "erasure-coverage.test.ts", "client-copy.test.ts",
     "child-data-kinds.test.ts", "guards-manifest.test.ts", "`sizes` CHECK",
+    "frozen-records.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }

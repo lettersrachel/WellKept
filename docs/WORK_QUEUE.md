@@ -162,6 +162,19 @@ Also confirm rule retirement is versioned and attributed the way
 `provision_versions` is, since STD-016 §7 requires a later reader to see what
 was pruned and why.
 
+### Round-four gated sessions (ROUND4_SESSIONS.md)
+
+- **Session D, concerns_minor on definitional playbook fields:** gated on
+  the FOUNDER'S FIELD LIST (the brief forbids choosing the fields). Build
+  the marker for definitionally-child fields, keep policy for free text.
+- **Session E, seasonal voice pass:** gated until the seasonal prompts can
+  fire; apply item 6's four-tell signature (jargon prefix, nominalization,
+  passive, internal citation), read as rendered.
+- **Session A follow-ups (ROUND4_FINDINGS_A.md):** commitment T-3 never
+  collapsed (bare date in key); multi-window families count per-window
+  keys, not objects; "radar" renders to House Managers via packName and
+  two prompt texts. Each fix its own session, none yet authorized.
+
 ### Briefs already written
 
 | Item | Brief | Gate |
