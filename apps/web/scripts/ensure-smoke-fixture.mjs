@@ -12,6 +12,12 @@
  * WK_KMS_KEY (the same KEK the app runs on) additionally seeds the s3 value
  * checklist item 5 reveals. Without it every other prop still seeds and the
  * s3 step says so — it is never sealed under a fallback key.
+ *
+ * G-50/G-51 (2026-07-28): the admin email also derives a house_manager and
+ * a client identity by plus-addressing (three roles, three users, one
+ * inbox), and the fixture carries one already-overdue deferral and one
+ * already-overdue paused decision so the resolution paths are testable
+ * same-day. Resolving one consumes it; the next run re-seeds.
  */
 import { randomUUID } from "node:crypto";
 import pg from "pg";
@@ -45,24 +51,41 @@ if (!hh) {
   }
 }
 
-if (email) {
+// G-50 (2026-07-28): no single identity can see both ends of a
+// field-and-client feature, because the unique index allows one role per
+// user per household. The fixture therefore carries THREE identities:
+// the admin (corporate_admin, below), plus a house_manager and a client
+// derived from the admin address by plus-addressing, so the magic links
+// land in the same inbox and no personal address is hardcoded. Signing
+// in as each identity is how the /visit and /playbook halves of a
+// feature get verified on the fixture instead of on a client household.
+async function ensureIdentity(addr, role) {
   await c.query(
     "INSERT INTO auth_user (id, email) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING",
-    [randomUUID(), email],
+    [randomUUID(), addr],
   );
-  const { rows: [user] } = await c.query("SELECT id FROM auth_user WHERE email=$1", [email]);
+  const { rows: [user] } = await c.query("SELECT id FROM auth_user WHERE email=$1", [addr]);
   const { rows: existing } = await c.query(
-    "SELECT id FROM household_role_assignment WHERE user_id=$1 AND household_id=$2",
+    "SELECT id, role FROM household_role_assignment WHERE user_id=$1 AND household_id=$2",
     [user.id, hh.id],
   );
   if (existing.length === 0) {
     await c.query(
       `INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved, created_at)
-       VALUES ($1, $2, $3, 'corporate_admin', false, now())`,
-      [randomUUID(), user.id, hh.id],
+       VALUES ($1, $2, $3, $4, false, now())`,
+      [randomUUID(), user.id, hh.id, role],
     );
-    console.log(`corporate_admin granted to ${email}.`);
+    console.log(`${role} granted to ${addr}.`);
   }
+  return user.id;
+}
+
+let hmUserId = null;
+if (email) {
+  await ensureIdentity(email, "corporate_admin");
+  const [local, domain] = email.split("@");
+  hmUserId = await ensureIdentity(`${local}+wk-fixture-hm@${domain}`, "house_manager");
+  await ensureIdentity(`${local}+wk-fixture-client@${domain}`, "client");
 }
 
 // Checklist props (2026-07-27): item 3 needs a cascade-bound field with a
@@ -182,6 +205,45 @@ if (!kek) {
   } catch (err) {
     await c.query("ROLLBACK");
     throw err;
+  }
+}
+
+// G-51 (2026-07-28): resolution controls render only once revisit_date <
+// today, so an item deferred or paused during a sitting cannot be resolved
+// the same day. The fixture therefore carries one ALREADY-OVERDUE instance
+// of each entity, attributed to the fixture HM identity. Like the pending
+// client edit above, resolving one during a sitting consumes it and the
+// next run re-seeds a fresh open one.
+if (!hmUserId) {
+  console.log("Overdue deferral/paused decision NOT seeded: set WK_ADMIN_EMAIL (they attribute to the fixture HM identity).");
+} else {
+  const DEF_NOTICED = "Fixture gate latch sticking (smoke-test deferral)";
+  const { rows: openDef } = await c.query(
+    "SELECT id FROM deferral WHERE household_id=$1 AND noticed=$2 AND resolved_at IS NULL",
+    [hh.id, DEF_NOTICED],
+  );
+  if (openDef.length === 0) {
+    await c.query(
+      `INSERT INTO deferral (id, household_id, noticed, reason, revisit_date, decided_by, decided_at, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, current_date - 1, $5, now() - interval '8 days', now(), now())`,
+      [randomUUID(), hh.id, DEF_NOTICED,
+       "Works with a firm push; scheduling the adjustment alongside other outdoor work.", hmUserId],
+    );
+    console.log("Overdue deferral seeded (resolution checks run against this).");
+  }
+  const PD_DECISION = "Fixture water filter vendor (smoke-test paused decision)";
+  const { rows: openPd } = await c.query(
+    "SELECT id FROM paused_decision WHERE household_id=$1 AND decision=$2 AND resolved_at IS NULL",
+    [hh.id, PD_DECISION],
+  );
+  if (openPd.length === 0) {
+    await c.query(
+      `INSERT INTO paused_decision (id, household_id, decision, research, revisit_date, paused_by, paused_at, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, current_date - 1, $5, now() - interval '8 days', now(), now())`,
+      [randomUUID(), hh.id, PD_DECISION,
+       "Two quotes gathered, third pending; smoke-test research notes.", hmUserId],
+    );
+    console.log("Overdue paused decision seeded (resolution checks run against this).");
   }
 }
 
