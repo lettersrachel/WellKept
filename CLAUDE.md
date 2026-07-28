@@ -66,6 +66,7 @@ row here fails CI, so the table cannot silently go stale.
 | `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind until classified |
 | `child-data-kinds.test.ts` | every registry kind classified child-data or client-safe; child kinds carry a CHECK; CHILD_DATA.md covers every surface | free-text content a database cannot read |
 | `guards-manifest.test.ts` | the guard set exists, is wired into CI, and matches this table | a test file that exists but asserts nothing |
+| `frozen-records.test.ts` | the four dated evidentiary records are byte-identical to manifest hashes | records not yet declared frozen |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
