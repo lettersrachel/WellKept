@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import {
   pgTable, uuid, text, integer, smallint, boolean, timestamp, jsonb, index, pgEnum,
-  primaryKey, uniqueIndex, date,
+  primaryKey, uniqueIndex, date, check,
 } from "drizzle-orm/pg-core";
 
 export const sensitivityEnum = pgEnum("sensitivity", ["s1", "s2", "s3"]);
@@ -515,6 +515,12 @@ export const registryEntry = pgTable("registry_entry", {
 }, (t) => [
   index("registry_entry_household_idx").on(t.householdId),
   index("registry_entry_household_kind_idx").on(t.householdId, t.kind),
+  // W-4 (WORK_QUEUE) / WK-SOP-019: children's sizes are child data and
+  // must never be client-visible by default. The column default stays s1
+  // (right for dates/vendors); this constraint makes the unsafe combo
+  // impossible at the database, which is the safer place than a write
+  // surface remembering to.
+  check("registry_sizes_not_client_visible", sql`${t.kind} <> 'sizes' OR ${t.sensitivity} <> 's1'`),
 ]);
 
 // G-49 (INTAKE_CAPTURE_GAP_REVIEW §2): the observation series. Condition
