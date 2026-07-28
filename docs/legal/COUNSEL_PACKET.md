@@ -269,7 +269,13 @@ clothing sizes, held internally and never shown outside the service team.
 Our internal rule already treats these as child data requiring care. Does
 Virginia law (or a duty of care you would advise regardless) require
 handling beyond internal-only access for this material; and does the
-answer change what the consent document must say about children?
+answer change what the consent document must say about children? Two
+sub-questions while this is open: should children's data carry its own
+retention rule (a distinct window, or deletion at majority, rather than
+the household default - the schema is gaining a marker that would make
+any answer enforceable), and what is the consent posture for VISITING
+children (grandchildren, guests' children), who are not members of the
+consenting household - the sharper version of question (d)?
 
 ---
 
