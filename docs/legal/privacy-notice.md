@@ -16,7 +16,7 @@ status: living
 |---|---|---|
 | Household operating details | routines, preferences, standards, layout | to run your household |
 | Secured details | access codes, alarm info, where valuables are kept | to care for the home; **encrypted**, access **logged** |
-| Visit records | tasks, hours, notes, photos | service delivery + accountability |
+| Visit records | tasks, hours, notes, photos, and what we noticed but deliberately set aside for later, with the reason and the planned timing | service delivery + accountability |
 | Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |
 | Practical data | important dates, vendors, appliances, subscriptions, and the condition of items we care for, observed over time, including conditions we flag to revisit | to anticipate needs |
 | Service time & costs | time spent serving your household by activity, and costs incurred in serving it (supplies, materials, mileage); a receipt photo, where one is captured, is stored and retained exactly like a visit photo | accurate cost and quality of your service |

@@ -1147,6 +1147,35 @@ export async function recordFlagLook(formData: FormData) {
 }
 
 /**
+ * W-6 (STD-016): a deliberate deferral - noticed, deliberately left, with
+ * the reason and the intended timing. The reason REACHES THE CLIENT, so
+ * the form labels invite an explanation a client would find reassuring;
+ * the timing is a revisit trigger, required here and by the database
+ * CHECK, the same structural sentence as condition_flag.
+ */
+export async function createDeferral(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const noticed = String(formData.get("noticed") ?? "").trim().slice(0, 200);
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 400);
+  const revisitDateRaw = String(formData.get("revisitDate") ?? "").trim();
+  const revisitCondition = String(formData.get("revisitCondition") ?? "").trim().slice(0, 200) || null;
+  if (!householdId || noticed.length < 4 || reason.length < 8) refuseTo(returnTo, "bad-input");
+  if ([noticed, reason, revisitCondition ?? ""].some((s) => s.includes("\u2014"))) refuseTo(returnTo, "bad-input");
+  const revisitDate = /^\d{4}-\d{2}-\d{2}$/.test(revisitDateRaw) ? revisitDateRaw : null;
+  if (!revisitDate && !revisitCondition) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { deferral } = await import("@wellkept/schema");
+  await db.insert(deferral).values({
+    id: randomUUID(), householdId, noticed, reason, revisitDate, revisitCondition,
+    decidedBy: principal.userId, decidedAt: new Date(),
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `deferred, with the reason on record: ${noticed}`);
+}
+
+/**
  * W-5: resolution is a state change with a reason and who closed it,
  * never a delete. The close_is_reasoned CHECK backs this at the database.
  */

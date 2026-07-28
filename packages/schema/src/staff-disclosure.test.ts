@@ -80,6 +80,10 @@ const ALLOWLIST: Record<string, string> = {
   provision_version:
     "actor_user records corporate standards-library edits, same posture as exclusion " +
     "approval: generic action-log coverage, named line is a founder decision",
+  deferral:
+    "W-6, 2026-07-28: decided_by attributes each deliberate deferral; the surface shipped " +
+    "after the disclosure was approved, so it joins the founder line candidates for the " +
+    "next revision (the written-work item is the natural home)",
 };
 
 /** Detect staff-attributed tables from the schema source itself. A column

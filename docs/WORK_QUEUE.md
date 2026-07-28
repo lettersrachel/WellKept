@@ -172,14 +172,43 @@ taken by playbook-field flags; the K naming collision, avoided at birth):
   text.** Out of scope, as briefed: automatic flag creation from
   sentinel provisions (gated on the floor review).
 
-### W-6 and W-7: unblocked by W-5, not yet built
+### W-6: CLOSED 2026-07-28 (0030, session Z of the W-5 follow-on)
 
-- **W-6 deliberate deferral** ("noticed and left, with the reason and the
-  intended timing") now has its revisit mechanism. The most
-  client-visible item in either review; touches the client projection;
-  own session.
-- **W-7 paused decisions**, same mechanism, pairs with W-6 (separate
-  migrations per the brief).
+Deliberate deferral: noticed, the reason (client-facing by design), the
+intended timing as a DATABASE CHECK (date or stated condition, the W-5
+structural sentence), who decided, and a nullable visit reference.
+Client projection on the playbook page carries the content and never
+the attribution; the payload guard gained the unprojected-deferral
+signature (noticed + decidedBy), proven both directions, and the page
+re-asserts it live. Erasure is the visit-report posture: free text
+blanked, skeleton kept (revisit_condition blanks to a marker, not NULL,
+so the CHECK survives erasure). Legal: README category, both privacy
+copies (Visit records row), the consent document's Visit records
+bullet, CHILD_DATA row plus the guard's surface list; staff-disclosure
+allowlist entry (session X's guard enforced it on its first new
+surface).
+
+**Four reports, per the brief, decisions not made here:**
+1. **The reason label wording (founder picks):** shipped as "why it was
+   left, in words the client will read" with the client card header
+   "Noticed, and planned for later". One string each to change.
+2. **Promote-to-flag:** a deferral whose timing passes without action is
+   adjacent to condition_flag promotion but NOT wired; whether passing
+   timing creates a flag, a briefing mark, or nothing is a founder
+   decision.
+3. **Visit association:** the capture surface runs DURING the visit,
+   before the applied visit row exists, so visit_id stays null from the
+   current form and association is by decided_at. Filling it means
+   capture moves into the close flow; own decision.
+4. **Lifecycle:** a deferral has no resolved state, so the client card
+   accumulates; fine at pilot scale, but how a deferral leaves the
+   client's view (acted on, promoted, expired) is undecided and shares
+   shape with W-7.
+
+### W-7: unblocked, pairs naturally with W-6's lifecycle report
+
+Paused decisions, same revisit mechanism, separate migration per the
+brief. Not yet sent as a session.
 - **Anticipation E is also movable now** per the same brief: build the
   external_signal mechanism on weather first (NWS alerts API is live,
   free, keyed by zone, needs no household); school calendars become

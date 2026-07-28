@@ -5,7 +5,7 @@ import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data
 import { proposeEdit } from "@/lib/actions";
 import { isClientEditable } from "@/lib/client-allowlist";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { getRegistries, getStewardship } from "@/lib/data";
+import { getRegistries, getStewardship, getClientDeferrals } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 
 export const dynamic = "force-dynamic";
@@ -187,6 +187,37 @@ export default async function ClientPlaybook({
       ) : null}
 
       <RegistryCard entries={await getRegistries(hh.id, "client")} />
+
+      {/* W-6 (STD-016): what was noticed and deliberately left, with the
+          reason and the intended timing. A clean bathroom demonstrates
+          nothing about attention; this does. The projection carries no
+          staff attribution, and the payload guard re-asserts that here. */}
+      {await (async () => {
+        const deferrals = await getClientDeferrals(hh.id);
+        assertNoAnticipationRows(deferrals); // the client shape carries no decidedBy
+        if (deferrals.length === 0) return null;
+        const fmtDay = (d: Date) =>
+          d.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
+        return (
+          <div className="card">
+            <h2>Noticed, and planned for later</h2>
+            <p className="note" style={{ marginTop: 0 }}>
+              Small things we saw and chose not to act on yet, so you know they
+              are being watched rather than missed.
+            </p>
+            {deferrals.map((d) => (
+              <div key={d.id} className="field">
+                <span className="fname">{d.noticed}</span>
+                <div className="fval" style={{ fontSize: 14 }}>{d.reason}</div>
+                <div className="prov">
+                  noticed {fmtDay(d.decidedAt)} · we will come back to it{" "}
+                  {d.revisitDate ? `by ${fmtDay(new Date(`${d.revisitDate}T12:00:00Z`))}` : d.revisitCondition}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {flagged.length > 0 && (
         <div className="card">
