@@ -35,31 +35,37 @@ const disclosure = readFileSync(
   path.join(here, "../../../docs/legal/staff-records-disclosure.md"), "utf8")
   .replace(/\s+/g, " ");
 
-/** Each disclosed surface maps to the MOST SPECIFIC phrase the approved
- * text carries for it. Generic item-1 coverage ("every consequential
- * action") is deliberately not a valid mapping target for a new surface:
- * that is what the allowlist-with-reason is for, so vacuous coverage
- * cannot satisfy the guard. */
+/** Session AA: each disclosed surface maps to a STABLE ANCHOR in the
+ * approved text (an HTML comment, invisible in the rendered document a
+ * person signs), never to prose. The first version keyed on phrases and
+ * that was the packName lesson in a new place: the founder's imminent
+ * revision would have broken nineteen mappings on wording alone, and a
+ * guard that fails nineteen times on a legitimate edit is a guard people
+ * learn to bypass. The wording is now freely editable; the anchors are
+ * the contract, and adding one is a founder-approved structural change
+ * (this set approved 2026-07-28). Generic action-log coverage remains an
+ * invalid mapping target for a new surface: allowlist-with-reason is the
+ * hatch, so vacuous coverage cannot satisfy the guard. */
 const DISCLOSED: Record<string, string> = {
-  audit_event: "append-only action log",
-  time_entry: "Time entries you log",
-  cost_entry: "costs you record",
-  visit: "Visit reports you author",
-  stranger_test: "first-visit notes",
-  dot: '"dots"',
-  object_observation: "fill-level observations",
-  prompt_outcome: "judgment calls on service prompts",
-  incident_report: "Who reported and who resolved",
-  auth_session: "That you signed in",
-  auth_account: "That you signed in",
-  device_pairing: "your paired device",
-  push_subscription: "notification settings",
-  notification: "notification settings",
-  user_totp: "authenticator secret",
-  user_backup_code: "authenticator secret",
-  membership_event: "membership change",
-  household: "recording consent",
-  client_edit: "editing household information",
+  audit_event: "action-log",
+  time_entry: "hours-costs",
+  cost_entry: "hours-costs",
+  visit: "written-work",
+  stranger_test: "written-work",
+  dot: "written-work",
+  object_observation: "written-work",
+  prompt_outcome: "prompt-judgment",
+  incident_report: "incident-involvement",
+  auth_session: "signin-device",
+  auth_account: "signin-device",
+  device_pairing: "signin-device",
+  push_subscription: "signin-device",
+  notification: "signin-device",
+  user_totp: "signin-device",
+  user_backup_code: "signin-device",
+  membership_event: "action-log",
+  household: "action-log",
+  client_edit: "action-log",
 };
 
 // The escape hatch, per the standing pattern: a written reason, reviewed.
@@ -123,24 +129,29 @@ test("every staff-attributed surface is named in the disclosure or excused in wr
       if (ALLOWLIST[table]!.trim().length <= 10) problems.push(`${table}: allowlist entry needs a real written reason`);
       continue;
     }
-    const phrase = DISCLOSED[table];
-    if (!phrase) {
+    const anchor = DISCLOSED[table];
+    if (!anchor) {
       problems.push(`${table}: staff-attributed but neither disclosed nor excused - a person ` +
-        `will sign this document; add the phrase mapping (and the founder's disclosure line) ` +
+        `will sign this document; add the anchor mapping (and the founder's disclosure line) ` +
         `or an allowlist entry with a written reason`);
       continue;
     }
-    if (!disclosure.includes(phrase)) {
-      problems.push(`${table}: mapped phrase ${JSON.stringify(phrase)} is not in the approved ` +
-        `disclosure text - the mapping drifted or the text was revised`);
+    if (!disclosure.includes(`<!-- surface-anchor: ${anchor} -->`)) {
+      problems.push(`${table}: anchor "${anchor}" is not in the disclosure - the anchor comment ` +
+        `was removed or renamed. Anchors are the contract (AA); restore it or re-map with ` +
+        `founder approval.`);
     }
   }
   assert.deepEqual(problems, [], `G-13 surface guard:\n  ${problems.join("\n  ")}`);
 });
 
 test("the disclosure the guard reads is the signable document, not a stub", () => {
-  assert.ok(disclosure.includes("What the system records about you"),
-    "the disclosure lost its records section; the phrase mappings would be checking prose that no longer exists");
+  // Anchors are the structural contract (AA); the prose is freely editable.
+  const anchors = new Set([...disclosure.matchAll(/<!-- surface-anchor: ([a-z-]+) -->/g)].map((m) => m[1]));
+  const needed = new Set(Object.values(DISCLOSED));
+  for (const a of needed) {
+    assert.ok(anchors.has(a), `disclosure is missing anchor "${a}"`);
+  }
   assert.ok(disclosure.includes("Acknowledgment"),
     "the disclosure lost its signature block; this guard exists because a person signs it");
 });

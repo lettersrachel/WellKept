@@ -409,6 +409,18 @@ was pruned and why.
   (unclassified surface; phrase absent; broken detection), green. The
   approved text was not edited.
 
+### W-6 follow-on items (brief external, from the WK_W5_FOLLOWON_READOUT review)
+
+- **AA, disclosure guard on stable anchors: CLOSED 2026-07-28.** The
+  phrase mappings were the packName lesson in a new place, and the
+  founder's imminent revision would have broken nineteen of them on
+  wording alone. Six anchor comments (invisible in the rendered,
+  signable document) now carry the contract; the founder approved the
+  exact six-line diff before it landed. Proven green, then THE case the
+  session exists for (a mapped phrase reworded, guard stays green),
+  then red on a removed anchor, then green. The count floor and the
+  no-vacuous-coverage rule survive unchanged.
+
 ### Briefs already written
 
 | Item | Brief | Gate |

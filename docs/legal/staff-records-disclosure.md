@@ -21,6 +21,7 @@ before your first shift than discover it later.
 
 ## What the system records about you
 
+<!-- surface-anchor: action-log -->
 1. **An append-only action log.** Every consequential action you take in the
    app is recorded to your name: viewing a secured item, editing household
    information, logging or resolving an incident, recording consent or a
@@ -28,23 +29,28 @@ before your first shift than discover it later.
    or deleted, by you or by us. It exists so that the service is accountable
    to clients, and it means nothing you do in the system is anonymous.
 
+<!-- surface-anchor: hours-costs -->
 2. **Your hours and costs.** Time entries you log (by activity category) and
    costs you record, attributed to you. These are employment and business
    records; they are retained even if a client household's data is deleted.
 
+<!-- surface-anchor: written-work -->
 3. **Your written work.** Visit reports you author (clients see their
    content), internal observations you log ("dots" and object condition or
    fill-level observations stay internal and are never shown to clients),
    and, when you cover another manager's household, the first-visit notes
    which include whether the visit went smoothly.
 
+<!-- surface-anchor: prompt-judgment -->
 4. **Your judgment calls on service prompts.** When the app suggests an
    action and you act on it or set it aside, it records your answer,
    whether the prompt told you something new, and the reason you gave when
    setting one aside.
 
+<!-- surface-anchor: incident-involvement -->
 5. **Incident involvement.** Who reported and who resolved each incident.
 
+<!-- surface-anchor: signin-device -->
 6. **Sign-in and device records.** That you signed in, your paired device,
    and your notification settings. Your authenticator secret is stored
    encrypted and can be read by no one; it is used only to check your codes.
