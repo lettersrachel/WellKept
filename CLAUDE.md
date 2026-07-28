@@ -72,7 +72,8 @@ Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
 legitimate exception is a reviewed line, never a commented-out guard.
 Adding a guard is the preferred fix for anything currently held by memory.
-Prove it red before trusting it green.
+Prove it in both directions before trusting it: red on a violation, green on
+a known-good case.
 
 ## Boundary (ADR-004)
 
@@ -117,9 +118,14 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 - **Green banners are to be verified, not believed.**
 - **Re-read a mismatch before believing it.** `/api/build-id` can serve one stale
   reading mid-alias-flip.
-- **A guard must fire, not merely exist.** Prove a new check red before trusting
-  it green. A substring match that matched anything was green until it was
-  tested in the failing direction.
+- **A guard must be proven in both directions before it is trusted: red on a
+  deliberate violation, green on a known-good case.** A guard that only fires
+  is as broken as one that never fires; it just fails safe. A selftest
+  containing only refusal cases proves nothing about the passing path, which
+  is exactly how the deploy gate shipped refusing every legitimate deploy.
+  A substring match that matched anything was green until it was tested in
+  the failing direction; the deploy gate was red until it was tested in the
+  passing one.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
 
