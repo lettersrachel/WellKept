@@ -100,9 +100,10 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   await inputs.nth(2).fill("Coffee stocked and set for the week.");
   await report.getByRole("button", { name: "Save report" }).click();
 
-  // Submit — required steps complete.
+  // Submit — required steps complete. AG: the offline card claims what
+  // actually happened (saved on this device), never "submitted".
   await page.getByRole("button", { name: "Submit visit report" }).click();
-  await expect(page.getByText("Visit submitted")).toBeVisible();
+  await expect(page.getByText("Visit saved on this device")).toBeVisible();
 
   // While offline, NOTHING reached the database.
   expect(await visitCount()).toBe(before);
@@ -113,4 +114,8 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
 
   // The queued visit now applies in Postgres.
   await expect.poll(async () => visitCount(), { timeout: 15_000, intervals: [500] }).toBe(before + 1);
+
+  // AG, the other direction: once nothing is waiting, the card upgrades
+  // its claim to submitted.
+  await expect(page.getByText("Visit submitted")).toBeVisible();
 });

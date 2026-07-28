@@ -490,6 +490,52 @@ was pruned and why.
   (paused_by/resolved_by) and was proven red without the entry, green
   with it. Separate migration from AB, per the brief.
 
+### Sync-defect sessions (brief external, SYNC_DEFECT_SESSIONS.md, from the WK_SECTION4_SITTING_READOUT review)
+
+- **AE, queue topology: REPORTED 2026-07-28 (code half; the DevTools
+  probe is the founder's).** The IndexedDB store is per-ORIGIN (one
+  `wellkept-offline` database shared by every tab); the in-memory queue
+  is per-TAB. The handoff is claim-by-delete: a loading tab reads the
+  household's records, DELETES them, and re-puts under new ids
+  (visit-sync.ts rehydration), which yields (a) a loss window between
+  delete and re-put where the command exists only in that tab's memory,
+  and (b) divergent in-memory queues: an older tab keeps a command the
+  newer tab claimed. **Answer to the brief's question: yes, the
+  multi-tab path can produce the stuck-command symptom independently.**
+  Sharper: under a shared store, any fresh load rehydrates the stuck
+  command at its queue's head and the order-preserving break then blocks
+  everything behind it, so the observed retry-applied-anyway means the
+  retry ran in a context that did not see the disk record (another
+  profile or browser, or a load inside the claim window). Prediction
+  for the probe: a drain that finally succeeds will surface the stuck
+  visit as a same-day CONFLICT row (last_write_wins), which is the
+  system working.
+- **AF, retry + loud head-of-line blocking + dead-letter: CLOSED
+  2026-07-28.** The queue counts attempts and dead-letters at the cap;
+  a dead head still blocks the tail (ordering is the contract, the fix
+  is visibility); backoff is exponential and capped
+  (backoffDelayMs, base 5s, cap 5min, MAX_SEND_ATTEMPTS 8; engineering
+  parameters, reported as proposals). The wizard now self-schedules
+  retries (the drain no longer waits for a reload), shows three
+  distinguishable states (syncing / retrying with attempt count / a
+  stuck warning), and offers the operator retry-or-discard on dead
+  items. **Discard writes the audit row FIRST, server-side
+  (/api/visit-commands/discard, kind command_discarded); no audit, no
+  discard, the vault-reveal ordering posture.** Attempts and dead state
+  persist with the record, so a reload cannot resurrect a dead command
+  as healthy. Proven in the queue's own suite: head failure blocks the
+  tail, the cap dead-letters, a dead head still blocks, operator retry
+  drains in order, discard refuses non-dead items and returns the
+  removed item, backoff bounded.
+- **AG, the honest card: CLOSED 2026-07-28, shipped with AF.** The
+  submitted card claims what happened: "Visit saved on this device"
+  while anything waits, "Visit submitted" only when nothing does.
+  Copy is a PROPOSAL for the founder's adjustment. The airplane e2e now
+  proves both directions: offline submit shows the saved-on-device
+  claim, and after reconnect-and-drain the card upgrades to submitted.
+- AH (reconciliation floor), AI (resolution available whenever open),
+  AJ (one-role constraint report): open, in the brief's order.
+
 ### Briefs already written
 
 | Item | Brief | Gate |
