@@ -13,6 +13,13 @@ import path from "node:path";
  *
  * When a guard legitimately moves, update this manifest in the same
  * commit — that is the point: the move becomes a reviewed decision.
+ *
+ * Escape hatches, per guard (founder item 4): this manifest IS its own
+ * hatch (edit it in a reviewed commit). The payload guard's exceptions
+ * are design changes to the permission model, never allowlisted. The
+ * sizes CHECK's hatch is a reviewed migration. The copy guards carry
+ * allowlists-with-written-reasons in client-copy.test.ts. The child-data
+ * classification's hatch is moving a kind between its two named sets.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "../../..");
