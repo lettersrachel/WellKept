@@ -1,6 +1,6 @@
-# Privacy notice — Well Kept
+# Well Kept privacy notice
 
-> **DRAFT — review with counsel before publishing.** Adapt to the privacy laws
+> **DRAFT: review with counsel before publishing.** Adapt to the privacy laws
 > that apply to you and your clients/staff (your state's law; GDPR/UK GDPR if
 > anyone is in the EU/UK). Fill the ⟨brackets⟩.
 
@@ -56,7 +56,7 @@ serving your household and the costs of doing so, your membership history,
 and the general category of how you found us. When we act on a deletion
 request, the free-text notes those retained records carry are removed along
 with everything else personal to your household. ⟨State your
-concrete retention period and your erasure process — reconcile the tombstone
+concrete retention period and your erasure process; reconcile the tombstone
 model with any legal right to deletion; this needs counsel.⟩
 
 ## Your rights
@@ -68,7 +68,7 @@ contact ⟨email⟩. The client view already shows a live summary of what we hol
 ## Subprocessors
 
 We rely on: ⟨hosting (Vercel)⟩, ⟨database (Neon)⟩, ⟨cache/queue (Upstash)⟩,
-⟨background worker (Railway)⟩, ⟨email (Resend)⟩, ⟨error monitoring (Sentry —
+⟨background worker (Railway)⟩, ⟨email (Resend)⟩, ⟨error monitoring (Sentry;
 configured to exclude personal data)⟩. ⟨Confirm each and link their
 terms; a data-processing agreement with each is typically required.⟩
 

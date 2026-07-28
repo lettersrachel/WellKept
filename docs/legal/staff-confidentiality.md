@@ -1,6 +1,6 @@
-# Staff confidentiality acknowledgment — Well Kept
+# Staff confidentiality acknowledgment, Well Kept
 
-> **DRAFT — review with counsel before use.** Pair with your employment/
+> **DRAFT, review with counsel before use.** Pair with your employment/
 > contractor agreement; this is an access-time acknowledgment, not a substitute
 > for it. Fill the ⟨brackets⟩.
 
@@ -9,8 +9,8 @@
 Working with Well Kept ⟨legal entity⟩ gives you access to private information
 about clients' homes and lives. By accepting access, you agree:
 
-1. **Confidentiality.** You will keep everything you see — household details,
-   secured items (codes, access, valuables), observations, schedules — strictly
+1. **Confidentiality.** You will keep everything you see, household details,
+   secured items (codes, access, valuables), observations, schedules, strictly
    confidential, during and after your engagement. You use it **only** to do
    your job for that household.
 
@@ -31,7 +31,7 @@ about clients' homes and lives. By accepting access, you agree:
    will not retain or use any client information.
 
 6. **Observations ("dots").** Notes you log about a household are for service
-   quality and stay internal — never share them with the client or anyone else.
+   quality and stay internal; never share them with the client or anyone else.
 
 Violations may result in immediate removal of access and ⟨disciplinary / legal⟩
 consequences per your agreement with Well Kept.

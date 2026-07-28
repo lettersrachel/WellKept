@@ -1,4 +1,4 @@
-# Staff records disclosure — Well Kept
+# Staff records disclosure; Well Kept
 
 > **FOUNDER-APPROVED 2026-07-28; counsel review required before use.**
 > This is the G-13 document (gap register G-41): it must exist and be
@@ -65,7 +65,7 @@ you about it before it is used.
 ## How long we keep it
 
 The action log is permanent. Other records about you are kept for the
-duration of your employment plus ⟨period — counsel sets this; no shorter
+duration of your employment plus ⟨period; counsel sets this; no shorter
 than the retention federal and Virginia employment recordkeeping rules
 require for time and payroll records⟩.
 

@@ -1,6 +1,6 @@
-# Household data consent — Well Kept pilot
+# Household data consent, Well Kept pilot
 
-> **DRAFT — review with counsel before use.** Fill the ⟨bracketed⟩ blanks.
+> **DRAFT, review with counsel before use.** Fill the ⟨bracketed⟩ blanks.
 
 **Household:** ⟨household / client name⟩
 **Prepared by:** ⟨Well Kept representative⟩
@@ -15,14 +15,14 @@ we'll hold and asks your permission to hold it.
 
 ## What we'll record
 
-- **How your home runs** — routines, preferences, standards, and the details
+- **How your home runs**; routines, preferences, standards, and the details
   needed to care for it. We tag each detail by sensitivity so the right people
   see the right things.
-- **Secured items** — things like access codes, alarm details, and where
+- **Secured items**; things like access codes, alarm details, and where
   valuables are kept. These are **encrypted**, shown only to authorized team
   members, and every time one is viewed it's **logged**.
-- **Visit records** — what was done, hours, notes, and (when enabled) photos.
-- **Practical dates and vendors** — so we can anticipate what your home needs.
+- **Visit records**, what was done, hours, notes, and (when enabled) photos.
+- **Practical dates and vendors**, so we can anticipate what your home needs.
 
 We do **not** need, and ask you not to provide, government IDs, bank or card
 numbers, or health records. Well Kept is not a place to store those.
@@ -44,7 +44,7 @@ second factor (an authenticator app).
 
 - You can see a summary of what we hold for you at any time.
 - You can ask us to correct anything.
-- You can ask us to stop and to remove your information — ⟨describe your
+- You can ask us to stop and to remove your information; ⟨describe your
   deletion process and any records you must retain and why; confirm with
   counsel⟩.
 
