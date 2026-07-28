@@ -1,7 +1,9 @@
 # Session brief: verify the counsel packet's "What exists" claims
 
-> Edited 2026-07-28: punctuation only (em-dash sweep, W-13). Every claim,
-> date, and finding is unchanged from the original record.
+> Editorial note: this record's findings are as of its stated date and are
+> unchanged. On 2026-07-28 the file was edited for punctuation only, replacing
+> em dashes under the repo copy rule (W-13). No claim, figure, verdict, or
+> disposition was altered. The pre-sweep text is in git history.
 
 Paste this whole file into Claude Code from `~/dev/wellkept`. It is a read-only
 session. Nothing is built, nothing is fixed, nothing is edited.

@@ -1,7 +1,9 @@
 # Counsel packet verification report; 2026-07-25
 
-> Edited 2026-07-28: punctuation only (em-dash sweep, W-13). Every claim,
-> date, and finding is unchanged from the original record.
+> Editorial note: this record's findings are as of its stated date and are
+> unchanged. On 2026-07-28 the file was edited for punctuation only, replacing
+> em dashes under the repo copy rule (W-13). No claim, figure, verdict, or
+> disposition was altered. The pre-sweep text is in git history.
 
 Run of `COUNSEL_VERIFICATION_SESSION.md` against main (69b6631), read-only.
 Verdicts: CONFIRMED / WRONG / OVERSTATED / UNVERIFIABLE, with evidence.
