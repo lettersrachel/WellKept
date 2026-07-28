@@ -1112,3 +1112,71 @@ children's sizes are child data under WK-SOP-019 and must not land
 client-visible by default — the write surface, when built, sets s2 for
 sizes, and counsel is asked about children's data handling (packet rev 6,
 section 6).
+
+## Checklist-sitting addendum (2026-07-28) — gaps the step-5 write paths surfaced
+
+Found working DEPLOY §4 plus the three new write paths (flag loop, close-flow
+deferral, paused decision) against `1385a1e`/`ae553fd` on production. The
+standing checklist passed 1-14; the flag loop passed in full, both guards
+firing and failing closed. These two gaps blocked the remaining verification
+and will block it again every time, so they are filed rather than worked
+around.
+
+### G-50. No single identity can see both ends of a field-and-client feature
+The deferral and paused-decision paths are written on `/visit` (a FIELD
+surface), read back on `/playbook` (a CLIENT surface), and administered on
+the corporate drill-in. Each surface gates on a different role, and
+`household_role_assignment_user_household_unique` — a UNIQUE index on
+`(user_id, household_id)` — permits exactly one role per person per
+household. So one account cannot hold the roles those surfaces require on
+the same household, and the feature cannot be verified end to end by one
+operator.
+
+Observed on 2026-07-28: `/visit` resolves via
+`assigned.find(a => a.role === "house_manager" || a.role === "backup_hm")`,
+so it pinned to Field Test Home (the only household with a field role) and
+could not be pointed at the fixture, where the operator is
+`corporate_admin`. Granting `house_manager` on the fixture would have
+REPLACED that `corporate_admin` — losing the drill-in, the photo toggles,
+consent, incidents, exclusions and membership events, i.e. checks 3 and
+5-13. Step 5 therefore ran on Field Test Home, putting condition flags and
+a deferral permanently on a non-fixture household — the G-23 situation the
+fixture exists to prevent. The client-side verifications (deferral under
+"Noticed, and planned for later", then "Since taken care of", and the
+paused-decision leak check) could not run at all: `/playbook` requires
+`role === "client"` and the CEO preview requires `corporate_admin` ON THAT
+HOUSEHOLD.
+
+**Disposition.** `ensure-smoke-fixture.mjs` should seed SEPARATE identities
+on the fixture — an HM address and a client address alongside the corporate
+grant — so the fixture is self-sufficient for all three surfaces without
+anyone trading a role away. That also matches how the roles are held in
+life: by different people. Until then, any checklist item spanning field and
+client surfaces is unverifiable, and DEPLOY §4 should say so rather than
+implying a single operator can work it.
+
+### G-51. Resolution paths are time-gated and cannot be tested the same day
+A deferral's and a paused decision's resolve controls render only when the
+item is overdue: `openDeferrals.filter(d => d.revisitDate && d.revisitDate <
+today)`, and the same shape for `overduePaused`. The comparison is strictly
+less-than, so an item deferred with today's date is not resolvable today.
+
+The consequence is that the whole-or-absent CHECK's PASSING direction —
+`resolution`, `resolved_at` and `resolved_by` all set together — has no
+same-day test path for either entity. On 2026-07-28 both were created and
+verified (`deferral.visit_command_id` proven to reference a real applied
+`visit.submit`; the paused decision holding valid timing with
+`resolution`/`resolved_at` NULL) and both resolutions were left unverified
+for this reason alone. The refusal directions passed; the constraint's
+accepting direction did not, which is the half a CHECK is usually wrong in.
+
+The gating itself is correct behaviour (AB/AD: the HM sees only what has
+come due, nothing promotes automatically). The gap is that verification has
+no supported way in.
+
+**Disposition.** Seed the fixture with one already-overdue deferral and one
+already-overdue paused decision, so the resolve controls are present on a
+fresh fixture and the passing direction is testable in the same sitting.
+Failing that, DEPLOY §4 must state that these two resolutions require a
+back-dated row and are not same-day checks — silence currently reads as "run
+it", and it cannot be run.
