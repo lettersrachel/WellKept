@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import { ZONE_DRIFT_NONE } from "@wellkept/trigger-engine";
-import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
-import { createVisitSync, type VisitSync } from "@/lib/client/visit-sync";
+import { backoffDelayMs, type QueueConflict, type QueueItem } from "@wellkept/offline-queue";
+import { createVisitSync, MAX_SEND_ATTEMPTS, type VisitSync } from "@/lib/client/visit-sync";
 
 // Task-list configuration is a later sprint; a fixed checklist exercises the
 // real close-flow contract end to end (same call the foundation repo made).
@@ -19,10 +19,15 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const flowRef = useRef<CloseFlow | null>(null);
   const syncRef = useRef<VisitSync | null>(null);
   const [state, setState] = useState<CloseFlowState | null>(null);
-  const [queueStatus, setQueueStatus] = useState<{ pending: number; conflicts: QueueConflict[] }>({ pending: 0, conflicts: [] });
+  const [queueStatus, setQueueStatus] = useState<{ pending: number; dead: QueueItem[]; conflicts: QueueConflict[] }>({ pending: 0, dead: [], conflicts: [] });
   const [online, setOnline] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // AF: retry pacing. The streak counts consecutive drains that delivered
+  // nothing while something was waiting; it resets on any delivery. The
+  // timer is the periodic-retry loop the queue was missing.
+  const failStreakRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [hoursStart, setHoursStart] = useState("");
   const [hoursEnd, setHoursEnd] = useState("");
@@ -53,14 +58,67 @@ export function VisitWizard({ householdId }: { householdId: string }) {
 
   const refreshQueueStatus = useCallback(() => {
     if (!syncRef.current) return;
-    setQueueStatus({ pending: syncRef.current.queue.pending().length, conflicts: syncRef.current.queue.conflicts() });
+    setQueueStatus({
+      pending: syncRef.current.queue.pending().length,
+      dead: syncRef.current.queue.dead(),
+      conflicts: syncRef.current.queue.conflicts(),
+    });
   }, []);
 
+  // AF: the drain used to run only on page load and the browser's online
+  // event, so one silently failed attempt left commands stuck until the
+  // next reload. Now a drain that delivers nothing while work waits
+  // schedules its own retry, exponential and capped; any delivery resets
+  // the streak. Dead items do not retry themselves; they wait on the
+  // operator's explicit action below.
   const attemptSync = useCallback(async () => {
     if (!syncRef.current) return;
-    await syncRef.current.sync(transport);
+    if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+    const result = await syncRef.current.sync(transport);
+    refreshQueueStatus();
+    const waiting = syncRef.current.queue.pending().length;
+    if (result.attempted && waiting > 0 && result.sent.length === 0) {
+      failStreakRef.current += 1;
+      retryTimerRef.current = setTimeout(() => { void attemptSync(); }, backoffDelayMs(failStreakRef.current));
+    } else if (result.sent.length > 0 || waiting === 0) {
+      failStreakRef.current = 0;
+      if (waiting > 0) {
+        // Something moved but something still waits (e.g. a fresh enqueue
+        // mid-drain): keep the loop alive at the base delay.
+        retryTimerRef.current = setTimeout(() => { void attemptSync(); }, backoffDelayMs(0));
+      }
+    }
     refreshQueueStatus();
   }, [transport, refreshQueueStatus]);
+
+  // AF: the operator's two ways out of a dead-lettered command. Discard
+  // writes the audit row FIRST via the server; only an ok response
+  // removes the local copy (no audit, no discard).
+  const retryDeadItem = useCallback(async (itemId: string) => {
+    if (!syncRef.current) return;
+    await syncRef.current.retryDead(itemId);
+    failStreakRef.current = 0;
+    await attemptSync();
+  }, [attemptSync]);
+
+  const discardDeadItem = useCallback(async (item: QueueItem) => {
+    if (!syncRef.current) return;
+    try {
+      const response = await fetch("/api/visit-commands/discard", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          idempotencyKey: item.idempotencyKey, type: item.type,
+          householdId: item.payload.householdId, attempts: item.attempts,
+        }),
+      });
+      if (!response.ok) throw new Error("the discard could not be recorded; nothing was removed");
+      await syncRef.current.discardDead(item.id);
+      refreshQueueStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }, [refreshQueueStatus]);
 
   useEffect(() => {
     // Offline shell: lets /visit itself load after a reload with no network.
@@ -95,6 +153,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     window.addEventListener("offline", handleOffline);
     return () => {
       cancelled = true;
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
@@ -232,12 +291,23 @@ export function VisitWizard({ householdId }: { householdId: string }) {
       {error && <div className="banner" role="alert">{error}</div>}
 
       {submitted ? (
+        // AG: the card claims what actually happened. Queued locally is
+        // "saved on this device", not "submitted"; the header only says
+        // submitted once nothing is waiting. Copy is the founder's to
+        // adjust; proposed wording shipped 2026-07-28.
         <div className="card">
-          <h2>Visit submitted</h2>
+          <h2>{queueStatus.pending + queueStatus.dead.length === 0 ? "Visit submitted" : "Visit saved on this device"}</h2>
           <div className="note">
             The client sees the three sentences and photo count; dots and signals stay internal.
           </div>
-          <div className="fval">{queueStatus.pending} item(s) still waiting to sync.</div>
+          {queueStatus.pending + queueStatus.dead.length === 0 ? (
+            <div className="fval">Everything has reached the record.</div>
+          ) : (
+            <div className="fval">
+              Your work is safe here and sends automatically; the sync status
+              below shows what is still waiting.
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -392,10 +462,32 @@ export function VisitWizard({ householdId }: { householdId: string }) {
 
       <div className="card">
         <h2>Sync status</h2>
+        {/* AF: three distinguishable states - syncing normally, retrying
+            after failures (attempt count visible), and stuck (a warning
+            with the operator's two ways out), because "waiting" and
+            "stuck" looking identical is how a visit sat on one device
+            all afternoon. */}
         <div className="fval">
-          {queueStatus.pending} command(s) queued{online ? "" : "; will send once back online"}.
+          {queueStatus.pending} command(s) queued
+          {!online && "; will send once back online"}
+          {online && queueStatus.pending > 0 && failStreakRef.current === 0 && "; syncing"}
+          {online && queueStatus.pending > 0 && failStreakRef.current > 0 &&
+            `; retrying automatically (attempt ${failStreakRef.current + 1})`}
+          .
         </div>
         <p><button className="act subtle" type="button" onClick={() => void (async () => { await retryPhotoUploads(); await attemptSync(); })()}>Sync now</button></p>
+        {queueStatus.dead.length > 0 && (
+          <div className="banner" role="alert">
+            <strong>{queueStatus.dead.length} command(s) could not sync after {MAX_SEND_ATTEMPTS} attempts and need your attention.</strong>
+            {queueStatus.dead.map((d) => (
+              <div key={d.id} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+                <span style={{ flex: 1 }}>{d.type} ({d.idempotencyKey.slice(0, 8)})</span>
+                <button className="act subtle" type="button" onClick={() => void retryDeadItem(d.id)}>Try again</button>
+                <button className="act danger" type="button" onClick={() => void discardDeadItem(d)}>Discard (recorded)</button>
+              </div>
+            ))}
+          </div>
+        )}
         {queueStatus.conflicts.length > 0 && (
           <div className="banner" role="alert">
             {queueStatus.conflicts.map((c) => (

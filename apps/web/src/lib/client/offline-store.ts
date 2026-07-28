@@ -16,6 +16,11 @@ export interface PersistedRecord {
   sequence: number;
   command: QueueCommand;
   conflictReason: string | null;
+  // AF: retry bookkeeping persists with the command, so a reload cannot
+  // silently resurrect a dead-lettered item as healthy. Optional for
+  // records written before the fields existed (read as fresh).
+  attempts?: number;
+  state?: "pending" | "dead";
 }
 
 function openDb(): Promise<IDBDatabase> {
