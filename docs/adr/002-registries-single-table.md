@@ -1,3 +1,6 @@
+---
+status: living
+---
 # ADR-002: Registries as one structured table, not seven
 
 Date: 2026-07-19 | Status: Accepted | Context: REQ-014

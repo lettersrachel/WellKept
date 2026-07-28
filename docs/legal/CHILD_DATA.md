@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Child data in the record: classification and handling
 
 Founder item 3, 2026-07-28. Extends the registry-kind classification

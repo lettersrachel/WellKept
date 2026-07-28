@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Pilot agreements, starting points
 
 > ⚠️ **These are drafts, not legal advice.** They're written to match exactly

@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Spec audit — build vs WK-DEV-001 requirements
 
 Date: 2026-07-18. Audited against the full handoff package (01_Read_First

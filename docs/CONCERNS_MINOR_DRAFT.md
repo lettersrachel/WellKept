@@ -1,3 +1,6 @@
+---
+status: living
+---
 # `concerns_minor`: draft field categories for redline
 
 Prepared 28 July 2026, as input to session D. **This is a redline draft, not a

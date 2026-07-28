@@ -1,3 +1,6 @@
+---
+status: living
+---
 # The custody sitting — one afternoon, everything G-01 needs
 
 Prepared 2026-07-27 so the counsel meeting is turnkey. This closes the

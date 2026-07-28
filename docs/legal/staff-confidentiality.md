@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Well Kept staff confidentiality acknowledgment
 
 > **DRAFT, review with counsel before use.** Pair with your employment/

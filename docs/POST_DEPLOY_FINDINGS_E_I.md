@@ -1,3 +1,6 @@
+---
+status: frozen
+---
 # Post-deploy round two: sessions E and I findings
 > Dated verification record. Historical evidence, not living copy: findings
 > are as of the stated date. Excluded from style sweeps (the W-13 em-dash

@@ -1,3 +1,6 @@
+---
+status: living
+---
 # ADR-004: System boundary - what Well Kept deliberately does not do
 
 Date: 2026-07-25 | Status: Accepted (founder decision, 2026-07-25) | Decider: Rachel Letters (founder)

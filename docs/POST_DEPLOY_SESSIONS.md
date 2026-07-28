@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Post-deploy review: Claude Code sessions
 
 Prepared 27 July 2026, from the review of `WK_STATUS_REPORT_20260727.md`.

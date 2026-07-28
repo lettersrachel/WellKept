@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Security posture & hardening status
 
 Sprint-10 direction (WK-DEV-001 REQ-070/071). This is the running record of

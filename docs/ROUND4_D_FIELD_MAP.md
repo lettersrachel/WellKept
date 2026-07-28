@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Session D input: draft categories mapped onto the 258-field seed
 
 2026-07-28. Mechanical mapping of CONCERNS_MINOR_DRAFT.md's categories

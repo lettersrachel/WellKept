@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Gap register (rev 5 input)
 
 Prepared 25 July 2026, against main commit 04b6e23 and the rev 4 handoff

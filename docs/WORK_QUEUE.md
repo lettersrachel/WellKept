@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Work queue
 
 Updated 28 July 2026. Supersedes the open-item lists in
@@ -214,17 +217,48 @@ was pruned and why.
   checks that shipped broken, each now proven in its passing direction.
   The step-7 wiring beyond the extractor is only exercised by a real
   deploy, and was, three times, deploying b7026dd.
-- **M, display-name/key split: gate satisfied by K, not yet run.** Scope is
-  K's class list, not packName alone. The exclusion-row data migration
-  question from the brief stands and is the careful part.
-- **L, frozen-pattern-to-property: reported, awaiting the pick.** Census:
-  30 documents (21 docs/, 9 docs/legal). Option 1, frontmatter status on
-  every doc, is 30 one-line edits plus the guard rewrite, and fails loudly
-  at creation. Option 2, widening to any dated document, is zero doc edits
-  but immediately sweeps roughly a dozen dated LIVING briefs into the
-  allowlist and still misses undated records. Option 1 costs more once and
-  guesses never; the reviewer's stated preference. Choosing is not this
-  side's call.
+- **M, display-name/key split: AUTHORIZED (2026-07-28), scoped to K's
+  class, baseline check first.** Before building: item 6 and W-10 rewrote
+  member-1 strings (itemText templates), so "preserve which exclusions
+  currently fire" is only a valid migration baseline if nothing was
+  matching when the texts changed. Repo-side, attribution is immune
+  (prompt_outcome carries rule_id). What needs one production read:
+  `SELECT scope, count(*) FROM anticipation_exclusion GROUP BY scope` and
+  `SELECT count(*) FROM prompt_pack_item WHERE fired_at IS NULL`. Zero
+  exclusions means no match could have silently broken and the baseline is
+  sound; any pending pre-rewrite items will re-mint ids on the next sweep
+  (known, fixture-only exposure). Expected answer is zero/fixture-only,
+  but expected is not verified; run the queries before the split builds.
+- **L, frozen-pattern-to-property: CLOSED 2026-07-28 (decision:
+  frontmatter).** Every .md under docs/ now carries `status: frozen` or
+  `status: living`; an unmarked file fails CI at creation. The name
+  pattern and its LIVING allowlist are removed. Hashes cover content after
+  frontmatter is stripped, per the decision's condition, so classifying a
+  doc never burns the reviewed-hash-update hatch; all six pre-existing
+  manifest hashes survived unchanged (proven: K's stripped hash equals its
+  pre-frontmatter hash). Proven red four ways (unmarked doc; frozen status
+  without manifest entry; tampered frozen content; manifest entry
+  demoted to living) and green on the clean tree.
+- **P, floor review preflight: CLOSED 2026-07-28, frozen in
+  ROUND6_FINDINGS_P.md.** (1) kind enum accepts table_row; documented
+  drift (SPEC_AUDIT row 1), not silent. (2) Loader round-trip EXERCISED
+  on a local Postgres: five tier changes landed at version 2 with both
+  snapshots in provision_versions, verified by SQL. But the floor-review
+  workbook cannot reach the loader as-is: wk_provisions.py wants the
+  original full sheet; `keep`/`unsure` are hard errors and a 471-row
+  subset fails the completeness check. A mapping step (keep to Y, unsure
+  to blank, merge over the full sheet) is required and is a decision.
+  (3) seed_reviewed=true unlocks DISPLAY ONLY. Floor enforcement exists
+  as a tested library nobody calls; the STD-000 S1 path (same-day visit
+  report marking, CEO ownership in one business day) does not exist in
+  software. Review and flip are safe; the enforcement gap is its own
+  sprint.
+- **Q, git history secret scan: CLOSED 2026-07-28, frozen in
+  ROUND6_FINDINGS_Q.md.** History is clean to share with an external
+  reviewer: no secret file ever committed, zero live credentials in 190
+  commits of content and messages, dev secret fenced at boot. Bounds
+  stated in the record (pattern-based; gitleaks adds entropy breadth if
+  wanted).
 
 ### Briefs already written
 

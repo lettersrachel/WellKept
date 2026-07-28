@@ -1,3 +1,6 @@
+---
+status: frozen
+---
 # Session brief: verify the counsel packet's "What exists" claims
 
 > Editorial note: this record's findings are as of its stated date and are

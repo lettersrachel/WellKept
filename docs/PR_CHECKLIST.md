@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Pre-PR checklist — the repo's laws, applied not remembered
 
 From the anticipation sessions doc: "a checklist a session can apply is more

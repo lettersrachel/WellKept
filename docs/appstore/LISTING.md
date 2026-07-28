@@ -1,3 +1,6 @@
+---
+status: living
+---
 # App Store listing kit — Well Kept HM
 Prepared 25 July 2026. Everything App Store Connect asks for, drafted.
 Prereq: Apple Developer Program enrollment (developer.apple.com/programs, $99/yr).

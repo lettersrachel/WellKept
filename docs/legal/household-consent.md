@@ -1,3 +1,6 @@
+---
+status: living
+---
 # Well Kept household data consent (pilot)
 
 > **DRAFT, review with counsel before use.** Fill the ⟨bracketed⟩ blanks.
