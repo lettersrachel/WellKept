@@ -24,7 +24,11 @@ runtime-identical; it rides the next deploy. The founder set the
 `visit_reconciliation` knob the same night (`{"gapDays":10}`), so the
 missing-visit flag is LIVE: demo households with no visits since 18-19
 July flag immediately, which is the knob working. Ten CI guards. Gap
-register at G-51. G-13 founder-approved, awaiting counsel review and
+register at G-52 (the visit-close false green, filed with its settled
+outcome: the first submit's command was LOST client-side, never
+delivered; the AF/AG/AH fixes are the response, and the AE multi-tab
+claim-window remains the recorded unfixed exposure, its own session
+when authorized). G-13 founder-approved, awaiting counsel review and
 the hire's acknowledgment.
 
 The DEPLOY.md section 4 sitting for the 0030-0033 batch ran 2026-07-28:
