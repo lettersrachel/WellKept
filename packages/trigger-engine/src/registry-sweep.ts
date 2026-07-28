@@ -61,7 +61,7 @@ const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
     annual: true,
     windows: [
       { offsetDays: 14, text: (l, w) => `Occasion radar: ${l} on ${w}. Is a gesture planned?` },
-      { offsetDays: 3, text: (l, w) => `T-3: ${l} (${w}). Confirm the plan is in motion.` },
+      { offsetDays: 3, text: (l, w) => `${l} is three days out (${w}). Is the plan in motion?` },
     ],
   },
   commitment: {
@@ -77,11 +77,11 @@ const WINDOWS: Record<string, { annual: boolean; windows: SweepWindow[] }> = {
   },
   horizon: {
     annual: false,
-    windows: [{ offsetDays: 30, text: (l, w) => `Transition ahead: ${l} (${w}).` }],
+    windows: [{ offsetDays: 30, text: (l, w) => `Coming due: ${l} (${w}). Start planning before it becomes urgent.` }],
   },
   appliance: {
     annual: false,
-    windows: [{ offsetDays: 14, text: (l, w) => `Maintenance due: ${l} (${w}). The service interval has elapsed.` }],
+    windows: [{ offsetDays: 14, text: (l, w) => `Maintenance due: ${l} (${w}); it has been a full interval since the last service.` }],
   },
 };
 

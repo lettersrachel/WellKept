@@ -118,7 +118,7 @@ test("horizon end-of-life derives from installed + lifespan when no key_date is 
     { now: NOW, statusTag: "STEADY" },
   );
   assert.equal(drafts.length, 1);
-  assert.match(drafts[0]!.itemText, /Transition ahead: Roof \(asphalt\) \(August 10\)/);
+  assert.match(drafts[0]!.itemText, /Coming due: Roof \(asphalt\) \(August 10\)/);
 });
 
 test("an appliance with installed + lifespan derives end-of-life too; explicit key_date still wins for the entry's own kind", () => {

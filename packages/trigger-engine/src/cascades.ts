@@ -19,7 +19,7 @@ export const CASCADES: TriggerRuleRow[] = [
       packName: "kindergarten-readiness",
       // methodRefs per Addendum A1 S4, founder-approved 2026-07-24.
       items: [
-        { text: "School registration windows open soon: confirm enrollment paperwork and immunization records are located.", offsetDays: 7, methodRef: "STD-016.4.1" },
+        { text: "School registration windows open soon: confirm the enrollment paperwork and immunization records are where you can find them.", offsetDays: 7, methodRef: "STD-016.4.1" },
         { text: "Ask about before/after-care needs for the new school schedule.", offsetDays: 14, methodRef: "STD-016.4.1" },
         { text: "Uniform or supply list: order before the late-summer rush.", offsetDays: 30, methodRef: "STD-015.1.4" },
       ],
@@ -56,7 +56,9 @@ export const CASCADES: TriggerRuleRow[] = [
       packName: "occasion-radar",
       items: [
         { text: "Occasion radar: scan the next 14 days for birthdays and anniversaries; is a gesture planned?", offsetDays: 1, methodRef: "STD-019.1.3" },
-        { text: "Gesture gate check: cultural-fit reviewed and HM notified before execution (REQ-042).", offsetDays: 3, methodRef: "STD-019.8.1" },
+        // Voice pass (founder item 6, 2026-07-28): the spec citation mid-briefing
+        // was machine voice; the gate itself stays in the methodRef.
+        { text: "Before the gesture goes out: has the cultural-fit review happened, and does everyone involved know the plan?", offsetDays: 3, methodRef: "STD-019.8.1" },
       ],
     },
   },
