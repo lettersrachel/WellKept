@@ -13,7 +13,7 @@
  * disk copy stays honest. Discard deletes the record ONLY after the caller
  * has written the audit row (no audit, no discard).
  */
-import { OfflineMutationQueue, type QueueCommand, type QueueConflict, type QueueItem, type Transport } from "@wellkept/offline-queue";
+import { OfflineMutationQueue, rehydrate, type QueueCommand, type QueueConflict, type QueueItem, type Transport } from "@wellkept/offline-queue";
 import { deleteRecords, getRecordsForHousehold, putRecord } from "./offline-store";
 
 /** The dead-letter cap: with the 5s-base, 5-minute-cap backoff this is
@@ -36,19 +36,11 @@ export interface VisitSync {
 export async function createVisitSync({ householdId }: { householdId: string }): Promise<VisitSync> {
   const queue = new OfflineMutationQueue();
 
-  const persistedRecords = await getRecordsForHousehold(householdId);
-  await deleteRecords(persistedRecords.map((record) => record.recordId));
-  for (const record of persistedRecords) {
-    const item = queue.enqueue(record.command, {
-      attempts: record.attempts ?? 0,
-      state: record.state === "dead" ? "dead" : "pending",
-    });
-    await putRecord({
-      recordId: item.id, householdId, sequence: item.sequence,
-      command: record.command, conflictReason: record.conflictReason ?? null,
-      attempts: item.attempts, state: item.state === "dead" ? "dead" : "pending",
-    });
-  }
+  // AK: the handoff is put-new-then-delete-old with idempotencyKey
+  // dedupe, so a durable copy exists at every instant (the G-52 loss
+  // window closed). The invariant is proven in the queue package's
+  // suite; this is the IndexedDB wiring.
+  await rehydrate(queue, { getRecordsForHousehold, putRecord, deleteRecords }, householdId);
 
   async function persistBookkeeping() {
     for (const item of [...queue.pending(), ...queue.dead()]) {

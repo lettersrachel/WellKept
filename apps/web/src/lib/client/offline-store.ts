@@ -5,23 +5,15 @@
  * @wellkept/offline-queue (see visit-sync.ts); this module never duplicates
  * it. Ported from the July 12 foundation repo.
  */
-import type { QueueCommand } from "@wellkept/offline-queue";
+import type { PersistedRecord } from "@wellkept/offline-queue";
 
 const DB_NAME = "wellkept-offline";
 const STORE_NAME = "commands";
 
-export interface PersistedRecord {
-  recordId: string;
-  householdId: string;
-  sequence: number;
-  command: QueueCommand;
-  conflictReason: string | null;
-  // AF: retry bookkeeping persists with the command, so a reload cannot
-  // silently resurrect a dead-lettered item as healthy. Optional for
-  // records written before the fields existed (read as fresh).
-  attempts?: number;
-  state?: "pending" | "dead";
-}
+// AK: the record shape and the handoff contract live in
+// @wellkept/offline-queue (where the ordering invariant is proven); this
+// module is the IndexedDB implementation of that contract.
+export type { PersistedRecord };
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
