@@ -17,6 +17,7 @@ export const CASCADES: TriggerRuleRow[] = [
     enabled: true,
     definition: {
       packName: "kindergarten-readiness",
+      packKey: "kindergarten-readiness",
       // methodRefs per Addendum A1 S4, founder-approved 2026-07-24.
       items: [
         { text: "School registration windows open soon: confirm the enrollment paperwork and immunization records are where you can find them.", offsetDays: 7, methodRef: "STD-016.4.1" },
@@ -35,6 +36,7 @@ export const CASCADES: TriggerRuleRow[] = [
     enabled: true,
     definition: {
       packName: "meds-day",
+      packKey: "meds-day",
       items: [
         { text: "Meds day: confirm the refill pickup was collected (bag on entry bench).", offsetDays: 30, methodRef: "STD-022.3.2" },
         // Reworded per founder decision 2026-07-24: labels are NEVER read
@@ -54,6 +56,7 @@ export const CASCADES: TriggerRuleRow[] = [
     enabled: true,
     definition: {
       packName: "occasion-radar",
+      packKey: "occasion-radar",
       items: [
         { text: "Occasion radar: scan the next 14 days for birthdays and anniversaries; is a gesture planned?", offsetDays: 1, methodRef: "STD-019.1.3" },
         // Voice pass (founder item 6, 2026-07-28): the spec citation mid-briefing

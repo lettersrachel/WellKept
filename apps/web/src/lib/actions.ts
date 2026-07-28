@@ -847,7 +847,9 @@ export async function createTriggerRule(formData: FormData) {
   const ruleId = randomUUID();
   await db.insert(triggerRule).values({
     id: ruleId, householdId: null, family, bindsToFieldName, enabled: true,
-    definition: { packName, items },
+    // M: the key is minted from the authored name ONCE, here; any later
+    // display rename touches packName only and exclusion matching holds.
+    definition: { packName, packKey: packName, items },
   });
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: anchorHouseholdId, actorUser: principal.userId, actorRole: principal.role,

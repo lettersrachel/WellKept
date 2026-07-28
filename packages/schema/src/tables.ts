@@ -193,6 +193,10 @@ export const promptPackItem = pgTable("prompt_pack_item", {
   ...stamps,
   householdId: uuid("household_id").notNull(),
   triggerRuleId: uuid("trigger_rule_id").notNull(),
+  // M (round six): pack_key is the stable IDENTIFIER exclusion matching
+  // uses; pack_name is display copy a voice pass may touch freely. Keys
+  // were minted equal to the names at the split, so nothing changed then.
+  packKey: text("pack_key").notNull(),
   packName: text("pack_name").notNull(),
   itemText: text("item_text").notNull(),
   fireAt: timestamp("fire_at", { withTimezone: true }).notNull(), // household-local computed upstream

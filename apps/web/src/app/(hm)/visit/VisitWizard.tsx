@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
+import { ZONE_DRIFT_NONE } from "@wellkept/trigger-engine";
 import type { QueueConflict, QueueItem } from "@wellkept/offline-queue";
 import { createVisitSync, type VisitSync } from "@/lib/client/visit-sync";
 
@@ -27,7 +28,9 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const [hoursEnd, setHoursEnd] = useState("");
   const [changesNoticed, setChangesNoticed] = useState("");
   const [dotText, setDotText] = useState("");
-  const [zoneAnswer, setZoneAnswer] = useState("none");
+  // M (round six): the no-drift vocabulary comes from the engine constant,
+  // never from copy an HM was taught to type; the button below writes it.
+  const [zoneAnswer, setZoneAnswer] = useState<string>(ZONE_DRIFT_NONE);
   const [zonePhoto, setZonePhoto] = useState("");
   const [reportSentences, setReportSentences] = useState(["", "", ""]);
   const [lifeChange, setLifeChange] = useState<boolean | null>(null);
@@ -323,7 +326,8 @@ export function VisitWizard({ householdId }: { householdId: string }) {
           <div className="card">
             <h2>Zone drift</h2>
             <input value={zoneAnswer} onChange={(e) => setZoneAnswer(e.target.value)} />
-            <input aria-label="Zone drift photo id" value={zonePhoto} onChange={(e) => setZonePhoto(e.target.value)} placeholder="photo id (required unless 'none')" />
+            <button className="act subtle" type="button" onClick={() => setZoneAnswer(ZONE_DRIFT_NONE)}>No drift</button>
+            <input aria-label="Zone drift photo id" value={zonePhoto} onChange={(e) => setZonePhoto(e.target.value)} placeholder="photo id (required unless no drift)" />
             <p><button className="act subtle" type="button" onClick={() => run((f) => f.setZoneDrift({ answer: zoneAnswer, photoId: zonePhoto || null }))}>Save</button></p>
             {state.zoneDrift && <div className="prov">Saved: {state.zoneDrift.answer}</div>}
           </div>

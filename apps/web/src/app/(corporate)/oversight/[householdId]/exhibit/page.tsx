@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { and, asc, eq, gte } from "drizzle-orm";
 import { visitCommand, gesture, clientEdit, strangerTest, auditEvent, playbookField } from "@wellkept/schema";
+import { ZONE_DRIFT_NONE } from "@wellkept/trigger-engine";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getHouseholdAndPrincipalById } from "@/lib/data";
@@ -64,7 +65,7 @@ export default async function ExhibitPage({
     return {
       id: v.id, when: v.receivedAt, hours: mins / 60,
       report: p.report ?? [], photoCount: (p.photoIds ?? []).length,
-      drift: p.zoneDrift?.answer && p.zoneDrift.answer.toLowerCase() !== "none" ? p.zoneDrift.answer : null,
+      drift: p.zoneDrift?.answer && p.zoneDrift.answer.toLowerCase() !== ZONE_DRIFT_NONE ? p.zoneDrift.answer : null,
     };
   });
   const executed = gestures90.filter((g) => g.executedAt);
