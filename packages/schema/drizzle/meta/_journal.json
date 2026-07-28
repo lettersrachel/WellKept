@@ -232,6 +232,13 @@
       "when": 1785255484622,
       "tag": "0032_deferral_visit_command",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1785256153443,
+      "tag": "0033_paused_decision",
+      "breakpoints": true
     }
   ]
 }

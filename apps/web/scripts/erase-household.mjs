@@ -68,6 +68,9 @@
  *    deferral is a client-visible service record (the visit-report
  *    posture), so the business-record skeleton survives while the
  *    household specifics do not.
+ *  - paused_decision (W-7/AD, 2026-07-28): rows DELETED - internal
+ *    staff research about the household (never client-visible, no
+ *    business-record claim), the condition_flag class.
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -147,6 +150,7 @@ const counts = {
   objectObservations: await count("SELECT count(*) n FROM object_observation WHERE household_id=$1"),
   conditionFlags: await count("SELECT count(*) n FROM condition_flag WHERE household_id=$1"),
   deferrals: await count("SELECT count(*) n FROM deferral WHERE household_id=$1"),
+  pausedDecisions: await count("SELECT count(*) n FROM paused_decision WHERE household_id=$1"),
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
@@ -160,6 +164,7 @@ console.log(`  registry entries to clear + tombstone:                     ${coun
 console.log(`  object observations to DELETE (condition/fill series):     ${counts.objectObservations}`);
 console.log(`  condition flags to DELETE (W-5 staff observations):        ${counts.conditionFlags}`);
 console.log(`  deferrals to BLANK (W-6 client-visible service records):   ${counts.deferrals}`);
+console.log(`  paused decisions to DELETE (W-7 internal staff research):  ${counts.pausedDecisions}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
 console.log(`  gestures / stranger tests / client edits to blank:         ${counts.gestures} / ${counts.stranger} / ${counts.edits}`);
 console.log(`  season observations / prompts / outcome notes to blank:    ${counts.season} / ${counts.prompts} / ${counts.outcomes}`);
@@ -230,6 +235,9 @@ try {
   // deferral (W-6, 2026-07-28): BLANKED, kept - client-visible service
   // record, the visit-report posture.
   await c.query("UPDATE deferral SET noticed='', reason='', revisit_condition=CASE WHEN revisit_condition IS NULL THEN NULL ELSE '[erased]' END, updated_at=now() WHERE household_id=$1", [householdId]);
+  // paused_decision (W-7/AD, 2026-07-28): DELETED - internal staff
+  // research about the household, the condition_flag class.
+  await c.query("DELETE FROM paused_decision WHERE household_id=$1", [householdId]);
   await c.query(`UPDATE trigger_rule SET enabled=false, definition='{\"packName\":\"[erased]\",\"items\":[]}', updated_at=now() WHERE household_id=$1`, [householdId]);
   if (ERASE_INCIDENTS) {
     await c.query("UPDATE incident_report SET description=$2, resolution_note=CASE WHEN resolution_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);

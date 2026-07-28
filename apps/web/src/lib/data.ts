@@ -124,6 +124,17 @@ export async function getDeferrals(householdId: string, limit = 12) {
     .limit(limit);
 }
 
+/** AD (W-7): paused decisions, newest first. Staff read only - there is
+ * no client projection at all; the payload guard treats any leaked row
+ * as a violation. */
+export async function getPausedDecisions(householdId: string, limit = 12) {
+  const { pausedDecision } = await import("@wellkept/schema");
+  return db.select().from(pausedDecision)
+    .where(eq(pausedDecision.householdId, householdId))
+    .orderBy(desc(pausedDecision.pausedAt))
+    .limit(limit);
+}
+
 /** W-6: the CLIENT projection of deferrals - the content is for them by
  * design (noticed, the reason, the intended timing); the staff attribution
  * never rides along. The page re-asserts this with the payload guard. */

@@ -635,6 +635,35 @@ export const deferral = pgTable("deferral", {
     sql`(${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL) OR (${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL)`),
 ]);
 
+// AD (W-7): a paused decision. Research done and then paused, logged with
+// its own revisit trigger so it is not lost to time. INTERNAL, unlike a
+// deferral: it never reaches the client, so there is no client projection
+// and the payload guard treats any leaked row as a violation. Same
+// structural sentence as the deferral and the flag (no revisit trigger,
+// no record) and lifecycle-shaped from birth, reusing the deferral's
+// resolution vocabulary rather than minting a second one. Nothing acts on
+// an arrived revisit automatically: the briefing shows it, a person
+// decides (the Misses-panel posture).
+export const pausedDecision = pgTable("paused_decision", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  decision: text("decision").notNull(), // what is being decided
+  research: text("research").notNull(), // what was learned before the pause
+  revisitDate: date("revisit_date"),
+  revisitCondition: text("revisit_condition"),
+  pausedBy: text("paused_by").notNull().references(() => authUser.id),
+  pausedAt: timestamp("paused_at", { withTimezone: true }).notNull().defaultNow(),
+  resolution: deferralResolutionEnum("resolution"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedBy: text("resolved_by").references(() => authUser.id),
+}, (t) => [
+  index("paused_decision_household_idx").on(t.householdId, t.pausedAt),
+  check("paused_decision_has_revisit_trigger",
+    sql`${t.revisitDate} IS NOT NULL OR ${t.revisitCondition} IS NOT NULL`),
+  check("paused_decision_resolution_is_whole",
+    sql`(${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL) OR (${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL)`),
+]);
+
 export const objectObservation = pgTable("object_observation", {
   ...stamps,
   householdId: uuid("household_id").notNull().references(() => household.id),

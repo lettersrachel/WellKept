@@ -1177,6 +1177,66 @@ export async function resolveDeferral(formData: FormData) {
 }
 
 /**
+ * AD (W-7): a paused decision - research done and then paused, logged
+ * with its own revisit trigger so it is not lost to time. INTERNAL,
+ * unlike a deferral: the client never sees it, so the capture labels
+ * invite working notes rather than client-readable prose. The timing is
+ * required here and by the database CHECK, the same structural sentence
+ * as the flag and the deferral.
+ */
+export async function createPausedDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const decision = String(formData.get("decision") ?? "").trim().slice(0, 200);
+  const research = String(formData.get("research") ?? "").trim().slice(0, 1000);
+  const revisitDateRaw = String(formData.get("revisitDate") ?? "").trim();
+  const revisitCondition = String(formData.get("revisitCondition") ?? "").trim().slice(0, 200) || null;
+  if (!householdId || decision.length < 4 || research.length < 4) refuseTo(returnTo, "bad-input");
+  if ([decision, research, revisitCondition ?? ""].some((s) => s.includes("\u2014"))) refuseTo(returnTo, "bad-input");
+  const revisitDate = /^\d{4}-\d{2}-\d{2}$/.test(revisitDateRaw) ? revisitDateRaw : null;
+  if (!revisitDate && !revisitCondition) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { pausedDecision } = await import("@wellkept/schema");
+  await db.insert(pausedDecision).values({
+    id: randomUUID(), householdId, decision, research, revisitDate, revisitCondition,
+    pausedBy: principal.userId, pausedAt: new Date(),
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `paused, with the research on record: ${decision}`);
+}
+
+/**
+ * AD (W-7): a paused decision resolves the same three ways a deferral
+ * does - done, no longer needed, or superseded - by whom and when, never
+ * by deletion. The resolution_is_whole CHECK backs this at the database.
+ * Nothing resolves automatically when the revisit arrives: the briefing
+ * shows it, a person decides (the Misses-panel posture).
+ */
+export async function resolvePausedDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const pausedDecisionId = String(formData.get("pausedDecisionId") ?? "");
+  const resolution = String(formData.get("resolution") ?? "");
+  const RESOLUTIONS = ["done", "no_longer_needed", "superseded"] as const;
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(pausedDecisionId)) refuseTo(returnTo, "bad-input");
+  if (!(RESOLUTIONS as readonly string[]).includes(resolution)) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { pausedDecision } = await import("@wellkept/schema");
+  const { isNull } = await import("drizzle-orm");
+  const [row] = await db.select({ id: pausedDecision.id, decision: pausedDecision.decision }).from(pausedDecision)
+    .where(and(eq(pausedDecision.id, pausedDecisionId), eq(pausedDecision.householdId, householdId), isNull(pausedDecision.resolvedAt)))
+    .limit(1);
+  if (!row) refuseTo(returnTo, "missing"); // absent, foreign, or already resolved
+  await db.update(pausedDecision)
+    .set({ resolution: resolution as (typeof RESOLUTIONS)[number], resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date() })
+    .where(eq(pausedDecision.id, pausedDecisionId));
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `decision resolved (${resolution.replace(/_/g, " ")}): ${row.decision}`);
+}
+
+/**
  * W-5: resolution is a state change with a reason and who closed it,
  * never a delete. The close_is_reasoned CHECK backs this at the database.
  */

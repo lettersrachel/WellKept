@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals } from "@/lib/data";
+import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, resolveDeferral } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, resolveDeferral, createPausedDecision, resolvePausedDecision } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -75,12 +75,16 @@ export default async function VisitPage({ searchParams }: {
     getRegistries(hh.id, "house_manager"),
   ]);
   const deferrals = await getDeferrals(hh.id);
+  const pausedDecisions = await getPausedDecisions(hh.id);
   const today = new Date().toISOString().slice(0, 10);
   // AB/AD: an overdue deferral (date-based timing passed, unresolved) is
   // SHOWN to the House Manager, who decides what it means. Nothing
   // promotes or fires automatically; the system shows what it noticed.
   const openDeferrals = deferrals.filter((d) => !d.resolvedAt);
   const overdueDeferrals = openDeferrals.filter((d) => d.revisitDate && d.revisitDate < today);
+  // AD: the same posture for a paused decision whose timing has arrived.
+  const openPaused = pausedDecisions.filter((p) => !p.resolvedAt);
+  const overduePaused = openPaused.filter((p) => p.revisitDate && p.revisitDate < today);
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
   });
@@ -267,6 +271,51 @@ export default async function VisitPage({ searchParams }: {
             <input name="revisitCondition" aria-label="Revisit condition" placeholder="revisit when (after the next deep clean)" style={{ flex: 1, marginTop: 0 }} />
           </div>
           <p><button className="act">Raise the flag</button></p>
+        </form>
+      </div>
+
+      {/* AD (W-7): research done and then paused, logged so it is not
+          lost to time. Internal; the client never sees it. When the
+          timing arrives nothing happens automatically - the card marks
+          it and the person decides, the Misses-panel posture. */}
+      <div className="card">
+        <h2>Paused decisions</h2>
+        <p className="note" style={{ marginTop: 0 }}>
+          Research you did and then paused. Internal; the client never sees
+          this. Give it a revisit plan so it is not lost to time.
+        </p>
+        {openPaused.map((p) => (
+          <div key={p.id} className="field">
+            <span className="fname">
+              {p.decision}
+              {overduePaused.some((o) => o.id === p.id) && <span className="tag CRITICAL">TIMING ARRIVED</span>}
+            </span>
+            <div className="fval sans" style={{ fontSize: 13 }}>{p.research}</div>
+            <div className="prov">revisit {p.revisitDate ?? p.revisitCondition}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              {(["done", "no_longer_needed", "superseded"] as const).map((res) => (
+                <form key={res} action={resolvePausedDecision} style={{ display: "inline" }}>
+                  <input type="hidden" name="householdId" value={hh.id} />
+                  <input type="hidden" name="pausedDecisionId" value={p.id} />
+                  <input type="hidden" name="resolution" value={res} />
+                  <input type="hidden" name="returnTo" value="/visit" />
+                  <button className="act subtle">{res.replace(/_/g, " ")}</button>
+                </form>
+              ))}
+            </div>
+          </div>
+        ))}
+        <form action={createPausedDecision}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <input type="hidden" name="returnTo" value="/visit" />
+          <input name="decision" aria-label="What is being decided" placeholder="what is being decided (replace or repair the softener)" />
+          <input name="research" aria-label="What you learned" placeholder="what you learned before pausing" />
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+            <input name="revisitDate" aria-label="Pick it back up by" type="date" style={{ marginTop: 0 }} />
+            <span className="note">or</span>
+            <input name="revisitCondition" aria-label="Pick it back up when" placeholder="pick it back up when (quotes come back)" style={{ flex: 1, marginTop: 0 }} />
+          </div>
+          <p><button className="act">Log the pause</button></p>
         </form>
       </div>
 

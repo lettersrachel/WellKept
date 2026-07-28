@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags, getDeferrals } from "@/lib/data";
+import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
@@ -83,6 +83,14 @@ export async function GET(req: NextRequest) {
     .filter((d) => !d.resolvedAt && d.revisitDate && d.revisitDate < todayIso)
     .map((d) => ({ id: d.id, noticed: d.noticed, reason: d.reason, plannedFor: d.revisitDate }));
 
+  // AD (W-7): a paused decision whose timing has arrived surfaces the
+  // same way - shown, never acted on automatically. Internal entity;
+  // this route is staff-gated, and the client routes never carry it.
+  const allPaused = await getPausedDecisions(hh.id);
+  const overduePausedDecisions = allPaused
+    .filter((p) => !p.resolvedAt && p.revisitDate && p.revisitDate < todayIso)
+    .map((p) => ({ id: p.id, decision: p.decision, research: p.research, plannedFor: p.revisitDate }));
+
   const conditionFlags = openConditionFlags.map((f) => ({
     id: f.id, subject: f.subject, location: f.location, concern: f.concern,
     revisit: f.revisitDate ?? f.revisitCondition,
@@ -95,6 +103,7 @@ export async function GET(req: NextRequest) {
     flags,
     conditionFlags,
     overdueDeferrals,
+    overduePausedDecisions,
     changed,
     specials,
     radar,

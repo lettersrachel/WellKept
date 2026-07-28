@@ -184,4 +184,16 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /unprojected deferral/,
   );
   assert.ok(assertNoAnticipationRows([{ noticed: "hairline crack", resolution: "done", resolvedAt: "2026-07-28" }]));
+  // AD (W-7): a paused decision has NO client projection; any recognizable
+  // row is the violation. Both signature pairs, and the word "decision"
+  // alone stays innocent.
+  assert.throws(
+    () => assertNoAnticipationRows([{ decision: "filtration vendor", pausedBy: "u-1" }]),
+    /paused_decision/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ nested: { decision: "filtration vendor", research: "three quotes" } }),
+    /paused_decision/,
+  );
+  assert.ok(assertNoAnticipationRows([{ decision: "a harmless unrelated key" }]));
 });

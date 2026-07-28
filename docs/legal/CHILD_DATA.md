@@ -30,6 +30,7 @@ constraints where expressible.
 | `incident_report` | an incident may involve a child | internal; never shown in the app to clients | code + payload guards |
 | `condition_flag` (W-5, 2026-07-28) | a flagged condition's subject, location, or concern may mention a child's room or belongings | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guards (condition_flag signature) |
 | `deferral` (W-6, 2026-07-28) | what was noticed or the reason may mention a child's room or belongings | client-visible BY DESIGN to the household's own client only; staff attribution never rides the client shape; free-text policy applies | permission filtering + payload guard (unprojected-deferral signature) |
+| `paused_decision` (W-7, 2026-07-28) | the decision or the research notes may concern a child's room, schedule, or belongings | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guard (paused_decision signature) |
 
 ## The rules this document adds
 

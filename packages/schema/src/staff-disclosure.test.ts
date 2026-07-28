@@ -90,6 +90,11 @@ const ALLOWLIST: Record<string, string> = {
     "W-6, 2026-07-28: decided_by attributes each deliberate deferral; the surface shipped " +
     "after the disclosure was approved, so it joins the founder line candidates for the " +
     "next revision (the written-work item is the natural home)",
+  paused_decision:
+    "W-7/AD, 2026-07-28: paused_by and resolved_by attribute each paused decision; the " +
+    "surface shipped after the disclosure was approved and is internal research about the " +
+    "household, so it joins the founder line candidates for the next revision (the " +
+    "internal-observations item is the natural home)",
 };
 
 /** Detect staff-attributed tables from the schema source itself. A column
