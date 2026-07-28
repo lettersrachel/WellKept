@@ -44,6 +44,16 @@ const COPY_SOURCES = [
 // clients; they carry the same voice rule as the app.
 const DOC_DIRS = ["../../../docs/legal"];
 
+// Item 7 (founder 2026-07-28): the two dated verification records are
+// historical artifacts; they were punctuation-swept with an inline
+// annotation, and any FUTURE em dash in them is exempt only with the
+// reason below - restore-from-history plus this allowlist is the
+// sanctioned path if a verbatim historical quote ever needs one.
+const DOC_ALLOWLIST: Record<string, string> = {
+  "COUNSEL_PACKET_VERIFICATION.md": "dated verification record; edits are annotated, claims frozen",
+  "COUNSEL_VERIFICATION_SESSION.md": "dated verification record; edits are annotated, claims frozen",
+};
+
 function tsxFiles(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
@@ -104,6 +114,7 @@ test("legal documents contain no em dashes", () => {
   for (const rel of DOC_DIRS) {
     for (const name of readdirSync(path.join(here, rel))) {
       if (!name.endsWith(".md")) continue;
+      if (name in DOC_ALLOWLIST) { if (DOC_ALLOWLIST[name]!.trim().length <= 10) throw new Error(`allowlist entry for ${name} needs a real reason`); continue; }
       const file = path.join(here, rel, name);
       readFileSync(file, "utf8").split("\n").forEach((line, i) => {
         if (line.includes("—")) offenders.push(`${name}:${i + 1}`);

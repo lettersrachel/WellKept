@@ -1,5 +1,8 @@
 # Counsel packet verification report; 2026-07-25
 
+> Edited 2026-07-28: punctuation only (em-dash sweep, W-13). Every claim,
+> date, and finding is unchanged from the original record.
+
 Run of `COUNSEL_VERIFICATION_SESSION.md` against main (69b6631), read-only.
 Verdicts: CONFIRMED / WRONG / OVERSTATED / UNVERIFIABLE, with evidence.
 The packet is NOT edited (session hard rule 1); suggested wording only.
