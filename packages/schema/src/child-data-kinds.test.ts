@@ -38,3 +38,16 @@ test("every child-data kind has a CHECK forbidding client-visible sensitivity", 
   assert.deepEqual(missing, [],
     `child-data kind(s) without a sensitivity CHECK in tables.ts: ${missing.join(", ")} - extend the constraint (W-14)`);
 });
+
+test("the child-data policy document exists and classifies every capture surface (founder item 3)", () => {
+  const here2 = path.dirname(fileURLToPath(import.meta.url));
+  const doc = readFileSync(path.join(here2, "../../../docs/legal/CHILD_DATA.md"), "utf8");
+  // The surfaces where a child can appear in the record. A new surface
+  // that can hold child content gets a row in the doc's table before it
+  // ships (rule 1 of the doc); this list grows with the schema.
+  for (const surface of ["registry_entry", "playbook_field", "dot", "visit", "visit_photo", "incident_report"]) {
+    assert.ok(doc.includes(surface), `CHILD_DATA.md missing a treatment row for ${surface}`);
+  }
+  // The doc and this test's kind sets must agree.
+  for (const k of CHILD_DATA_KINDS) assert.ok(doc.includes(k), `CHILD_DATA.md does not name child kind ${k}`);
+});
