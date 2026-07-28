@@ -36,7 +36,7 @@ const contains = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.trim().toLowerCase());
 
 export function draftExcluded(
-  draft: Pick<PromptPackItemDraft, "triggerRuleId" | "packName" | "itemText">,
+  draft: Pick<PromptPackItemDraft, "triggerRuleId" | "packKey" | "itemText">,
   exclusion: ExclusionLike,
   ctx: DraftContext = {},
 ): boolean {
@@ -50,7 +50,12 @@ export function draftExcluded(
     case "field":
       return ctx.fieldName ? contains(ctx.fieldName, target) : contains(draft.itemText, target);
     case "topic":
-      return contains(draft.itemText, target) || contains(draft.packName, target);
+      // M (round six): topic matching keys on the STABLE packKey, never the
+      // display name, so a copy rename cannot silently revert a household's
+      // exclusion. Keys were minted equal to the names at the split, so the
+      // set of matches did not change then. itemText matching is inherent
+      // to the scope (a topic is content) and stays.
+      return contains(draft.itemText, target) || contains(draft.packKey, target);
     case "person":
       return contains(draft.itemText, target);
     default:

@@ -158,6 +158,9 @@ export function sweepRegistryDates(
         out.push({
           householdId: entry.householdId,
           triggerRuleId: SWEEP_RULE_IDS[ev.windowsKey] ?? SWEEP_RULE_IDS.dates!,
+          // M: the key is the identifier; the name is display. Minted equal
+          // at the split; a display rename never changes exclusion matching.
+          packKey: `${ev.windowsKey}-radar`,
           packName: `${ev.windowsKey}-radar`,
           itemText: w.text(entry.label, fmt(occurrence, timezone)),
           fireAt: clampOutOfQuietHours(new Date(Math.max(windowOpens.getTime(), now.getTime())), timezone),
@@ -183,6 +186,14 @@ export async function sweepItemId(entryId: string, occurrenceIso: string, itemTe
 // ---------------------------------------------------------------------------
 
 export const OBSERVANCE_RULE_ID = "01980000-0000-7000-8000-000000000d05";
+
+/**
+ * M (round six, K member 3): the sweep finds its input field by this name
+ * prefix. One definition, used by the runner's LIKE and asserted against
+ * the intake seed template by seed-binding.test.ts, so a seed rename
+ * cannot silently detach the observance radar.
+ */
+export const OBSERVANCES_FIELD_PREFIX = "Movable-date observances";
 
 export interface MovableObservanceLike { name: string; date: Date }
 export interface HouseholdObservanceField {
@@ -215,6 +226,7 @@ export function sweepMovableObservances(
       out.push({
         householdId: hh.householdId,
         triggerRuleId: OBSERVANCE_RULE_ID,
+        packKey: "observance-radar",
         packName: "observance-radar",
         itemText: `Movable observance ahead: ${obs.name} on ${fmt(obs.date, timezone)}. Prep per this household's Playbook and WK-STD-014.`,
         fireAt: clampOutOfQuietHours(new Date(Math.max(windowOpens, now.getTime())), timezone),
@@ -227,6 +239,14 @@ export function sweepMovableObservances(
 }
 
 /**
+ * M (round six, K member 5): the no-drift vocabulary is a code-owned
+ * constant, not a convention HMs are taught by placeholder copy. The visit
+ * wizard writes it via its own control, the exhibit page and the detector
+ * read it from here; a copy pass cannot silently change what breaks the run.
+ */
+export const ZONE_DRIFT_NONE = "none";
+
+/**
  * The threshold family's converged number (Addendum A1 S5: APP-002's load
  * signal and STD-023's maintenance-capacity threshold are the same rule):
  * three consecutive visits reporting zone drift. Input is the most-recent-
@@ -236,6 +256,6 @@ export function detectLoadSignal(zoneDriftAnswers: (string | null | undefined)[]
   if (zoneDriftAnswers.length < 3) return false;
   return zoneDriftAnswers.slice(0, 3).every((a) => {
     const t = (a ?? "").trim().toLowerCase();
-    return t !== "" && t !== "none";
+    return t !== "" && t !== ZONE_DRIFT_NONE;
   });
 }

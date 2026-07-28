@@ -47,6 +47,11 @@ function allowlisted(list: Record<string, string>, key: string): boolean {
 const COPY_SOURCES = [
   "../../../packages/trigger-engine/src/registry-sweep.ts",
   "../../../packages/trigger-engine/src/engine.ts",
+  // K (round six): the cascade item texts moved here from seed-rules.ts,
+  // which now only imports them; the guard follows the strings, and
+  // season.ts's recall-summary template is rendered copy too.
+  "../../../packages/trigger-engine/src/cascades.ts",
+  "../../../packages/trigger-engine/src/season.ts",
   "../../../services/worker/src/seed-rules.ts",
   "../../../services/worker/src/digest.ts",
   "../../../packages/mail/src/index.ts",

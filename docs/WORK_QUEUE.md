@@ -17,9 +17,9 @@ in a session prompt.
 ## State
 
 Production serves `b7026dd` (2026-07-28, the first deploy through
-tooling/deploy.sh's full gate). 28 migrations (0000 to 0027). Seven CI
-guards. Gap register at G-49. G-13 founder-approved, awaiting counsel review
-and the hire's acknowledgment.
+tooling/deploy.sh's full gate). 29 migrations (0000 to 0028; 0028 not yet
+deployed). Eight CI guards. Gap register at G-49. G-13 founder-approved,
+awaiting counsel review and the hire's acknowledgment.
 
 The Railway worker is Git-connected and auto-deployed `b7026dd` (founder
 confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
@@ -217,18 +217,26 @@ was pruned and why.
   checks that shipped broken, each now proven in its passing direction.
   The step-7 wiring beyond the extractor is only exercised by a real
   deploy, and was, three times, deploying b7026dd.
-- **M, display-name/key split: AUTHORIZED (2026-07-28), scoped to K's
-  class, baseline check first.** Before building: item 6 and W-10 rewrote
-  member-1 strings (itemText templates), so "preserve which exclusions
-  currently fire" is only a valid migration baseline if nothing was
-  matching when the texts changed. Repo-side, attribution is immune
-  (prompt_outcome carries rule_id). What needs one production read:
-  `SELECT scope, count(*) FROM anticipation_exclusion GROUP BY scope` and
-  `SELECT count(*) FROM prompt_pack_item WHERE fired_at IS NULL`. Zero
-  exclusions means no match could have silently broken and the baseline is
-  sound; any pending pre-rewrite items will re-mint ids on the next sweep
-  (known, fixture-only exposure). Expected answer is zero/fixture-only,
-  but expected is not verified; run the queries before the split builds.
+- **M, display-name/key split: CLOSED 2026-07-28 (0028), on the
+  close-out's corrected premise (build on fixtures before the first
+  household).** `pack_key` is the stable identifier topic-scope exclusion
+  matching uses; `pack_name` is display copy. Keys minted equal to names
+  everywhere (migration backfill, sweep, cascades, authored rules), so
+  the set of matching exclusions did not change; proven at the fixture
+  level, including the display-rename-does-not-change-matching property
+  and a mechanism check against the real post-rewrite templates. Member
+  3 (field-name bindings) and member 5 (the no-drift vocabulary) are held
+  by the new seed-binding guard; cascades.ts and season.ts joined
+  COPY_SOURCES (the guard found and fixed one em dash on arrival, in
+  sanitizeSummary's own regex). Members 1-id (sweep id text-keying and
+  the W-9 real object key) stay gated on the calibration read; member 4
+  is data-side, recorded in K.
+- **S, the M baseline: dispositioned.** `.neon-connection` does not exist
+  in the cloud container (gitignored, founder's machine only), so the two
+  production reads fall to the founder's local session; per the close-out
+  they only confirm fixture-only data. The half that matters, the
+  mechanism still matching after the rewrites, is now a fixture assertion
+  in exclusions.test.ts and ran green before M landed.
 - **L, frozen-pattern-to-property: CLOSED 2026-07-28 (decision:
   frontmatter).** Every .md under docs/ now carries `status: frozen` or
   `status: living`; an unmarked file fails CI at creation. The name

@@ -93,7 +93,7 @@ export async function runTriggerPass(db: any, event: FieldChangeEvent) {
 export async function runRegistrySweep(db: any, opts: { householdId?: string; now?: Date } = {}) {
   const { registryEntry, movableObservance, playbookField } = await import("@wellkept/schema");
   const { isNull, and, like, gte } = await import("drizzle-orm");
-  const { sweepRegistryDates, sweepMovableObservances, sweepItemId } = await import("./registry-sweep.ts");
+  const { sweepRegistryDates, sweepMovableObservances, sweepItemId, OBSERVANCES_FIELD_PREFIX } = await import("./registry-sweep.ts");
 
   const households = opts.householdId
     ? await db.select().from(household).where(eq(household.id, opts.householdId))
@@ -113,7 +113,7 @@ export async function runRegistrySweep(db: any, opts: { householdId?: string; no
     const drafts = sweepRegistryDates(entries, { statusTag: hh.statusTag, now: opts.now });
     if (observances.length) {
       const [obsField] = await db.select({ value: playbookField.value }).from(playbookField)
-        .where(and(eq(playbookField.householdId, hh.id), like(playbookField.name, "Movable-date observances%")))
+        .where(and(eq(playbookField.householdId, hh.id), like(playbookField.name, `${OBSERVANCES_FIELD_PREFIX}%`)))
         .limit(1);
       drafts.push(...sweepMovableObservances(observances, [
         { householdId: hh.id, statusTag: hh.statusTag, fieldValue: obsField?.value ?? "" },

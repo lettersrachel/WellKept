@@ -12,6 +12,7 @@ const NOW = new Date("2026-07-25T12:00:00Z");
 const DRAFT = (over: Partial<PromptPackItemDraft> = {}): PromptPackItemDraft => ({
   householdId: "hh-1",
   triggerRuleId: "rule-1",
+  packKey: "meds-day",
   packName: "meds-day",
   itemText: "Confirm the refill pickup is scheduled.",
   fireAt: NOW,
@@ -73,6 +74,40 @@ test("REQ-056 GUARDRAIL: the fail-closed path suppresses every non-floor draft a
 
 test("REQ-056: an unknown scope excludes nothing (malformed config must not silence the engine)", () => {
   assert.ok(!draftExcluded(DRAFT(), EXCL({ scope: "vibes", target: "anything" })));
+});
+
+// ---------------------------------------------------------------------------
+// M (round six): the display-name/key split, proven at the fixture level
+// BEFORE the first household exists, per the close-out brief. "Preserve
+// which exclusions currently fire" is these assertions.
+// ---------------------------------------------------------------------------
+
+test("M: topic matching keys on packKey; a display-only rename never changes which exclusions fire", () => {
+  const topicOnPack = EXCL({ scope: "topic", target: "meds" });
+  // Keys were minted equal to the names at the split: the match holds.
+  assert.ok(draftExcluded(DRAFT(), topicOnPack));
+  // The property M exists for: copy work touches packName freely and the
+  // household's instruction still fires, because matching never sees it.
+  assert.ok(draftExcluded(DRAFT({ packName: "Medication day" }), topicOnPack));
+  // And a key change IS a matching change, which is why keys are stable.
+  assert.ok(!draftExcluded(DRAFT({ packKey: "renamed-pack" }), topicOnPack));
+});
+
+test("M/S: the post-rewrite sweep templates still reach exclusion matching (mechanism check)", async () => {
+  // The item-6 voice pass and J1 rewrote template strings; this pins the
+  // MECHANISM against the real current templates rather than synthetic
+  // text: a sweep draft rendered today matches topic targets by its real
+  // itemText and its real packKey.
+  const { sweepRegistryDates } = await import("./registry-sweep.ts");
+  const drafts = sweepRegistryDates(
+    [{ id: "e-1", householdId: "hh-1", kind: "dates", label: "Mia's birthday", keyDate: new Date("2026-08-02T13:00:00Z"), cadence: null }],
+    { now: new Date("2026-07-25T12:00:00Z"), statusTag: "ACTIVE" },
+  );
+  assert.ok(drafts.length > 0, "the dates family renders no drafts; the mechanism test has no input");
+  const byText = filterExcludedDrafts(drafts, [EXCL({ scope: "topic", target: "birthday" })], { now: NOW });
+  assert.equal(byText.kept.length, 0, "a topic target inside the rendered text no longer matches");
+  const byKey = filterExcludedDrafts(drafts, [EXCL({ scope: "topic", target: "dates-radar" })], { now: NOW });
+  assert.equal(byKey.kept.length, 0, "a topic target naming the stable pack key no longer matches");
 });
 
 // ---------------------------------------------------------------------------

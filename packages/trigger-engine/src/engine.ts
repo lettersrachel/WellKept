@@ -29,6 +29,10 @@ export interface TriggerRuleRow {
   enabled: boolean;
   definition: {
     packName: string;
+    // M (round six): the stable key matching uses. Older stored rules
+    // predate the split and carry only packName; the engine falls back to
+    // it, which preserves exactly the matches that existed before.
+    packKey?: string;
     // methodRef (Addendum A1 S4): the provision id a THEN step's implicit
     // method pointer resolves to; null/absent is a finding (the cascade asks
     // for work no standard defines), not an error. Step text stays as written.
@@ -39,6 +43,9 @@ export interface TriggerRuleRow {
 export interface PromptPackItemDraft {
   householdId: string;
   triggerRuleId: string;
+  /** Stable identifier (M): exclusion matching keys on this, never on the
+   * display name, so copy work cannot silently change which exclusions fire. */
+  packKey: string;
   packName: string;
   itemText: string;
   fireAt: Date;
@@ -105,6 +112,7 @@ export function evaluate(
       out.push({
         householdId: event.householdId,
         triggerRuleId: rule.id,
+        packKey: rule.definition.packKey ?? rule.definition.packName,
         packName: rule.definition.packName,
         itemText: item.text,
         fireAt: clampOutOfQuietHours(raw, timezone),
