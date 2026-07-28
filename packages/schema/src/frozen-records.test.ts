@@ -25,6 +25,7 @@ const FROZEN: Record<string, string> = {
   "docs/POST_DEPLOY_FINDINGS_A_B.md": "90b89da3bd367bd4042176c1cc577ad47ddb12e82ca6fc3ba2aa58f1b4e32da6",
   "docs/POST_DEPLOY_FINDINGS_E_I.md": "fd4831ea5f6abc7e441ee2bf1045b62c6617bc66974a928cf7a2b1742f444e5e",
   "docs/ROUND4_FINDINGS_A.md": "e55e7ecbad8c6cf7b22a4257924d17548a31c922f4d725aa3bd3fa79f2ec3506",
+  "docs/ROUND6_FINDINGS_K.md": "be6c157a06e4340e00b34516203511b7461589e978eb4b98ca8eb0d98cde8a1a",
 };
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");

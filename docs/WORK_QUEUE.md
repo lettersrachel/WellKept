@@ -196,6 +196,36 @@ was pruned and why.
   id, and the build id verified three times with JSON extraction. Both
   guards fixed after the first run's wrongful refusal did their jobs.
 
+### Round-six items (brief external, from the WK_ROUND5_READOUT review)
+
+- **K, string-as-identifier survey: CLOSED 2026-07-28.** Read-only; findings
+  frozen in ROUND6_FINDINGS_K.md. Six class members, itemText the largest
+  (exclusion-matched three ways, id input twice, W-9 collapse key). The
+  copy guard styles two members' source files today; the item-6 voice pass
+  already rewrote matched strings, harmless only because no exclusion rows
+  exist yet.
+- **Doctrine correction: folded into CLAUDE.md** (verification section and
+  the guard-section line): a guard is proven in both directions, red on a
+  violation and green on a known-good case.
+- **N, selftest green-path coverage: CONFIRMED, no change needed.** Case 5
+  exercises the pinned-link acceptance end to end through --preflight
+  (deploy.sh:64-66); case 6 exercises extract_build_id on a synthetic
+  JSON body carrying the real sha (deploy.sh:68-71). Those are the two
+  checks that shipped broken, each now proven in its passing direction.
+  The step-7 wiring beyond the extractor is only exercised by a real
+  deploy, and was, three times, deploying b7026dd.
+- **M, display-name/key split: gate satisfied by K, not yet run.** Scope is
+  K's class list, not packName alone. The exclusion-row data migration
+  question from the brief stands and is the careful part.
+- **L, frozen-pattern-to-property: reported, awaiting the pick.** Census:
+  30 documents (21 docs/, 9 docs/legal). Option 1, frontmatter status on
+  every doc, is 30 one-line edits plus the guard rewrite, and fails loudly
+  at creation. Option 2, widening to any dated document, is zero doc edits
+  but immediately sweeps roughly a dozen dated LIVING briefs into the
+  allowlist and still misses undated records. Option 1 costs more once and
+  guesses never; the reviewer's stated preference. Choosing is not this
+  side's call.
+
 ### Briefs already written
 
 | Item | Brief | Gate |
@@ -219,6 +249,16 @@ was pruned and why.
 
 ## Not software
 
+0. **Branch protection with required status checks, today.** PR #60 reached
+   mergeable with no CI run; the Actions API shows ZERO runs in any state
+   for its branch, so this was not an unapproved run waiting behind a
+   banner, it was genuinely no run created. Until required checks exist,
+   every guard is bypassable by a PR that never triggers CI. Repository
+   setting, five minutes. While in the dashboard: check whether the
+   dormant well-kept-web Vercel project carries environment variables,
+   specifically a production DATABASE_URL; it auto-builds every pushed
+   branch, and the answer decides G-35 (and, if uncomfortable, opens the
+   security review).
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111
