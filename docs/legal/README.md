@@ -114,6 +114,14 @@ Four documents, one per audience and direction:
   blanked and the record skeleton kept (the visit-report posture). Also
   STAFF data (decided_by, resolved_by); joins the G-13 founder line
   candidates.
+- **Paused decisions** (added 2026-07-28, W-7); research a staff member
+  did toward a household decision and then paused: what is being decided,
+  what was learned, a revisit plan (a date or a stated condition), and
+  how it was ultimately resolved (done, no longer needed, or superseded,
+  by whom and when). Internal (s2); never shown to the client; deleted
+  with the household on erasure. Recorded by a named staff member, also
+  STAFF data (paused_by, resolved_by); joins the G-13 founder line
+  candidates.
 - **Account & activity**, email, role, and an append-only audit log of who
   accessed or changed what.
 

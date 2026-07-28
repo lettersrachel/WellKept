@@ -148,6 +148,12 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("noticed", "resolvedBy") || has("noticed", "resolved_by")) {
       throw new Error(`SEVERE: an unprojected deferral row (staff attribution) reached a client payload at ${path}`);
     }
+    // AD (W-7): a paused decision is INTERNAL, with no client projection
+    // at all, so the whole row is the violation, not just attribution.
+    if (has("decision", "pausedBy") || has("decision", "paused_by")
+      || has("decision", "research")) {
+      throw new Error(`SEVERE: a paused_decision row reached a client payload at ${path}`);
+    }
     for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
       assertNoAnticipationRows(v, `${path}.${k}`);
     }

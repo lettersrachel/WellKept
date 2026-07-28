@@ -23,7 +23,8 @@ verified three times; W-5 condition flags live). Ten CI guards. Gap
 register at G-49. G-13 founder-approved, awaiting counsel review and the
 hire's acknowledgment. Migrations 0030 (deferral), 0031 (lifecycle) and
 0032 (visit_command_id) are merged but not yet deployed: the next deploy
-carries them and the three-way count will read 33. A queued follow-up
+carries them, with 0033 (paused_decision), and the three-way count will
+read 34. A queued follow-up
 migration (its own session, one line, reviewed): DROP the legacy
 `deferral.visit_id` column, which references the never-written `visit`
 table and can never be filled (the W-11 always-null-column class).
@@ -210,10 +211,10 @@ surface).
    client's view (acted on, promoted, expired) is undecided and shares
    shape with W-7.
 
-### W-7: unblocked, pairs naturally with W-6's lifecycle report
+### W-7: CLOSED 2026-07-28 (0033, session AD of the W-6 follow-on)
 
 Paused decisions, same revisit mechanism, separate migration per the
-brief. Not yet sent as a session.
+brief. See the AD entry in the W-6 follow-on section below.
 - **Anticipation E is also movable now** per the same brief: build the
   external_signal mechanism on weather first (NWS alerts API is live,
   free, keyed by zone, needs no household); school calendars become
@@ -453,6 +454,24 @@ was pruned and why.
   session; 0032 is a pure ADD because one migration per session.**
   Existing null-visit_command rows (fixture-only scale) keep their
   decided_at association; no backfill.
+- **AD, W-7 paused decisions: CLOSED 2026-07-28 (0033).** Research done
+  and then paused, logged with its own revisit trigger so it is not
+  lost to time. INTERNAL: no client projection exists at all, and the
+  payload guard's paused_decision signature treats any recognizable row
+  as a violation (proven red both pairs, green on an innocent key).
+  Same structural CHECK as the flag and the deferral (no revisit
+  trigger, no record) and lifecycle-shaped from birth, reusing the
+  deferral resolution vocabulary; both CHECKs proven red and green in
+  SQL. The report-2 decision, implemented as answered: NO
+  auto-promotion. An arrived timing marks the visit-page card and the
+  briefing (`overduePausedDecisions`); a person resolves it. Erasure is
+  DELETE (the condition_flag class: internal staff research, no
+  business-record claim), guard proven red by the blanking method.
+  Legal in the same PR: README category, CHILD_DATA row, both privacy
+  copies (Practical data row). Staff-disclosure allowlist entry with
+  the written reason; the guard DETECTED the new surface on its own
+  (paused_by/resolved_by) and was proven red without the entry, green
+  with it. Separate migration from AB, per the brief.
 
 ### Briefs already written
 
