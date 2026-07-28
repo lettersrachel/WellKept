@@ -16,9 +16,9 @@ const REFUSALS: Record<RefusalReason, string> = {
   "bad-input":
     "That form arrived incomplete or invalid, so nothing was changed. Check the fields and try again.",
   forbidden:
-    "Your role on this household does not permit that action, so nothing was changed. Roles are per household — you may hold a different one here than elsewhere.",
+    "Your role on this household does not permit that action, so nothing was changed. Roles are per household; you may hold a different one here than elsewhere.",
   "not-pending":
-    "That item was already handled — someone else reviewed it, or the page you clicked from was out of date. Nothing was changed.",
+    "That item was already handled; someone else reviewed it, or the page you clicked from was out of date. Nothing was changed.",
   missing:
     "The record behind that action no longer exists, so nothing was changed. Reload the page to see the current state.",
   "gate-unmet":

@@ -63,7 +63,7 @@ export default async function FleetBoard() {
     <>
       <div className="card">
         <div className="row">
-          <h2 style={{ border: "none", margin: 0, padding: 0 }}>Fleet — {rows.length} household(s)</h2>
+          <h2 style={{ border: "none", margin: 0, padding: 0 }}>Fleet; {rows.length} household(s)</h2>
           <Link className="pill" href="/oversight/economics">Economics</Link>
           <Link className="pill" href="/oversight/triggers">Triggers</Link>
           <Link className="pill" href="/standards">Standards library</Link>
@@ -116,7 +116,7 @@ export default async function FleetBoard() {
           <div style={{ marginTop: 10, opacity: 0.65 }}>
             {fixtures.map((r) => (
               <div key={r.hh.id} className="prov">
-                <span className="tag s2">FIXTURE — not a client</span>{" "}
+                <span className="tag s2">FIXTURE; not a client</span>{" "}
                 <Link href={`/oversight/${r.hh.id}`} style={{ color: "var(--grey)" }}>{r.hh.name}</Link>
                 {" · "}deploy-checklist target; excluded from counts, economics, and the digest
                 {r.openIncidents > 0 && ` · ${r.openIncidents} open (checklist 13b resolves it)`}
@@ -125,7 +125,7 @@ export default async function FleetBoard() {
           </div>
         )}
         <div className="note" style={{ marginTop: 8 }}>
-          Rows are the households you hold an explicit assignment for — there is no
+          Rows are the households you hold an explicit assignment for; there is no
           fleet-wide wildcard (REQ-001).
         </div>
       </div>

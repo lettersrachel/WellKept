@@ -29,12 +29,14 @@ cd "$(dirname "$0")/.."
 if [[ "${1:-}" == "--selftest" ]]; then
   # Prove the refusals, red before green (guard-must-fire).
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/3: wrong sha refused"
-  WK_DEPLOY_TEST_DB_COUNT=999 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/3: migration-count mismatch refused"
-  WK_DEPLOY_TEST_PROJECT=stray bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/3: unexpected project refused"
-  echo "selftest PASSED: all three refusals fire"
+  echo "selftest 1/4: wrong sha refused"
+  WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
+  echo "selftest 2/4: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
+  echo "selftest 3/4: unexpected project refused"
+  WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
+  echo "selftest 4/4: absent/wrong project link refused BEFORE deploy"
+  echo "selftest PASSED: all four refusals fire"
   exit 0
 fi
 
@@ -48,16 +50,20 @@ HEAD_SHA=$(git rev-parse HEAD)
 [[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is not set (never echo it; set it inline)"
 
 # 3. Migrate (before the web deploy, always).
-pnpm --filter @wellkept/schema db:migrate
+if [[ -z "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" ]]; then
+  pnpm --filter @wellkept/schema db:migrate
+fi
 
 # 4. Migration count agrees three ways: disk, journal, database.
 DISK=$(ls packages/schema/drizzle/*.sql | wc -l | tr -d ' ')
 JOURNAL=$(node -e "console.log(require('./packages/schema/drizzle/meta/_journal.json').entries.length)")
+if [[ "${WK_DEPLOY_TEST_DB_COUNT:-}" == "SKIP" ]]; then DB=$DISK; else
 DB=${WK_DEPLOY_TEST_DB_COUNT:-$(node -e '
 const pg=require("./apps/web/node_modules/pg");
 const c=new pg.Client({connectionString:process.env.DATABASE_URL});
 c.connect().then(async()=>{const r=await c.query("SELECT count(*)::int n FROM drizzle.__drizzle_migrations");console.log(r.rows[0].n);await c.end();}).catch(e=>{console.error(e.message);process.exit(1);});
 ')}
+fi
 [[ "$DISK" == "$JOURNAL" && "$JOURNAL" == "$DB" ]] || fail "migration counts disagree: disk=$DISK journal=$JOURNAL database=$DB"
 echo "migrations agree three ways: $DISK"
 
@@ -65,6 +71,13 @@ echo "migrations agree three ways: $DISK"
 if [[ -n "${WK_DEPLOY_TEST_PROJECT:-}" ]]; then
   PROJECT="$WK_DEPLOY_TEST_PROJECT"
 else
+  # G1 (round five): refuse BEFORE deploying - the failure mode is --yes
+  # with an absent or wrong link file CREATING a project, so the check
+  # after the deploy catches the stray only after it exists. Before is
+  # the guard; the post-hoc read below is proof the guard worked.
+  if [[ "${WK_DEPLOY_TEST_LINK:-}" == "absent" ]]; then LINKED=""; else
+  LINKED=$(node -e "console.log(require('./.vercel/project.json').projectName ?? '')" 2>/dev/null || echo ""); fi
+  [[ "$LINKED" == "$EXPECTED_PROJECT" ]] || fail "repo root is linked to '${LINKED:-nothing}', expected '$EXPECTED_PROJECT'. Refusing before a deploy can create a stray project. Run npx vercel link."
   npx vercel --prod --yes
   # 6. The deployment must have landed on the expected project, by name,
   # not merely succeeded (the stray-project failure a script would

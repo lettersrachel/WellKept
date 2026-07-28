@@ -135,7 +135,7 @@ export default async function EconomicsPage() {
                 <td>
                   {r.daysSinceVisit === null ? "no applied visits in 30d"
                     : r.daysSinceVisit <= 9 ? `last visit ${r.daysSinceVisit}d ago (on rhythm)`
-                    : `last visit ${r.daysSinceVisit}d ago — off the weekly rhythm`}
+                    : `last visit ${r.daysSinceVisit}d ago; off the weekly rhythm`}
                 </td>
               </tr>
               <tr>

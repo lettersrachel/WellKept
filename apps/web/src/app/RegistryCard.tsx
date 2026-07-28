@@ -94,7 +94,7 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
                   {trend.length > 0 && (
                     <div className="fval sans" style={{ fontSize: 12, opacity: 0.85 }}>
                       {trend.join(" · ")}
-                      {/* W-1: the latest look is correctable — supersede, never
+                      {/* W-1: the latest look is correctable; supersede, never
                           delete. Only the newest row gets the control; older
                           rows are history the next look already answered. */}
                       {supersede && householdId && (["condition", "fill_level"] as const).map((m) => {
@@ -120,7 +120,7 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
                       {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
                       <select key={`om-${e.id}-${(series?.get(`${e.id}:condition`)?.length ?? 0) + (series?.get(`${e.id}:fill_level`)?.length ?? 0)}`} name="measure" defaultValue="condition" className="inline" aria-label="Measure">
                         {/* W-4: the direction is printed at the point of entry
-                            (founder decision 2026-07-28) — two HMs reading
+                            (founder decision 2026-07-28); two HMs reading
                             "3 of 5" oppositely is the calibration failure the
                             Stranger Test exists to surface. */}
                         <option value="condition">condition 1-5 (5 = like new, 1 = failing)</option>

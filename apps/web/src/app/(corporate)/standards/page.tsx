@@ -58,13 +58,13 @@ export default async function StandardsLibrary({
       <div className="card">
         <div className="row" style={{ alignItems: "center", gap: 10 }}>
           <h2 style={{ border: "none", margin: 0, padding: 0, flex: 1 }}>
-            Standards library — {all.length} provisions, {new Set(all.map((p) => p.document)).size} documents
+            Standards library; {all.length} provisions, {new Set(all.map((p) => p.document)).size} documents
           </h2>
           <Link className="pill" href="/oversight">Fleet board</Link>
         </div>
         {!reviewed && (
           <div className="note" style={{ color: "var(--brick)", marginTop: 6 }}>
-            Tier assignments pending founder review (standards.seed_reviewed is off) — the
+            Tier assignments pending founder review (standards.seed_reviewed is off); the
             briefing read path renders nothing until the corrected seed loads.
           </div>
         )}
@@ -98,7 +98,7 @@ export default async function StandardsLibrary({
         <div className="card" key={doc}>
           <details className="section" open={filtering}>
             <summary>
-              {doc} · {titles.get(doc) ?? "—"} <span className="pill">{provisions.length}</span>
+              {doc} · {titles.get(doc) ?? "–"} <span className="pill">{provisions.length}</span>
             </summary>
             {provisions.map((p) => (
               <div key={p.id} className={`provision ${p.overridable ? "quiet" : "floor"}`}>

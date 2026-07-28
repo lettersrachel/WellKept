@@ -217,7 +217,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
         <div className="sans" style={{ fontSize: 12, marginTop: 8, color: online ? "var(--sage)" : "var(--gold-bright)" }} role="status">
           {online
             ? "Online"
-            : "Offline — your work is saved on this device and will sync automatically once you're back online."}
+            : "Offline; your work is saved on this device and will sync automatically once you're back online."}
         </div>
       </div>
 
@@ -363,13 +363,13 @@ export function VisitWizard({ householdId }: { householdId: string }) {
       <div className="card">
         <h2>Sync status</h2>
         <div className="fval">
-          {queueStatus.pending} command(s) queued{online ? "" : " — will send once back online"}.
+          {queueStatus.pending} command(s) queued{online ? "" : "; will send once back online"}.
         </div>
         <p><button className="act subtle" type="button" onClick={() => void (async () => { await retryPhotoUploads(); await attemptSync(); })()}>Sync now</button></p>
         {queueStatus.conflicts.length > 0 && (
           <div className="banner" role="alert">
             {queueStatus.conflicts.map((c) => (
-              <div key={c.mutationId}>{c.reason} — reported to corporate; your work is not lost.</div>
+              <div key={c.mutationId}>{c.reason}; reported to corporate; your work is not lost.</div>
             ))}
           </div>
         )}

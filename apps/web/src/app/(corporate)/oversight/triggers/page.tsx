@@ -8,6 +8,7 @@ import { getAssignedHouseholds } from "@/lib/data";
 import { getPrincipal } from "@/lib/session";
 import { setTriggerRuleEnabled, createTriggerRule } from "@/lib/actions";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { collapseItemText } from "@wellkept/trigger-engine";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
@@ -30,6 +31,11 @@ interface RuleHealth {
 // Sweep families share this synthetic-rule-id prefix (registry-sweep.ts
 // SWEEP_RULE_IDS); only they derive recurring occurrences per object.
 const SWEEP_RULE_PREFIX = "01980000-0000-7000-8000-000000000d";
+// F2 (round five): multi-window families key per (object x window), so
+// their count is a SERIES count, not an object count - the label admits
+// it until the real object key exists (queue: gated on the first
+// calibration read against real household data, with the fired dedup).
+const MULTI_WINDOW_RULE_IDS = new Set(["01980000-0000-7000-8000-000000000d01", "01980000-0000-7000-8000-000000000d02"]);
 
 /**
  * A2/REQ-055 rule health, trailing 90 days. fired_count reads the PROMPT
@@ -66,7 +72,7 @@ async function ruleHealthByRule(now: Date) {
     // The object identity: a sweep item's text is its template with the
     // label fixed and only the occurrence date varying, so stripping the
     // parenthesized/on-date part collapses cycles of the same object.
-    h.firedObjects.add(f.itemText.replace(/\s*\(([^)]*)\)|\son\s.+$/g, "").trim());
+    h.firedObjects.add(collapseItemText(f.itemText));
   }
   for (const a of answers) {
     const h = get(a.ruleId);
@@ -149,7 +155,7 @@ export default async function TriggersPage({ searchParams }: {
       <div className="card">
         <div className="row" style={{ alignItems: "center", gap: 10 }}>
           <h2 style={{ border: "none", margin: 0, padding: 0, flex: 1 }}>
-            Trigger library — {rules.length} rule(s), {rules.filter((r) => r.enabled).length} enabled
+            Trigger library; {rules.length} rule(s), {rules.filter((r) => r.enabled).length} enabled
           </h2>
           <Link className="pill" href="/oversight">Fleet board</Link>
         </div>
@@ -230,21 +236,21 @@ export default async function TriggersPage({ searchParams }: {
         );
       })}
 
-      {/* Session B: the Misses panel — incidents the resolver marked
+      {/* Session B: the Misses panel; incidents the resolver marked
           no_prompt_existed. The only false-negative stream the business
           gets; this list IS the rule library's backlog. Never inferred. */}
       <div className="card">
-        <h2>Misses — incidents no prompt existed for</h2>
+        <h2>Misses; incidents no prompt existed for</h2>
         <div className="prov">
           back-link answered on {answeredCount} of {resolvedIncidents.length} resolved incident(s)
           {resolvedIncidents.length > 0 && ` (${Math.round((answeredCount / resolvedIncidents.length) * 100)}%)`}
-          {" — "}the question is skippable; this number says whether the mechanism is
+          {"; "}the question is skippable; this number says whether the mechanism is
           being used before you rely on what it produces
         </div>
         {misses.length === 0 ? (
           <div className="note">
             None recorded. Rows appear when an incident is resolved with
-            &ldquo;no prompt existed&rdquo; — the question is asked (and skippable)
+            &ldquo;no prompt existed&rdquo;; the question is asked (and skippable)
             on the incident resolution form.
           </div>
         ) : (

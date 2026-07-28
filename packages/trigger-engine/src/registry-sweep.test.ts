@@ -145,3 +145,19 @@ test("typed inputs alone never fire for kinds that do not imply dates", () => {
   );
   assert.equal(drafts.length, 0);
 });
+
+// --- F1 (round five): date position in templates is load-bearing; enforce it ---
+import { WINDOWS, collapseItemText } from "./registry-sweep";
+
+test("every sweep template collapses to a stable key across different dates (W-9 depends on it)", () => {
+  const broken: string[] = [];
+  for (const [family, spec] of Object.entries(WINDOWS)) {
+    spec.windows.forEach((w, i) => {
+      const a = collapseItemText(w.text("Sample object", "July 25"));
+      const b = collapseItemText(w.text("Sample object", "March 3"));
+      if (a !== b) broken.push(`${family}[${i}]: "${a}" vs "${b}"`);
+    });
+  }
+  assert.deepEqual(broken, [],
+    `template(s) whose date survives the W-9 collapse (put the date in parentheses or after " on "): ${broken.join("; ")}`);
+});

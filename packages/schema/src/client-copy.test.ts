@@ -57,6 +57,18 @@ const COPY_SOURCES = [
 // clients; they carry the same voice rule as the app.
 const DOC_DIRS = ["../../../docs/legal"];
 
+// J1 (round five): packName reached House Managers and no guard saw it.
+// Staff surfaces are rendered strings too - pack names, labels, buttons,
+// empty states, error text leak internal vocabulary and machine voice
+// the same way prose does. Same em-dash floor, comments stripped.
+const STAFF_ROOTS = ["(hm)", "(corporate)"];
+const STAFF_EXTRA_FILES = [
+  "../../../apps/web/src/app/RegistryCard.tsx",
+  "../../../apps/web/src/app/ProvisionList.tsx",
+  "../../../apps/web/src/components/RefusalBanner.tsx",
+  "../../../apps/web/src/components/SkewWatch.tsx",
+];
+
 // Item 7 (founder 2026-07-28): the two dated verification records are
 // historical artifacts; they were punctuation-swept with an inline
 // annotation, and any FUTURE em dash in them is exempt only with the
@@ -138,4 +150,23 @@ test("legal documents contain no em dashes", () => {
   }
   assert.deepEqual(offenders, [],
     `em dash in a legal document (W-13; every document carries the rule): ${offenders.join(", ")}`);
+});
+
+test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {
+  const offenders: string[] = [];
+  for (const root of STAFF_ROOTS) {
+    for (const file of tsxFiles(path.join(webApp, root))) {
+      stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
+        if (line.includes("—")) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
+      });
+    }
+  }
+  for (const rel of STAFF_EXTRA_FILES) {
+    const file = path.join(here, rel);
+    stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
+      if (line.includes("—")) offenders.push(`${path.basename(file)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    `em dash on a staff surface (J1; a House Manager is a user): ${offenders.join(", ")}`);
 });

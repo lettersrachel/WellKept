@@ -38,10 +38,10 @@ function OutcomeChoice({ promptId, outcome, label, wasNews, dismissReason }: {
 
 /** Session A: render an answer with its second dimension, if recorded. */
 function outcomeLabel(o: { outcome: string; wasNews: boolean | null; dismissReason: string | null }): string {
-  if (o.outcome === "acted" && o.wasNews === true) return "acted — good catch";
-  if (o.outcome === "acted" && o.wasNews === false) return "acted — already on it";
-  if (o.outcome === "dismissed" && o.dismissReason === "wrong") return "dismissed — wrong for this home";
-  if (o.outcome === "dismissed" && o.dismissReason === "bad_timing") return "dismissed — bad timing";
+  if (o.outcome === "acted" && o.wasNews === true) return "acted; good catch";
+  if (o.outcome === "acted" && o.wasNews === false) return "acted; already on it";
+  if (o.outcome === "dismissed" && o.dismissReason === "wrong") return "dismissed; wrong for this home";
+  if (o.outcome === "dismissed" && o.dismissReason === "bad_timing") return "dismissed; bad timing";
   return o.outcome.replace(/_/g, " ");
 }
 
@@ -113,7 +113,7 @@ export default async function VisitPage({ searchParams }: {
         <div className="sans" style={{ fontSize: 12, color: "var(--sage)", marginTop: 2 }}>
           {hh.tier}
           {lifeEvent && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | LIFE-EVENT set by corporate</span>}
-          {stranger && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | STRANGER MODE — first-visit runbook</span>}
+          {stranger && <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}> | STRANGER MODE; first-visit runbook</span>}
         </div>
         <div style={{ marginTop: 8 }}>
           <Link className="pill" href="/intake" style={{ background: "var(--sage)", color: "var(--green)" }}>Intake mode</Link>
@@ -217,7 +217,7 @@ export default async function VisitPage({ searchParams }: {
         ))
       )}
 
-      <div className="eyebrow">Coming up — the anticipation engine</div>
+      <div className="eyebrow">Coming up; the anticipation engine</div>
       {lifeEvent ? (
         <div className="card" style={{ border: "1px dashed var(--grey)", background: "var(--cream)" }}>
           <div className="note">Held. LIFE-EVENT pauses every prompt; nothing is deleted.</div>
@@ -235,11 +235,11 @@ export default async function VisitPage({ searchParams }: {
         ))
       )}
 
-      <div className="eyebrow">Last year at this time — repeat-season memory</div>
+      <div className="eyebrow">Last year at this time; repeat-season memory</div>
       {recall.length === 0 ? (
         <div className="note">
           Builds from this household&apos;s own record: recall lines appear once there is a
-          year of history behind them. Not a defect — the memory is accruing now.
+          year of history behind them. Not a defect; the memory is accruing now.
         </div>
       ) : (
         <div className="card">
@@ -299,8 +299,8 @@ export default async function VisitPage({ searchParams }: {
               <label>Friction noticed (one per line; blank only if it truly ran clean)</label>
               <textarea name="frictionNotes" aria-label="Friction noticed" rows={3} placeholder="e.g. Could not find the mudroom bin key from the record alone" />
               <div className="row" style={{ marginTop: 8 }}>
-                <button className="act" name="passed" value="yes">Ran clean — PASS</button>
-                <button className="act danger" name="passed" value="no">Friction found — log it</button>
+                <button className="act" name="passed" value="yes">Ran clean; PASS</button>
+                <button className="act danger" name="passed" value="no">Friction found; log it</button>
               </div>
             </form>
           </div>
@@ -309,10 +309,10 @@ export default async function VisitPage({ searchParams }: {
 
       {/* Capture sessions 1+2: after-the-fact time and cost entry (founder
           decisions 2026-07-27). The visit close already produces the
-          delivery entry automatically — these forms cover everything else:
+          delivery entry automatically; these forms cover everything else:
           travel, intake, admin, training, and the costs. Hours in, never
           pay out (ADR-004). */}
-      <div className="eyebrow">Time &amp; costs — after the fact</div>
+      <div className="eyebrow">Time &amp; costs; after the fact</div>
       <div className="note">
         Your visit&apos;s delivery hours record themselves when you close. Log travel and
         anything else here; costs go to the household&apos;s record (QuickBooks stays the
@@ -356,7 +356,7 @@ export default async function VisitPage({ searchParams }: {
         </span>
         <span>
           <label htmlFor="ce-miles">Miles (mileage only)</label>
-          <input id="ce-miles" name="miles" inputMode="numeric" placeholder="—" style={{ marginTop: 0, width: 80 }} />
+          <input id="ce-miles" name="miles" inputMode="numeric" placeholder="–" style={{ marginTop: 0, width: 80 }} />
         </span>
         <span style={{ flex: 1, minWidth: 140 }}>
           <label htmlFor="ce-note">Note</label>
