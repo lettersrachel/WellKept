@@ -107,8 +107,9 @@ export async function getOpenConditionFlags(householdId: string) {
     return {
       ...f,
       looks: series.map((l) => ({ value: l.value, observedAt: l.observedAt })),
-      ratePer30Days: conditionRatePer30Days(series),
-      promotionCandidate: isPromotionCandidate(series, knob),
+      // Session Y: the rate window opens when the flag was raised.
+      ratePer30Days: conditionRatePer30Days(series, f.raisedAt),
+      promotionCandidate: isPromotionCandidate(series, knob, f.raisedAt),
     };
   });
   return out.sort((a, b) => Number(b.promotionCandidate) - Number(a.promotionCandidate));

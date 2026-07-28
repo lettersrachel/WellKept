@@ -191,7 +191,10 @@ export default async function VisitPage({ searchParams }: {
               <input type="hidden" name="householdId" value={hh.id} />
               <input type="hidden" name="flagId" value={f.id} />
               <input type="hidden" name="returnTo" value="/visit" />
-              <input name="value" aria-label="Condition 1-5" placeholder="condition 1-5" inputMode="numeric" style={{ width: 110, marginTop: 0 }} />
+              {/* W-4 carried (session Y): the direction is printed at the
+                  point of entry, same as the registry form; two HMs reading
+                  "3 of 5" oppositely is the calibration failure. */}
+              <input name="value" aria-label="Condition 1-5 (5 = like new, 1 = failing)" placeholder="condition 1-5 (5 = like new, 1 = failing)" inputMode="numeric" style={{ width: 250, marginTop: 0 }} />
               <input name="note" aria-label="Look note (internal)" placeholder="note (optional)" style={{ flex: 1, marginTop: 0 }} />
               <button className="act">Log look</button>
             </form>

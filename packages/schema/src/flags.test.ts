@@ -36,6 +36,23 @@ test("RED: below the threshold, below the minimum count, or improving never prom
   assert.ok(!isPromotionCandidate([look(2, 1), look(3, 8), look(5, 16)], knob));
 });
 
+test("Y: pre-flag history never makes a fresh flag promotion-eligible", () => {
+  const knob = { minObservations: 3, rateThreshold: 2 };
+  const raisedAt = day(20);
+  // A well-documented object: a long, steeply declining PRE-flag series,
+  // then the flag, then one look of the flag's own. STD-016 says faster
+  // than ITS FLAG assumed; the flag sets the baseline.
+  const preFlagCliff = [look(5, 1), look(4, 5), look(3, 10), look(2, 15)];
+  assert.ok(!isPromotionCandidate([...preFlagCliff, look(2, 21)], knob, raisedAt),
+    "pre-flag observations satisfied minObservations; the flag inherited a baseline");
+  // Once the flag accumulates minObservations of its own, its own rate governs.
+  const ownLooks = [look(4, 21), look(3, 24), look(2, 27)];
+  assert.ok(isPromotionCandidate([...preFlagCliff, ...ownLooks], knob, raisedAt));
+  // And the rate itself ignores the pre-flag cliff: 4 -> 2 over 6 days of
+  // the flag's own looks, not 5 -> 2 over 26 days of history.
+  assert.equal(conditionRatePer30Days([...preFlagCliff, ...ownLooks], raisedAt), 10);
+});
+
 test("POSTURE: nothing promotes while rateThreshold is null, the shipped default", () => {
   assert.equal(DEFAULT_FLAG_PROMOTION.rateThreshold, null);
   // The steepest possible decline, well past every count: still not a candidate.
