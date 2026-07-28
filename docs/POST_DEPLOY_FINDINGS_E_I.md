@@ -1,4 +1,7 @@
 # Post-deploy round two: sessions E and I findings
+> Dated verification record. Historical evidence, not living copy: findings
+> are as of the stated date. Excluded from style sweeps (the W-13 em-dash
+> rule applies to living documents, not this record). Do not edit for style.
 
 Run 2026-07-27 against main `d0fa350`, read-only, per
 [POST_DEPLOY_SESSIONS_2.md](POST_DEPLOY_SESSIONS_2.md). Evidence per claim;
