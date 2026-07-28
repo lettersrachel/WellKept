@@ -142,9 +142,10 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       throw new Error(`SEVERE: a condition_flag row reached a client payload at ${path}`);
     }
     // W-6: a deferral's CONTENT is client-facing by design, but its staff
-    // attribution is not. A payload carrying noticed + decidedBy is an
-    // unprojected row, not the client shape.
-    if (has("noticed", "decidedBy") || has("noticed", "decided_by")) {
+    // attribution is not. A payload carrying noticed + decidedBy (or, AB,
+    // noticed + resolvedBy) is an unprojected row, not the client shape.
+    if (has("noticed", "decidedBy") || has("noticed", "decided_by")
+      || has("noticed", "resolvedBy") || has("noticed", "resolved_by")) {
       throw new Error(`SEVERE: an unprojected deferral row (staff attribution) reached a client payload at ${path}`);
     }
     for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {

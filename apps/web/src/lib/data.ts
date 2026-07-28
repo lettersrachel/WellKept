@@ -133,6 +133,8 @@ export async function getClientDeferrals(householdId: string, limit = 12) {
     id: deferral.id, noticed: deferral.noticed, reason: deferral.reason,
     revisitDate: deferral.revisitDate, revisitCondition: deferral.revisitCondition,
     decidedAt: deferral.decidedAt,
+    // AB: resolution and when, never who (attribution stays staff-side).
+    resolution: deferral.resolution, resolvedAt: deferral.resolvedAt,
   }).from(deferral)
     .where(eq(deferral.householdId, householdId))
     .orderBy(desc(deferral.decidedAt))

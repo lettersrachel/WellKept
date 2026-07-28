@@ -1176,6 +1176,36 @@ export async function createDeferral(formData: FormData) {
 }
 
 /**
+ * AB (W-6 follow-on): a deferral resolves - done, no longer needed, or
+ * superseded - by whom and when, never by deletion. The resolved story
+ * stays on the client's card ("noticed in March, fixed in May"), which
+ * is the attention the feature exists to demonstrate. The
+ * resolution_is_whole CHECK backs this at the database.
+ */
+export async function resolveDeferral(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  const deferralId = String(formData.get("deferralId") ?? "");
+  const resolution = String(formData.get("resolution") ?? "");
+  const RESOLUTIONS = ["done", "no_longer_needed", "superseded"] as const;
+  if (!householdId || !/^[0-9a-f-]{36}$/i.test(deferralId)) refuseTo(returnTo, "bad-input");
+  if (!(RESOLUTIONS as readonly string[]).includes(resolution)) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { deferral } = await import("@wellkept/schema");
+  const { isNull } = await import("drizzle-orm");
+  const [row] = await db.select({ id: deferral.id, noticed: deferral.noticed }).from(deferral)
+    .where(and(eq(deferral.id, deferralId), eq(deferral.householdId, householdId), isNull(deferral.resolvedAt)))
+    .limit(1);
+  if (!row) refuseTo(returnTo, "missing"); // absent, foreign, or already resolved
+  await db.update(deferral)
+    .set({ resolution: resolution as (typeof RESOLUTIONS)[number], resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date() })
+    .where(eq(deferral.id, deferralId));
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `deferral resolved (${resolution.replace(/_/g, " ")}): ${row.noticed}`);
+}
+
+/**
  * W-5: resolution is a state change with a reason and who closed it,
  * never a delete. The close_is_reasoned CHECK backs this at the database.
  */

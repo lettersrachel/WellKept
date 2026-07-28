@@ -194,10 +194,19 @@ export default async function ClientPlaybook({
           staff attribution, and the payload guard re-asserts that here. */}
       {await (async () => {
         const deferrals = await getClientDeferrals(hh.id);
-        assertNoAnticipationRows(deferrals); // the client shape carries no decidedBy
+        assertNoAnticipationRows(deferrals); // no decidedBy, no resolvedBy
         if (deferrals.length === 0) return null;
         const fmtDay = (d: Date) =>
           d.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
+        const open = deferrals.filter((d) => !d.resolvedAt);
+        const done = deferrals.filter((d) => d.resolvedAt);
+        // AB: the resolved story stays visible. "Noticed in March, fixed
+        // in May" is the attention a clean bathroom cannot demonstrate.
+        const RESOLUTION_COPY: Record<string, string> = {
+          done: "taken care of",
+          no_longer_needed: "no longer needed",
+          superseded: "folded into other work",
+        };
         return (
           <div className="card">
             <h2>Noticed, and planned for later</h2>
@@ -205,7 +214,7 @@ export default async function ClientPlaybook({
               Small things we saw and chose not to act on yet, so you know they
               are being watched rather than missed.
             </p>
-            {deferrals.map((d) => (
+            {open.map((d) => (
               <div key={d.id} className="field">
                 <span className="fname">{d.noticed}</span>
                 <div className="fval" style={{ fontSize: 14 }}>{d.reason}</div>
@@ -215,6 +224,21 @@ export default async function ClientPlaybook({
                 </div>
               </div>
             ))}
+            {open.length === 0 && <div className="note">Nothing waiting at the moment.</div>}
+            {done.length > 0 && (
+              <>
+                <div className="eyebrow" style={{ marginTop: 10 }}>Since taken care of</div>
+                {done.map((d) => (
+                  <div key={d.id} className="field" style={{ opacity: 0.85 }}>
+                    <span className="fname">{d.noticed}</span>
+                    <div className="prov">
+                      noticed {fmtDay(d.decidedAt)} ·{" "}
+                      {RESOLUTION_COPY[d.resolution ?? "done"]} {d.resolvedAt ? fmtDay(d.resolvedAt) : ""}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         );
       })()}

@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries } from "@/lib/data";
+import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, createDeferral } from "@/lib/actions";
+import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, createDeferral, resolveDeferral } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
@@ -74,6 +74,13 @@ export default async function VisitPage({ searchParams }: {
     getOpenConditionFlags(hh.id),
     getRegistries(hh.id, "house_manager"),
   ]);
+  const deferrals = await getDeferrals(hh.id);
+  const today = new Date().toISOString().slice(0, 10);
+  // AB/AD: an overdue deferral (date-based timing passed, unresolved) is
+  // SHOWN to the House Manager, who decides what it means. Nothing
+  // promotes or fires automatically; the system shows what it noticed.
+  const openDeferrals = deferrals.filter((d) => !d.resolvedAt);
+  const overdueDeferrals = openDeferrals.filter((d) => d.revisitDate && d.revisitDate < today);
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
   });
@@ -208,6 +215,34 @@ export default async function VisitPage({ searchParams }: {
           </div>
         ))
       )}
+      {overdueDeferrals.length > 0 && (
+        <div className="card" style={{ borderColor: "var(--gold-bright)" }}>
+          <h2>Past their planned timing</h2>
+          <p className="note" style={{ marginTop: 0 }}>
+            These were deferred with a date that has passed and no resolution.
+            You decide what each one means; nothing happens automatically.
+          </p>
+          {overdueDeferrals.map((d) => (
+            <div key={d.id} className="field">
+              <span className="fname">{d.noticed}</span>
+              <div className="fval sans" style={{ fontSize: 13 }}>{d.reason}</div>
+              <div className="prov">planned for {d.revisitDate}</div>
+              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                {(["done", "no_longer_needed", "superseded"] as const).map((r) => (
+                  <form key={r} action={resolveDeferral} style={{ display: "inline" }}>
+                    <input type="hidden" name="householdId" value={hh.id} />
+                    <input type="hidden" name="deferralId" value={d.id} />
+                    <input type="hidden" name="resolution" value={r} />
+                    <input type="hidden" name="returnTo" value="/visit" />
+                    <button className="act subtle">{r.replace(/_/g, " ")}</button>
+                  </form>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="card">
         {/* W-6: a deferral is a decision, not an observation, and the
             client reads the reason. The label wording below is REPORTED

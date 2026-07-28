@@ -218,6 +218,13 @@
       "when": 1785253539868,
       "tag": "0030_deferral",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1785254933041,
+      "tag": "0031_deferral_lifecycle",
+      "breakpoints": true
     }
   ]
 }

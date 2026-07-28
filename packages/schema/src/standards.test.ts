@@ -177,4 +177,11 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /unprojected deferral/,
   );
   assert.ok(assertNoAnticipationRows([{ noticed: "hairline crack", reason: "stable and cosmetic", revisitDate: "2026-10-01" }]));
+  // AB: resolution attribution is staff data too; the client shape carries
+  // resolution and resolvedAt, never resolvedBy.
+  assert.throws(
+    () => assertNoAnticipationRows([{ noticed: "hairline crack", resolvedBy: "u-1" }]),
+    /unprojected deferral/,
+  );
+  assert.ok(assertNoAnticipationRows([{ noticed: "hairline crack", resolution: "done", resolvedAt: "2026-07-28" }]));
 });

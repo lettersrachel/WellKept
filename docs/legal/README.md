@@ -104,13 +104,16 @@ Four documents, one per audience and direction:
   household on erasure. Recorded by a named staff member, also STAFF
   data (the G-13 disclosure's internal-observations item covers the
   category; its examples list should name flags at the next revision).
-- **Deliberate deferrals** (added 2026-07-28, W-6); what a staff member
-  noticed and chose not to act on yet, with the reason and the intended
-  timing (a date or a stated condition). CLIENT-VISIBLE by design: the
-  client sees what was noticed, the reason, and the timing, never who
-  decided. On erasure the free text is blanked and the record skeleton
-  kept (the visit-report posture). Also STAFF data (decided_by); joins
-  the G-13 founder line candidates.
+- **Deliberate deferrals** (added 2026-07-28, W-6; lifecycle added same
+  day, AB); what a staff member noticed and chose not to act on yet,
+  with the reason, the intended timing (a date or a stated condition),
+  and how it was ultimately resolved (done, no longer needed, or
+  superseded, by whom and when). CLIENT-VISIBLE by design: the client
+  sees what was noticed, the reason, the timing, and the resolution and
+  its date, never who decided or resolved. On erasure the free text is
+  blanked and the record skeleton kept (the visit-report posture). Also
+  STAFF data (decided_by, resolved_by); joins the G-13 founder line
+  candidates.
 - **Account & activity**, email, role, and an append-only audit log of who
   accessed or changed what.
 

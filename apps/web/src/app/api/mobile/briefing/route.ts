@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
-import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags } from "@/lib/data";
+import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags, getDeferrals } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
@@ -76,6 +76,13 @@ export async function GET(req: NextRequest) {
   // W-5: open condition flags, promotion candidates first (they rise;
   // they never create prompts). `flags` below remains the FIELD flags -
   // distinct entity, distinct key, per the K naming survey.
+  // AB/AD: overdue deferrals surface to the HM; the person decides.
+  const allDeferrals = await getDeferrals(hh.id);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const overdueDeferrals = allDeferrals
+    .filter((d) => !d.resolvedAt && d.revisitDate && d.revisitDate < todayIso)
+    .map((d) => ({ id: d.id, noticed: d.noticed, reason: d.reason, plannedFor: d.revisitDate }));
+
   const conditionFlags = openConditionFlags.map((f) => ({
     id: f.id, subject: f.subject, location: f.location, concern: f.concern,
     revisit: f.revisitDate ?? f.revisitCondition,
@@ -87,6 +94,7 @@ export async function GET(req: NextRequest) {
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: principal.role === "backup_hm" },
     flags,
     conditionFlags,
+    overdueDeferrals,
     changed,
     specials,
     radar,
