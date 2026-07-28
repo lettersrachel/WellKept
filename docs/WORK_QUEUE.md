@@ -16,12 +16,16 @@ in a session prompt.
 
 ## State
 
-Production serves `6fd8e3b` (2026-07-28 evening, fifth clean run through
-tooling/deploy.sh's full gate; a code-and-docs deploy, zero new
-migrations, counts 34/34/34; 0030 through 0033 went in with the earlier
-`1385a1e` deploy the same day). Ten CI guards. Gap register at G-51.
-G-13 founder-approved, awaiting counsel review and the hire's
-acknowledgment.
+Production serves `fd1083c` (2026-07-28 night, sixth clean run through
+tooling/deploy.sh's full gate; code-only, zero new migrations, counts
+34/34/34; carries the whole sync-defect fix set, sessions AF through
+AI). The `#88` tsbuildinfo chore merged just after that deploy and is
+runtime-identical; it rides the next deploy. The founder set the
+`visit_reconciliation` knob the same night (`{"gapDays":10}`), so the
+missing-visit flag is LIVE: demo households with no visits since 18-19
+July flag immediately, which is the knob working. Ten CI guards. Gap
+register at G-51. G-13 founder-approved, awaiting counsel review and
+the hire's acknowledgment.
 
 The DEPLOY.md section 4 sitting for the 0030-0033 batch ran 2026-07-28:
 standing checklist 1 through 14 all PASS, and **check 9 genuinely ran
