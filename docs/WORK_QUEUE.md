@@ -608,7 +608,17 @@ was pruned and why.
   precedence rule in getPrincipal AND per-action role selection; the
   most invasive, only worth it if the pilot shows the founder living in
   both roles weekly. No per-person analytics implications in any
-  option. A decision, not made here.
+  option. **DECIDED 2026-07-28 the same night: the founder chose option
+  2, implemented.** All four field surfaces (/visit, the visit-commands
+  sink, the discard route, the mobile briefing) admit corporate_admin;
+  corporate_ops deliberately not included; the audit row's actorRole
+  attributes an admin-covered visit honestly. The one-role index and
+  getPrincipal stay untouched. The same authorization adopted the
+  home-screen-install rule: the pilot protocol now specifies the field
+  client is opened from a home-screen install (iOS seven-day storage
+  eviction sits exactly on the weekly-visit gap; G-52's operational
+  control), with "opened it in Safari instead" defined as a
+  friction-log row.
 
 ### Briefs already written
 

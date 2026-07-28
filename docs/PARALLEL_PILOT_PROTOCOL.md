@@ -48,6 +48,20 @@ reconciliation leaves evidence (G-21): one dated sign-off row per quarter.
 |---|---|---|---|---|---|
 | | | | | | |
 
+## How the field client is opened (adopted 2026-07-28, from the G-52 review)
+
+The House Manager opens the app from a HOME-SCREEN INSTALL, never a
+browser tab. This is onboarding doctrine, not preference: iOS requires
+every browser to use WebKit, and Safari deletes a site's stored data
+(including the offline queue's IndexedDB) after seven days without a
+visit to the site. Weekly membership visits mean roughly seven-day gaps,
+so a browser tab sits exactly on the eviction boundary; a home-screen
+installed web app has its own use counter and is exempt. G-52 records a
+visit command lost from browser storage; the installed app is the
+operational control that class of loss cannot recur through eviction.
+Add the install step to the HM's first-day setup, and treat "opened it
+in Safari instead" as a friction-log row.
+
 ## Exit test for the parallel phase
 
 Promotion is proposed by ADR only when ALL of the following hold in a

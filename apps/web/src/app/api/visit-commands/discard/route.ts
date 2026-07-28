@@ -4,7 +4,8 @@ import { auditEvent } from "@wellkept/schema";
 import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
 
-const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
+// AJ decision (founder, 2026-07-28, option 2): matches the drain sink.
+const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
 
 /**
  * AF (sync-defect sessions): discarding a dead-lettered visit command is

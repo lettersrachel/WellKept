@@ -6,7 +6,9 @@ import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
 
-const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
+// AJ decision (founder, 2026-07-28, option 2): the briefing serves
+// whoever runs the visit, including the admin covering one.
+const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
 
 /**
  * The pre-visit briefing for the native app — the same "brief from the live
