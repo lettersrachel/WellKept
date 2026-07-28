@@ -312,11 +312,21 @@ was pruned and why.
   durable rows; 12 was re-verified during the 2026-07-28 deploys; the
   display-only checks rest on the sitting's word. Check 9 goes into the
   next section 4 sitting as an M verification.
-- **V, decided-row drift check: gated on the review-stamp decision**
-  (founder), since both touch wk_floor_review.py. The reviewer recommends
-  the frozen dated review record emitted by the script, not a schema
-  column; if that is the pick, V and the record ship together as one
-  small script change.
+- **V + the review stamp: CLOSED 2026-07-28 (one script change).** The
+  founder picked the frozen record. wk_floor_review.py now refuses any
+  DECIDED row whose store tier differs from the tier the workbook
+  displayed unless --accept-drift, listing each; --reviewer is required
+  on any run that writes; every committing run emits a dated frozen
+  review record (who, when, what moved, what was confirmed, the unsure
+  queue, accepted drift) and prints the manifest line the
+  frozen-records guard will demand in the landing commit. Proven on the
+  local database: reviewer-missing refused, drift refused then accepted
+  explicitly, record emitted with correct content. The proof run caught
+  a second real defect in the process: the keep branch was carrying
+  BASE-seed tiers and silently reverted a drifted store row, the V
+  class inside the fix itself; keep now confirms the tier the reviewer
+  SAW, falling back to the store, never the base seed. Re-proven:
+  exactly the decided change versioned, the keep row untouched.
 
 ### Briefs already written
 
