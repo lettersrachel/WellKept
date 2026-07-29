@@ -137,7 +137,14 @@ manual ones:
 4. Dev-gated surfaces are actually gated — BOTH return 404 in production:
    `/dev/last-email` AND `/api/dev/trigger-pass` (POST). Standing rule:
    every new dev-gated surface gets its own 404 line here (G-15)
-5. An s3 reveal → audit row present in `audit_event`
+5. An s3 reveal → audit row present in `audit_event`. Until the fixture's
+    sealed s3 value exists this proves the AUDIT path only (the reveal
+    returns the vault-pending placeholder; discovered 2026-07-28 with zero
+    vault_item rows in the whole database). Once the fixture value is
+    sealed, the same check is a true vault round-trip: expect the fake
+    alarm-code value, not vault-pending. The KEK itself is now validated
+    at BOOT (instrumentation.ts), so a mis-encoded WK_KMS_KEY fails the
+    deploy's smoke checks instead of the vault sprint.
 6. A household drill-in shows the **Household consent card** — red
    NO-CONSENT banner on any household without a recorded consent
 7. On the FIXTURE drill-in: log a test incident (kind `other`, low) → it
