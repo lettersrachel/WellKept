@@ -1363,3 +1363,80 @@ An operational rule follows and belongs in the rotation procedure:
 **rotate the KEK only after clearing enrolled TOTP rows, or accept a
 lockout**, because the sealed-secret failure mode gives no usable path
 back through the UI.
+
+---
+
+### G-55. Twenty-five refusal paths land on a page that renders nothing, so a declined action is indistinguishable from a completed one
+
+**Filed 2026-07-29**, from the last open item on the DEPLOY.md section 4
+checklist: a stray fixture exclusion (`5e5d170a`, scope `person`, target
+"topic") that reported green on two separate End attempts and wrote
+nothing. The database settled the observation: `effective_to` is still
+NULL, and the only `exclusion_ended` audit row in the entire store
+belongs to a different exclusion, ended correctly the day before. Two
+attempts, two green readings, zero writes. The action demonstrably
+works, which made the difference worth chasing rather than filing as
+mysterious.
+
+**The data could not separate the two candidates** (a different
+`exclusionId` reached the action, or the green came from something other
+than the action). The code can narrow it, and in doing so exposes a
+wider defect than the row that led here.
+
+**Mechanism.** G-29 replaced the action layer's silent `return` guards
+with a redirect carrying `?refused=<reason>`, on the explicit reasoning
+that an operator cannot tell "the system declined this" from "the system
+is down". A refusal can land on exactly four surfaces, and three of them
+render `RefusalBanner`: the oversight drill-in, `/visit`, and
+`/oversight/triggers`. The fourth is the fleet board at `/oversight`,
+which took no `searchParams` and rendered no banner at all.
+
+`refuse(householdId, reason)` falls back to `/oversight` whenever the
+household is unknown (`actions.ts:38-40`), and **25 call sites pass
+`null` deliberately**: every `bad-input` guard whose form named no
+record, and every `missing` guard whose form named a record that does
+not exist. All 25 produced a click, a navigation, and silence. That is
+the precise signature observed on the exclusion: the operator acts, the
+page changes, no error appears, nothing is written.
+
+It also explains why the two candidates were indistinguishable from the
+outside. `endAnticipationExclusion` refuses `bad-input` on an empty
+`exclusionId` (`actions.ts:803`) and `missing` on an unknown one
+(`actions.ts:806`); **both are `refuse(null, ...)`, so both landed on the
+silent board.** A wrong or empty id submitted by the form would look
+exactly like success. This does not prove that is what happened, and the
+row is inert either way, but it removes the mystery from the class.
+
+**Disposition, shipped in the same change.** The fleet board takes
+`searchParams` and renders the banner. A guard
+(`apps/web/src/lib/refusal-visibility.test.ts`, the eleventh) reads the
+refusal target set out of `actions.ts` and resolves each target through
+the route tree, then asserts each target page renders
+`<RefusalBanner reason={x}>` with `x` destructured from
+`await searchParams`. Both halves of its input are computed rather than
+listed, per the inputs doctrine, with floors on the target count, the
+route count and the call-site count so a broken extractor fails instead
+of passing vacuously.
+
+**The guard caught its own first version.** Proving it red on the actual
+bug returned green: `includes("RefusalBanner")` was satisfied by the
+leftover import of a component no longer rendered. A second weak
+assertion, `/searchParams/`, matched any mention of the word. Both were
+tightened and the proof re-run: green, red on five injections (the real
+bug with the import left behind; a target with no page; the extractor
+defeated by renaming `refuse`; a banner wired to `undefined`; a banner
+wired to a real local that the redirect never sets), green again.
+
+**The stray exclusion row is deliberately left in place, unresolved.**
+Ending it by direct SQL would set `effective_to` with no
+`exclusion_ended` row behind it, manufacturing a fourth audit hole in a
+day that produced three (G-52, G-53, G-54) in order to tidy a row that
+excludes a person named "topic" and therefore suppresses nothing. It
+stands as the evidence that produced this entry.
+
+**What this does not close.** The exclusion's green readings are
+explained as *possible* here, not demonstrated. The stale server-action
+hypothesis recorded against the checklist item is weakened rather than
+eliminated: the clean-page retry that was supposed to settle it also
+wrote nothing. A refusal that never redirects at all, and whether an
+operator reads a banner that does render, are both outside this guard.

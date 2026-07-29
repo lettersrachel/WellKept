@@ -28,7 +28,7 @@ has ever been exercised; rotation is still required (a key value
 entered a session transcript on 2026-07-28) and precedes the fixture
 seeding.** The `visit_reconciliation` knob is live (`{"gapDays":10}`,
 founder-set); demo households flag immediately, which is the knob
-working. Ten CI guards. Gap register at G-52, filed with its settled
+working. Eleven CI guards. Gap register at G-55, filed with its settled
 outcome (the first submit's command was LOST client-side, never
 delivered; AK closes the window it fell through). G-13
 founder-approved, awaiting counsel review and the hire's
@@ -56,11 +56,26 @@ G-50's and G-51's dispositions are therefore exercised in practice, not
 merely filed - **this was the first use of the fixture's field-role
 half**, which is exactly what the three-identity seeding was built for.
 The visit-close false green became G-52, filed with its settled
-outcome. **One remainder stands: the stray person/"topic" exclusion,
-whose two end-attempts reported green and wrote nothing with all four
-action guards provably satisfied** (see G-52's neighbours; the leading
-candidate is the stale server-action class, general to all 40 actions
-per session AO, and a clean-page retry settles it).
+outcome. **The sitting is now closed.** Its last remainder, the stray
+person/"topic" exclusion whose two end-attempts reported green and
+wrote nothing, was settled by query and became G-55: `effective_to` is
+still NULL and no `exclusion_ended` row references it, so nothing was
+written either time. The code narrowed the cause the data could not.
+G-29 made refusal visible on three of the four surfaces a refusal can
+land on; the fleet board at `/oversight` rendered no banner, and
+**25 `refuse(null, ...)` sites redirect there**, so every bad-input and
+missing refusal in the action layer produced a click, a navigation and
+silence. Both of `endAnticipationExclusion`'s id guards are in that
+set, which is why a wrong or empty `exclusionId` would have looked
+exactly like success. Fixed with the eleventh guard
+(`refusal-visibility.test.ts`, target set and page mapping both
+computed, proven green then red five ways then green; it caught its own
+first version, which an unrendered leftover import satisfied).
+**The row itself is deliberately left unresolved** as the evidence: a
+direct SQL end would set `effective_to` with no audit row behind it,
+which is the fourth hole of a day that produced three. The stale
+server-action hypothesis is weakened rather than eliminated, since the
+clean-page retry that was meant to settle it also wrote nothing.
 
 The queued `deferral.visit_id` DROP landed as migration 0034
 (2026-07-28, authorized with the night's batch): the always-null FK to

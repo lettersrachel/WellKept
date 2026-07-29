@@ -5,6 +5,7 @@ import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit, 
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
+import { RefusalBanner } from "@/components/RefusalBanner";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
@@ -16,7 +17,17 @@ export const maxDuration = 60;
  * user is explicitly assigned to (REQ-001: no wildcard grants) with status
  * tag, Playbook health, Stranger Test recency, and visit counts.
  */
-export default async function FleetBoard() {
+export default async function FleetBoard({ searchParams }: {
+  // G-55: the fleet board is a refusal TARGET and was rendering nothing.
+  // Every `refuse(null, ...)` in the action layer lands here - the
+  // bad-input and missing classes, 25 call sites - so an action that
+  // declined because its form named no record, or named one that does not
+  // exist, brought the operator here in silence. A click, a navigation, no
+  // message: the exact shape of a false success. G-29 made refusal visible
+  // on three surfaces and missed the fourth.
+  searchParams: Promise<{ refused?: string }>;
+}) {
+  const { refused } = await searchParams;
   const assigned = await getAssignedHouseholds();
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
@@ -79,6 +90,7 @@ export default async function FleetBoard() {
 
   return (
     <>
+      <RefusalBanner reason={refused} />
       <div className="card">
         <div className="row">
           <h2 style={{ border: "none", margin: 0, padding: 0 }}>Fleet; {rows.length} household(s)</h2>
