@@ -1294,3 +1294,56 @@ the candidate reasons are no-vault-item and decrypt-failed.
 
 Until the fix lands, any audit export answering "who viewed this" must
 be read as "who was authorized to view this and attempted it".
+
+### G-54. A KEK rotation locks out every enrolled staff user, backup codes included, because the TOTP decrypt throws before the fallback is reached
+
+Hit in production 2026-07-29 (digest 2073677018) minutes after the KEK
+rotation: the founder's `user_totp` row was sealed under the previous
+key, and every attempt to reach a staff surface returned a server-side
+exception rather than a challenge.
+
+**Mechanism, in `apps/web/src/lib/totp.ts`.** `verifyChallenge` opens
+the confirmed secret first and only then falls back:
+
+    if (verifyTotp(openSecret(row), token)) return true;   // line 128
+    if (/^\d{6}$/.test(...)) return false;
+    return redeemBackupCode(userId, token);                // line 130
+
+`openSecret` is `openValue(kms(), ...)`, which throws on a GCM auth-tag
+failure when the ciphertext was sealed under a different KEK. The throw
+happens on line 128, so line 130 is unreachable. **Backup codes are
+stored as hashes and are entirely unaffected by the rotation - the
+escape hatch is intact and simply cannot be reached.** The same applies
+to any future key rotation, any restore of a database snapshot taken
+under a different key, and any partial rotation across environments.
+
+**Disposition.** Wrap the secret open so a decrypt failure falls
+through to the backup-code path instead of throwing: a secret that
+cannot be opened is a factor that cannot be satisfied, which is exactly
+the case backup codes exist for. Failing closed is still correct (no
+TOTP match), but it must fail closed as a REFUSAL, not as a 500. Worth
+pairing with an operator-visible reason on the challenge screen, since
+"your authenticator no longer matches this server" is a different
+instruction from "wrong code".
+
+**Recovery used, recorded here because the trail cannot hold it.** The
+`user_totp` and `user_backup_code` rows for the affected user were
+deleted directly in SQL (the founder was locked out of the drill-in,
+so the `resetTotp` action was unreachable). Two consequences follow
+from the direct route rather than the action:
+
+1. **Sessions were not revoked.** `resetTotp` revokes them precisely so
+   a reset cannot leave a window with the second factor removed and old
+   sessions still valid; ten sessions remained live. Cleared separately
+   once noticed.
+2. **No audit row exists for the MFA removal.** The trail has no record
+   that a second factor was removed, by whom, or when. This is the
+   third gap in the same direction on the same day (G-53 reveals logged
+   identically whether they succeed or fail; G-52 a visit close that
+   logged nothing) and the only one that was self-inflicted. Recorded
+   in this entry because there is nowhere else durable to put it.
+
+An operational rule follows and belongs in the rotation procedure:
+**rotate the KEK only after clearing enrolled TOTP rows, or accept a
+lockout**, because the sealed-secret failure mode gives no usable path
+back through the UI.

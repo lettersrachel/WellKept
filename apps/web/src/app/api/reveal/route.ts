@@ -73,7 +73,48 @@ export async function POST(req: NextRequest) {
   // The value comes from the encrypted vault (REQ-013), decrypted only
   // after the permission decision and only after the audit row committed.
   // No vault item yet -> the vault-pending placeholder.
-  const vaultValue = await vaultOpen(f.id);
+  //
+  // G-53: the row above records that a reveal was AUTHORIZED and ATTEMPTED,
+  // written before any decryption (the audit invariant, unchanged). What it
+  // cannot say is whether a secret actually reached anyone: on 2026-07-29
+  // three identical rows covered one real exposure and two failures (no
+  // vault item, and a value sealed under a superseded KEK), so an auditor
+  // asking "who has viewed this" was wrong about two of three. The outcome
+  // is therefore a SECOND append, after the decrypt resolves.
+  //
+  // The two writes are deliberately NOT a transaction and the order is not
+  // reversed (CLAUDE.md): if this second write fails, the attempt row still
+  // stands, so the trail stays conservative - it may claim an exposure that
+  // did not happen, never hide one that did.
+  let vaultValue: string | null = null;
+  let outcome: "delivered" | "no_vault_item" | "decrypt_failed";
+  try {
+    vaultValue = await vaultOpen(f.id);
+    outcome = vaultValue === null ? "no_vault_item" : "delivered";
+  } catch {
+    // Sealed under a different key, or corrupt. Previously this threw and
+    // the route answered with an unhandled 500 (the G-54 class).
+    outcome = "decrypt_failed";
+  }
+  try {
+    await db.insert(auditEvent).values({
+      id: randomUUID(),
+      householdId: f.householdId,
+      actorUser: principal.userId,
+      actorRole: entry.role,
+      kind: "s3_reveal_outcome",
+      fieldId: f.id,
+      detail: { field: entry.field, outcome, delivered: outcome === "delivered" },
+    });
+  } catch {
+    console.error(`[reveal] outcome row failed for field ${f.id} (${outcome}); the attempt row stands`);
+  }
+  if (outcome === "decrypt_failed") {
+    return NextResponse.json(
+      { ok: false, reason: "the stored value could not be opened (key mismatch or corrupt ciphertext)" },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({
     ok: true,
     value: vaultValue ?? "vault-pending",
