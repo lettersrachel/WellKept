@@ -26,3 +26,6 @@ wk-drift-dump.json
 # TypeScript incremental build cache: regenerates on every typecheck,
 # never reviewable, dirtied every session (the WORK_QUEUE chore).
 *.tsbuildinfo
+
+# Merge-script output artifact (wk_floor_review.py --out default); regenerated per run.
+tooling/import/floor_review_merged_seed.json
