@@ -1246,3 +1246,51 @@ reconciliation floor, and the operational rule that the field client is
 opened from a home-screen install, not a browser tab (iOS evicts a
 tab's IndexedDB after seven days without a visit to the site, which is
 exactly the weekly-visit gap).
+
+### G-53. The reveal audit records the attempt, never the outcome: a failed reveal is indistinguishable from a successful one
+
+Demonstrated 2026-07-29 on the fixture's `alarm code` field, three rows,
+three different real outcomes, no way to tell them apart:
+
+    17:13:34  s3_corporate_view  {"field":"alarm code"}   FAILED: no vault item existed
+    14:48:58  s3_corporate_view  {"field":"alarm code"}   SUCCEEDED: plaintext delivered
+    14:37:13  s3_corporate_view  {"field":"alarm code"}   FAILED: sealed under the previous KEK
+
+Same kind, same actor, same role, same detail shape. An auditor asked
+"who has viewed this secured value" reads three views by corporate_admin
+and is wrong about two of them.
+
+**Mechanism, in `apps/web/src/app/api/reveal/route.ts`.** The audit row
+is inserted at line 59, fail-closed, BEFORE the decrypt (the audit
+invariant, and correct). The decrypt happens at line 76,
+`vaultOpen(f.id)`, and its result is never recorded: a missing vault
+item returns null and the route answers with the `vault-pending`
+placeholder; a wrong-key decrypt throws inside `openValue`. In every
+case the row already written says only that a reveal was authorized and
+attempted. Nothing downstream ever amends it.
+
+**Why this is not the audit invariant working as designed.** The
+invariant's promise is "no audit row, no value" - the log cannot be
+skipped before a secret is exposed. It says nothing about the reverse,
+and the reverse is what an auditor actually asks. The trail currently
+OVER-reports: it claims exposures that never happened. G-34 is the same
+trail UNDER-reporting (a reveal that wrote no row at all, 2026-07-26).
+Together they mean the reveal audit is unreliable in both directions,
+which matters because the counsel packet describes the audit insert as
+load-bearing evidence.
+
+**Disposition, and the constraint on any fix.** Do NOT move the audit
+write after the decrypt, and do NOT wrap the two in a transaction -
+CLAUDE.md forbids both, for the reason that a decrypt failure would then
+roll back the record of the attempt, which is the unsafe direction. The
+shape that fits: keep the pre-decrypt row exactly as it is (the
+authorization-and-attempt record), and append a SECOND row after the
+decrypt resolves, recording whether the plaintext was actually
+delivered. If that second write fails, the trail still holds the
+conservative attempt row, so the failure mode stays "assume they saw
+it". The outcome vocabulary is a taxonomy and therefore a founder
+decision, not the implementer's: the minimum is delivered vs not, and
+the candidate reasons are no-vault-item and decrypt-failed.
+
+Until the fix lands, any audit export answering "who viewed this" must
+be read as "who was authorized to view this and attempted it".
