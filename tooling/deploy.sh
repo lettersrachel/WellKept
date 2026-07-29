@@ -51,13 +51,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # NOT about the origin/main gate pin it to HEAD via the selftest-only
   # override, so a dev tree with unpushed commits can still prove them.
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/7: wrong sha refused"
+  echo "selftest 1/9: wrong sha refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/7: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  echo "selftest 2/9: migration-count mismatch refused (the assertion itself, migrate skipped)"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/7: unexpected project refused"
+  echo "selftest 3/9: unexpected project refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/7: absent/wrong project link refused BEFORE deploy"
+  echo "selftest 4/9: absent/wrong project link refused BEFORE deploy"
 
   # Round seven, session T: the class case. A commit that EXISTS locally but
   # is not on origin/main must be refused, however the argument was produced.
@@ -66,7 +66,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   LOCAL_ONLY=$(git commit-tree "HEAD^{tree}" -p HEAD -m "deploy.sh selftest: local-only commit, never pushed")
   WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$LOCAL_ONLY" 2>/dev/null \
     && { echo "SELFTEST FAIL: a local-only sha (not on origin/main) was accepted"; exit 1; }
-  echo "selftest 5/7: a sha that exists locally but is not on origin/main refused"
+  echo "selftest 5/9: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
   # guard suite that only tests red passes while refusing everything — which
@@ -74,14 +74,29 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # the checks ACCEPT what they are supposed to accept.
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: correct sha + real project link REFUSED (green path broken)"; exit 1; }
-  echo "selftest 6/7: correct sha and real project link accepted"
+  echo "selftest 6/9: correct sha and real project link accepted"
 
   GREEN=$(printf '{"id":"%s"}' "$(git rev-parse HEAD)" | extract_build_id)
   [[ "$GREEN" == "$(git rev-parse HEAD)" ]] \
     || { echo "SELFTEST FAIL: build-id extraction returned '$GREEN'"; exit 1; }
-  echo "selftest 7/7: build-id extracted from its JSON body"
+  echo "selftest 7/9: build-id extracted from its JSON body"
 
-  echo "selftest PASSED: five refusals fire, two green paths accepted"
+  # Env presence (2026-07-29): a rm-then-failed-add on WK_KMS_KEY left the
+  # project with no key, and a routine deploy would have shipped a build
+  # that throws on the vault and TOTP paths. Names only, never values.
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_ENV_LS=$' AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
+    bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: a project missing WK_KMS_KEY was accepted"; exit 1; }
+  echo "selftest 8/9: missing required env var refused"
+
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_ENV_LS=$' WK_KMS_KEY Encrypted Production\n AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
+    bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
+    || { echo "SELFTEST FAIL: a complete env set was refused (green path broken)"; exit 1; }
+  echo "selftest 9/9: complete env set accepted"
+
+  echo "selftest PASSED: six refusals fire, three green paths accepted"
   exit 0
 fi
 
@@ -162,6 +177,31 @@ c.connect().then(async()=>{const r=await c.query("SELECT count(*)::int n FROM dr
 fi
 [[ "$DISK" == "$JOURNAL" && "$JOURNAL" == "$DB" ]] || fail "migration counts disagree: disk=$DISK journal=$JOURNAL database=$DB"
 echo "migrations agree three ways: $DISK"
+
+# 4b. Required env vars EXIST on the production environment, by NAME only
+# (values are never read; sensitive vars cannot be read anyway). Added
+# 2026-07-29: a rm-then-failed-add left the project with no WK_KMS_KEY,
+# and a routine deploy would have shipped a build that throws on the
+# vault and TOTP paths while every other check stayed green. The app
+# validates the KEY'S SHAPE at boot; this validates its PRESENCE before
+# anything ships. Word-bounded match so DATABASE_URL cannot be satisfied
+# by DATABASE_URL_UNPOOLED (the inputs doctrine: a plausible bad input).
+REQUIRED_ENVS=(WK_KMS_KEY AUTH_SECRET DATABASE_URL REDIS_URL RESEND_API_KEY)
+if [[ -n "${WK_DEPLOY_TEST_ENV_LS:-}" ]]; then
+  ENV_LS="$WK_DEPLOY_TEST_ENV_LS"
+elif [[ -n "$SELFTEST_MODE" ]]; then
+  ENV_LS="" # selftest cases about other refusals skip this check
+else
+  ENV_LS=$(npx vercel env ls production 2>&1) \
+    || fail "could not list the project's env vars (vercel env ls production); refusing to ship a build with unknown configuration"
+fi
+if [[ -n "$ENV_LS" ]]; then
+  for v in "${REQUIRED_ENVS[@]}"; do
+    printf '%s\n' "$ENV_LS" | grep -qE "(^|[^A-Za-z0-9_])$v([^A-Za-z0-9_]|$)" \
+      || fail "required env var $v is MISSING from the production environment; a deploy would ship a build that throws when it is first needed. Add it in the Vercel dashboard, then re-run."
+  done
+  echo "required env vars present by name: ${REQUIRED_ENVS[*]}"
+fi
 
 # 5. Deploy, from the repo root this script cd'd to itself.
 if [[ -n "${WK_DEPLOY_TEST_PROJECT:-}" ]]; then
