@@ -53,6 +53,8 @@ wrong one.
 deploy is manual): `bash tooling/deploy.sh <sha-from-the-merged-PR>`
 runs the whole mechanical sequence as a gate - named-sha check, its own
 cd to the repo root, migrate, three-way migration-count assertion,
+required-env-presence check (names only, never values; added 2026-07-29
+after a rm-then-failed-add left the project with no WK_KMS_KEY),
 deploy, expected-project verification, triple build-id read, mechanical
 smoke checks - refusing non-zero at the first mismatch. `--selftest`
 proves the refusals fire. Two invocation rules, both learned 2026-07-28:
