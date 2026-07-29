@@ -40,6 +40,30 @@ test("the guard files exist where the manifest says they are", () => {
   }
 });
 
+/**
+ * Session AP: apps/web became a collection point on 2026-07-29. Until
+ * then the app - the auth path, the reveal path, all 40 server actions -
+ * had nowhere to put a test, so every guard doctrine stopped at the
+ * package boundary. A new runner that silently stops being collected is
+ * the same failure this manifest exists to catch, one level out: the
+ * package must keep a test script, turbo must still fan out to it, and
+ * the suite must contain the G-53 outcome-branch tests that were the
+ * reason for building it.
+ */
+test("apps/web still has a collected test runner", () => {
+  const pkg = JSON.parse(readFileSync(path.join(root, "apps/web/package.json"), "utf8"));
+  assert.equal(pkg.scripts?.test, "vitest run",
+    "apps/web lost its test script - its suite is no longer collected by `turbo run test`");
+  assert.ok(existsSync(path.join(root, "apps/web/vitest.config.ts")),
+    "apps/web/vitest.config.ts missing - the runner cannot resolve the @/ alias without it");
+  const revealSuite = path.join(root, "apps/web/src/app/api/reveal/route.test.ts");
+  assert.ok(existsSync(revealSuite), "the reveal outcome-branch suite is gone (G-53/AP)");
+  const src = readFileSync(revealSuite, "utf8");
+  for (const outcome of ["delivered", "no_vault_item", "decrypt_failed"]) {
+    assert.ok(src.includes(outcome), `the reveal suite no longer exercises the ${outcome} branch`);
+  }
+});
+
 test("the sizes CHECK constraint is present in the schema and the latest snapshot", () => {
   const tables = readFileSync(path.join(root, "packages/schema/src/tables.ts"), "utf8");
   assert.ok(tables.includes("registry_sizes_not_client_visible"),
