@@ -1155,6 +1155,15 @@ life: by different people. Until then, any checklist item spanning field and
 client surfaces is unverifiable, and DEPLOY §4 should say so rather than
 implying a single operator can work it.
 
+**EXERCISED 2026-07-29.** The three-identity fixture was used for real
+for the first time: the two overdue items were resolved as the
+plus-addressed `+wk-fixture-hm` identity and the client card was read as
+`+wk-fixture-client`, both on the same household, in one sitting. The
+verification gap this entry describes is closed in practice. The
+underlying product question - whether one person should be able to hold
+both roles - was answered separately by the founder (AJ option 2: the
+four visit-close surfaces admit corporate_admin; the index is unchanged).
+
 ### G-51. Resolution paths are time-gated and cannot be tested the same day
 A deferral's and a paused decision's resolve controls render only when the
 item is overdue: `openDeferrals.filter(d => d.revisitDate && d.revisitDate <
@@ -1194,6 +1203,13 @@ visit-page card maps every open item; only the TIMING ARRIVED tag and the
 briefing array key on the date), so the fix applies to the deferral side
 alone. The fixture's pre-overdue seeds remain useful for exercising the
 overdue path itself.
+
+**FIX VERIFIED IN PRODUCTION 2026-07-29.** Both entities resolved from
+the visit page on the day the items were surfaced, and both rows carry
+resolution, resolvedAt and resolvedBy together - so the whole-or-absent
+CHECK is now proven in BOTH directions (refusals the day before, the
+accepting direction here). That accepting half had never run on either
+entity, which was the substance of this entry.
 
 ### G-52. The visit close reported success for a visit that was never delivered, and the command was lost client-side
 

@@ -41,16 +41,26 @@ generation, ended; the anomaly session U reconciled is closed). The
 flag loop passed in full, both guards firing. The deferral and paused
 decision each passed their refusal and creation steps; deferral
 visit_command_id association verified against a real applied command.
-Remainders from the sitting: check 5 re-run on the fixture (it ran on
-Fernbrook; G-23 discipline); both resolution paths and both client-view
-checks blocked by G-50 (no identity sees both ends) and G-51
-(resolution controls are time-gated; testable the day after capture);
-one stray active exclusion to end; and **the visit-close first-submit
-false green, unfiled pending the founder's filing decision** - the
-mechanism is identified in code (the submitted card renders at
-local-queue time by design, a failed drain is silent except the
-pending counter, the command persists in IndexedDB and redelivers on
-reload) and two production queries decide whether any data was lost.
+**The sitting's remainders were worked 2026-07-29 and all but one are
+closed.** Check 5 re-ran on the fixture and is now a TRUE vault
+round-trip, the first the system has ever performed (seal, reveal,
+reseal after the KEK rotation, reveal again). Both resolution paths ran
+as the plus-addressed `+wk-fixture-hm` identity: deferral and paused
+decision each carry resolution, resolvedAt and resolvedBy together, two
+seconds apart, so **the whole-or-absent CHECK is now proven in its
+ACCEPTING direction on both entities** (its refusal direction passed
+the day before). Both client-view checks passed as
+`+wk-fixture-client`: the resolved deferral renders under "Since taken
+care of" with no staff name, and the paused decision appears nowhere.
+G-50's and G-51's dispositions are therefore exercised in practice, not
+merely filed - **this was the first use of the fixture's field-role
+half**, which is exactly what the three-identity seeding was built for.
+The visit-close false green became G-52, filed with its settled
+outcome. **One remainder stands: the stray person/"topic" exclusion,
+whose two end-attempts reported green and wrote nothing with all four
+action guards provably satisfied** (see G-52's neighbours; the leading
+candidate is the stale server-action class, general to all 40 actions
+per session AO, and a clean-page retry settles it).
 
 The queued `deferral.visit_id` DROP landed as migration 0034
 (2026-07-28, authorized with the night's batch): the always-null FK to
