@@ -441,6 +441,29 @@ was pruned and why.
   (unclassified surface; phrase absent; broken detection), green. The
   approved text was not edited.
 
+### Session AN (brief external, MERGE_SESSION.md): CLOSED 2026-07-29
+
+The merge script reads the review app's flat TSV outputs (one or more
+at once) alongside the session R workbook path, which stays intact.
+Report-first answer: extend, never convert; a converter would invent
+tab structure that no longer describes reality. The AN rules, each
+proven red and green on the local store: seen_tier REQUIRED (header
+and row; the attached tier_corrections.tsv is refused AS-IS because it
+lacks the column, the founder adds it rather than the script assuming
+`method`); cross-input conflicts refuse listing both values and
+sources (the founder resolves; STD-012.5.1 and STD-004.9.2 will
+surface exactly this way when the real inputs run together); `split`
+reaching the script refuses as an export bug; completeness redefined
+against the provision set, with the flip gated on ZERO store FLOOR
+provisions lacking a decision (300 floors gate it today, matching R's
+census) while the total no-decision count is always reported since a
+flat export cannot distinguish not-reviewed from not-included. The
+NOTE column (the 29 Jul restatement policy) rides into the frozen
+record. The flip's passing direction proven end to end locally: full
+floor coverage, loader with --reviewed, record emitted with its
+manifest line. The four wrongly-matched never-do items and the second
+app's vocabulary stay out, per the brief.
+
 ### W-6 follow-on items (brief external, from the WK_W5_FOLLOWON_READOUT review)
 
 - **AA, disclosure guard on stable anchors: CLOSED 2026-07-28.** The
