@@ -16,20 +16,23 @@ in a session prompt.
 
 ## State
 
-Production serves `fd1083c` (2026-07-28 night, sixth clean run through
-tooling/deploy.sh's full gate; code-only, zero new migrations, counts
-34/34/34; carries the whole sync-defect fix set, sessions AF through
-AI). The `#88` tsbuildinfo chore merged just after that deploy and is
-runtime-identical; it rides the next deploy. The founder set the
-`visit_reconciliation` knob the same night (`{"gapDays":10}`), so the
-missing-visit flag is LIVE: demo households with no visits since 18-19
-July flag immediately, which is the knob working. Ten CI guards. Gap
-register at G-52 (the visit-close false green, filed with its settled
-outcome: the first submit's command was LOST client-side, never
-delivered; the AF/AG/AH fixes are the response, and the AE multi-tab
-claim-window remains the recorded unfixed exposure, its own session
-when authorized). G-13 founder-approved, awaiting counsel review and
-the hire's acknowledgment.
+Production serves `527533c` (2026-07-29, seventh clean run through
+tooling/deploy.sh's full gate; migration 0034 applied, counts 35/35/35,
+build id verified three times). The deploy carries the AK atomic tab
+handoff (G-52's loss window closed, plus the conflict-marker
+stuck-queue fix), the AJ option 2 role widening, the boot-time KEK
+validation, and the AN merge-script work. **The health check passing
+with the boot validation aboard proved the stored production
+WK_KMS_KEY decodes to 32 valid bytes, the first time the key's shape
+has ever been exercised; rotation is still required (a key value
+entered a session transcript on 2026-07-28) and precedes the fixture
+seeding.** The `visit_reconciliation` knob is live (`{"gapDays":10}`,
+founder-set); demo households flag immediately, which is the knob
+working. Ten CI guards. Gap register at G-52, filed with its settled
+outcome (the first submit's command was LOST client-side, never
+delivered; AK closes the window it fell through). G-13
+founder-approved, awaiting counsel review and the hire's
+acknowledgment.
 
 The DEPLOY.md section 4 sitting for the 0030-0033 batch ran 2026-07-28:
 standing checklist 1 through 14 all PASS, and **check 9 genuinely ran
