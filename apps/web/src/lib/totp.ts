@@ -49,8 +49,23 @@ function seal(secret: string): { secretBox: string; wrappedKey: string } {
   return { secretBox: JSON.stringify(sealed.box), wrappedKey: JSON.stringify(sealed.wrappedKey) };
 }
 
-function openSecret(row: { secretBox: string; wrappedKey: string }): string {
-  return openValue(kms(), JSON.parse(row.wrappedKey) as SealedBox, JSON.parse(row.secretBox) as SealedBox);
+/**
+ * G-54: a secret sealed under a PREVIOUS KEK cannot be opened - after a key
+ * rotation, a snapshot restored under a different key, or a partial rotation
+ * across environments. Every caller must treat that as "this factor cannot
+ * be satisfied" and fail closed as a REFUSAL. Throwing here made the
+ * backup-code fallback below unreachable and turned the 2026-07-29 rotation
+ * into a total lockout: server-side exceptions instead of a challenge, with
+ * the escape hatch intact but unreachable by construction.
+ */
+function openSecret(row: { secretBox: string; wrappedKey: string }): string | null {
+  try {
+    return openValue(kms(), JSON.parse(row.wrappedKey) as SealedBox, JSON.parse(row.secretBox) as SealedBox);
+  } catch {
+    console.error("[totp] a stored secret could not be opened under the current KEK; "
+      + "treating the factor as unsatisfiable so backup codes stay reachable (G-54)");
+    return null;
+  }
 }
 
 /**
@@ -63,8 +78,13 @@ function openSecret(row: { secretBox: string; wrappedKey: string }): string {
  */
 export async function ensureEnrollment(userId: string, account: string): Promise<{ secret: string; otpauth: string }> {
   const [existing] = await db.select().from(userTotp).where(and(eq(userTotp.userId, userId), isNull(userTotp.confirmedAt)));
-  const secret = existing ? openSecret(existing) : generateSecret();
-  if (!existing) {
+  // G-54: an existing PENDING secret that cannot be opened is worthless -
+  // nobody can prove a code against a secret the server cannot read - so it
+  // is replaced rather than thrown on. A confirmed secret never reaches
+  // here (callers gate on getTotpStatus), so this cannot discard one.
+  const opened = existing ? openSecret(existing) : null;
+  const secret = opened ?? generateSecret();
+  if (!opened) {
     const { secretBox, wrappedKey } = seal(secret);
     await db
       .insert(userTotp)
@@ -82,7 +102,8 @@ export async function ensureEnrollment(userId: string, account: string): Promise
 export async function confirmEnrollment(userId: string, token: string): Promise<string[] | null> {
   const [row] = await db.select().from(userTotp).where(and(eq(userTotp.userId, userId), isNull(userTotp.confirmedAt)));
   if (!row) return null;
-  if (!verifyTotp(openSecret(row), token)) return null;
+  const secret = openSecret(row);
+  if (!secret || !verifyTotp(secret, token)) return null; // G-54: unopenable = unconfirmable
   await db.update(userTotp).set({ confirmedAt: new Date() }).where(eq(userTotp.userId, userId));
   return issueBackupCodes(userId);
 }
@@ -126,7 +147,11 @@ export async function remainingBackupCodes(userId: string): Promise<number> {
 export async function verifyChallenge(userId: string, token: string): Promise<boolean> {
   const [row] = await db.select().from(userTotp).where(eq(userTotp.userId, userId));
   if (!row?.confirmedAt) return false;
-  if (verifyTotp(openSecret(row), token)) return true;
+  // G-54: when the secret cannot be opened, no code can ever match it, and
+  // this is EXACTLY the case backup codes exist for. The fallback below must
+  // stay reachable; a 6-digit input still never burns a backup code.
+  const secret = openSecret(row);
+  if (secret && verifyTotp(secret, token)) return true;
   if (/^\d{6}$/.test(token.replace(/\s+/g, ""))) return false; // a TOTP attempt, not a backup code
   return redeemBackupCode(userId, token);
 }
