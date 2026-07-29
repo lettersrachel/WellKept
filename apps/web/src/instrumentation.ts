@@ -9,6 +9,17 @@
  * it. No browser SDK here, so the enforcing CSP is untouched.
  */
 export async function register() {
+  // The KEK is validated AT BOOT, not at first seal (2026-07-28 finding:
+  // zero vault_item rows meant LocalKms had never been constructed in
+  // production, so a mis-encoded WK_KMS_KEY would surface at the vault
+  // sprint, exactly when real client data arrives, instead of at deploy
+  // time where the smoke checks would catch it). A malformed key fails
+  // the boot loudly; an absent key keeps the existing lazy behavior
+  // (production refuses at first vault use; dev falls back).
+  if (process.env.NEXT_RUNTIME === "nodejs" && process.env.WK_KMS_KEY) {
+    const { LocalKms } = await import("@wellkept/vault");
+    new LocalKms(process.env.WK_KMS_KEY); // throws unless base64 of 32 bytes
+  }
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.SENTRY_DSN) {
     const Sentry = await import("@sentry/node");
     Sentry.init({
