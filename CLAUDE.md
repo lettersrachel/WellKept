@@ -142,6 +142,11 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   production, is the strongest form of the proof.** The KEK validation threw
   on a real malformed key with zero writes the same night it shipped; that
   did more than its round-trip test.
+- **A recovery path is only real if it can be reached from the state it
+  exists to recover from.** Backup codes were intact and unreachable,
+  because the code opened the TOTP secret before falling back to them
+  (G-54). Check every escape hatch against the failure it exists for, not
+  against a healthy system.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
 
