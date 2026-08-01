@@ -80,6 +80,7 @@ row here fails CI, so the table cannot silently go stale.
 | `staff-disclosure.test.ts` | every staff-attributed surface computed from the schema is named in the G-13 disclosure or excused in writing | the founder's pending disclosure lines; prose accuracy beyond the mapped phrases |
 | `refusal-visibility.test.ts` | every page an action can refuse onto renders the banner, wired to the redirect's own param | whether the operator reads it; a refusal that never redirects at all |
 | `provisional-markers.test.ts` | every `counsel-pending` marker parses, resolves in `docs/PROVISIONAL.md`, and fails the build past 90 days unresolved | whether the marked assumption is still accurate; `pilot-calibrated` markers, which are counted but never fail |
+| `decline-class-exclusion.test.ts` | no trigger rule reads a decline-class field without a reviewed exclusion; no new Section 1/3 field ships unclassified | fields predating the 1 August 2026 baseline, grandfathered rather than classified; the taxonomy's own completeness |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
