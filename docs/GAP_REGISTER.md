@@ -1525,3 +1525,66 @@ background state, no prompt-to-ask trigger class. Provenance-on-write
 already exists (CLAUDE.md, "every write stamps provenance server-side");
 what is missing is the layer above it that decides which field to ask for
 next and when.
+
+---
+
+### G-58. Suppression is more built than a first read suggests; one state is genuinely missing and the six are not one pipeline
+
+**Filed 2026-08-01**, correcting an overstatement made earlier the same
+session. Asked to recommend a path forward from session AQ, this session
+first reported suppression as "1 of 6 states" (only LIFE-EVENT) based on a
+grep for state-specific names (`escalate-only`, `pre-decline`,
+`categoryDecline`). That grep was too literal: it looked for the vocabulary
+`WK-APP-008` uses, not the mechanism the code actually built.
+
+**What's actually there.** `anticipation_exclusion` (REQ-056,
+`packages/trigger-engine/src/exclusions.ts`) is a generalized suppression
+list — `scope: rule | topic | person | field | all` — consulted live and
+fail-closed in both the delta and sweep paths (`run.ts:53-56, 72, 122`)
+before a draft ever queues. Read against `WK-APP-008` Part 3's six states:
+
+- **Pre-decline**: covered. An exclusion with `effectiveFrom` in the past
+  and no `effectiveTo` suppresses from the first candidate onward
+  (`exclusionActive`, `exclusions.ts:23-27`).
+- **Field-level decline**: substantively covered via `scope: "field"`,
+  matched against the field name or item text. Not identical to the spec's
+  ask, though — see the gap below.
+- **Category decline**: substantively covered via `scope: "topic"` or
+  `scope: "all"`, matched by case-insensitive text containment against
+  `itemText`/`packKey`. No `scope: "section"` exists, so it doesn't map
+  cleanly onto WK-PLAY-003's 25 numbered sections the way "decline Section
+  25" implies.
+- **LIFE-EVENT**: covered, structurally and totally (`engine.ts:106`,
+  `household.statusTag`).
+- **Escalate-only**: genuinely absent. `filterExcludedDrafts` has one
+  effect — drop the draft, count it as suppressed. Nothing routes a
+  suppressed candidate to a corporate-only queue; a household-wide
+  `scope: "all"` exclusion suppresses for everyone including corporate,
+  which is a different behavior than "reaches corporate, never the client
+  or House Manager."
+- **Tier**: not evaluated in this pass — Part 4's tier-gating of what
+  reaches which surface is a separate mechanism from suppression proper.
+
+**Two real gaps, distinct from the false "1 of 6" headline.**
+
+1. Section 0's field-level decline (`WK-DEV-001` REQ-011's 1 August
+   correction) wants a confirmed-decline VALUE resident on the field
+   record itself, distinguishable on the field's own display from
+   `N/A-confirmed` and from unasked. `scope: "field"` exclusion rows
+   suppress correctly but don't give the field that visible state — this
+   is the same gap AQ's finding 1 already named, restated here in
+   suppression terms rather than schema terms.
+2. Escalate-only has no mechanism. Building it needs a decision this
+   session isn't scoping: does an escalate-only candidate get a new
+   `anticipation_exclusion` scope value with different runner behavior
+   (route to a corporate queue instead of dropping), or a separate table
+   entirely? Either way it's new schema, not an extension of what exists.
+
+**Not checked in this pass, worth naming rather than assuming clean:**
+whether exclusion-based suppression and LIFE-EVENT tagging, evaluated as
+two independent mechanisms rather than one ordered pipeline, ever produce
+an outcome `WK-APP-008`'s fixed order (pre-decline, category, field,
+LIFE-EVENT, escalate-only, tier) would have prevented. Floors bypass
+exclusions explicitly (`exclusions.ts` header); whether a floor also
+reaches a House Manager correctly during LIFE-EVENT — the spec's own
+carve-out — was not traced end to end here.
