@@ -1676,3 +1676,85 @@ Direction 1b's audit-identity ADR (tokenize-at-write-time for non-client
 subjects) is written with this finding in view, since the same mechanism
 answers both the not-yet-built case and this already-live one, but building
 either fix here is out of scope for a read-only survey.
+
+---
+
+### G-60. Direction 4's live-data read: no drift found, but the event log can't be trusted as pricing history, and two schema gaps confirmed empirically
+
+**Filed 2026-08-01**, from the founder's Mac session running the four-query
+package this session prepared. Corrects one claim made earlier in this
+same register/thread and confirms two findings that were only suspected
+from code before now.
+
+**The headline question is answered clean: no drift exists today.** All
+four households (`Chen-Williams Demo`, `Fernbrook Demo`, `Field Test Home`,
+`Smoke Test Fixture`) have a `household.tier` that either matches their
+`membership_event` history exactly or has no history to disagree with. One
+apparent drift row in the first pass was a false positive in the query
+itself, not the data: `Smoke Test Fixture`'s most recent event is a
+`pause`, which carries `tier = NULL` by design, and the query's `DISTINCT
+ON` picked the most recent event of *any* kind rather than the most recent
+*tier-bearing* one, so `NULL IS DISTINCT FROM family_ops` read as drift
+when the actual last tier-bearing event (the `tier_change` two minutes
+earlier) matches `household.tier` exactly. **A guard proven wrong by real
+data is the whole point of running it against real data**, recorded here
+rather than quietly fixed and re-run, since the wrong first answer is
+itself informative about how easy this class of query is to get subtly
+wrong.
+
+**Confirmed empirically what PR #105's commit message could only infer
+from code: three of four households have a `tier` with zero
+`membership_event` rows behind it at all** (`Chen-Williams Demo`,
+`Fernbrook Demo`, `Field Test Home`, none of them have ever had a `start`
+event). `tooling/seed/load-seed.ts` sets `household.tier` directly at
+creation without a matching event, confirmed both in the code and now in
+the data it produced. Harmless at fixture scale; at the point queue item 6
+("consider putting one pilot household on a non-Concierge tier") is acted
+on, a household whose tier has no origin event is a household whose
+pricing history cannot be reconstructed from day one.
+
+**New finding, not part of the original ask: `Field Test Home` has
+`is_fixture = false`.** Every fixture-exclusion path in the code (the
+`visit_reconciliation` gap mark, digest counts, analytics views) counts it
+as a real household. It is also the household holding the stuck
+`visit_command` from G-52, so it will continue surfacing as a genuinely
+neglected real household in reconciliation views rather than being
+excluded as test data. **Not corrected here.** A direct `UPDATE` would be
+the same class of unaudited write this register already flags as a defect
+pattern (G-55's "the row itself is deliberately left unresolved" reasoning
+applies equally to fixing this by hand); it needs either a proper audited
+path or the founder's explicit go before anyone changes it.
+
+**New finding: `membership_event` has no state machine, unlike its
+siblings.** `condition_flag`, `deferral`, and `paused_decision` each got a
+DATABASE CHECK for their lifecycle rules (W-5, AB, AD). `membership_event`
+has none: nothing requires a `start` to precede other events, nothing
+prevents two `start` rows, nothing ties `pause` to a following `resume` or
+`cancel`. The live fixture data demonstrates this isn't theoretical: its
+own `tier_change` rows are timestamped *before* its `start` row (an
+artifact of the checklist sitting's exercise order, not a production
+defect, but the schema has no constraint that would have caught it either
+way). `effective_on` also can't order same-day events on its own; every
+row in the fixture's history shares one date, so ordering falls entirely
+to `created_at` as a tiebreaker, which is insertion order, not a domain
+claim.
+
+**Correction to an earlier claim in this same thread.** Session AQ (and my
+own recommended-path answer) said `membership_event.priceCents` existing
+meant "MRR history is derivable." The schema claim was true; the practical
+one was optimistic. Of the five `start`/`tier_change` rows in the only
+household with any history, four have no price at all, and the one that
+does (`$100.00`) is identical across two different tiers (`essential` and
+`family_ops`), proof the write path doesn't derive price from tier, it
+just records whatever was typed. **MRR is not currently derivable from
+`membership_event` in practice**, only in principle. All data is fixture
+data from the checklist sitting; this is a statement about the mechanism,
+not about any real household's pricing.
+
+**Two decisions, neither made here, matching the Mac session's own
+posture:** whether `price_cents` should be required (a CHECK gated on
+`kind`) or left optional with `membership_terms.monthlyRateCents` as the
+authoritative source (unverified whether the economics read path already
+falls back to it that way); and whether `membership_event` needs its own
+lifecycle CHECK the way its three siblings got one. Both are scoped
+sessions of their own, not a default to pick in passing.
