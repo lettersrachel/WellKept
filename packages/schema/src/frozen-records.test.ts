@@ -40,6 +40,7 @@ const FROZEN: Record<string, string> = {
   "docs/AUDIT_WRITE_PATH_SURVEY.md": "eafdd0136535417c8577c767c15c3cbde518c04c6d2709ea5805bbf2a6552a34",
   "docs/ROUND6_FINDINGS_P.md": "b0d53bb4f14bf17322588175b7edfb8cca8d7c3e47330d6b88a214f1fb24e310",
   "docs/ROUND6_FINDINGS_Q.md": "6be3c8ff697ac29cebdc0cfa62afc584ed2aec7586ccb8150ee53086002ff5e5",
+  "docs/AUDIT_IDENTITY_SURVEY.md": "9978d39a1fe7cb63e9dc0c0e8f75347cb749cf261416e45d64bca047e7779721",
 };
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");
