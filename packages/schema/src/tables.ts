@@ -189,6 +189,22 @@ export const triggerRule = pgTable("trigger_rule", {
   enabled: boolean("enabled").notNull().default(true),
 });
 
+// Direction 3b (PLACEHOLDER_DIRECTIONS.md, 1 August 2026, G-58): the WATCH
+// read found escalate-only does not already exist under another name -
+// WATCH is a separate, tag-triggered alert (a corporate email on visit
+// close, an HM push on tag-set) with no connection to this table at all,
+// not a per-candidate routing decision. This column is the placeholder the
+// direction asks for: it belongs on the emitted item, never the household,
+// because a household can need escalate-only for one domain (a billing
+// dispute) while the sentinel sweep still needs to reach the client
+// normally. Default is computed from what an item actually does TODAY
+// (data.ts's briefing query reads promptPackItem for the HM briefing; no
+// client-portal surface renders it directly; corporate sees it in the
+// oversight pages regardless) - 'hm' for every existing and new row, so
+// this migration changes no behaviour. Nothing routes differently until a
+// future session reads this column and wires escalate-only against it.
+export const promptItemRoutingEnum = pgEnum("prompt_item_routing", ["client", "hm", "corporate", "none"]);
+
 export const promptPackItem = pgTable("prompt_pack_item", {
   ...stamps,
   householdId: uuid("household_id").notNull(),
@@ -205,6 +221,7 @@ export const promptPackItem = pgTable("prompt_pack_item", {
   // A2/REQ-055: the prompt's own target date (a sweep item's occurrence);
   // null for event-driven items. lead_days calibration reads this.
   targetDate: date("target_date"),
+  routedTo: promptItemRoutingEnum("routed_to").notNull().default("hm"),
 }, (t) => [index("prompt_pack_item_household_idx").on(t.householdId)]);
 
 // REQ-022: client edits land in review state, merge only on HM approval, full diff kept.

@@ -1539,7 +1539,7 @@ grep for state-specific names (`escalate-only`, `pre-decline`,
 
 **What's actually there.** `anticipation_exclusion` (REQ-056,
 `packages/trigger-engine/src/exclusions.ts`) is a generalized suppression
-list — `scope: rule | topic | person | field | all` — consulted live and
+list (`scope: rule | topic | person | field | all`), consulted live and
 fail-closed in both the delta and sweep paths (`run.ts:53-56, 72, 122`)
 before a draft ever queues. Read against `WK-APP-008` Part 3's six states:
 
@@ -1548,7 +1548,7 @@ before a draft ever queues. Read against `WK-APP-008` Part 3's six states:
   (`exclusionActive`, `exclusions.ts:23-27`).
 - **Field-level decline**: substantively covered via `scope: "field"`,
   matched against the field name or item text. Not identical to the spec's
-  ask, though — see the gap below.
+  ask, though; see the gap below.
 - **Category decline**: substantively covered via `scope: "topic"` or
   `scope: "all"`, matched by case-insensitive text containment against
   `itemText`/`packKey`. No `scope: "section"` exists, so it doesn't map
@@ -1557,12 +1557,12 @@ before a draft ever queues. Read against `WK-APP-008` Part 3's six states:
 - **LIFE-EVENT**: covered, structurally and totally (`engine.ts:106`,
   `household.statusTag`).
 - **Escalate-only**: genuinely absent. `filterExcludedDrafts` has one
-  effect — drop the draft, count it as suppressed. Nothing routes a
+  effect: drop the draft, count it as suppressed. Nothing routes a
   suppressed candidate to a corporate-only queue; a household-wide
   `scope: "all"` exclusion suppresses for everyone including corporate,
   which is a different behavior than "reaches corporate, never the client
   or House Manager."
-- **Tier**: not evaluated in this pass — Part 4's tier-gating of what
+- **Tier**: not evaluated in this pass. Part 4's tier-gating of what
   reaches which surface is a separate mechanism from suppression proper.
 
 **Two real gaps, distinct from the false "1 of 6" headline.**
@@ -1571,7 +1571,7 @@ before a draft ever queues. Read against `WK-APP-008` Part 3's six states:
    correction) wants a confirmed-decline VALUE resident on the field
    record itself, distinguishable on the field's own display from
    `N/A-confirmed` and from unasked. `scope: "field"` exclusion rows
-   suppress correctly but don't give the field that visible state — this
+   suppress correctly but don't give the field that visible state; this
    is the same gap AQ's finding 1 already named, restated here in
    suppression terms rather than schema terms.
 2. Escalate-only has no mechanism. Building it needs a decision this
@@ -1586,5 +1586,93 @@ two independent mechanisms rather than one ordered pipeline, ever produce
 an outcome `WK-APP-008`'s fixed order (pre-decline, category, field,
 LIFE-EVENT, escalate-only, tier) would have prevented. Floors bypass
 exclusions explicitly (`exclusions.ts` header); whether a floor also
-reaches a House Manager correctly during LIFE-EVENT — the spec's own
-carve-out — was not traced end to end here.
+reaches a House Manager correctly during LIFE-EVENT (the spec's own
+carve-out) was not traced end to end here.
+
+**Update, 2026-08-01, Direction 3a's WATCH read.** Checked whether WATCH
+already implements escalate-only under another name, per the brief's own
+hope (the shape that turned out true for G-49). It does not. Every WATCH
+reference in the codebase is one of two things: `alertCorporateOnWatch`
+(REQ-061, `apps/web/src/app/api/visit-commands/route.ts:46-51`), an email
+to corporate on every visit close for a WATCH or LIFE-EVENT household, and
+`setStatusTag`'s notification to the household's House Managers at the
+moment the tag is set (`actions.ts:93-108`). Both are one-shot, tag-change
+or visit-close triggered side channels. Neither touches `trigger_rule`
+matching, `filterExcludedDrafts`, or `promptPackItem` emission in any way.
+Client-facing candidates are not suppressed for a WATCH household (only
+`"LIFE-EVENT"` sets `suppressedByTag`), so a WATCH household's client
+portal and HM briefing behave exactly as a STEADY household's would. This
+is the opposite outcome from G-49: escalate-only genuinely does not exist
+under another name and genuinely needs new state.
+
+**Also confirmed: the suppression log does not exist**, closing the
+question Direction 3d asked before anything else got built. `filterExcludedDrafts`
+(`exclusions.ts`) returns a bare count (`{ kept, suppressed: number }`),
+not a per-candidate record of which gate stopped which item. Both callers
+discard even that count: `field-events.ts:43` awaits `runTriggerPass`
+without reading its return value, and `services/worker/src/index.ts:45`
+does the same. `WK-APP-008` Part 3's "every suppressed candidate is logged
+with the gate that stopped it" and Part 8's fire-rate telemetry are both
+unbuilt; annual pruning is opinion today, exactly as the brief warned it
+would be without this.
+
+**Direction 3b, built the same session** (migration 0035): `prompt_pack_item`
+gains `routed_to` (`client | hm | corporate | none`), defaulting to `'hm'`,
+computed from what an item actually does today (the HM briefing query in
+`data.ts` reads it; no client-portal surface renders it directly; corporate
+sees it in the oversight pages regardless of tag) rather than hardcoded.
+The migration changes no behavior: nothing reads or branches on `routed_to`
+yet. Applied clean against a fresh local database, 36/36/36 three-way
+count. Wiring actual escalate-only routing behavior against this column,
+and the suppression-log gap above, are each their own session.
+
+---
+
+### G-59. Two live audit-write sites store an email address and a person's name directly, not an id pointing at one
+
+**Filed 2026-08-01**, from Direction 1a's audit identity survey
+(`docs/AUDIT_IDENTITY_SURVEY.md`), run to scope a forward-looking design
+question about non-client records and finding a present-tense one instead,
+raised separately per that direction's own instruction, since this is about
+client-household data already in production, not about the recipient records
+G-56 blocks.
+
+**`role_assigned`** (`apps/web/src/lib/actions.ts:327`) writes
+`detail: { email, role, ndaApproved }` to `audit_event` every time a
+household role is assigned. `email` is the literal address, not a
+reference to the `auth_user` row it belongs to (which `actorUser` already
+provides for the actor, but not for the target of the assignment).
+
+**`exclusion_created`/`exclusion_ended`** (`actions.ts:667, 813`) write
+`detail: { exclusionId, scope, target, requestedBy }`. `anticipationExclusion.target`
+is documented as holding "rule_id, topic tag, **person reference**, field
+ref" (`tables.ts:884`); when `scope === "person"`, `target` is free text
+naming a person. The fixture row this session has repeatedly referenced
+(`5e5d170a`, scope `person`, target `"topic"`) is this exact shape with an
+innocuous value; a real household's equivalent exclusion would hold a real
+name.
+
+**The erasure tool already knew.** `erase-household.mjs`'s own header
+anticipates this: `--scrub-audit-detail` exists specifically because
+`detail` payloads "can carry emails." But the flag is off by default, and
+the dry-run's status line unconditionally reports audit events as "kept
+intact (hashes, no values)" regardless of whether that's true for the
+household being erased. **It answers Direction 1a's question 4 directly:
+by default, an erased household's audit trail remains fully resolvable to a
+person who was assigned a role or named in a person-scoped exclusion.**
+
+**Disposition, not yet decided.** Two shapes fix this going forward, and
+they are not mutually exclusive with catching up the historical rows:
+
+1. Both sites store an id instead of the raw value (`assignmentId` already
+   exists and resolves to the user; a `personId`/reference table would be
+   needed for exclusion targets, which do not currently reference anyone
+   structurally: `target` is untyped free text by design).
+2. `--scrub-audit-detail` becomes the erasure default rather than opt-in,
+   and the dry-run's status line is corrected to say what it actually knows
+   rather than a blanket claim.
+
+Direction 1b's audit-identity ADR (tokenize-at-write-time for non-client
+subjects) is written with this finding in view, since the same mechanism
+answers both the not-yet-built case and this already-live one, but building
+either fix here is out of scope for a read-only survey.

@@ -1,0 +1,2 @@
+CREATE TYPE "public"."prompt_item_routing" AS ENUM('client', 'hm', 'corporate', 'none');--> statement-breakpoint
+ALTER TABLE "prompt_pack_item" ADD COLUMN "routed_to" "prompt_item_routing" DEFAULT 'hm' NOT NULL;
