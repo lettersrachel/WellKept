@@ -46,6 +46,10 @@ fail-closed is deliberate.
 - **No capture surface attributing data to a named House Manager** ships before
   the G-13 staff disclosure is approved and acknowledged. `time_entry` and
   `object_observation` already exist under this rule.
+- **No record about a person who is not a client ships before REQ-076
+  exists.** Member Circle entries, Showing Up recipients, and a lead who never
+  signs are all non-client records. WK-STD-026 governs; see WORK_QUEUE.md
+  W-15.
 - **Payload guards on every new client-facing route.** They re-assert in the
   page, not only in CI.
 - Nothing hard-deletes. Tombstone plus append-only audit. The vault crypto-shred

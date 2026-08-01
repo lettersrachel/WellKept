@@ -193,6 +193,31 @@ which is the depends-on-remembering pattern again.
 Decide before the Phase 0 form creates three more of them: is child data a
 property of a kind, or a named set of kinds with a safe default?
 
+### W-15. REQ-076, deletion on request for non-client records (NEW, added 1 August 2026)
+
+WK-DEV-001 adds REQ-076 (P0), governed by WK-STD-026: records about people who
+are not clients (recipients, vendors, neighbours, Member Circle entries, a lead
+who never signs) require deletion on request and a 24-month retention ceiling.
+REQ-071's deletion clause reaches a client household at membership end and does
+not cover these. Checked packages/schema/src: no member_circle table and no
+non-client erasure path exist today.
+
+**This is a blocker, not a feature.** No record about a person who is not a
+client may be created before it exists, which gates WK-SVC-007 Showing Up and
+the lead pipeline before either starts.
+
+**Do:** hard delete on request; a scheduled job hard-deleting after 24 months
+of inactivity; the deletion itself audited (the audit row survives the
+delete); a non-marketable constraint that excludes these rows from every
+export and analytics view by default, not by convention. Read WK-STD-026 in
+full before scoping the migration.
+
+**Reconciled 2026-08-01 against the operating-library bundle:** the register
+itself, not only its deletion path, is also unbuilt (GAP_REGISTER G-56; not
+to be confused with G-55, filed the same week for an unrelated fleet-board
+defect). The 83-field temporal layer that would eventually feed the horizon
+channel is tracked separately (G-57, extends G-49).
+
 ---
 
 ## Gated

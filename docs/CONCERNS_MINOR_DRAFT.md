@@ -8,6 +8,11 @@ decision.** It is categories with reasoning, not field keys, because I have neve
 seen the 258-field seed. Map each category onto the actual fields, cut what is
 wrong, add what I could not know about.
 
+**Correction, 1 August 2026 (WK-PLAY-001):** 258 is a retired figure. The
+authored field count is 218, across 25 section slots numbered 0 to 24
+(section 0 record-level, 1 to 24 the Playbook's content sections). Earlier
+figures of 205, 215 and 273 are retired the same way.
+
 Sources: Client Profiles §2, §3, §5, §21; the Playbook Inventory Rubric Part 2
 and its WK-SOP-019 note; STD-016 §6.
 

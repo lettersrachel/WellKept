@@ -1440,3 +1440,88 @@ hypothesis recorded against the checklist item is weakened rather than
 eliminated: the clean-page retry that was supposed to settle it also
 wrote nothing. A refusal that never redirects at all, and whether an
 operator reads a banner that does render, are both outside this guard.
+
+---
+
+## Addendum (2026-08-01) — reconciled against the 1 August operating-library bundle
+
+Two new gaps surfaced reading WK-SVC-007, WK-QA-015, WK-PLAY-001 Addendum C,
+WK-STD-026 and WK-LEG-010 against the schema as it stands. Neither is a defect
+in anything shipped; both are prerequisites the bundle names as blocking
+work that has not started (Member Circle, Showing Up, the horizon channel).
+Numbered G-56 and G-57: G-55 above was filed the same week, independently,
+and lands first in the register.
+
+### G-56. The Member Circle register does not exist anywhere in the schema
+🧑 Rachel · ⚖️ a decision to make
+
+WK-SVC-007 states plainly: this service must not run until two things exist.
+The first is REQ-076 deletion (W-15, tracked). The second is THE MEMBER
+CIRCLE, the register of non-client recipients (a sister, a neighbor, a
+colleague someone asks Well Kept to help show up for) that WK-STD-026
+governs. Checked `packages/schema/src`: no table, no model, nothing
+resembling a recipient record exists today.
+
+This is the second half of the same blocker W-15 already tracks, not a
+separate one: no recipient record may be created before REQ-076 (deletion)
+AND the register itself both exist. WK-LEG-010 (the client-facing "Record
+Preview" document, drafted 1 August 2026) already describes this as
+"Section 25, people outside your household we help you show up for," with
+its own decline-the-whole-section provision (WK-LEG-010 §25, added 1 August
+2026: declining it changes nothing else about the record). That legal
+provision has nowhere to attach until the register is built.
+
+**Scope, per WK-STD-026 and WK-PLAY-001 Addendum C section F:** name and
+relationship, dietary and observance facts, sensitivities (scent, allergy),
+a pre-decline that outranks every other rule in the library, recurring dates
+kept only where the member asks, and what was sent and when. Twenty-four
+months after last engagement, then deleted, unless a recurring date was
+expressly asked to be kept. Never marketed to; never counted in a pipeline.
+
+**Do not build this before W-15,** since a Member Circle write path without
+a working deletion path is exactly the state WK-SVC-007 forbids.
+
+### G-57. The temporal layer (83 fields) is unbuilt; the horizon channel has no substrate to run on
+🧑 Rachel · 🤖 code or infra
+
+WK-PLAY-001 Addendum C, issued 31 July 2026, specifies 83 fields across six
+groups (People; Systems; Administrative custody; The household year; Guests,
+pets and vehicles; The Circle) as one structural change, not 83 separate
+decisions. Checked `packages/schema/src`: none of birth year/date, system
+installation date, expected life, serial/model, warranty terms, passport or
+visa expiry, policy renewal dates, vehicle registration/inspection, or a
+field marking a household tradition as lapsed exist anywhere in the schema
+(grepped for birth_year, birth_date, install_date, warranty, passport, visa,
+policy_number, vehicle_registration, expected_life — zero matches).
+
+This is the field-level detail behind two things already on record:
+- CLAUDE.md's REQ-011 correction (SPEC_AUDIT.md row 011): the horizon
+  channel is explicitly named as unpowered until date fields exist.
+- **G-49 above**, which covers the narrower case of object-level horizon
+  inputs (install date, expected lifespan, maintenance interval, last
+  serviced) for the registry/appliance domain specifically. G-49 stays open
+  and unchanged; this entry is the wider set Addendum C adds on top of it:
+  person dates (birth year is "the highest-value field in the library,"
+  unlocking ten downstream surfacings per WK-APP-007), administrative-custody
+  dates (passport, visa, insurance policies, vehicle registration, FSA,
+  professional licensure, each with its own lead time), household-year
+  dates (school calendars, camp registration, enrollment windows), and the
+  Circle fields tracked separately in G-56.
+
+Also folds in the "ritual restored" gap: Addendum C section A lists
+"household traditions, and lapsed ones" (tier 2) as "the origin of the
+ritual restored Moment. A tradition that stopped is often a signal rather
+than a preference." The schema records standing traditions; it has no field
+for one having stopped. WK-SVC-002 Addendum B and WK-QA-015 both name this
+gap independently; this is its one home in the register.
+
+**Per WK-PLAY-001 Addendum C's own guidance:** not a new section. These
+fields attach to sections that already exist (birth year with the person,
+install date with the system). Six of the 83 are tier zero (intake); the
+rest arrive over the first year through opportunistic capture and two
+backstops, per WK-APP-007's blocking/staged/background model, which is
+itself unbuilt: no field-dependency graph, no derived blocking/staged/
+background state, no prompt-to-ask trigger class. Provenance-on-write
+already exists (CLAUDE.md, "every write stamps provenance server-side");
+what is missing is the layer above it that decides which field to ask for
+next and when.

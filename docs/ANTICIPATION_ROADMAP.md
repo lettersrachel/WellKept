@@ -124,7 +124,10 @@ constantly, so the engine will eventually assert a stale fact to a client with
 total confidence. That is worse than saying nothing, because it demonstrates
 the record is not current, which is the premise the whole service rests on.
 
-**Schema.** A `field_confirmation` table rather than 258 columns:
+**Schema.** A `field_confirmation` table rather than 258 columns (258 is a
+retired figure per WK-PLAY-001, corrected 1 August 2026; the authored count
+is 218 fields across 25 section slots, 0 to 24. The point below, one row per
+field rather than a wide table, is unaffected by the correction):
 
     household_id, field_key, confirmed_at, confirmed_by, source
 

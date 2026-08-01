@@ -12,6 +12,9 @@ manifest, compared against ADR-002, SPEC_AUDIT and the rev 9 package.
 Still not seen: the 258-field record seed itself and the bindings CSV. Those
 would let me check field-by-field rather than model-to-model.
 
+**Correction, 1 August 2026 (WK-PLAY-001):** 258 is a retired figure. The
+authored field count is 218, across 25 section slots numbered 0 to 24.
+
 ---
 
 ## The through-line

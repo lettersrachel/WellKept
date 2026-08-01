@@ -3,6 +3,11 @@ status: living
 ---
 # Session D input: draft categories mapped onto the 258-field seed
 
+**Correction, 1 August 2026 (WK-PLAY-001):** 258 is a retired figure. The
+authored field count is 218, across 25 section slots numbered 0 to 24. The
+title and mapping below are kept as originally written (2026-07-28); read
+"258-field seed" as the pre-correction figure throughout this document.
+
 2026-07-28. Mechanical mapping of CONCERNS_MINOR_DRAFT.md's categories
 onto the actual template (tooling/seed/fernbrook_template_seed.json),
 which the draft's author had not seen. **Candidates for the founder's
