@@ -1589,6 +1589,43 @@ exclusions explicitly (`exclusions.ts` header); whether a floor also
 reaches a House Manager correctly during LIFE-EVENT (the spec's own
 carve-out) was not traced end to end here.
 
+**Update, 2026-08-01, Direction 3a's WATCH read.** Checked whether WATCH
+already implements escalate-only under another name, per the brief's own
+hope (the shape that turned out true for G-49). It does not. Every WATCH
+reference in the codebase is one of two things: `alertCorporateOnWatch`
+(REQ-061, `apps/web/src/app/api/visit-commands/route.ts:46-51`), an email
+to corporate on every visit close for a WATCH or LIFE-EVENT household, and
+`setStatusTag`'s notification to the household's House Managers at the
+moment the tag is set (`actions.ts:93-108`). Both are one-shot, tag-change
+or visit-close triggered side channels. Neither touches `trigger_rule`
+matching, `filterExcludedDrafts`, or `promptPackItem` emission in any way.
+Client-facing candidates are not suppressed for a WATCH household (only
+`"LIFE-EVENT"` sets `suppressedByTag`), so a WATCH household's client
+portal and HM briefing behave exactly as a STEADY household's would. This
+is the opposite outcome from G-49: escalate-only genuinely does not exist
+under another name and genuinely needs new state.
+
+**Also confirmed: the suppression log does not exist**, closing the
+question Direction 3d asked before anything else got built. `filterExcludedDrafts`
+(`exclusions.ts`) returns a bare count (`{ kept, suppressed: number }`),
+not a per-candidate record of which gate stopped which item. Both callers
+discard even that count: `field-events.ts:43` awaits `runTriggerPass`
+without reading its return value, and `services/worker/src/index.ts:45`
+does the same. `WK-APP-008` Part 3's "every suppressed candidate is logged
+with the gate that stopped it" and Part 8's fire-rate telemetry are both
+unbuilt; annual pruning is opinion today, exactly as the brief warned it
+would be without this.
+
+**Direction 3b, built the same session** (migration 0035): `prompt_pack_item`
+gains `routed_to` (`client | hm | corporate | none`), defaulting to `'hm'`,
+computed from what an item actually does today (the HM briefing query in
+`data.ts` reads it; no client-portal surface renders it directly; corporate
+sees it in the oversight pages regardless of tag) rather than hardcoded.
+The migration changes no behavior: nothing reads or branches on `routed_to`
+yet. Applied clean against a fresh local database, 36/36/36 three-way
+count. Wiring actual escalate-only routing behavior against this column,
+and the suppression-log gap above, are each their own session.
+
 ---
 
 ### G-59. Two live audit-write sites store an email address and a person's name directly, not an id pointing at one

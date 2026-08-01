@@ -6,7 +6,7 @@ status: living
 
 Companion to the `counsel-pending` marker convention (Direction 0,
 `PLACEHOLDER_DIRECTIONS.md`, 1 August 2026). A placeholder waiting on a ruling
-does not expire the way `pilot-calibrated` does — it sits in the code looking
+does not expire the way `pilot-calibrated` does. It sits in the code looking
 decided until nobody remembers it was provisional. This file, plus the
 `provisional-markers` guard (`packages/schema/src/provisional-markers.test.ts`),
 is what keeps that from happening: every `counsel-pending` marker in the source
@@ -30,8 +30,8 @@ Resolved: <date and outcome, once answered - remove the marker from the
 
 ## Open questions
 
-None yet. Nothing in the codebase currently depends on an unresolved ruling —
-the non-client-record work this convention was built for (`WK-STD-026`'s
+None yet. Nothing in the codebase currently depends on an unresolved ruling.
+The non-client-record work this convention was built for (`WK-STD-026`'s
 deletion-on-request question, tracked in `docs/GAP_REGISTER.md` G-56) is still
 blocked upstream of any code that would need a marker. The first real entry
 belongs here the moment a session writes code whose behavior assumes an
