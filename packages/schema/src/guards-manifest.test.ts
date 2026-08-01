@@ -37,6 +37,9 @@ test("the guard files exist where the manifest says they are", () => {
     // G-55: refusal targets render the banner (lives in apps/web because
     // it reads the route tree and the action layer).
     "apps/web/src/lib/refusal-visibility.test.ts",
+    // Direction 0: counsel-pending markers resolve in the register and
+    // never go stale unnoticed.
+    "packages/schema/src/provisional-markers.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -97,7 +100,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "permissions.test.ts", "erasure-coverage.test.ts", "client-copy.test.ts",
     "child-data-kinds.test.ts", "guards-manifest.test.ts", "`sizes` CHECK",
     "frozen-records.test.ts", "seed-binding.test.ts", "staff-disclosure.test.ts",
-    "refusal-visibility.test.ts",
+    "refusal-visibility.test.ts", "provisional-markers.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }
