@@ -6,6 +6,17 @@ status: living
 Date: 2026-08-01 | Status: Accepted (engineering decision, shape only - see
 Open questions) | Decider: this session, per Direction 1b (`PLACEHOLDER_DIRECTIONS.md`)
 
+**Update, 2026-08-01, same day:** the promise question this ADR deliberately
+left open is now resolved. Counsel confirmed no statute obliges deletion of
+non-client records; the founder's instruction was "there should be no
+constraints." Full resolution in `docs/GAP_REGISTER.md` G-56. This ADR's
+shape is unaffected and is now confirmed as sufficient rather than merely
+survivable: tombstone was always going to be enough, and this ADR's
+tokenized shape remains the recommendation on its own engineering merits
+(an unlinkable-on-request audit trail costs nothing to build and is good
+practice independent of any legal floor), not because a stricter ruling
+might have required it.
+
 ## Context
 
 `WK-STD-026` requires deletion on request for records about people who are
@@ -82,7 +93,9 @@ anonymized - the audit trail's whole purpose is knowing who did what).
 - **Whether the company owes deletion at all**, and to what non-client
   population, under what retention window. Counsel's answer
   (`OPEN_ITEMS_INSTRUCTIONS.md` 1.1) is unaffected by this ADR and this
-  ADR does not anticipate it.
+  ADR does not anticipate it. **Answered same day, see the update note
+  above: no statutory obligation. The retention window and field scope
+  remain the founder's to set**, unconstrained rather than undecided.
 - **The mapping table's exact schema, or whether it is one table shared
   across subject classes or one per class.** That is implementation,
   decided when G-56 unblocks or when G-59 is worked, whichever comes

@@ -1481,6 +1481,51 @@ expressly asked to be kept. Never marketed to; never counted in a pipeline.
 **Do not build this before W-15,** since a Member Circle write path without
 a working deletion path is exactly the state WK-SVC-007 forbids.
 
+**Resolved, 2026-08-01: counsel confirmed no statutory obligation.**
+`OPEN_ITEMS_INSTRUCTIONS.md` Item 1.1's question went to counsel: does any
+statute or regulation require deletion of records about people who are not
+clients, at Well Kept's size. Answer: no. The founder's instruction,
+verbatim: "we do not need to require deletion of records about people who
+are not clients. there should be no constraints."
+
+**What this changes.** Deletion-on-request for non-client records is a
+promise the company may choose to make, not an obligation it must
+discharge under a statute. REQ-076's current wording ("hard delete, not a
+soft flag") asserted a legal necessity that was never verified and is now
+known to be false. It was drafted before `erase-household.mjs` was read,
+per `OPEN_ITEMS_INSTRUCTIONS.md`'s own framing. Withdrawn.
+
+**What this does not change.** "No constraints" answers the legal
+question, not the design one. `ADR-006` (audit-identity tokenization) was
+built to survive every possible ruling, including this one. Tombstone is
+now confirmed sufficient, and tokenizing identifying fields at write time
+still costs nothing and remains the correct shape, since it makes the
+trail unlinkable on request without an unaudited deletion or a broken
+append-only property either way. The specific retention design (the
+24-month figure, the may-hold/may-never-hold field list, whether a
+recurring date survives by request) was never a legal question and is
+still the founder's to set. "No constraints" means the mechanism is
+unconstrained, not that the record needs no design at all.
+
+**Not editable from this repo.** `REQ-076` and `WK-STD-026` live in the
+founder's document library, not in `packages/` or `docs/`. The matching
+edits (`WK-STD-026` amended under `WK-SOP-026` with this decision and its
+date, `REQ-076` rewritten to drop "hard delete, not a soft flag," and
+`WK-DEV-005`'s "nothing hard-deletes" line corrected the same way `CLAUDE.md`'s
+was in PR #104) are the founder's to make in her own copies, per the
+`WK-APP-003 Addendum A1 §S3` / `membership_tier_gate` precedent (W-11).
+
+**G-56 unblocked in principle, not yet scoped.** The register itself (the
+`member_circle_entry` table) can now be built as a tombstone-pattern write
+path, matching every other entity in this schema, rather than needing a
+true hard-delete mechanism. Still not started: the table design, the
+may-hold/may-never-hold enforcement at the API boundary, the 24-month
+retention job, the non-marketable export exclusion, and `OPEN_ITEMS_INSTRUCTIONS.md`
+1.3's flagged gap (a recipient is not a household, and `erase-household.mjs`
+is household-shaped, engineering not counsel, and still open). Sized as
+its own session or several, not something to start inside a documentation
+commit.
+
 ### G-57. The temporal layer (83 fields) is unbuilt; the horizon channel has no substrate to run on
 🧑 Rachel · 🤖 code or infra
 

@@ -218,6 +218,17 @@ to be confused with G-55, filed the same week for an unrelated fleet-board
 defect). The 83-field temporal layer that would eventually feed the horizon
 channel is tracked separately (G-57, extends G-49).
 
+**Resolved 2026-08-01: counsel confirmed no statutory obligation to delete
+records about people who are not clients.** The "hard delete on request"
+half of this item's own "Do" list above is withdrawn along with REQ-076's
+matching wording; deletion is a promise the company may choose to make, not
+a legal requirement, so the mechanism is unconstrained. Full resolution and
+what it does and does not change: GAP_REGISTER G-56. The register itself
+(member_circle_entry, the may-hold/may-never-hold field list, the retention
+job, the non-marketable export exclusion) is not built yet and is its own
+session; a recipient not being a household, so erase-household.mjs cannot
+reach one, is a separately flagged engineering gap.
+
 ---
 
 ## Gated
