@@ -990,11 +990,20 @@ export async function recordMembershipEvent(formData: FormData) {
   // impossible. And success is now as legible as refusal (the 2026-07-27
   // lesson, round two): redirect with ?recorded= so the page SAYS it landed
   // - no green banner, no write, no ambiguity.
+  //
+  // AQ (1 August 2026): household.tier is read directly by the fleet board
+  // and elsewhere, but until now nothing kept it in sync with this event
+  // log - a tier_change wrote history and left the denormalised column
+  // stale. Kept in the same transaction as the event it tracks, same
+  // reasoning as the audit row: the two must never be able to disagree.
   await db.transaction(async (tx) => {
     await tx.insert(membershipEvent).values({
       id: randomUUID(), householdId, kind: kind as (typeof KINDS)[number],
       effectiveOn, tier, priceCents, reason, initiatedBy, recordedBy: principal.userId,
     });
+    if (tier) {
+      await tx.update(household).set({ tier, updatedAt: new Date() }).where(eq(household.id, householdId));
+    }
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
       kind: "membership_event", detail: { eventKind: kind, effectiveOn, tier, initiatedBy },
