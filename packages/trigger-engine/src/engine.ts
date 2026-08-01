@@ -12,6 +12,11 @@
  *   pilot) and clamped forward to 7am.
  */
 
+import {
+  fieldIsDeclineClass, isDeclineClassExcluded, DeclineClassViolation, DECLINE_CLASS_EXCLUSIONS,
+  type DeclineClassExclusion,
+} from "./decline-class.ts";
+
 export interface FieldChangeEvent {
   householdId: string;
   fieldId: string;
@@ -82,11 +87,31 @@ export function clampOutOfQuietHours(fireAt: Date, timezone: string): Date {
   return out; // unreachable for a valid timezone; fail open to "later"
 }
 
-export function ruleMatches(rule: TriggerRuleRow, event: FieldChangeEvent): boolean {
+export function ruleMatches(
+  rule: TriggerRuleRow,
+  event: FieldChangeEvent,
+  // Injectable for tests only - production always uses the real,
+  // reviewed list (the parameter's default). Threading it through here
+  // rather than reaching for the module singleton inside the function
+  // means a test can prove the red-then-green transition without
+  // mutating shared state other tests in the same process might read.
+  exclusions: readonly DeclineClassExclusion[] = DECLINE_CLASS_EXCLUSIONS,
+): boolean {
   if (!rule.enabled) return false;
   if (rule.householdId !== null && rule.householdId !== event.householdId) return false;
   if (!rule.bindsToFieldName) return false;
-  return event.fieldName.toLowerCase().includes(rule.bindsToFieldName.toLowerCase());
+  const matched = event.fieldName.toLowerCase().includes(rule.bindsToFieldName.toLowerCase());
+  if (!matched) return false;
+  // Direction 2 (decline-class): a match against a field whose presence
+  // implies a diagnosis, a treatment, or an elder's decline is a hard
+  // error here, not a skip - WK-STD-016 Section 2 requires proposing
+  // nothing, and a silently-skipped match is indistinguishable from a
+  // rule that simply never fired (the G-55 failure shape, one layer in).
+  if (fieldIsDeclineClass(event.fieldName)) {
+    const packKey = rule.definition.packKey ?? rule.definition.packName;
+    if (!isDeclineClassExcluded(packKey, exclusions)) throw new DeclineClassViolation(event.fieldName, packKey);
+  }
+  return true;
 }
 
 /**
