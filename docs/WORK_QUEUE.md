@@ -715,6 +715,23 @@ app's vocabulary stay out, per the brief.
 | Mileage `purpose` and `destination` | G-46 | founder field list, plus the erasure interaction |
 | Room-level intake granularity | INTAKE_CAPTURE_GAP_REVIEW §7 | after the calibration study runs |
 
+### Briefs from the 1 August operating-library bundle, not in this repo
+
+Reconciled 2026-08-01 alongside G-56/G-57. These four are drafts held by the
+founder (WK-APP-004 through 007), each explicitly self-marked not yet
+reconciled or not yet costed against WK-DEV-001. None is a correction to
+anything built; all are new backlog. Adding them here so they are indexed
+and not lost, not proposing a build order.
+
+| Item | Brief | Gate |
+|---|---|---|
+| Anticipation batch groups A-E (seasonal/hobby/appliance, lifecycle practice, relationship/coordination, credential/staffing, multi-property) | WK-APP-006 (bundle, not in repo) | none stated; fields exist per the brief's own reconciliation. Do group I (a five-minute doc-hygiene fix, in the founder's copy, not this repo) first |
+| New household segments (medically complex, business owner, downsizing, exceptional-needs child, estate settling) | WK-APP-006 group F (bundle, not in repo) | an intake pass, fields before triggers; ranking the five by urgency is a founder call the brief leaves open |
+| Collision detection, 12 classes | WK-APP-004 (bundle, not in repo) | the weekly-shape fields (S3-5) structured from prose to typed time; the weekly-reset cost decision in the brief's Section 4 (margin trade-off, needs a founder call); ship HARD severity only at first |
+| Knowledge half-life + recommendations library | WK-APP-005 (bundle, not in repo) | decay/expiry mechanism before any sourcing; library starts narrow (children's gifts by age band); corporate-library placement (Section 6) needs confirming against WK-DEV-001; internal-tool-vs-client-product is an open founder decision |
+| Information dependency layer (blocking/staged/background, "ask once") | WK-APP-007 (bundle, not in repo) | WK-STD-016 sequencing and suppression first, per the brief's own build order; field-dependency graph is the smallest first piece |
+| Record Preview, generated client-facing pre-signup document | WK-LEG-010 (bundle, not in repo) | the schema it renders from (25 slots including section 0, G-57's temporal layer) and, for its own §25, the Member Circle register (G-56) |
+
 ---
 
 ## Not software
