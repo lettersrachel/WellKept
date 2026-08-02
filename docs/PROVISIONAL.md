@@ -30,9 +30,47 @@ Resolved: <date and outcome, once answered - remove the marker from the
 
 ## Open questions
 
-None yet. Nothing in the codebase currently depends on an unresolved ruling.
-The non-client-record work this convention was built for (`WK-STD-026`'s
-deletion-on-request question, tracked in `docs/GAP_REGISTER.md` G-56) is still
-blocked upstream of any code that would need a marker. The first real entry
-belongs here the moment a session writes code whose behavior assumes an
-answer counsel or the founder hasn't given yet.
+Seeded 2 August 2026 from the founder's commissioning package
+(`PROVISIONAL_seed.md`). The seed's opening instruction, to first resolve
+any existing counsel-pending marker on the statutory deletion question, was
+checked and is moot: this register was created after that question was
+already answered (1 August, no statutory obligation, see GAP_REGISTER G-56),
+so no such marker ever existed here. Neither entry below has a matching
+`counsel-pending` source marker yet, because no code currently branches on
+either answer; the entries are registered ahead of the code so the first
+session that does write such code has its question id waiting.
+
+### WK-HR-OpsCoordinator-departures
+
+Who: counsel, with the WK-HR-002 v1.1 packet.
+Asked: 2026-08-02.
+Text: Two senior operations people leaving the same employer for the same
+venture; non-solicitation exposure, whether anything was developed on the
+employer's systems, and the sequencing of the two resignations.
+Consequence: if counsel advises constraints, the Operations Coordinator
+offer terms and start date change; the model's 2028 Operations Lead line
+does not.
+Resolved: open.
+
+### WK-LEG-011-founding-rate-review
+
+Who: counsel.
+Asked: 2026-08-02.
+Text: Review of the Founding Member Addendum at the decided terms ($775,
+12-month lock, fifteen households).
+Consequence: if counsel changes the term structure, the model's assumption
+rows carry the scenarios and the base case moves by selector, not by edit.
+Resolved: open.
+
+## Pilot-calibrated entries
+
+Counted by the guard, never build-failing; these expire when real numbers
+arrive.
+
+- **Decline-class taxonomy** (Founder Ruling 1, 2026-08-02): the six
+  approved categories are deliberately incomplete; the pilot will surface
+  cases the list does not cover. Revisit at pilot close. Lives in
+  `packages/trigger-engine/src/decline-class.ts`.
+- **The 90-day counsel-pending expiry itself** (`provisional-markers.test.ts`):
+  a placeholder for real counsel turnaround, set before any real turnaround
+  has been observed.
