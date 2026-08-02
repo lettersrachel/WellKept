@@ -46,10 +46,15 @@ fail-closed is deliberate.
 - **No capture surface attributing data to a named House Manager** ships before
   the G-13 staff disclosure is approved and acknowledged. `time_entry` and
   `object_observation` already exist under this rule.
-- **No record about a person who is not a client ships before REQ-076
-  exists.** Member Circle entries, Showing Up recipients, and a lead who never
-  signs are all non-client records. WK-STD-026 governs; see WORK_QUEUE.md
-  W-15.
+- **No record about a person who is not a client ships before REQ-077 is
+  built** (member_circle_entry plus a recipient-shaped erasure path).
+  Member Circle entries, Showing Up recipients, and a lead who never signs
+  are all non-client records; WK-STD-026's four rules stand as company
+  policy. Counsel confirmed on 1 August 2026 that no statute obliges
+  deletion (REQ-076 withdrawn, REQ-077 replaces it at P2), and the founder
+  chose paper-first through the pilot anyway, a stricter-than-required
+  policy, never a compliance claim. See WORK_QUEUE.md W-15 and
+  GAP_REGISTER G-56.
 - **Payload guards on every new client-facing route.** They re-assert in the
   page, not only in CI.
 - Nothing hard-deletes by default. Tombstone plus append-only audit is the
@@ -159,6 +164,15 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   because the code opened the TOTP secret before falling back to them
   (G-54). Check every escape hatch against the failure it exists for, not
   against a healthy system.
+- **When a document and the code disagree, report both and stop.** Do not
+  reconcile, do not pick the more recent, do not assume the code is
+  descriptive of intent. The library has a change-control procedure and
+  silent reconciliation defeats it. This applies to documents disagreeing
+  with each other as much as to documents disagreeing with code.
+- **Log-before-do is correct in the vault and nowhere else.** In the vault,
+  no row must mean no value. At every other surface it produces an
+  optimistic row that claims something happened before anything did, which
+  is the defect class of G-53 rather than a safeguard against it.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
 

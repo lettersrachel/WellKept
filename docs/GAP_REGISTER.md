@@ -1803,3 +1803,66 @@ authoritative source (unverified whether the economics read path already
 falls back to it that way); and whether `membership_event` needs its own
 lifecycle CHECK the way its three siblings got one. Both are scoped
 sessions of their own, not a default to pick in passing.
+
+---
+
+### Commissioning addendum (2026-08-02): founder rulings applied to G-56, G-58, and G-60
+
+The 2 August commissioning package (`FOUNDER_RULINGS_2026-08-02.md`,
+`DURABILITY_REQUIREMENTS_2026-08-02.md`, `SESSION_COMMISSIONING_BRIEF.md`,
+`INSTRUCTION_UPDATES_2026-08-02.md`, `PROVISIONAL_seed.md`; founder-held,
+recorded here in summary) was reconciled against this register. Most of its
+commissioned sessions had already run in the 1 August working session; the
+rulings below are the new material.
+
+**G-56 (Member Circle), per Ruling 5.** The register's scoping half closed
+2 August: WK-PLAY-003 Addendum A (in the founder's library) scopes
+`member_circle_entry` to the WK-STD-026 may-hold column, the pre-decline,
+and the whole-register decline per WK-LEG-010 section 25. The pilot runs it
+ON PAPER through the administrative alternative; per the 1 August counsel
+ruling recipient records MAY lawfully enter the platform before a deletion
+path exists, so paper-first is the founder's stricter-than-required policy
+choice, never a compliance claim. REQ-076 is withdrawn and REQ-077 replaces
+it at P2. What remains on G-56 is engineering only: a recipient-shaped
+erasure path (erase-household.mjs is household-shaped) and the
+member_circle_entry build under REQ-077. When those exist, G-56 closes.
+
+**G-60's first open question, answered by Durability requirement 3:
+`price_cents` becomes REQUIRED on `start` and `tier_change`.** Not built
+here; the durability document's own consolidation note has it ride the
+Temporal Layer migration window (Ruling 4) so the durability items cost one
+migration rather than seven. G-60's second question (derive
+`household.tier` from the event stream, or reconcile on write) is settled
+by the drift query's own result: no drift exists, and reconcile-on-write
+already shipped in PR #105, so the reconciliation branch is the standing
+answer unless a later session deliberately supersedes it.
+
+**Ruling 4 (Temporal Layer, G-57/G-49): approved as the first post-pause
+schema build**, additive-only nullable fields, decline-class guards
+required in place first (they are, PR #107). Two gates remain before it
+can start: AO/AP/AQ have all reported (satisfied), and the founder's
+August paper capture on her own household validates the field list
+(NOT yet satisfied; founder-side).
+
+**Durability requirements 1-8 recorded as binding on the Temporal Layer
+migration window**: territory seam, explicit timezone per territory,
+required lifecycle pricing, append-only lifecycle with coded end reasons,
+referral lineage at creation, person-level identity mapping generalized
+from ADR-006, export as a tested first-class capability, and a generated
+data dictionary per migration. The don't-list is equally binding: no
+multi-region, no microservices, no franchise tooling, no premature scale
+work; one Postgres serves 1,200 households indefinitely.
+
+**One divergence, reported rather than absorbed (report-and-stop):**
+Ruling 1's condition reads "the sweep of existing fields (2e) is REPORT
+ONLY and any existing field that would be caught comes back as a separate
+ruling." The 1 August build (PR #107) instead TAGGED the three existing
+matching fields (Resident-member health horizon, Aging-parent horizon,
+Other dependents) after verifying zero trigger rules bind to any of them,
+so the tagging changed no live behavior. The ruling was written
+independently of that build and asks for a separate founder ruling on
+exactly these fields. **RATIFIED by the founder, 2026-08-02, same day**
+("ratify", on the reported divergence naming all three fields). The tags
+on Resident-member health horizon, Aging-parent horizon, and Other
+dependents (elder care, special needs) are now founder-approved, closing
+the separate-ruling condition rather than bypassing it.
