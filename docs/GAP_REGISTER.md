@@ -1861,6 +1861,8 @@ matching fields (Resident-member health horizon, Aging-parent horizon,
 Other dependents) after verifying zero trigger rules bind to any of them,
 so the tagging changed no live behavior. The ruling was written
 independently of that build and asks for a separate founder ruling on
-exactly these fields. The tags stand as shipped pending that ruling;
-un-tagging them is a one-line revert per field if the founder rules
-otherwise.
+exactly these fields. **RATIFIED by the founder, 2026-08-02, same day**
+("ratify", on the reported divergence naming all three fields). The tags
+on Resident-member health horizon, Aging-parent horizon, and Other
+dependents (elder care, special needs) are now founder-approved, closing
+the separate-ruling condition rather than bypassing it.

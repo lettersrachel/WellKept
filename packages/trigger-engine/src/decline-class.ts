@@ -62,6 +62,11 @@ export const DECLINE_CLASS_TAXONOMY = [
  * them untagged would be the actual gap this direction exists to close -
  * these are exactly the fields a future rule-authoring session could bind
  * to without knowing the concern exists.
+ *
+ * Founder Ruling 1 (2 August 2026) independently asked for these matches
+ * to come back as a separate ruling rather than be tagged directly; the
+ * divergence was reported and the founder RATIFIED all three tags the
+ * same day. They are founder-approved, not session-defaulted.
  */
 export const DECLINE_CLASS_FIELDS: readonly string[] = [
   "resident-member health horizon",
