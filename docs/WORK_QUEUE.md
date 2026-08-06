@@ -28,12 +28,15 @@ binding; none exists, so no behavior changed on day one), the G-59
 audit-identity tokenisation (ADR-006's audit_subject_token, all three
 write sites), the routed_to placeholder, and the brace-expansion
 security overrides. The `visit_reconciliation` knob read back intact
-after the migration, `{"gapDays":10}` as founder-set. **Nothing new
-has been exercised against production data yet**: no tokenised audit
-row has been written and no decline-class match has fired; the section
-4 sitting for this batch (standing checks plus the two batch-specific
-proofs, the role_assigned token shape and the fleet-board banner) is
-the open verification work. Known-standing, not new: the turbo.json
+after the migration, `{"gapDays":10}` as founder-set. **The two batch-specific proofs ran the same day and
+both PASS** (founder, 2026-08-06): the first production tokenised
+audit write (a role_assigned row carrying subjectToken with no email
+in the detail, the matching audit_subject_token row holding the
+value), and the fleet-board refusal banner rendering on a stale
+second-tab exclusion end, the exact failure shape G-55 filed. The
+decline-class guard remains unexercised by design (no decline-class
+binding exists to fire). The standing section 4 checks (2-3, 5-11,
+13-14) are the remaining verification work. Known-standing, not new: the turbo.json
 env-var declaration warning (queue chore item 5) and the
 Sentry/OpenTelemetry compile warning.
 
