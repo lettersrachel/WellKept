@@ -16,9 +16,33 @@ in a session prompt.
 
 ## State
 
-Production serves `527533c` (2026-07-29, seventh clean run through
-tooling/deploy.sh's full gate; migration 0034 applied, counts 35/35/35,
-build id verified three times). The deploy carries the AK atomic tab
+Production serves `12b9661` (2026-08-06, eighth clean run through
+tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
+37/37/37, build id verified three times, the env-presence gate naming
+all five required vars). The deploy carries everything merged since the
+seventh run: the G-55 fleet-board refusal banner (the 25
+`refuse(null, ...)` paths stop failing silently), the household.tier
+sync inside recordMembershipEvent's transaction, the decline-class
+guard live at rule-match time (throws on an unreviewed decline-class
+binding; none exists, so no behavior changed on day one), the G-59
+audit-identity tokenisation (ADR-006's audit_subject_token, all three
+write sites), the routed_to placeholder, and the brace-expansion
+security overrides. The `visit_reconciliation` knob read back intact
+after the migration, `{"gapDays":10}` as founder-set. **The two batch-specific proofs ran the same day and
+both PASS** (founder, 2026-08-06): the first production tokenised
+audit write (a role_assigned row carrying subjectToken with no email
+in the detail, the matching audit_subject_token row holding the
+value), and the fleet-board refusal banner rendering on a stale
+second-tab exclusion end, the exact failure shape G-55 filed. The
+decline-class guard remains unexercised by design (no decline-class
+binding exists to fire). The standing section 4 checks (2-3, 5-11,
+13-14) are the remaining verification work. Known-standing, not new: the turbo.json
+env-var declaration warning (queue chore item 5) and the
+Sentry/OpenTelemetry compile warning.
+
+The seventh run's record, kept for history: production served
+`527533c` (2026-07-29; migration 0034, counts 35/35/35, build id
+verified three times). The deploy carries the AK atomic tab
 handoff (G-52's loss window closed, plus the conflict-marker
 stuck-queue fix), the AJ option 2 role widening, the boot-time KEK
 validation, and the AN merge-script work. **The health check passing
@@ -28,7 +52,11 @@ has ever been exercised; rotation is still required (a key value
 entered a session transcript on 2026-07-28) and precedes the fixture
 seeding.** The `visit_reconciliation` knob is live (`{"gapDays":10}`,
 founder-set); demo households flag immediately, which is the knob
-working. Eleven CI guards. Gap register at G-55, filed with its settled
+working. Thirteen CI guards as of 5 August (provisional-markers and
+decline-class-exclusion joined the manifest); the register has since
+moved to G-60, with G-59 FIXED in the eighth deploy. Earlier text of
+this paragraph, kept as the seventh run's record: gap register at
+G-55, filed with its settled
 outcome (the first submit's command was LOST client-side, never
 delivered; AK closes the window it fell through). G-13
 founder-approved, awaiting counsel review and the hire's

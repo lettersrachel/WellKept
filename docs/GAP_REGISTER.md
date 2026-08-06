@@ -1441,6 +1441,11 @@ eliminated: the clean-page retry that was supposed to settle it also
 wrote nothing. A refusal that never redirects at all, and whether an
 operator reads a banner that does render, are both outside this guard.
 
+**BANNER PROVEN IN PRODUCTION 2026-08-06** (the eighth deploy's second
+proof): a stale second-tab end of the same exclusion landed on the fleet
+board showing the red Action refused banner, the exact click-navigate-
+silence shape this entry filed, now visible where it was invisible.
+
 ---
 
 ## Addendum (2026-08-01) — reconciled against the 1 August operating-library bundle
@@ -1745,6 +1750,13 @@ the dry-run status line) remains open, deliberately: the tool's blanket
 "kept intact (hashes, no values)" line is now TRUE for rows written after
 this fix and stale only for pre-fix fixture rows, a smaller inaccuracy
 than G-59 filed, left for the erasure tool's next reviewed pass.
+
+**EXERCISED IN PRODUCTION 2026-08-06, the eighth deploy's first proof.**
+A role assignment on the Smoke Test Fixture produced a role_assigned row
+whose detail carries subjectToken with the email nowhere in the JSON, and
+the matching audit_subject_token row holding the value. The first
+tokenised audit write the system has ever performed, the strongest form
+of the proof per standing doctrine.
 
 ---
 
