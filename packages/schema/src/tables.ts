@@ -891,6 +891,23 @@ export const seasonObservation = pgTable("season_observation", {
 // fail closed. Approval is corporate only, always; ending an exclusion sets
 // effective_to (nothing hard-deletes). SAFETY FLOORS BYPASS THIS TABLE
 // ENTIRELY — asserted in @wellkept/trigger-engine exclusion tests.
+// ADR-006 (G-59, AR's first fix): the audit-identity mapping. An audit row
+// must never hold a name or an email for a subject who is not the acting
+// user; it holds this table's row id (the token) and resolution is a live
+// join at read time. Erasure of a subject DELETES the mapping row: the
+// audit row survives untouched (append-only holds) and becomes unlinkable,
+// which is the entire mechanism - deletion here is BY DESIGN, the seventh
+// documented DELETE exception in erase-household.mjs, not a tombstone
+// candidate. A new token is minted per audit event rather than deduped per
+// subject: dedupe would itself be a linkage record, and the cost of extra
+// rows is nothing at this scale.
+export const auditSubjectToken = pgTable("audit_subject_token", {
+  ...stamps,
+  householdId: uuid("household_id").notNull(),
+  kind: text("kind").notNull(), // email | person_ref
+  value: text("value").notNull(), // the identifying value; s2, staff-only
+}, (t) => [index("audit_subject_token_household_idx").on(t.householdId)]);
+
 export const anticipationExclusion = pgTable("anticipation_exclusion", {
   id: uuid("id").primaryKey(),
   householdId: uuid("household_id").notNull(),

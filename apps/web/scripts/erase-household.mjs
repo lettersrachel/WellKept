@@ -55,6 +55,10 @@
  *    household name; no business-record claim.
  *  - field_event_outbox: DELETED - transient trigger-delivery rows whose
  *    payloads carry actual field values.
+ *  - audit_subject_token: DELETED - the ADR-006 audit-identity mapping;
+ *    deleting the mapping row IS the erasure mechanism (the audit rows
+ *    referencing these tokens survive, append-only, and become
+ *    unlinkable by design).
  *  - trigger_rule (household-scoped only): kept and disabled, definition
  *    replaced with an erased stub (rules never hard-delete; fleet-level
  *    rules are untouched).
@@ -151,6 +155,7 @@ const counts = {
   conditionFlags: await count("SELECT count(*) n FROM condition_flag WHERE household_id=$1"),
   deferrals: await count("SELECT count(*) n FROM deferral WHERE household_id=$1"),
   pausedDecisions: await count("SELECT count(*) n FROM paused_decision WHERE household_id=$1"),
+  auditSubjectTokens: await count("SELECT count(*) n FROM audit_subject_token WHERE household_id=$1"),
 };
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
@@ -174,6 +179,7 @@ console.log(`  audit events: ${SCRUB_AUDIT ? "detail payloads WILL be scrubbed (
   console.log(`  membership events: ${ERASE_MEMBERSHIP ? `${counts.membershipEvents} rows WILL be deleted (--erase-membership-history)` : `${counts.membershipEvents} KEPT, cancellation reasons blanked (commercial history is a business record)`}`);
   console.log(`  referral note: cleared (names third parties); referral CHANNEL retained (marketing fact, founder decision - counsel confirms)`);
   console.log(`  exclusions: ${counts.exclusions} kept, reason+target blanked · notifications: ${counts.notifications} deleted · outbox rows: ${counts.outbox} deleted · household-scoped rules: ${counts.scopedRules} disabled+stubbed`);
+  console.log(`  audit subject tokens: ${counts.auditSubjectTokens} deleted (ADR-006: the audit rows survive and become unlinkable - this IS the mechanism)`);
 console.log(`  role assignments to delete (sessions revoked):             ${counts.roles}`);
 
 if (!COMMIT) {
@@ -228,6 +234,12 @@ try {
   // series describes the household's objects; operational data, no
   // business-record claim once the household is erased.
   await c.query("DELETE FROM object_observation WHERE household_id=$1", [householdId]);
+  // audit_subject_token (ADR-006/G-59, 2026-08-05): DELETED - deleting the
+  // mapping row IS the erasure mechanism for audit identity. The audit
+  // rows referencing these tokens survive untouched (append-only holds)
+  // and become unlinkable, which is the designed outcome, not a side
+  // effect. The seventh documented DELETE exception.
+  await c.query("DELETE FROM audit_subject_token WHERE household_id=$1", [householdId]);
   // condition_flag (W-5, 2026-07-28): DELETED, same class as its series
   // (staff observations about the household's property); after the series
   // rows above, which reference it.

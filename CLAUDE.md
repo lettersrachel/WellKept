@@ -58,12 +58,14 @@ fail-closed is deliberate.
 - **Payload guards on every new client-facing route.** They re-assert in the
   page, not only in CI.
 - Nothing hard-deletes by default. Tombstone plus append-only audit is the
-  pattern. **Six tables are documented, reasoned exceptions that DELETE
+  pattern. **Seven tables are documented, reasoned exceptions that DELETE
   rows** (`apps/web/scripts/erase-household.mjs`'s own header names each):
   `vault_item` (the crypto-shred), `condition_flag`, `object_observation`,
-  `paused_decision`, `notification`, `field_event_outbox`. Each reason is
-  written where the deletion happens. A seventh exception needs the same:
-  a reason in the erasure tool, not a silent addition.
+  `paused_decision`, `notification`, `field_event_outbox`, and
+  `audit_subject_token` (ADR-006: deleting the mapping IS the audit-identity
+  erasure mechanism). Each reason is written where the deletion happens. An
+  eighth exception needs the same: a reason in the erasure tool, not a
+  silent addition.
 
 ## The CI guards, and what they do not cover
 

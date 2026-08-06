@@ -15,6 +15,26 @@ import { isClientEditable } from "./client-allowlist";
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 /**
+ * ADR-006 (G-59, AR's first fix): audit rows never hold a name or an email
+ * for a subject who is not the acting user - they hold a token minted
+ * here, resolved through audit_subject_token at read time by an
+ * authorized viewer. Erasing the subject deletes the mapping row; the
+ * audit row survives, append-only, and becomes unlinkable. A new token
+ * per event on purpose: deduping per subject would itself be a linkage
+ * record.
+ */
+async function mintAuditSubjectToken(
+  householdId: string,
+  kind: "email" | "person_ref",
+  value: string,
+): Promise<string> {
+  const { auditSubjectToken } = await import("@wellkept/schema");
+  const id = randomUUID();
+  await db.insert(auditSubjectToken).values({ id, householdId, kind, value });
+  return id;
+}
+
+/**
  * G-29: a refused action must SAY it refused.
  *
  * These guards used to `return` silently. A silent return is
@@ -322,9 +342,14 @@ export async function assignRole(formData: FormData) {
       id: randomUUID(), userId: user.id, householdId, role: role as "client", ndaApproved,
     });
   }
+  // G-59: the assignment target's email never enters the audit row - the
+  // token resolves to it while the subject's mapping exists, and stops
+  // resolving the day it is erased. actorUser stays a plain id: the actor
+  // is deliberately never anonymized (ADR-006's scope note).
+  const subjectToken = await mintAuditSubjectToken(householdId, "email", email);
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
-    kind: "role_assigned", detail: { email, role, ndaApproved },
+    kind: "role_assigned", detail: { subjectToken, role, ndaApproved },
   });
   revalidatePath(`/oversight/${householdId}`);
 }
@@ -662,9 +687,16 @@ export async function createAnticipationExclusion(formData: FormData) {
     id, householdId, scope, target, reason, requestedBy,
     approvedBy: principal.userId, effectiveFrom: new Date(),
   });
+  // G-59: a person-scoped exclusion's target is a person's name in free
+  // text; the audit row carries a token for it, never the name. Other
+  // scopes (rule ids, topic tags, field refs) are not personal and keep
+  // the plaintext target, which the trail needs to stay useful.
+  const auditTarget = scope === "person"
+    ? { subjectToken: await mintAuditSubjectToken(householdId, "person_ref", target) }
+    : { target };
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
-    kind: "exclusion_created", detail: { exclusionId: id, scope, target, requestedBy },
+    kind: "exclusion_created", detail: { exclusionId: id, scope, requestedBy, ...auditTarget },
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
@@ -808,9 +840,15 @@ export async function endAnticipationExclusion(formData: FormData) {
   const principal = await getPrincipal(x.householdId);
   if (principal?.role !== "corporate_admin") refuse(x.householdId, "forbidden");
   await db.update(anticipationExclusion).set({ effectiveTo: new Date() }).where(eq(anticipationExclusion.id, exclusionId));
+  // G-59: same tokenization as exclusion_created - the ended row's target
+  // is a person's name when scope is person, and the trail must not hold
+  // it. A fresh token per event, per ADR-006 (dedupe would be linkage).
+  const endedTarget = x.scope === "person"
+    ? { subjectToken: await mintAuditSubjectToken(x.householdId, "person_ref", x.target) }
+    : { target: x.target };
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId: x.householdId, actorUser: principal.userId, actorRole: principal.role,
-    kind: "exclusion_ended", detail: { exclusionId, scope: x.scope, target: x.target },
+    kind: "exclusion_ended", detail: { exclusionId, scope: x.scope, ...endedTarget },
   });
   revalidatePath(`/oversight/${x.householdId}`);
   revalidatePath("/visit");

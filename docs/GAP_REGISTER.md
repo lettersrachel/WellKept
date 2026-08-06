@@ -1722,6 +1722,30 @@ subjects) is written with this finding in view, since the same mechanism
 answers both the not-yet-built case and this already-live one, but building
 either fix here is out of scope for a read-only survey.
 
+**FIXED 2026-08-05, AR's first code session (Ruling 2), migration 0036.**
+Built as ADR-006 specifies: `audit_subject_token` (id-as-token, household
+scoped, kind email | person_ref, value at s2) holds the identifying value;
+the audit row holds the token; resolution is a live join for an authorized
+viewer (no surface renders these details today, so no display work was
+needed yet); erasing the household DELETES the mapping rows, which is the
+designed mechanism and the seventh documented DELETE exception in
+erase-household.mjs (CLAUDE.md's exception list updated to seven in the
+same change). All three write sites fixed: `role_assigned` mints an email
+token; `exclusion_created` and `exclusion_ended` mint a person_ref token
+when scope is person and deliberately keep plaintext targets for rule,
+topic and field scopes (a topic tag is not a person, and blanking it would
+blind the trail without protecting anyone). A fresh token per event, per
+the ADR: dedupe per subject would itself be a linkage record. Proven red
+(the email leak reintroduced, caught by name) and green in
+apps/web/src/lib/actions.audit-identity.test.ts, four tests. Historical
+fixture rows written before this fix keep their plaintext detail; no real
+household exists, and rewriting audit history would break append-only for
+zero privacy gain. Disposition option 2 (--scrub-audit-detail default and
+the dry-run status line) remains open, deliberately: the tool's blanket
+"kept intact (hashes, no values)" line is now TRUE for rows written after
+this fix and stale only for pre-fix fixture rows, a smaller inaccuracy
+than G-59 filed, left for the erasure tool's next reviewed pass.
+
 ---
 
 ### G-60. Direction 4's live-data read: no drift found, but the event log can't be trusted as pricing history, and two schema gaps confirmed empirically
