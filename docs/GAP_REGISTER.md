@@ -1446,6 +1446,38 @@ proof): a stale second-tab end of the same exclusion landed on the fleet
 board showing the red Action refused banner, the exact click-navigate-
 silence shape this entry filed, now visible where it was invisible.
 
+**RESOLVED 2026-08-06, evidence spent, root cause settled as user
+error (founder-confirmed).** The row was ended that night through the
+legitimate audited path, as check 9 of the section 4 sitting:
+`effective_to` set at 07:45:32.435, an `exclusion_ended` audit row 9ms
+behind it carrying `subjectToken` and no name (the row is
+person-scoped, so ADR-006's tokenised branch applied; the token is
+fresh, distinct from the only prior one, no linkage). Not the bare SQL
+update this entry deliberately refused. A later reader should know the
+filed defect no longer has a row behind it; this paragraph is why.
+
+The end worked on the first press, no banner, which eliminates every
+theory that the action was broken for this row: the id, the guards and
+the write path were always fine. Whatever failed on 2026-07-28 failed
+before the action ran. The founder then confirmed the cause: user
+error, the same shape as the row's own creation. The drill-in offers
+two adjacent controls both labelled Approve, one of which creates an
+exclusion from free text; the same mechanism turned an intended
+edit-approval into a live topic exclusion again the night of the
+resolution (`cea920dc`, also since ended). The two July "end attempts"
+were real clicks and real success banners on a different action than
+the one intended, so no submit carrying this id ever reached
+`endAnticipationExclusion`, which is why nothing was written and
+nothing refused. The stale-tab hypothesis is retired with it.
+
+The durable outcome of this entry stands on its own and is unchanged
+by the cause: 25 `refuse(null, ...)` sites redirecting to a fleet board
+that rendered no banner was real regardless of what happened here, and
+the eleventh guard closed it. One string decision left for the
+founder, reported rather than made: whether the two adjacent Approve
+controls should stop sharing a label, since that affordance has now
+produced the same misfire twice.
+
 ---
 
 ## Addendum (2026-08-01) — reconciled against the 1 August operating-library bundle
