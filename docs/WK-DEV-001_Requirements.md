@@ -1,0 +1,83 @@
+---
+status: living
+---
+
+# WK-DEV-001: Requirements
+Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = launch-blocking, P1 = fast follow, P2 = later
+
+## A. Platform, auth & tenancy
+- REQ-001 (P0) Multi-tenant single organization: one Well Kept instance holding many households; every record scoped to a household except fleet-level corporate data.
+- REQ-002 (P0) Roles: client, house_manager, backup_hm, corporate_ops, corporate_admin (founder), cfo_readonly. One user may hold different roles per household (an HM is backup elsewhere).
+- REQ-003 (P0) Auth: email + password with mandatory TOTP MFA for staff roles; magic-link option for clients; session revocation from corporate.
+- REQ-004 (P0) Field-level permission enforcement server-side from the S1/S2/S3 x role matrix (WK-APP-003 S2). The client app must never receive S2/S3 payloads for a client session.
+- REQ-005 (P0) Full audit log: every read of an S3 field and every write of any field records user, role, timestamp, household, field, old/new value hash.
+- REQ-006 (P1) NDA household mode: tightens S3 reveal rules, disables all media reuse flags, restricts backup-HM visibility until familiarization is scheduled.
+
+## B. The Playbook data model
+- REQ-010 (P0) Household record: identity, tier (essential/family_ops/concierge), membership terms, founding-rate lock date, status tag (ONBOARDING-90 / STEADY / LIFE-EVENT / WATCH / RENEWAL-WINDOW / CHAMPION).
+- REQ-011 (P0) The fixed sections as schema; sections cannot be deleted or reordered; N/A-confirmed is a first-class field state. CORRECTED 1 August 2026: there are 25 section slots, numbered 0 to 24. Section 0 is record-level (field-level decline as a confirmed fact, and the returned Record Preview). Sections 1 to 24 are the Playbook's content sections and the "24-section Playbook" standard in WK-SOP-000 Addendum A3 continues to refer to those. WK-PLAY-003 holds 218 fields across the 25 slots.
+- REQ-012 (P0) Field record: value, note, sensitivity (S1/S2/S3), provenance (asked/observed/verified_by_touch/client_written + date + actor), confirmed boolean, flag (none/CRITICAL/CAUTION/DELIGHT), section ref, optional photo refs.
+- REQ-013 (P0) S3 vault: credentials stored encrypted (envelope encryption), never rendered in document views, revealed only on a per-field reveal action that is logged; auto-hide after 60s.
+- REQ-014 (P0) Registries as structured sub-tables: dates registry, sizes registry, appliance registry (nameplate photo, filter size, cadence), vendor directory, subscriptions inventory, commitments ledger, horizon list, dot log, gesture log.
+- REQ-015 (P0) Change log per household: every Playbook edit appears in a human-readable timeline (feeds Section 24).
+- REQ-016 (P1) Import: ingest WK_PLAY_002 workbook (xlsx) mapping columns to field records; dry-run report before commit (the pilot-to-app migration, WK-APP-003 S5).
+- REQ-017 (P1) Export: render a household's S1 view to branded PDF (the client Playbook artifact) and a full S1+S2 internal PDF for coverage binders.
+
+## C. Client portal
+- REQ-020 (P0) Read-mostly S1 Playbook view, branded per WK house style, fast search within own household.
+- REQ-021 (P0) Weekly visit report feed (the 3-sentence report + approved photos).
+- REQ-022 (P0) Self-service S1 updates limited to an allowlist (travel dates, contact changes, preference notes); every client write enters an HM review queue before merging (flagged, never silent).
+- REQ-023 (P1) Quarterly review artifacts and Year in Review / Year Ahead documents surfaced when published.
+- REQ-024 (P2) Data stewardship view: what categories are held, last S3 audit date (the trust ceremony, WK-APP-001 S6).
+
+## D. House Manager portal (mobile-first, offline-first)
+- REQ-030 (P0) Pre-visit briefing auto-generated per WK-APP-001 S2.1: flags first, deltas since last visit, today's sequence specials, occasion radar (14 days), open dots, planned gesture, proposal window (suppressed under LIFE-EVENT).
+- REQ-031 (P0) Enforced close flow per WK-APP-001 S2.2: tasks confirm, hours auto-capture, photos, changes-noticed (required, "none" allowed), dots quick-capture, life-change signal screen (yes routes to corporate same day), zone drift one-tap + photo, then the 3-sentence report drafts last. Report cannot submit with required steps empty.
+- REQ-032 (P0) Offline-first: briefing caches on open; all close-flow capture queues locally and syncs on reconnect; last-write-wins with conflict flag to corporate.
+- REQ-033 (P0) Stranger mode: amplified first-visit runbook for backup coverage; friction notes route to primary HM and log as a Stranger Test record.
+- REQ-034 (P0) S3 reveal in context (alarm code on the alarm step, at the door), logged per REQ-005.
+- REQ-035 (P1) Service intelligence quick-log per visit (emotional read, client-effort events, anticipation hit/miss, strain), three taps max, never client-visible.
+- REQ-036 (P1) Timer-free hours: geofenced arrive/leave suggestion with manual override (never auto-bill from geofence alone).
+
+## E. Corporate portal
+- REQ-040 (P0) Household list with status tags, relationship-health panel (rating trend, days-since-delight, thank-you log, open recoveries), compliance panel (unconfirmed count, staleness, Stranger Test date, media release, access log), economics panel (hours vs model, supplies, drive time, non-billable split).
+- REQ-041 (P0) Status tag administration; LIFE-EVENT suppresses all proposal prompts app-wide the moment it is set.
+- REQ-042 (P0) Corporate gesture queue per WK-APP-001 S7: triggers land here, cultural-fit checklist gate, HM-notified-before-lands step, quiet log.
+- REQ-043 (P0) Fleet roll-ups: retention board, horizon calendar across households, dots economy by HM, proposal outcomes, Playbook health league.
+- REQ-044 (P0) Exhibit-pack feed: hours, retention, cohort, and funnel tables exportable in the WK_SBA exhibit shapes (CSV/xlsx).
+- REQ-045 (P1) Trigger administration: enable/disable library cascades per household, edit local booking-race dates, author new if/thens into the versioned library.
+- REQ-046 (P1) Weekly dot triage screen: promote dots to field changes (which fires attached triggers).
+- REQ-047 (P2) Recall monitoring job: CPSC feed matched against appliance registry nameplates; matches open corporate alerts.
+
+## F. Trigger engine (WK-APP-002 realized)
+- REQ-050 (P0) Triggers bind to fields; a field change emits an event; the engine evaluates attached rules and emits prompts routed by role, respecting proposal protocol text and status-tag suppression.
+- REQ-051 (P0) Trigger families: roster/age (birthdate math incl. school-year), calendar/season (incl. movable non-Gregorian dates), data thresholds (zone score, hours trend, days-since-delight, reorder points), signals (close-flow events), relationship state (tag transitions), external feeds (weather, school calendar; P1).
+- REQ-052 (P0) Prompt packs: a trigger can schedule a staged series over months (the high-school pack); each item lands in the right briefing on its date.
+- REQ-053 (P1) Commitment cascade: commitment type derives a prep template with T-14/T-3 prompts; weekend density metering.
+- REQ-054 (P1) Repeat-season memory: completed bundles/engagements auto-create next year's pre-filled window.
+
+## G. Notifications & comms
+- REQ-060 (P0) Push (mobile) + email digests; per-role notification preferences; quiet hours per household comms contract.
+- REQ-061 (P0) Client report delivery on close-flow submit; corporate alerted on WATCH/LIFE-EVENT homes every visit close.
+- REQ-062 (P2) In-app message thread per household (client to HM), batched per the comms contract; no free-chat during LIFE-EVENT proposals freeze exceptions.
+
+## H. Non-functional
+- REQ-070 (P0) Security: TLS 1.3, AES-256 at rest, envelope-encrypted S3 vault, per-field ACL checks in the API layer, dependency scanning, secrets in a managed store, annual pen test line item.
+- REQ-071 (P0) Privacy: no third-party analytics on client portal; media-release flag gates any photo reuse; NDA mode per REQ-006; data deletion workflow on membership end per retention policy.
+- REQ-076 WITHDRAWN 1 August 2026 (counsel ruling: no statute obliges deletion of records about people who are not clients; the "hard delete, not a soft flag" scope asserted a legal necessity that was never verified). Replaced by REQ-077. Original text of 1 August, preserved as the dated record: Deletion on request for records about people who are not clients. WK-STD-026 governs records held about recipients, vendors, neighbours and Member Circle entries: people who never consented and cannot see their record. It requires deletion on request and a 24-month retention ceiling. REQ-071's deletion clause covers a CLIENT household at membership end and does not reach these records. See GAP_REGISTER G-56 for the full resolution.
+- REQ-077 (P2) Non-client record lifecycle. ADDED 1 August 2026, replacing withdrawn REQ-076. The member_circle_entry register (scoped by WK-PLAY-003 Addendum A) plus a recipient-shaped erasure path (erase-household.mjs is household-shaped; a recipient is not a household). WK-STD-026's four rules stand as COMPANY POLICY: deletion on request, 24-month retention ceiling, the deletion itself audited with the audit row surviving, and a non-marketable constraint excluding these rows from every export and analytics view by default. Tombstone-pattern mechanics satisfy the policy (counsel confirmed the mechanism is unconstrained); audit identity follows ADR-006 tokenisation. GATE: no non-client record may be created on the platform before this is built; the pilot runs the Member Circle ON PAPER per the founder's stricter-than-required choice (Ruling 5).
+- REQ-072 (P0) Availability target 99.5%; RPO 24h (nightly encrypted backups), RTO 8h; status page.
+- REQ-073 (P0) Performance: briefing opens < 2s on cached data; search results < 500ms p95 within a household.
+- REQ-074 (P1) Accessibility: WCAG 2.1 AA on client portal.
+- REQ-075 (P0) Scale envelope: design for 150 households, 60 staff users, 5-year photo retention (~1TB) without re-architecture (covers the 2032 plan with headroom).
+
+## I. Response architecture (WK-STD-028, ADOPTED 2 August 2026, ruling A121; appended 5 August 2026)
+
+Adopted as requirements at the numbers proposed; IMPLEMENTATION remains gated
+per item. Do not renumber existing requirements.
+
+- REQ-078 (P1) Inbound routing: member-facing phone number, SMS number and shared inbox route to corporate surfaces; no member surface exposes a House Manager's personal contact details; no HM surface exposes member contact details in a form enabling direct off-platform contact. GATE: after AR; prerequisite, SMS/voice provider selected and A2P/10DLC registration completed (registration takes weeks; corporate starts it outside any code session).
+- REQ-079 (P1) Auto-acknowledgment: channel-aware and time-aware acknowledgment for inbound messages outside business hours, specific to the message, naming the follow-up time and the emergency line. Doctrine, binding: the 9pm-to-7am rule governs OUTBOUND notifications the company initiates; a reply to an inbound member message is exempt. GATE: with REQ-078.
+- REQ-080 (P1) Response-time capture: inbound and first-response timestamps per channel, reported quarterly against the WK-STD-028 commitment table (feeds WK-QA-019 M-23). GATE: with REQ-078.
+- REQ-081 (P2) Emergency line: dedicated number to the on-call Ops Lead, call log with member attribution and a non-emergency flag, on-call rotation administration. Conduct governed by WK-STD-022 and the emergency-response procedure, not by the platform. GATE: after AR.
+- REQ-082 (P2) After-hours HM contact incident capture (feeds WK-QA-019 M-24, expected zero). GATE: after AR.
