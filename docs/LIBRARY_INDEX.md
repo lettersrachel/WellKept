@@ -34,6 +34,11 @@ paraphrases them.
   package, frozen. Every code session reads the rulings before AR-era work.
 - `WK-DEV-001_Requirements.md`: the requirements list, living, carrying the
   REQ-076 withdrawal, REQ-077, and the adopted REQ-078..082 with gates.
+- `WK-APP-008_Making_Anticipation_Functional.md`: the anticipation
+  implementation spec, living, corrected copy per register A124 (the AQ
+  supersession banner, the REQ-076 withdrawal in Part 3's table, and AQ
+  correction 4: the client access-log 30 July 2026 date floor, which is
+  now a ships-only-with condition in Part 10 phase 10).
 - `WK-DEV-005_Developer_Handbook.md`: living, carrying the corrected
   Section 3 deletion wording and the stage-enum design-review rule.
 - `PROVISIONAL.md`: the counsel-pending and pilot-calibrated register,
