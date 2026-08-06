@@ -93,6 +93,21 @@ A121/A122 executed, the referenced standards ADOPTED).
 - Brief item 3 (deleting the duplicate AO/AP briefs) is library-side; no
   repo copies exist.
 
+## Appended in the same pull request: the gates job broke under this PR for an unrelated reason, fixed here
+
+The first CI run failed on the dependency-audit step, not on anything this
+session changed: a new advisory (GHSA-rgw5-rvv9-x895, brace-expansion DoS)
+published between PR #110's green run and this one, failing
+`pnpm audit --audit-level=high` on every future PR. Fixed with the repo's
+established mechanism (`pnpm.overrides`): each minimatch major line is
+parent-scoped to its own API-compatible patched brace-expansion line
+(minimatch@3 to the 1.x patch, minimatch@9 to the 2.x patch, 5.x consumers
+to 5.0.9). The first attempt, a blanket re-resolution to 5.0.9, broke
+minimatch@9 at runtime (its build expects the v2 export shape) and was
+caught by the permissions suite before push; the parent-scoped form passes
+the full suite (11 tasks, 177 tests) and the audit. Eight moderate
+advisories remain, below the gate's high threshold, untouched.
+
 ## Queue position after this session
 
 Housekeeping is complete. Directions 0, 2, 1a, 3a, AO, AP and AQ all ran
