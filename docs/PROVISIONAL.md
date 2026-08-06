@@ -56,10 +56,17 @@ Resolved: open.
 
 Who: counsel.
 Asked: 2026-08-02.
-Text: Review of the Founding Member Addendum at the decided terms ($775,
-12-month lock, fifteen households).
+Text: Review of the Founding Member Addendum as AMENDED (rulings A106/A108,
+2 August 2026): founding households pay full list rate and receive a
+per-household service credit drawn against engagement and add-on billing,
+Years 2 through 5; fifteen households. Terms and figures live in WK-LEG-011
+in the library, never here (financial figures never enter source control;
+this entry originally carried the pre-amendment rate and was scrubbed and
+updated 5 August 2026).
 Consequence: if counsel changes the term structure, the model's assumption
 rows carry the scenarios and the base case moves by selector, not by edit.
+The rate-lock mechanic in the schema stays correct either way: founding
+households now simply lock AT list rate.
 Resolved: open.
 
 ## Pilot-calibrated entries
