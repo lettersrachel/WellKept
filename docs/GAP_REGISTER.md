@@ -1902,3 +1902,85 @@ exactly these fields. **RATIFIED by the founder, 2026-08-02, same day**
 on Resident-member health horizon, Aging-parent horizon, and Other
 dependents (elder care, special needs) are now founder-approved, closing
 the separate-ruling condition rather than bypassing it.
+
+---
+
+### G-61. Date-only facts stored as timestamps render one day early: the consent date on screen is not the date the client signed
+
+**Filed 2026-08-06**, found by the section 4 sitting's check 6, on the
+first exercise of the green consent branch. Ten minutes before the
+founder recorded the fixture's consent, that branch was on record as
+unreachable until a household signs; its first real execution surfaced
+this defect, which is the strongest form of proof doing exactly what the
+doctrine says it does.
+
+**The observation, founder-reported verbatim from the drill-in:** the
+Household consent card reads "Signed consent on record: August 4, 2026."
+The database says `consent_signed_at = 2026-08-05T00:00:00.000Z`, and
+the `consent_recorded` audit row carries the same 2026-08-05 value. The
+screen is wrong by one day; the record is right.
+
+**The mechanism, both halves in code.**
+`recordHouseholdConsent` (apps/web/src/lib/actions.ts:592) parses the
+`type="date"` form input with `new Date(signedAtRaw)`, which reads a
+date-only string as UTC midnight. That is correct under the store-UTC
+convention. The drill-in card
+(apps/web/src/app/(corporate)/oversight/[householdId]/page.tsx:549)
+renders it with `toLocaleDateString` pinned to `America/New_York`. UTC
+midnight on the 5th is 8pm on the 4th in Eastern, so the card prints
+the 4th. The timezone pin is deliberate, not drift; the collision is
+structural: a date-only value stored at UTC midnight can never survive
+display in a west-of-UTC zone. Every consent date will render one day
+early, for every household, permanently. Not a fixture artifact.
+
+**The class has exactly two members, verified against the schema.** The
+codebase already has a correct convention for date-only facts: `date`
+columns holding regex-validated `YYYY-MM-DD` strings, used by
+`membership_event.effective_on` (actions.ts:1012), `cost_entry.incurred_on`
+(actions.ts:955), and all three `revisit_date` columns (condition_flag,
+deferral, paused_decision). Exactly two fields break it, both captured
+from `type="date"` inputs but stored as `timestamp withTimezone`:
+
+- `household.consent_signed_at` (tables.ts:52; parse at actions.ts:592;
+  render at the drill-in card, page.tsx:549).
+- `incident_report.occurred_at` (tables.ts:420; parse at actions.ts:725;
+  rendered Eastern-pinned at the drill-in incident table, page.tsx:254,
+  and the triggers page, triggers/page.tsx:265). Every incident's
+  occurrence date has the same one-day-early display defect.
+
+**Why this is worse than an ordinary display bug.** The consent date is
+the legally significant one: it is the date a client signed, it anchors
+legal/README.md and the privacy notice, and the one screen a person
+would read it from shows the wrong day. The incident date feeds an
+evidentiary register with the same property. The audit rows hold the
+correct values, so both are recoverable; the presentation is not.
+
+**Secondary observation, not a defect:** the fixture's
+`consent_doc_version` is the literal string `consent`. actions.ts:591
+accepts any non-empty text up to 80 characters, so nothing constrains
+the field to identify a document, which is its entire purpose.
+Re-recording with a real version identifier is the founder's, once the
+display question settles (re-recording is the designed correction path;
+the audit trail keeps the prior value).
+
+**Check 6's verdict, recorded here for the sitting close-out: not
+passed as written.** Its assertion is the red NO-CONSENT banner on a
+household without consent, and the fixture no longer qualifies. The red
+branch remains observable on Fernbrook Demo or Chen-Williams Demo
+(both still `consent_signed_at IS NULL`), without touching the
+fixture's new record.
+
+**Two fix shapes exist; neither is chosen here (stop-and-ask).**
+(a) Render fix: pin the affected `toLocaleDateString` calls to
+`timeZone: "UTC"` for these two fields only. Two-line change, no
+migration, correct today; leaves the type mismatch latent for whichever
+render site is written next. (b) Schema alignment: migrate both columns
+to `date`, joining the convention the other five date-only fields
+already follow. One migration; and Durability requirement 2 (explicit
+timezone per territory) touches this same seam, so the column change
+could ride the Temporal Layer migration window where the other
+durability items are already consolidated. Recommendation: (a) now,
+because the screen is wrong today and the fix is two lines; (b) rides
+the Temporal Layer window rather than spending this cycle's migration
+on it. The founder decides scope and timing; also open is whether the
+fix belongs to this sitting or to its own session.
