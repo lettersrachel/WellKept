@@ -45,7 +45,14 @@ const CORPORATE_ROLES = new Set(["corporate_ops", "corporate_admin", "cfo_readon
  * @returns {"visible"|"reveal_only"|"denied"}
  */
 export type Decision = "visible" | "reveal_only" | "denied";
-export interface PermOpts { ndaMode?: boolean }
+export interface PermOpts {
+  ndaMode?: boolean;
+  /** Stranger-mode ruling (c), 24 Aug 2026: hide every s2 surface except
+   * fields explicitly marked stranger_visible; s3 never shows in stranger
+   * mode, marker or not. Applied AFTER the role matrix, never instead of
+   * it: a stranger projection can only ever narrow what the role sees. */
+  strangerMode?: boolean;
+}
 export function readDecision(role: string, sensitivity: string, opts: PermOpts = {}): Decision {
   if (!ROLES.includes(role)) return "denied";
   if (!SENSITIVITIES.includes(sensitivity)) return "denied"; // fail closed
@@ -75,6 +82,12 @@ export function filterFields(role: string, fields: FieldRecord[], opts: PermOpts
   for (const f of fields) {
     const d = readDecision(role, (f && f.sensitivity) ?? "", opts); // "" fails closed
     if (d === "denied") continue;
+    if (opts.strangerMode && f.sensitivity !== "s1") {
+      // The overlay narrows only: s3 is out regardless of any marker (the
+      // vault never opens for a stranger), s2 stays only when a human
+      // marked it (the allergy a covering stranger must know).
+      if (f.sensitivity === "s3" || f.strangerVisible !== true) continue;
+    }
     if (d === "reveal_only") {
       out.push({ ...f, value: null, vault: true });
     } else {

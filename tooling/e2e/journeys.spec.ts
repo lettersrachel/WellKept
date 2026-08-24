@@ -190,6 +190,11 @@ test("intake journey: capture, then correct, both audited as hashes; s3 reclassi
   // database is the only honest signal the server action landed. Generous
   // on the first write: dev mode may still be compiling the action route.
   await expect.poll(writeCount, { timeout: 30_000 }).toBe(1);
+  // Wait for the post-save re-render to LAND before typing the correction:
+  // the revalidation replaces the form, and a fill that races it gets reset
+  // to the saved value, making the second save a no-op re-write. The
+  // "not yet captured" tag disappearing is the re-render's own signal.
+  await expect(coffee.getByText("not yet captured")).toHaveCount(0, { timeout: 15_000 });
 
   // Correct: the simulated Day 5 correction, same surface, new value.
   await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 6:30, grinder on 4");

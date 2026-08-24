@@ -30,25 +30,30 @@ export interface Briefing {
   overduePausedDecisions?: { id: string; decision: string; research: string; plannedFor: string | null }[];
 }
 
-const keyFor = (householdId: string) => `wk-briefing:${householdId}`;
+const keyFor = (householdId: string, stranger: boolean) =>
+  stranger ? `wk-briefing-stranger:${householdId}` : `wk-briefing:${householdId}`;
 
 export async function fetchBriefing(
   apiUrl: string,
   token: string,
   householdId: string,
+  // Stranger-mode ruling (c): the projection narrows server-side; the
+  // param only asks for it. Cached separately so a full briefing cached
+  // earlier can never surface while the phone is in a stranger's hands.
+  stranger = false,
 ): Promise<{ briefing: Briefing | null; stale: boolean }> {
   try {
     if (!apiUrl) throw new Error("no api");
-    const res = await fetch(`${apiUrl}/api/mobile/briefing?householdId=${householdId}`, {
+    const res = await fetch(`${apiUrl}/api/mobile/briefing?householdId=${householdId}${stranger ? "&stranger=1" : ""}`, {
       headers: { cookie: `authjs.session-token=${token}` },
     });
     if (!res.ok) throw new Error(`briefing ${res.status}`);
     const briefing = (await res.json()) as Briefing;
-    await AsyncStorage.setItem(keyFor(householdId), JSON.stringify(briefing));
+    await AsyncStorage.setItem(keyFor(householdId, stranger), JSON.stringify(briefing));
     return { briefing, stale: false };
   } catch {
     // Offline / server unreachable: fall back to the last cached brief.
-    const raw = await AsyncStorage.getItem(keyFor(householdId));
+    const raw = await AsyncStorage.getItem(keyFor(householdId, stranger));
     return { briefing: raw ? (JSON.parse(raw) as Briefing) : null, stale: true };
   }
 }

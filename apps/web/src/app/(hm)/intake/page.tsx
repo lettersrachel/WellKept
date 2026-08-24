@@ -153,6 +153,10 @@ export default async function IntakePage({
                 <option value="DELIGHT">DELIGHT</option>
               </select>
             </div>
+            <label className="sans" style={{ display: "block", fontWeight: "normal", fontSize: 12, marginTop: 6 }}>
+              <input type="checkbox" name="strangerVisible" defaultChecked={f.strangerVisible} />{" "}
+              Visible in stranger mode (a covering stranger must know this; matters for staff-only fields)
+            </label>
             <input name="note" defaultValue={f.note} aria-label="Note for a covering stranger" placeholder="Note a covering stranger would need" style={{ marginTop: 6 }} />
             <button className="act subtle" style={{ marginTop: 6 }}>Save</button>
           </form>

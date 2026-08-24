@@ -105,6 +105,13 @@ export const playbookField = pgTable("playbook_field", {
   provenanceActor: uuid("provenance_actor"),
   confirmed: boolean("confirmed").notNull().default(false),
   flag: fieldFlagEnum("flag").notNull().default("none"),
+  // Stranger-mode ruling (c), 24 Aug 2026 (proceed-with-recommendations):
+  // stranger mode hides every s2 surface EXCEPT fields a human explicitly
+  // marked stranger-visible (the safety exceptions: an allergy a covering
+  // stranger must know). Safe default hidden; s3 never shows in stranger
+  // mode, marker or not. The marker is set at capture or corporate review,
+  // never inferred, so no engineer ever chooses the safety list.
+  strangerVisible: boolean("stranger_visible").notNull().default(false),
   photoRefs: jsonb("photo_refs"),
   // Addendum A1 S4: provision ids governing this field (null = none bound).
   // FK-checked in app code, not the DB — provisions tombstone, never delete.

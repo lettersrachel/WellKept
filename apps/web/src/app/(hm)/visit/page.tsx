@@ -90,8 +90,11 @@ export default async function VisitPage({ searchParams }: {
   // AD: the same posture for a paused decision whose timing has arrived.
   const openPaused = pausedDecisions.filter((p) => !p.resolvedAt);
   const overduePaused = openPaused.filter((p) => p.revisitDate && p.revisitDate < today);
+  // Stranger-mode ruling (c): backup_hm gets the stranger projection on the
+  // web field surface too, server-side, same as the mobile briefing.
   const fields = filterFields(principal.role, allFields, {
     ndaMode: hh.isNda && !principal.ndaApproved,
+    strangerMode: principal.role === "backup_hm",
   });
   // Addendum A1 T4: bound provisions render beneath the field, collapsed.
   // Bundled per release (airplane test); dark until the corrected seed loads.

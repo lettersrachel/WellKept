@@ -287,6 +287,9 @@ function CloseFlowScreen({
   const [report, setReport] = useState(["", "", ""]);
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [briefingStale, setBriefingStale] = useState(false);
+  // Stranger-mode ruling (c): one gesture flips the phone to the stranger
+  // projection before it changes hands; the narrowing happens server-side.
+  const [strangerMode, setStrangerMode] = useState(false);
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [photosHydrated, setPhotosHydrated] = useState(false);
 
@@ -335,13 +338,13 @@ function CloseFlowScreen({
 
   useEffect(() => {
     let live = true;
-    void fetchBriefing(API_URL, token, household.id).then(({ briefing: b, stale }) => {
+    void fetchBriefing(API_URL, token, household.id, strangerMode).then(({ briefing: b, stale }) => {
       if (!live) return;
       setBriefing(b);
       setBriefingStale(stale);
     });
     return () => { live = false; };
-  }, [household.id, token]);
+  }, [household.id, token, strangerMode]);
 
   const transport = useCallback(async (item: QueueItem) => {
     if (!API_URL) throw new Error("no API configured; staying queued");
@@ -406,9 +409,22 @@ function CloseFlowScreen({
           <Text style={s.mastheadHome}>{household.name}</Text>
           <View style={s.mastheadActions}>
             {canSwitch ? <Pressable onPress={onSwitch}><Text style={s.mastheadLink}>Switch household</Text></Pressable> : <View />}
+            <Pressable onPress={() => { setBriefing(null); setStrangerMode((v) => !v); }}>
+              <Text style={s.mastheadLink}>{strangerMode ? "Exit stranger mode" : "Stranger mode"}</Text>
+            </Pressable>
             <Pressable onPress={onSignOut}><Text style={s.mastheadLink}>Sign out</Text></Pressable>
           </View>
         </View>
+
+        {strangerMode || briefing?.household.stranger ? (
+          <View style={[s.card, { borderColor: C.gold, borderWidth: 2 }]}>
+            <Text style={[s.h2, { marginBottom: 2 }]}>STRANGER MODE</Text>
+            <Text style={s.note}>
+              The first-visit projection: only what a covering stranger needs. Secured and
+              staff-only details stay hidden unless a field was marked stranger-visible.
+            </Text>
+          </View>
+        ) : null}
 
         {error ? <Text style={s.error}>{error}</Text> : null}
 
