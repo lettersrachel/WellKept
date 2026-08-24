@@ -9,13 +9,9 @@ import { randomUUID } from "node:crypto";
  *
  * 1. The consent journey (ADR-001 guardrail 3 / LAUNCH 1.5): the
  *    no-consent warning renders, recording consent lands with its audit
- *    row, and a future-dated consent refuses VISIBLY and changes nothing.
- *    The rendered consent DATE is deliberately not asserted: G-61 (a
- *    date-only fact stored as a timestamp renders one day early in
- *    America/New_York) sits on exactly that string, and this journey must
- *    not encode the defect as expected behavior. Card presence, doc
- *    version, and the database rows are the contract; the date string
- *    joins the assertions when G-61's fix is authorized.
+ *    row and renders the signed DATE as recorded (the G-61 UTC-render
+ *    fix, pinned here so a regression to a zone-shifted render fails),
+ *    and a future-dated consent refuses VISIBLY and changes nothing.
  * 2. The permissions journey: a client is walled out of every staff
  *    surface (and still sees their own), and a corporate admin without an
  *    assignment for a household cannot reach its record at all - the
@@ -88,8 +84,11 @@ test("consent journey: warning, then recorded with its audit row; a future date 
   await page.getByLabel("Consent document version").fill(docVersion);
   await page.getByRole("button", { name: "Record consent" }).click();
 
-  // Card presence and doc version; NOT the rendered date string (G-61).
+  // Card, doc version, AND the date string: with the G-61 UTC render the
+  // stored date displays as written, so the journey now pins it (the
+  // pre-fix America/New_York render showed August 19 here).
   await expect(page.getByText("Signed consent on record:")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("August 20, 2026")).toBeVisible();
   await expect(page.getByText(`doc version ${docVersion}`)).toBeVisible();
 
   // The database is the record: columns set, audit row written.
@@ -188,8 +187,9 @@ test("intake journey: capture, then correct, both audited as hashes; s3 reclassi
   await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 7");
   await coffee.getByRole("button", { name: "Save" }).click();
   // The textarea keeps the typed value client-side either way, so the
-  // database is the only honest signal the server action landed.
-  await expect.poll(writeCount, { timeout: 15_000 }).toBe(1);
+  // database is the only honest signal the server action landed. Generous
+  // on the first write: dev mode may still be compiling the action route.
+  await expect.poll(writeCount, { timeout: 30_000 }).toBe(1);
 
   // Correct: the simulated Day 5 correction, same surface, new value.
   await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 6:30, grinder on 4");

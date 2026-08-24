@@ -262,7 +262,10 @@ export default async function Oversight({ params, searchParams }: {
             <tbody>
               {incidents.map((i) => (
                 <tr key={i.id}>
-                  <td>{i.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</td>
+                  {/* G-61: occurred_at is a date-only fact from a date input, stored as a
+                      timestamp; UTC render shows the stored date as written (the date
+                      column itself waits for the Temporal window). */}
+                  <td>{i.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</td>
                   <td>{i.kind.replace(/_/g, " ")}</td>
                   <td><span className={`tag ${i.severity === "high" ? "CRITICAL" : i.severity === "medium" ? "CAUTION" : "s2"}`}>{i.severity}</span></td>
                   <td>{i.reportedVia.replace(/_/g, " ")}</td>
@@ -597,7 +600,8 @@ export default async function Oversight({ params, searchParams }: {
         <h2>Household consent (ADR-001 guardrail 3 · LAUNCH 1.5)</h2>
         {hh.consentSignedAt ? (
           <div className="fval">
-            Signed consent on record: {hh.consentSignedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}
+            {/* G-61: same class as occurred_at above; UTC shows the signed date as recorded. */}
+            Signed consent on record: {hh.consentSignedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
             {" · "}doc version {hh.consentDocVersion}
           </div>
         ) : (
