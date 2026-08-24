@@ -171,6 +171,7 @@ export function createWorker() {
         return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
+      if (job.name === "client-digest") { const { runClientWeeklyDigest } = await import("./client-digest.ts"); return runClientWeeklyDigest(pool); }
       if (job.name === "cpsc-recall") { const { runCpscRecallSweep } = await import("./cpsc.ts"); return runCpscRecallSweep(db); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
       if (job.name === "uptime-check") return handleUptimeCheck();
@@ -196,6 +197,10 @@ export async function ensureSweepScheduled() {
   const queue = createFieldEventsQueue();
   await queue.upsertJobScheduler("registry-sweep-daily", { pattern: "0 9 * * *" }, { name: "registry-sweep" });
   await queue.upsertJobScheduler("fleet-digest-weekly", { pattern: "0 13 * * 1" }, { name: "fleet-digest" });
+  // Launch scope 24.2: the client weekly digest, Fridays 21:00 UTC (about
+  // 5pm Eastern; an engineering proposal). Dark behind the
+  // client_weekly_digest flag until the founder approves the sample.
+  await queue.upsertJobScheduler("client-digest-weekly", { pattern: "0 21 * * 5" }, { name: "client-digest" });
   // REQ-047: recalls move on week timescales; Tuesdays after the digest.
   await queue.upsertJobScheduler("cpsc-recall-weekly", { pattern: "0 14 * * 2" }, { name: "cpsc-recall" });
   await queue.upsertJobScheduler("drain-outbox", { every: 300000 }, { name: "drain-outbox" }); // backstop only; the inline pass is primary

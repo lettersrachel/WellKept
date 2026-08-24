@@ -105,3 +105,57 @@ export function composeFleetDigest(
     : `Fleet digest: all steady (week of ${weekOf})`;
   return { subject, html };
 }
+
+// ---- The client weekly digest (launch scope, WK-DEV-006 24.2) ------------
+// Pure composition, client voice: serif for the ritual, plain language,
+// and ONLY what the household may see. By construction the input shape
+// cannot carry a staff name, an hour count, or an internal record: visits
+// are the three sentences and a photo count; deferrals are the client
+// card's own two lists. An empty week returns null and no email exists,
+// which is a PROPOSAL (a weekly "nothing happened" note is noise until
+// the founder says otherwise). Copy is a PROPOSAL for the founder's
+// adjustment; the sample is reviewed before any real household receives
+// one, and the client_weekly_digest feature flag holds the send dark
+// until that approval.
+
+export interface ClientWeekVisit { report: string[]; photoCount: number }
+export interface ClientWeekDigestInput {
+  householdName: string;
+  weekOf: string;
+  visits: ClientWeekVisit[];
+  takenCareOf: { noticed: string }[];
+  plannedForLater: { noticed: string; planned: string }[];
+}
+
+export function composeClientWeeklyDigest(input: ClientWeekDigestInput): { subject: string; html: string } | null {
+  const { householdName, weekOf, visits, takenCareOf, plannedForLater } = input;
+  if (visits.length === 0 && takenCareOf.length === 0 && plannedForLater.length === 0) return null;
+
+  const serif = "font-family:Georgia,serif;color:#26241f";
+  const sans = "font-family:Helvetica,Arial,sans-serif";
+  const visitBlocks = visits.map((v) => `
+    <div style="margin:14px 0">
+      ${v.report.map((s) => `<p style="${serif};font-size:16px;line-height:1.6;margin:6px 0">${s}</p>`).join("")}
+      <p style="${sans};font-size:12px;color:#6b6b6b;margin:4px 0 0">${v.photoCount} photo${v.photoCount === 1 ? "" : "s"} from this visit</p>
+    </div>`).join("");
+
+  const taken = takenCareOf.length
+    ? `<h3 style="${serif};color:#1c3d2e;margin:18px 0 6px">Since taken care of</h3>
+       ${takenCareOf.map((d) => `<p style="${serif};font-size:15px;line-height:1.5;margin:4px 0">${d.noticed}</p>`).join("")}`
+    : "";
+
+  const planned = plannedForLater.length
+    ? `<h3 style="${serif};color:#1c3d2e;margin:18px 0 6px">Noticed, and planned for later</h3>
+       ${plannedForLater.map((d) => `<p style="${serif};font-size:15px;line-height:1.5;margin:4px 0">${d.noticed} <span style="${sans};font-size:12px;color:#6b6b6b">(planned for ${d.planned})</span></p>`).join("")}`
+    : "";
+
+  const html = `<div style="max-width:560px;margin:0 auto">
+    <p style="${sans};font-size:11px;letter-spacing:.14em;color:#b08d2a;font-weight:700">WELL KEPT &middot; YOUR WEEK &middot; ${weekOf}</p>
+    <h2 style="${serif};color:#1c3d2e;margin:6px 0 12px">This week at ${householdName}</h2>
+    ${visitBlocks}
+    ${taken}
+    ${planned}
+    <p style="${sans};font-size:12px;color:#6b6b6b;margin-top:20px">Well Kept &middot; your home, looked after</p>
+  </div>`;
+  return { subject: `This week at ${householdName}`, html };
+}
