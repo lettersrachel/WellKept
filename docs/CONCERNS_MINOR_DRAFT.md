@@ -72,7 +72,7 @@ clinical detail. Worth marking so the constraint is queryable rather than
 remembered.
 
 **10. Allergies and dietary restrictions for a minor.** Health-adjacent, and
-operationally necessary for a House Manager, which is exactly why it will be
+operationally necessary for a HOM, which is exactly why it will be
 captured and why it needs the marker.
 
 **11. Child's room and belongings.** Bedroom location, personal storage. Locates

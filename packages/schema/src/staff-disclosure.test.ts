@@ -8,7 +8,7 @@ import path from "node:path";
  * Session X (W5_FOLLOWON): the G-13 surface guard. The approved staff
  * disclosure drifted twice in a week (object observations, then condition
  * flags), both caught by a reviewer noticing. A person will SIGN this
- * document; a House Manager signing a disclosure that does not list every
+ * document; a HOM signing a disclosure that does not list every
  * surface recording them is a substantive problem, and it is the gate the
  * founder set before hiring. Same move as the child-data guard, applied
  * to staff attribution.

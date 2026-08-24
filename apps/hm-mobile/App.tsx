@@ -82,10 +82,10 @@ export default function App() {
   if (session.households.length === 0) {
     return (
       <SafeAreaView style={s.root}>
-        <Masthead subtitle="HOUSE MANAGER" />
+        <Masthead subtitle="HOM" />
         <View style={s.card}>
           <Text style={s.h2}>No household assignments</Text>
-          <Text style={s.note}>This account isn&apos;t assigned to any household as a house manager yet. Ask corporate to add you, then sign in again.</Text>
+          <Text style={s.note}>This account isn&apos;t assigned to any household as a Household Operations Manager yet. Ask corporate to add you, then sign in again.</Text>
           <Pressable style={s.chip} onPress={() => void signOut()}><Text style={s.chipText}>Sign out</Text></Pressable>
         </View>
       </SafeAreaView>
@@ -170,7 +170,7 @@ function SignInScreen({ onSignedIn }: { onSignedIn: (s: Session) => void }) {
           <View style={s.card}>
             <Text style={s.h2}>Welcome</Text>
             <Text style={s.note}>
-              Well Kept is the field tool for house managers: your pre-visit briefing, the
+              Well Kept is the field tool for Household Operations Managers: your pre-visit briefing, the
               close-of-visit flow, photos, and alerts, working offline mid-visit. Sign in with
               your work email; there are no passwords.
             </Text>
@@ -401,7 +401,7 @@ function CloseFlowScreen({
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.masthead}>
-          <Text style={s.mastheadEyebrow}>HOUSE MANAGER · OFFLINE-FIRST</Text>
+          <Text style={s.mastheadEyebrow}>HOM · OFFLINE-FIRST</Text>
           <Text style={s.mastheadTitle}>WELL KEPT</Text>
           <Text style={s.mastheadHome}>{household.name}</Text>
           <View style={s.mastheadActions}>

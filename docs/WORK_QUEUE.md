@@ -58,8 +58,15 @@ dashboard clicks, the run-rate amounts, HO selection and written
 consent, the paper-kit capture, and the Task Inventory ruling. The Temporal Layer gate is OPEN (Household Zero field list
 held) but its migration is Phase 2 schema work and waits for Phase 1
 custody per the directive. Weekly build notes begin with the first
-Phase 0 note. The Ruling 3 terminology sweep (House Manager to HOM in
-display copy and prose, identifiers frozen) is its own queued session.
+Phase 0 note (docs/build-notes/2026-08-24.md). The Ruling 3 terminology
+sweep RAN 24 August: display copy and living prose now say HOM
+(Household Operations Manager spelled out where a reader meets it
+first); every keyed identifier (the house_manager enum, stored values,
+payload guards, audit rows, route gates) is untouched per the pack_key
+lesson; dated records, frozen documents, founder-approved texts (G-13,
+legal), and verbatim REQ text keep their original wording as records.
+Open-gate pilot framing in this file and CLAUDE.md moved to the
+launch/training language; dated entries keep "pilot" as written.
 
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
@@ -161,8 +168,11 @@ confirmed in the Railway dashboard, 2026-07-28), so the swept sweep-template
 copy is live from the worker as well. No Railway CLI or config exists in the
 repo; the dashboard is the only control surface.
 
-**Nothing has a real household yet.** Every gate below that says "pilot" or
-"first household" is genuinely closed, not deferred.
+**Nothing has a real household yet.** Every gate below that waits on a real
+household (the training households, or the "first household") is genuinely
+closed, not deferred. Dated records below keep the "pilot" wording they were
+written with; open gates now carry the plan of record's launch and training
+language per Ruling 3.
 
 ---
 
@@ -795,7 +805,7 @@ app's vocabulary stay out, per the brief.
 | G-47 tier gating | register | when it trips, build the per-item gate (W-3) |
 | Phase 0 portal form | INTAKE_CAPTURE_GAP_REVIEW §3 | counsel on children's data (packet §6g), and W-14 |
 | Transcript ingestion | INTAKE_CAPTURE_GAP_REVIEW §4 | counsel on the AI subprocessor (packet §8) |
-| Kits, object relationships, override taxonomy | INTAKE_CAPTURE_GAP_REVIEW | pilot makes them concrete |
+| Kits, object relationships, override taxonomy | INTAKE_CAPTURE_GAP_REVIEW | the first training households make them concrete |
 | Mileage `purpose` and `destination` | G-46 | founder field list, plus the erasure interaction |
 | Room-level intake granularity | INTAKE_CAPTURE_GAP_REVIEW §7 | after the calibration study runs |
 
@@ -836,12 +846,13 @@ and not lost, not proposing a build order.
    branch). Lifts the no-real-s3 guardrail.
 3. Insurance: workers' compensation, which attaches from the point of employment
    in Virginia, plus the G-48 hired and non-owned auto question. Same broker
-   call. Before the first pilot signature.
-4. Hire a House Manager. Recruit and consent the first household.
+   call. Before the first household signature.
+4. Hire a Household Operations Manager (HOM). Recruit and consent the first
+   household.
 5. Chores (Upstash budget alert, Vercel project rename, DMARC, and the
    `tsbuildinfo` untrack), the pilot protocol's friction-log brackets, the two
    LAUNCH signatures with §2.4 after the restore drill.
-6. **Consider putting one pilot household on a non-Concierge tier.** If every
-   pilot household runs the same tier, the pilot ends with no evidence about
-   tier differentiation, and the tiers are load-bearing in the revenue model.
-   A recruiting decision, not a build.
+6. **Consider putting one training household on a non-Concierge tier.** If
+   every training household runs the same tier, training ends with no evidence
+   about tier differentiation, and the tiers are load-bearing in the revenue
+   model. A recruiting decision, not a build.
