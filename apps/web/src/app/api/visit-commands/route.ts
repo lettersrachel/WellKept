@@ -72,7 +72,15 @@ async function alertCorporateOnWatch(
   }
 }
 
-const TYPES = new Set(["visit.submit", "dot.create", "signal.route"]);
+const TYPES = new Set([
+  "visit.submit", "dot.create", "signal.route",
+  // Input spine build 1: the visit-page capture surfaces drain here too,
+  // so every capture path works in airplane mode, not only the wizard.
+  // corporate_ops still uses the online forms; the sink's role set is
+  // unchanged (AJ option 2).
+  "flag.create", "flag.look", "flag.close",
+  "deferral.resolve", "pausedDecision.resolve", "prompt.outcome",
+]);
 // AJ decision (founder, 2026-07-28, option 2): corporate_admin may
 // submit visit commands when covering a visit; actorRole on the audit
 // trail attributes it honestly. corporate_ops deliberately not included.
@@ -102,7 +110,7 @@ export async function POST(req: NextRequest) {
   const result = await applyVisitCommand({
     idempotencyKey: body.idempotencyKey,
     type: body.type,
-    payload: { ...body.payload, householdId: principal.householdId, submittedBy: principal.userId },
+    payload: { ...body.payload, householdId: principal.householdId, submittedBy: principal.userId, submittedByRole: principal.role },
   });
   if (body.type === "visit.submit" && !result.conflict) {
     const p = body.payload as { report?: string[]; photoIds?: string[]; lifeChangeSignal?: boolean };
