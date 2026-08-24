@@ -502,10 +502,14 @@ export async function captureField(formData: FormData) {
     section: f.section, newValue: value, changedAt: new Date().toISOString(),
   };
   const valueChanged = value !== f.value;
+  // Stranger-mode ruling (c): the marker is set by a human at capture,
+  // never inferred. It only ever WIDENS the stranger projection for s2
+  // (the filter ignores it for s3, and s1 always shows).
+  const strangerVisible = formData.get("strangerVisible") === "on";
   await db.transaction(async (tx) => {
     await tx.update(playbookField)
       .set({
-        value, note, sensitivity, flag, provenance,
+        value, note, sensitivity, flag, provenance, strangerVisible,
         provenanceDate: new Date(), provenanceActor: principal.userId,
         confirmed: Boolean(value), updatedAt: new Date(),
       })

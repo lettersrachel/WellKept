@@ -1,0 +1,1 @@
+ALTER TABLE "playbook_field" ADD COLUMN "stranger_visible" boolean DEFAULT false NOT NULL;

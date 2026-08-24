@@ -67,6 +67,29 @@ test("filterFields: HM gets s1+s2 inline, s3 as vault placeholder with null valu
     "input must never be mutated");
 });
 
+test("stranger mode narrows only: s2 hidden unless marked, s3 out regardless of any marker", () => {
+  const fields = [
+    F("s1", "florist"),
+    F("s2", "candid"),
+    { ...F("s2", "allergies", "tree nuts, strict"), strangerVisible: true },
+    { ...F("s3", "alarm", "SECRET"), strangerVisible: true }, // a marker can never open the vault
+  ];
+  const out = filterFields("house_manager", fields, { strangerMode: true });
+  assert.deepEqual(out.map((f) => f.name).sort(), ["allergies", "florist"],
+    "s1 plus the marked safety exception, nothing else");
+  assert.equal(out.find((f) => f.name === "allergies")!.value, "tree nuts, strict",
+    "the marked field arrives whole; a hidden allergy is the failure mode the marker exists for");
+
+  // The overlay never widens: a client in stranger mode still gets s1 only,
+  // marker or not (the role matrix runs first).
+  const clientOut = filterFields("client", fields, { strangerMode: true });
+  assert.deepEqual(clientOut.map((f) => f.name), ["florist"]);
+
+  // And OFF means off: without the flag the ordinary projection stands.
+  const normal = filterFields("house_manager", fields);
+  assert.equal(normal.length, 4);
+});
+
 test("filterFields: corporate gets everything inline", () => {
   const fields = [F("s1"), F("s2", "b"), F("s3", "c", "CODE")];
   const out = filterFields("cfo_readonly", fields);

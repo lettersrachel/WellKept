@@ -36,7 +36,12 @@ export async function GET(req: NextRequest) {
     getSeasonRecall(hh.id), // A2/REQ-054: exclusion-filtered in the reader
     getOpenConditionFlags(hh.id), // W-5: re-observed at every visit
   ]);
-  const fields = filterFields(principal.role, allFields, { ndaMode: hh.isNda && !principal.ndaApproved });
+  // Stranger-mode ruling (c): the projection narrows SERVER-SIDE, so the
+  // hidden data never reaches the device. backup_hm is always the stranger
+  // projection (a covering stranger IS the stranger); a HOM can request it
+  // with ?stranger=1 (the one-gesture toggle) before handing the phone over.
+  const strangerMode = principal.role === "backup_hm" || req.nextUrl.searchParams.get("stranger") === "1";
+  const fields = filterFields(principal.role, allFields, { ndaMode: hh.isNda && !principal.ndaApproved, strangerMode });
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
 
   // Addendum A1 T4: bound provisions ride the briefing payload, so the
@@ -101,7 +106,7 @@ export async function GET(req: NextRequest) {
   }));
 
   return NextResponse.json({
-    household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: principal.role === "backup_hm" },
+    household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: strangerMode },
     flags,
     conditionFlags,
     overdueDeferrals,
