@@ -20,6 +20,14 @@ export interface Briefing {
   /** A2/REQ-054 recall lines — optional so pre-A2 cached briefings still parse. */
   lastYear?: { summary: string; anchorKind: string; observedAt: string }[];
   dots: { verbatim: string; heardAt: string }[];
+  /** Cockpit baseline build 1 (open-loops parity): the API always sent
+   * these three; optional so pre-parity cached briefings still parse. */
+  conditionFlags?: {
+    id: string; subject: string; location: string; concern: string;
+    revisit: string | null; looks: number[]; promotionCandidate: boolean;
+  }[];
+  overdueDeferrals?: { id: string; noticed: string; reason: string; plannedFor: string | null }[];
+  overduePausedDecisions?: { id: string; decision: string; research: string; plannedFor: string | null }[];
 }
 
 const keyFor = (householdId: string) => `wk-briefing:${householdId}`;
