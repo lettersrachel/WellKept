@@ -170,3 +170,33 @@ test("a condition flag captured offline queues on-device, then applies on reconn
   // Cleanup this test's flag and its command row.
   await pool.query("DELETE FROM condition_flag WHERE household_id=$1 AND subject=$2", [householdId, subject]);
 });
+
+/**
+ * Input spine build 1, nothing is lost: a reload mid-close-flow resumes
+ * exactly where it stopped. The draft autosaves to IndexedDB on every
+ * committed step; a fresh page load restores the flow state, so a crashed
+ * app costs nothing but the reload itself.
+ */
+test("a close flow in progress survives a reload and resumes where it stopped", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: token, url: BASE }]);
+  await page.goto("/visit");
+  await expect(page.getByRole("heading", { name: "Confirm today's tasks" })).toBeVisible({ timeout: 30_000 });
+
+  // Commit two steps: two tasks and the changes-noticed answer.
+  const boxes = page.locator('input[type=checkbox]');
+  await boxes.nth(0).check();
+  await boxes.nth(1).check();
+  const changes = page.locator('div.card', { hasText: "Changes noticed" });
+  await changes.getByPlaceholder("or 'none'").fill("resume drill: grout note");
+  await changes.getByRole("button", { name: "Save", exact: true }).click();
+  // Give the autosave a beat to land in IndexedDB.
+  await page.waitForTimeout(1200);
+
+  // The crash: a full reload, no graceful teardown.
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Confirm today's tasks" })).toBeVisible({ timeout: 30_000 });
+
+  await expect(boxes.nth(0)).toBeChecked();
+  await expect(boxes.nth(1)).toBeChecked();
+  await expect(boxes.nth(2)).not.toBeChecked();
+});

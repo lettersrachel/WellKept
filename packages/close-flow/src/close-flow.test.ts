@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { CloseFlowError, FloorNotDeferrable, createCloseFlow, type CloseFlow, type ProvisionTier } from "./index";
+import { CloseFlowError, FloorNotDeferrable, createCloseFlow, restoreCloseFlow, type CloseFlow, type ProvisionTier } from "./index";
 
 function complete(flow: CloseFlow, { lifeChange = false } = {}) {
   flow.confirmTask("kitchen");
@@ -85,4 +85,31 @@ test("double submit throws; input validation fails closed", () => {
   assert.throws(() => flow.captureHours({ startedAt: "2026-07-18T15:00:00Z", endedAt: "2026-07-18T13:00:00Z" }), CloseFlowError);
   assert.throws(() => flow.setChangesNoticed("   "), CloseFlowError);
   assert.throws(() => createCloseFlow({ householdId: "", requiredTaskIds: ["a"] }), CloseFlowError);
+});
+
+test("restoreCloseFlow resumes a draft exactly, and a submitted flow refuses to restore", () => {
+  const flow = createCloseFlow({ householdId: "hh-1", requiredTaskIds: ["a", "b"] });
+  flow.confirmTask("a");
+  flow.setChangesNoticed("grout wear near the rear shower wall");
+  flow.addDot("Owen mentioned the science fair is in March");
+  const snapshot = flow.state;
+
+  const resumed = restoreCloseFlow(snapshot);
+  assert.deepEqual(resumed.state, snapshot);
+  resumed.confirmTask("b");
+  assert.deepEqual(resumed.state.completedTaskIds, ["a", "b"]);
+  assert.equal(resumed.state.dots.length, 1);
+
+  const done = createCloseFlow({ householdId: "hh-1", requiredTaskIds: ["a"] });
+  done.confirmTask("a");
+  done.captureHours({ startedAt: "2026-08-24T09:00:00Z", endedAt: "2026-08-24T11:00:00Z" });
+  done.addPhoto("p1");
+  done.setChangesNoticed("none");
+  done.setLifeChangeSignal(false);
+  done.setZoneDrift({ answer: "none" });
+  done.setReportSentence(0, "One.");
+  done.setReportSentence(1, "Two.");
+  done.setReportSentence(2, "Three.");
+  done.submit();
+  assert.throws(() => restoreCloseFlow(done.state), /submitted flow does not restore/);
 });

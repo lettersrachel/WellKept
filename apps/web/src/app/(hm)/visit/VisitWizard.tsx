@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
+import { createCloseFlow, restoreCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
+import { deleteDraft, getDraft, putDraft } from "@/lib/client/offline-store";
 import { ZONE_DRIFT_NONE } from "@wellkept/trigger-engine";
 import { backoffDelayMs, type QueueConflict, type QueueItem } from "@wellkept/offline-queue";
 import { MAX_SEND_ATTEMPTS, type VisitSync } from "@/lib/client/visit-sync";
@@ -128,10 +129,39 @@ export function VisitWizard({ householdId }: { householdId: string }) {
         }
       }
     }
-    flowRef.current = createCloseFlow({ householdId, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
-    setState(flowRef.current.state);
-
     let cancelled = false;
+    // Input spine build 1 (nothing is lost): a persisted draft resumes
+    // exactly where it stopped; only when none exists does a fresh flow
+    // start. A draft from a submitted flow never survives (deleted on
+    // submit), so this cannot resurrect a finished visit.
+    void getDraft(householdId).then((draft) => {
+      if (cancelled) return;
+      try {
+        if (draft && (draft.flowState as CloseFlowState)?.submittedAt === null) {
+          flowRef.current = restoreCloseFlow(draft.flowState as CloseFlowState);
+          const f = draft.fields as Record<string, string | boolean | null | string[]>;
+          setHoursStart((f.hoursStart as string) ?? "");
+          setHoursEnd((f.hoursEnd as string) ?? "");
+          setChangesNoticed((f.changesNoticed as string) ?? "");
+          setZoneAnswer((f.zoneAnswer as string) || ZONE_DRIFT_NONE);
+          setDeferralNoticed((f.deferralNoticed as string) ?? "");
+          setDeferralReason((f.deferralReason as string) ?? "");
+          setDeferralDate((f.deferralDate as string) ?? "");
+          setDeferralCondition((f.deferralCondition as string) ?? "");
+          setZonePhoto((f.zonePhoto as string) ?? "");
+          setReportSentences((f.reportSentences as string[]) ?? ["", "", ""]);
+          setLifeChange((f.lifeChange as boolean | null) ?? null);
+          setPhotos(draft.photos.map((p) => ({ ...p, preview: `data:image/jpeg;base64,${p.base64}` })));
+        } else {
+          flowRef.current = createCloseFlow({ householdId, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
+        }
+      } catch {
+        // A malformed draft never blocks the visit: start fresh.
+        flowRef.current = createCloseFlow({ householdId, requiredTaskIds: REQUIRED_TASKS.map((t) => t.id) });
+      }
+      setState(flowRef.current.state);
+    });
+
     // Input spine build 1: the sync instance is the tab-wide singleton the
     // capture components share; a capture enqueue notifies this status bar.
     void getSharedSync(householdId).then((sync) => {
@@ -156,11 +186,36 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     };
   }, [householdId, attemptSync, refreshQueueStatus]);
 
+  // Input spine build 1 (nothing is lost): every committed step and, via
+  // the debounced effect below, every keystroke autosaves the draft; a
+  // crash mid-close-flow resumes exactly where it stopped.
+  const persistDraft = useCallback(() => {
+    if (!flowRef.current || flowRef.current.state.submittedAt !== null) return;
+    void putDraft({
+      householdId,
+      flowState: flowRef.current.state,
+      fields: {
+        hoursStart, hoursEnd, changesNoticed, zoneAnswer,
+        deferralNoticed, deferralReason, deferralDate, deferralCondition,
+        zonePhoto, reportSentences, lifeChange,
+      },
+      photos: photos.map(({ photoId, base64, uploaded }) => ({ photoId, base64, uploaded })),
+      savedAt: new Date().toISOString(),
+    }).catch(() => { /* a failed autosave never interrupts the visit */ });
+  }, [householdId, hoursStart, hoursEnd, changesNoticed, zoneAnswer, deferralNoticed, deferralReason, deferralDate, deferralCondition, zonePhoto, reportSentences, lifeChange, photos]);
+
+  useEffect(() => {
+    if (!state || submitted) return;
+    const t = setTimeout(persistDraft, 800);
+    return () => clearTimeout(t);
+  }, [state, submitted, persistDraft]);
+
   function run(action: (flow: CloseFlow) => void) {
     try {
       action(flowRef.current!);
       setState(flowRef.current!.state);
       setError(null);
+      persistDraft();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -236,6 +291,8 @@ export function VisitWizard({ householdId }: { householdId: string }) {
       for (const command of commands) await syncRef.current!.enqueueAndPersist(command);
       refreshQueueStatus();
       setSubmitted(true);
+      // The commands are durable in the queue store; the draft's job is done.
+      void deleteDraft(householdId).catch(() => {});
       await attemptSync();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
