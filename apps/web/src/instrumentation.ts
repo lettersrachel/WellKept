@@ -22,11 +22,15 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.SENTRY_DSN) {
     const Sentry = await import("@sentry/node");
+    const { scrubSentryEvent } = await import("@wellkept/schema");
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV,
       tracesSampleRate: 0, // errors only — no perf sampling, stays within free tier
       sendDefaultPii: false, // household data must never ride along in an error report
+      // PRIV-01: error text can carry row values (pg "Failing row contains");
+      // the scrubber cuts those shapes and drops request/breadcrumbs/extra.
+      beforeSend: scrubSentryEvent,
     });
   }
 }

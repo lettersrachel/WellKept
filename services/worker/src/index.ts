@@ -8,7 +8,7 @@ import { Worker, Queue } from "bullmq";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq, gt, isNull } from "drizzle-orm";
-import { promptPackItem, householdRoleAssignment, notification } from "@wellkept/schema";
+import { promptPackItem, householdRoleAssignment, notification, scrubSentryEvent } from "@wellkept/schema";
 import type { FloorConflictEvent } from "@wellkept/close-flow";
 import { runTriggerPass, runRegistrySweep, sweepLoadSignals, materializeSeasonObservations, drainFieldOutbox, type FieldChangeEvent } from "@wellkept/trigger-engine";
 import * as Sentry from "@sentry/node";
@@ -22,6 +22,9 @@ if (process.env.SENTRY_DSN) {
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    // PRIV-01: cut the pg row-value leak shapes from error text and drop
+    // request/breadcrumbs/extra; the discipline guard asserts this wiring.
+    beforeSend: scrubSentryEvent,
   });
 }
 
