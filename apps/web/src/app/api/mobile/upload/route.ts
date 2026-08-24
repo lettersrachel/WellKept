@@ -3,9 +3,15 @@ import { visitPhoto } from "@wellkept/schema";
 import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
 import { staffMfaCleared } from "@/lib/totp";
+import { stripJpegMetadata } from "@/lib/jpeg-strip";
 
 const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/heic"]);
+// Input spine build 1 (photo rules): JPEG only. Both real clients (the
+// wizard's canvas, the mobile ImageManipulator) transcode to JPEG on
+// device, and JPEG is the format the server can strip metadata from
+// without a native dependency. Accepting HEIC/WebP again is a
+// register-visible decision (it needs sharp or equivalent to strip).
+const ALLOWED = new Set(["image/jpeg"]);
 const MAX_BASE64 = 3_000_000; // ~2.2 MB decoded — capture is compressed on device
 
 /**
@@ -29,11 +35,16 @@ export async function POST(req: NextRequest) {
   if (!principal || !FIELD_ROLES.has(principal.role)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   if (!(await staffMfaCleared())) return NextResponse.json({ error: "second factor required" }, { status: 403 });
 
-  const bytes = Math.floor((body.base64.length * 3) / 4);
+  // Enforcement of the capture rule the clients already follow: EXIF and
+  // XMP (where GPS lives) and comments are stripped at the boundary, so a
+  // photo taken inside a member's home never stores its location, whatever
+  // client sent it.
+  const stripped = stripJpegMetadata(Buffer.from(body.base64, "base64"));
+  const data = stripped.toString("base64");
   // Idempotent on the photo id: a retried sync re-uploads the same photo once.
   await db
     .insert(visitPhoto)
-    .values({ id: body.photoId, householdId: body.householdId, contentType: body.contentType, data: body.base64, bytes, uploadedBy: principal.userId })
+    .values({ id: body.photoId, householdId: body.householdId, contentType: body.contentType, data, bytes: stripped.length, uploadedBy: principal.userId })
     .onConflictDoNothing({ target: visitPhoto.id });
 
   return NextResponse.json({ ok: true, photoId: body.photoId });

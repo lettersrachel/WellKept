@@ -76,11 +76,32 @@ export interface CloseFlow {
   submit(): VisitCommand[];
 }
 
+/**
+ * Input spine build 1 (nothing is lost): rebuild a flow from a persisted
+ * draft, so a crashed or reloaded app resumes exactly where it stopped.
+ * A submitted draft never restores; submission is final and the queue
+ * already holds its commands durably.
+ */
+export function restoreCloseFlow(
+  saved: CloseFlowState,
+  { provisionTiers }: { provisionTiers?: ReadonlyMap<string, ProvisionTier> } = {},
+): CloseFlow {
+  if (saved.submittedAt !== null) throw new CloseFlowError("a submitted flow does not restore");
+  return createCloseFlow({
+    householdId: saved.householdId,
+    requiredTaskIds: saved.requiredTaskIds,
+    startedAt: saved.startedAt,
+    provisionTiers,
+    restore: saved,
+  });
+}
+
 export function createCloseFlow({
   householdId,
   requiredTaskIds,
   startedAt = new Date().toISOString(),
   provisionTiers,
+  restore,
 }: {
   householdId: string;
   requiredTaskIds: string[];
@@ -90,11 +111,13 @@ export function createCloseFlow({
    * adapting it does. Optional: a flow without tiers simply cannot accept
    * a methodRef-carrying deferral (unknown refs fail loudly either way). */
   provisionTiers?: ReadonlyMap<string, ProvisionTier>;
+  /** Internal to restoreCloseFlow: adopt this persisted state wholesale. */
+  restore?: CloseFlowState;
 }): CloseFlow {
   if (!nonBlank(householdId) || !Array.isArray(requiredTaskIds) || requiredTaskIds.length === 0) {
     throw new CloseFlowError("household and required tasks are required");
   }
-  const state: CloseFlowState = {
+  const state: CloseFlowState = restore ? structuredClone(restore) : {
     id: randomUUID(),
     householdId,
     startedAt,
