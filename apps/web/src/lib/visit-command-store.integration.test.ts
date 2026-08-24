@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import {
   household, authUser, conditionFlag, objectObservation, deferral,
-  pausedDecision, visitCommand,
+  pausedDecision, visitCommand, eventOutbox, timeEntry,
 } from "@wellkept/schema";
 import { db } from "./db";
 import { applyVisitCommand } from "./visit-command-store";
@@ -41,6 +41,8 @@ afterAll(async () => {
   await db.delete(conditionFlag).where(eq(conditionFlag.householdId, H));
   await db.delete(deferral).where(eq(deferral.householdId, H));
   await db.delete(pausedDecision).where(eq(pausedDecision.householdId, H));
+  await db.delete(eventOutbox).where(eq(eventOutbox.householdId, H));
+  await db.delete(timeEntry).where(eq(timeEntry.householdId, H));
   if (created.commands.length) await db.delete(visitCommand).where(inArray(visitCommand.id, created.commands));
   await db.delete(household).where(eq(household.id, H));
   await db.delete(authUser).where(eq(authUser.id, U));
@@ -144,4 +146,60 @@ test("cross-household targets conflict instead of applying (isolation at the sin
     await db.delete(deferral).where(eq(deferral.id, otherD));
     await db.delete(household).where(eq(household.id, otherH));
   }
+});
+
+test("REQ-083: an applied visit with hours emits the two covenant events in the same transaction, personless; replay never doubles them", async () => {
+  const key = randomUUID();
+  const res = await apply("visit.submit", {
+    startedAt: "2026-08-24T09:00:00.000Z",
+    hours: { startedAt: "2026-08-24T09:00:00.000Z", endedAt: "2026-08-24T12:30:00.000Z" },
+  }, key);
+  assert.equal(res.conflict, false);
+
+  const events = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
+  const kinds = events.map((e) => e.kind).sort();
+  assert.deepEqual(kinds, ["visit.arrival", "visit.departure"], "exactly the arrival and departure taps");
+  const arrival = events.find((e) => e.kind === "visit.arrival")!;
+  const departure = events.find((e) => e.kind === "visit.departure")!;
+  assert.equal(arrival.occurredAt.toISOString(), "2026-08-24T09:00:00.000Z");
+  assert.equal(departure.occurredAt.toISOString(), "2026-08-24T12:30:00.000Z");
+  assert.equal((arrival.payload as { visitCommandId: string }).visitCommandId, key);
+  // NO person: attribution stays in time_entry under the approved G-13
+  // item; the covenant report joins through visitCommandId when built.
+  for (const e of [arrival, departure]) {
+    const p = JSON.stringify(e.payload);
+    assert.ok(!p.includes(U), "covenant event payload must not carry the HOM's identity");
+  }
+  assert.equal(arrival.processedAt, null, "no consumer exists yet; the event waits untouched");
+
+  // replay of the same idempotencyKey: recorded outcome, no duplicate events
+  created.commands.push(key);
+  await applyVisitCommand({
+    idempotencyKey: key, type: "visit.submit",
+    payload: {
+      householdId: H, submittedBy: U, startedAt: "2026-08-24T09:00:00.000Z",
+      hours: { startedAt: "2026-08-24T09:00:00.000Z", endedAt: "2026-08-24T12:30:00.000Z" },
+    },
+  });
+  const after = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
+  assert.equal(after.length, 2, "replay must not double the covenant events");
+});
+
+test("REQ-083, the refusing directions: no hours means no taps, and a conflicted visit emits nothing", async () => {
+  const before = (await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H))).length;
+
+  // a second same-day visit is a (correct) conflict: no events
+  const dup = await apply("visit.submit", {
+    startedAt: "2026-08-24T15:00:00.000Z",
+    hours: { startedAt: "2026-08-24T15:00:00.000Z", endedAt: "2026-08-24T16:00:00.000Z" },
+  });
+  assert.equal(dup.conflict, true);
+
+  // an applied visit on another day WITHOUT hours: applied, but no taps
+  // exist, so the stream stays silent rather than inventing facts
+  const bare = await apply("visit.submit", { startedAt: "2026-08-25T09:00:00.000Z" });
+  assert.equal(bare.conflict, false);
+
+  const after = (await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H))).length;
+  assert.equal(after, before, "neither a conflict nor an hourless visit reaches the covenant stream");
 });
