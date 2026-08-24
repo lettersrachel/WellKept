@@ -546,6 +546,12 @@ export default async function Oversight({ params, searchParams }: {
               <option value="client">client</option>
               <option value="corporate">corporate</option>
             </select>
+            <select key={`cause-${membershipEvents.length}`} name="causeCode" defaultValue="" className="inline" aria-label="Cause code (required on cancel)">
+              <option value="">cause (required on cancel)…</option>
+              {["relocated", "ended_by_member", "ended_by_company", "financial", "life_event", "other_documented"].map((c) => (
+                <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
+              ))}
+            </select>
             <input name="reason" aria-label="Reason (required on cancel)" placeholder="reason (required on cancel, s2)" style={{ flex: 1, marginTop: 0, minWidth: 150 }} />
             <button className="act">Record event</button>
           </form>

@@ -1024,10 +1024,15 @@ export async function recordMembershipEvent(formData: FormData) {
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || null; // s2
   const initiatedByRaw = String(formData.get("initiatedBy") ?? "");
   const initiatedBy = ["client", "corporate"].includes(initiatedByRaw) ? initiatedByRaw : null;
-  // The done-when: cancellations carry a reason and an initiator. Refused
+  // The done-when: cancellations carry a reason, an initiator, and (REQ-083,
+  // taxonomy v1 adopted 24 Aug 2026 evening) a structured cause code;
+  // other_documented leans on the reason it already requires. Refused
   // visibly, not silently - G-29 applies to new actions too.
-  if (kind === "cancel" && (!reason || !initiatedBy)) refuse(householdId, "gate-unmet");
-  const { membershipEvent } = await import("@wellkept/schema");
+  const CAUSES = ["relocated", "ended_by_member", "ended_by_company", "financial", "life_event", "other_documented"] as const;
+  const causeRaw = String(formData.get("causeCode") ?? "");
+  const causeCode = (CAUSES as readonly string[]).includes(causeRaw) ? (causeRaw as (typeof CAUSES)[number]) : null;
+  if (kind === "cancel" && (!reason || !initiatedBy || !causeCode)) refuse(householdId, "gate-unmet");
+  const { membershipEvent, eventOutbox } = await import("@wellkept/schema");
   // One transaction: an audit row without its event (or vice versa) must be
   // impossible. And success is now as legible as refusal (the 2026-07-27
   // lesson, round two): redirect with ?recorded= so the page SAYS it landed
@@ -1039,10 +1044,22 @@ export async function recordMembershipEvent(formData: FormData) {
   // stale. Kept in the same transaction as the event it tracks, same
   // reasoning as the audit row: the two must never be able to disagree.
   await db.transaction(async (tx) => {
+    const eventId = randomUUID();
     await tx.insert(membershipEvent).values({
-      id: randomUUID(), householdId, kind: kind as (typeof KINDS)[number],
-      effectiveOn, tier, priceCents, reason, initiatedBy, recordedBy: principal.userId,
+      id: eventId, householdId, kind: kind as (typeof KINDS)[number],
+      effectiveOn, tier, priceCents, reason, initiatedBy, causeCode, recordedBy: principal.userId,
     });
+    // REQ-083: a departure is a covenant event. Same transaction as the
+    // membership row, same posture as visit.arrival/departure; the payload
+    // carries the code and the ids, never a person and never the reason
+    // text (which is s2 and stays on the membership row).
+    if (kind === "cancel" && causeCode) {
+      await tx.insert(eventOutbox).values({
+        id: randomUUID(), householdId, kind: "household.departure",
+        payload: { membershipEventId: eventId, causeCode, effectiveOn },
+        occurredAt: new Date(`${effectiveOn}T12:00:00Z`),
+      });
+    }
     if (tier) {
       await tx.update(household).set({ tier, updatedAt: new Date() }).where(eq(household.id, householdId));
     }
