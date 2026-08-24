@@ -196,4 +196,16 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /paused_decision/,
   );
   assert.ok(assertNoAnticipationRows([{ decision: "a harmless unrelated key" }]));
+  // WK-DEV-007 s3: shadow-log output never reaches a client, in any
+  // casing; a payload merely carrying "confidence" in prose stays
+  // innocent (the pair is the signature).
+  assert.throws(
+    () => assertNoAnticipationRows([{ triggerKey: "condition-decline", inputsHash: "abc" }]),
+    /shadow_log/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { proposed_class: "A0", confidence_pct: 50 } }),
+    /shadow_log/,
+  );
+  assert.ok(assertNoAnticipationRows([{ confidence: "the client expressed confidence in the plan" }]));
 });

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
-import { bindProvisions } from "@wellkept/schema";
+import { bindProvisions, readFeatureFlags, shadowLog } from "@wellkept/schema";
+import { surfacesBeyondShadow, type ShadowSignal } from "@wellkept/trigger-engine";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
@@ -108,6 +111,23 @@ export default async function VisitPage({ searchParams }: {
   // gates anything; an ignored prompt is itself the signal.
   const outcomes = await getPromptOutcomes(specials.map((i) => i.id), principal.userId);
   const deltasRaw = await getDeltasSince(hh.id, lastVisit ? lastVisit.receivedAt : null);
+  // WK-DEV-007 s3: the SIGNALS panel. Empty until the founder flips a
+  // per-trigger promotion flag; even then surfacesBeyondShadow re-asserts
+  // the A0 cap (it throws above the cap, a defect worth hearing about).
+  // Single-consent stands: a surfaced signal is information for the HOM
+  // to weigh, never an instruction and never an action.
+  const featureFlags = await readFeatureFlags(db as never);
+  const shadowRecent = await db.select().from(shadowLog)
+    .where(eq(shadowLog.householdId, hh.id))
+    .orderBy(desc(shadowLog.evaluatedAt))
+    .limit(10);
+  const promotedSignals = shadowRecent.filter((s) =>
+    surfacesBeyondShadow({
+      triggerKey: s.triggerKey, householdId: s.householdId, signal: s.signal,
+      confidence: s.confidence / 100, evidence: (s.evidence as string[]) ?? [],
+      proposedClass: s.proposedClass as ShadowSignal["proposedClass"],
+      inputsHash: s.inputsHash, evaluatedAt: s.evaluatedAt.toISOString(),
+    }, featureFlags));
   const visibleIds = new Set(fields.map((f) => String(f.id)));
   const deltas = deltasRaw.filter((d) => visibleIds.has(d.id) && d.value).slice(-6);
   // First-visit essentials for stranger mode: flags plus captured
@@ -347,6 +367,21 @@ export default async function VisitPage({ searchParams }: {
             <div className="prov">
               {i.packName} · fires {fmtDay(i.fireAt)}
             </div>
+          </div>
+        ))
+      )}
+
+      <div className="eyebrow">Signals</div>
+      {promotedSignals.length === 0 ? (
+        <div className="note">
+          Nothing promoted. The engine watches in shadow; a signal appears here only after
+          the founder promotes its trigger on scored evidence.
+        </div>
+      ) : (
+        promotedSignals.map((s) => (
+          <div key={s.id} className="card" style={{ background: "#EFE9DC", marginBottom: 8 }}>
+            <div style={{ fontSize: 15, color: "var(--green)" }}>{s.signal}</div>
+            <div className="prov">observed by the engine · confidence {s.confidence}% · yours to weigh, nothing acts on its own</div>
           </div>
         ))
       )}

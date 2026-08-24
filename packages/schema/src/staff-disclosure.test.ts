@@ -95,6 +95,11 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  shadow_log:
+    "WK-DEV-007 s3, 2026-08-24: scored_by attributes the founder's weekly scoring of " +
+    "engine output, a corporate-role action the action log's generic clause covers (the " +
+    "exclusion-approval posture); the engine rows themselves carry no staff attribution. " +
+    "Whether scoring deserves a named line is a founder decision, not a drift",
 };
 
 /** Detect staff-attributed tables from the schema source itself. A column

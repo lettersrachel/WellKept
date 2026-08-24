@@ -56,6 +56,12 @@
  *  - event_outbox: DELETED - transient event-delivery rows (the
  *    CAND-OUTBOX-01 generalization of field_event_outbox; same reason)
  *    whose payloads carry actual field values and primitive facts.
+ *  - shadow_log (WK-DEV-007 s3, 2026-08-24): DELETED - internal engine
+ *    output ABOUT the household (signal text and evidence derive from
+ *    household content), never client-visible, no business-record
+ *    claim; the condition_flag class. Per-trigger precision is an
+ *    aggregate the scoring workflow reads before erasure; a departed
+ *    household's rows carry no claim that survives it.
  *  - audit_subject_token: DELETED - the ADR-006 audit-identity mapping;
  *    deleting the mapping row IS the erasure mechanism (the audit rows
  *    referencing these tokens survive, append-only, and become
@@ -231,6 +237,8 @@ try {
   await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
   await c.query("DELETE FROM event_outbox WHERE household_id=$1", [householdId]);
+  // shadow_log: internal engine output about the household (see header).
+  await c.query("DELETE FROM shadow_log WHERE household_id=$1", [householdId]);
   // object_observation (G-49, 2026-07-27): DELETED — the condition/fill
   // series describes the household's objects; operational data, no
   // business-record claim once the household is erased.
