@@ -31,7 +31,31 @@ Gate 0 per handoff 24.7). Remaining Phase 0 deliverables: the run-rate
 statement (founder-side input; figures never enter this repo), the
 demo-to-commitment ledger tags (24.5, founder plus developer), and the
 staging standup (STAGING_RUNBOOK.md, founder-side dashboard steps
-first). The Temporal Layer gate is OPEN (Household Zero field list
+first).
+
+**Same day, Transfer Set 2 (register drafts A569-A572):** the 24.5 tags
+are RESOLVED and the CAND ledger is CLOSED with every candidate
+assigned (FOUNDER_INPUTS_PHASE0_CLOSE_2026-08-24.md; recall job
+verified code-side: exists, scheduled weekly, deduped, tested; the
+Railway execution check is founder-side). The two staging rulings
+landed (staging Resend on a separate key with a hard internal
+allowlist; the dormant well-kept-web project is inspect-and-rotate
+before any repurpose). WK-DEV-007 authorizes the expanded internal
+build (nine primitives as substrate, the anticipation engine FULLY
+BUILT in shadow mode behind an A0 cap enforced in code, internal
+dashboards with Ruling 1 in the permission matrix; client side frozen
+at the digest; founder priority: input spine and HOM Cockpit perfected
+first). WK-DEV-008 incorporates the workload-forecasting layer (WL
+gates mapped into the substrate window; segments derive from existing
+taps, manual per-segment timing prohibited in v1; WL Gate 0 BLOCKED
+founder-side on the Task Inventory v1.3 locate-or-reconstruct ruling;
+the optimizer is the standing first entry of the weekly "deliberately
+not built" line). THIS WEEK: the Household One (HO) sprint
+(SPRINT_HOUSEHOLD_ONE_2026-08-24.md): Phase 1 internals gate real
+data; Day 5 go/no-go admits HO through production intake or the
+pseudonymized fallback. Still founder-only this week: the six staging
+dashboard clicks, the run-rate amounts, HO selection and written
+consent, the paper-kit capture, and the Task Inventory ruling. The Temporal Layer gate is OPEN (Household Zero field list
 held) but its migration is Phase 2 schema work and waits for Phase 1
 custody per the directive. Weekly build notes begin with the first
 Phase 0 note. The Ruling 3 terminology sweep (House Manager to HOM in
