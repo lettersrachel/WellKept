@@ -72,7 +72,6 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken]]);
-  await pool.end();
 });
 
 test("consent journey: warning, then recorded with its audit row; a future date refuses visibly and changes nothing", async ({ context, page }) => {
@@ -127,6 +126,98 @@ test("permissions journey: a client is walled out of staff surfaces and still se
   // The field close-flow does the same.
   await page.goto("/visit");
   await page.waitForURL(/\/playbook/, { timeout: 30_000 });
+});
+
+/**
+ * The intake journey (HO sprint Day 2-3 / Day 5 correction line): a HOM
+ * assigned to exactly one household captures a field through the real
+ * intake surface, then CORRECTS it, and the audit trail carries both
+ * writes as field_write rows with value HASHES, never values. The s3
+ * rail runs in the same journey: reclassifying a field to s3 clears its
+ * plaintext (vault law, REQ-013).
+ */
+let intakeHmId = "";
+let intakeToken = "";
+let intakeHhId = "";
+let coffeeFieldId = "";
+let entryFieldId = "";
+
+test.beforeAll(async () => {
+  intakeHmId = randomUUID();
+  intakeToken = randomUUID() + randomUUID();
+  intakeHhId = randomUUID();
+  coffeeFieldId = randomUUID();
+  entryFieldId = randomUUID();
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [intakeHmId, `syn-intake-${intakeHmId.slice(0, 8)}@test.invalid`, "SYN-01 intake HOM"]);
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [intakeHhId, "SYN-01 intake journey"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'house_manager',true)",
+    [randomUUID(), intakeHmId, intakeHhId]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
+    [intakeToken, intakeHmId, new Date(Date.now() + 3600_000)]);
+  await pool.query(
+    "INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity) VALUES ($1,$2,1,'Coffee ritual','','s1'), ($3,$2,1,'Entry sequence','Side porch first','s1')",
+    [coffeeFieldId, intakeHhId, entryFieldId]);
+});
+
+test.afterAll(async () => {
+  await pool.query("DELETE FROM audit_event WHERE household_id=$1", [intakeHhId]);
+  await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [intakeHhId]);
+  await pool.query("DELETE FROM playbook_field WHERE household_id=$1", [intakeHhId]);
+  await pool.query("DELETE FROM household WHERE id=$1", [intakeHhId]);
+  await pool.query("DELETE FROM auth_session WHERE session_token=$1", [intakeToken]);
+  await pool.query("DELETE FROM auth_user WHERE id=$1", [intakeHmId]);
+  await pool.end();
+});
+
+test("intake journey: capture, then correct, both audited as hashes; s3 reclassification clears the plaintext", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: intakeToken, url: BASE }]);
+
+  await page.goto("/intake?section=1");
+  await expect(page.getByText("INTAKE MODE · SYN-01 INTAKE JOURNEY")).toBeVisible({ timeout: 30_000 });
+
+  // Capture: the blank field takes its first value.
+  const writeCount = async () => {
+    const { rows } = await pool.query(
+      "SELECT count(*)::int n FROM audit_event WHERE household_id=$1 AND kind='field_write' AND field_id=$2",
+      [intakeHhId, coffeeFieldId]);
+    return rows[0].n as number;
+  };
+  const coffee = page.locator("div.card", { hasText: "Coffee ritual" });
+  await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 7");
+  await coffee.getByRole("button", { name: "Save" }).click();
+  // The textarea keeps the typed value client-side either way, so the
+  // database is the only honest signal the server action landed.
+  await expect.poll(writeCount, { timeout: 15_000 }).toBe(1);
+
+  // Correct: the simulated Day 5 correction, same surface, new value.
+  await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 6:30, grinder on 4");
+  await coffee.getByRole("button", { name: "Save" }).click();
+  await expect.poll(writeCount, { timeout: 15_000 }).toBe(2);
+
+  // The audit trail carries BOTH writes, hashes only, actor stamped.
+  const { rows: audits } = await pool.query(
+    "SELECT actor_user, new_value_hash FROM audit_event WHERE household_id=$1 AND kind='field_write' AND field_id=$2 ORDER BY created_at",
+    [intakeHhId, coffeeFieldId]);
+  expect(audits.length).toBe(2);
+  expect(audits[0].new_value_hash).not.toBe(audits[1].new_value_hash);
+  for (const a of audits) expect(a.actor_user).toBe(intakeHmId);
+  const { rows: [f] } = await pool.query(
+    "SELECT value, provenance_actor, confirmed FROM playbook_field WHERE id=$1", [coffeeFieldId]);
+  expect(f.value).toBe("Half-caf drip ready by 6:30, grinder on 4");
+  expect(f.provenance_actor).toBe(intakeHmId);
+  expect(f.confirmed).toBe(true);
+
+  // The s3 rail: reclassifying a valued field to s3 clears its plaintext
+  // (the value goes to the vault through corporate, never this row).
+  const entry = page.locator("div.card", { hasText: "Entry sequence" });
+  await entry.getByLabel("Sensitivity").selectOption("s3");
+  await entry.getByRole("button", { name: "Save" }).click();
+  await expect(entry.getByText("Secured field:")).toBeVisible({ timeout: 15_000 });
+  const { rows: [sec] } = await pool.query("SELECT value, sensitivity FROM playbook_field WHERE id=$1", [entryFieldId]);
+  expect(sec.sensitivity).toBe("s3");
+  expect(sec.value).toBe("");
 });
 
 test("tenant isolation at the page layer: no assignment for a household means no principal, means no page", async ({ context, page }) => {
