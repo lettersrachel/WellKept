@@ -43,6 +43,9 @@ test("the guard files exist where the manifest says they are", () => {
     // Direction 2: no trigger rule may read a decline-class field without
     // a reviewed exclusion; no new Section 1/3 field ships unclassified.
     "packages/trigger-engine/src/decline-class-exclusion.test.ts",
+    // WK-DEV-006 D7 (register A564): no client surface renders a
+    // duration-typed field or staffing-wall quantity.
+    "apps/web/src/lib/client-duration.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -104,7 +107,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "child-data-kinds.test.ts", "guards-manifest.test.ts", "`sizes` CHECK",
     "frozen-records.test.ts", "seed-binding.test.ts", "staff-disclosure.test.ts",
     "refusal-visibility.test.ts", "provisional-markers.test.ts",
-    "decline-class-exclusion.test.ts",
+    "decline-class-exclusion.test.ts", "client-duration.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }
