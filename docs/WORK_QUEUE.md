@@ -21,10 +21,17 @@ register A567; in repo as `WK-DEV-006_Execution_Directive.md` with the
 dev-session rulings and the implementation handoff beside it). Phase 0
 (Truth) is open: suite proven green before any change (22/22 local), the
 REQ-070..085 merge landed, the CLAUDE.md boundary amendment landed
-(Ruling 1), and the remaining Phase 0 deliverables are the WK-DEV-003
-delta report, the run-rate statement (founder-side input), the
-per-workflow system-of-record map, and CAND owners/dates from handoff
-section 24. The Temporal Layer gate is OPEN (Household Zero field list
+(Ruling 1), the WK-DEV-003 delta report is delivered and frozen
+(DELTA_REPORT_WKDEV003_2026-08-24.md; both of its section 8 escalations
+resolved by founder approval: ADR-007 staging, ADR-008 version pins),
+the system-of-record map is delivered (SYSTEM_OF_RECORD_MAP.md, the D1
+documentation), and the CAND ledger is drafted with owner/forum/date
+blanks for the founders (CAND_LEDGER.md; blanks close, not carry, after
+Gate 0 per handoff 24.7). Remaining Phase 0 deliverables: the run-rate
+statement (founder-side input; figures never enter this repo), the
+demo-to-commitment ledger tags (24.5, founder plus developer), and the
+staging standup (STAGING_RUNBOOK.md, founder-side dashboard steps
+first). The Temporal Layer gate is OPEN (Household Zero field list
 held) but its migration is Phase 2 schema work and waits for Phase 1
 custody per the directive. Weekly build notes begin with the first
 Phase 0 note. The Ruling 3 terminology sweep (House Manager to HOM in
