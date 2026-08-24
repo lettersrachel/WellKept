@@ -1,13 +1,26 @@
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
-import { visitCommand, timeEntry, deferral } from "@wellkept/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import {
+  visitCommand, timeEntry, deferral, conditionFlag, objectObservation,
+  registryEntry, pausedDecision, promptPackItem, promptOutcome,
+} from "@wellkept/schema";
 import { db } from "./db";
+import {
+  validateFlagCreate, validateFlagLook, validateFlagClose,
+  validateDeferralResolve, validatePausedDecisionResolve, validatePromptOutcome,
+} from "./visit-command-validate";
 
 const dayOf = (isoString: string) => new Date(isoString).toISOString().slice(0, 10);
 
+export type CommandType =
+  | "visit.submit" | "dot.create" | "signal.route"
+  // Input spine build 1: the visit-page capture surfaces, offline-capable.
+  | "flag.create" | "flag.look" | "flag.close"
+  | "deferral.resolve" | "pausedDecision.resolve" | "prompt.outcome";
+
 export interface ApplyInput {
   idempotencyKey: string;
-  type: "visit.submit" | "dot.create" | "signal.route";
+  type: CommandType;
   payload: { householdId: string; startedAt?: string; [k: string]: unknown };
 }
 export type ApplyResult = { conflict: false } | { conflict: true; reason: string | null };
@@ -38,6 +51,126 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
 
     let status: "applied" | "conflict" = "applied";
     let reason: string | null = null;
+    const actor = typeof payload.submittedBy === "string" ? payload.submittedBy : null;
+
+    // Input spine build 1: each visit-page capture type mirrors its server
+    // action's rules via the shared validators, then performs the same
+    // write the action performs, in this transaction, attributed to the
+    // route-stamped actor. An invalid or target-missing command is
+    // recorded as a conflict with its reason, never dropped: "nothing is
+    // lost" means a bad capture surfaces where conflicts already surface.
+    const NEW_TYPES = new Set(["flag.create", "flag.look", "flag.close", "deferral.resolve", "pausedDecision.resolve", "prompt.outcome"]);
+    if (NEW_TYPES.has(type)) {
+      if (!actor) { status = "conflict"; reason = "bad_input:actor"; }
+      else if (type === "flag.create") {
+        const v = validateFlagCreate(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          let entryId: string | null = null;
+          if (v.clean.registryEntryId) {
+            const [entry] = await tx.select({ id: registryEntry.id }).from(registryEntry)
+              .where(and(eq(registryEntry.id, v.clean.registryEntryId), eq(registryEntry.householdId, payload.householdId), isNull(registryEntry.tombstonedAt)))
+              .limit(1);
+            if (!entry) { status = "conflict"; reason = "missing_registry_entry"; }
+            else entryId = entry.id;
+          }
+          if (status === "applied") {
+            await tx.insert(conditionFlag).values({
+              id: v.clean.id ?? randomUUID(), householdId: payload.householdId, registryEntryId: entryId,
+              subject: v.clean.subject, location: v.clean.location, concern: v.clean.concern,
+              raisedBy: actor, raisedAt: new Date(),
+              revisitDate: v.clean.revisitDate, revisitCondition: v.clean.revisitCondition,
+            }).onConflictDoNothing();
+          }
+        }
+      } else if (type === "flag.look") {
+        const v = validateFlagLook(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          const [flag] = await tx.select({ id: conditionFlag.id, registryEntryId: conditionFlag.registryEntryId })
+            .from(conditionFlag)
+            .where(and(eq(conditionFlag.id, v.clean.flagId), eq(conditionFlag.householdId, payload.householdId), eq(conditionFlag.status, "open")))
+            .limit(1);
+          if (!flag) { status = "conflict"; reason = "missing_flag"; }
+          else {
+            await tx.insert(objectObservation).values({
+              id: randomUUID(), householdId: payload.householdId, registryEntryId: flag.registryEntryId,
+              conditionFlagId: flag.id, measure: "condition", value: v.clean.value, note: v.clean.note,
+              observedAt: new Date(), recordedBy: actor,
+            });
+          }
+        }
+      } else if (type === "flag.close") {
+        const v = validateFlagClose(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          const [flag] = await tx.select({ id: conditionFlag.id }).from(conditionFlag)
+            .where(and(eq(conditionFlag.id, v.clean.flagId), eq(conditionFlag.householdId, payload.householdId), eq(conditionFlag.status, "open")))
+            .limit(1);
+          if (!flag) { status = "conflict"; reason = "missing_flag"; }
+          else {
+            await tx.update(conditionFlag)
+              .set({ status: "closed", closedAt: new Date(), closedBy: actor, closeReason: v.clean.closeReason, updatedAt: new Date() })
+              .where(eq(conditionFlag.id, flag.id));
+          }
+        }
+      } else if (type === "deferral.resolve") {
+        const v = validateDeferralResolve(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          const [row] = await tx.select({ id: deferral.id }).from(deferral)
+            .where(and(eq(deferral.id, v.clean.targetId), eq(deferral.householdId, payload.householdId), isNull(deferral.resolvedAt)))
+            .limit(1);
+          if (!row) { status = "conflict"; reason = "missing_deferral"; }
+          else {
+            await tx.update(deferral)
+              .set({ resolution: v.clean.resolution, resolvedAt: new Date(), resolvedBy: actor, updatedAt: new Date() })
+              .where(eq(deferral.id, row.id));
+          }
+        }
+      } else if (type === "pausedDecision.resolve") {
+        const v = validatePausedDecisionResolve(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          const [row] = await tx.select({ id: pausedDecision.id }).from(pausedDecision)
+            .where(and(eq(pausedDecision.id, v.clean.targetId), eq(pausedDecision.householdId, payload.householdId), isNull(pausedDecision.resolvedAt)))
+            .limit(1);
+          if (!row) { status = "conflict"; reason = "missing_paused_decision"; }
+          else {
+            await tx.update(pausedDecision)
+              .set({ resolution: v.clean.resolution, resolvedAt: new Date(), resolvedBy: actor, updatedAt: new Date() })
+              .where(eq(pausedDecision.id, row.id));
+          }
+        }
+      } else if (type === "prompt.outcome") {
+        const v = validatePromptOutcome(payload);
+        if (!v.ok) { status = "conflict"; reason = v.reason; }
+        else {
+          const [item] = await tx.select().from(promptPackItem).where(eq(promptPackItem.id, v.clean.promptId));
+          if (!item || item.householdId !== payload.householdId) { status = "conflict"; reason = "missing_prompt"; }
+          else {
+            const answeredAt = new Date();
+            let leadDays: number | null = null;
+            if (item.targetDate) {
+              const target = new Date(`${item.targetDate}T12:00:00Z`);
+              leadDays = Math.round((target.getTime() - answeredAt.getTime()) / (24 * 60 * 60 * 1000));
+            }
+            const role = typeof payload.submittedByRole === "string" ? payload.submittedByRole : null;
+            if (!role) { status = "conflict"; reason = "bad_input:actor_role"; }
+            else {
+              await tx.insert(promptOutcome).values({
+                id: randomUUID(), householdId: item.householdId, promptId: item.id, ruleId: item.triggerRuleId,
+                provisionRef: null, userId: actor, role: role as "house_manager",
+                outcome: v.clean.outcome, firedAt: item.firedAt ?? item.fireAt, answeredAt,
+                targetDate: item.targetDate, leadDays, note: v.clean.note,
+                wasNews: v.clean.wasNews, dismissReason: v.clean.dismissReason,
+              }).onConflictDoNothing({ target: [promptOutcome.promptId, promptOutcome.userId] });
+            }
+          }
+        }
+      }
+    }
+
     if (type === "visit.submit") {
       const sameHousehold = await tx
         .select()
