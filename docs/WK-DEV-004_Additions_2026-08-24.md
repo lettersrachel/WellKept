@@ -4,12 +4,18 @@ status: living
 # WK-DEV-004 Conventions: the 24 August 2026 additions
 
 The full WK-DEV-004 Conventions document is founder-held and is NOT adopted
-into this repo as-is: its descriptive sections (monorepo layout, tRPC, an
-Expo mobile app, WatermelonDB, a permissions package) describe the July 2026
-specification, not the system as built, and adopting them verbatim would
-plant false claims about this codebase in a controlled document. The Phase 0
-delta report (WK-DEV-006 Phase 0) is the vehicle that reconciles them; the
-full document enters after that report, with its deltas annotated.
+into this repo as-is: its descriptive sections are the July 2026
+specification and have not been verified line-by-line against the system as
+built. Much of its layout IS real here (apps/hm-mobile on Expo,
+packages/permissions, packages/schema, services/worker, tooling/seed and
+tooling/import all exist), but verified deltas also exist: tRPC and
+WatermelonDB appear nowhere in this repo (server actions and an
+IndexedDB-backed offline queue instead), packages/ui and packages/config do
+not exist, and the triggers package is named trigger-engine. Adopting the
+document verbatim ahead of the Phase 0 delta report would freeze a mix of
+true and false claims in a controlled document; the delta report is the
+vehicle that reconciles it, and the full document enters after that report
+with its deltas annotated.
 
 The transfer set's handling note asked for the 24 August additions to be
 folded into "the repo copy"; no repo copy existed, so this document is that

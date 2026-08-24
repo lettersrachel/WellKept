@@ -92,11 +92,13 @@ before first debit; the ACH-only default reflected in the member agreement.
   budget-envelope dollar figure (its line 7). Held reference-only, used as
   the delta-report input; it enters docs/ only after a founder decision on
   scrubbing versus holding, reported rather than silently redacted.
-- WK-DEV-003 and WK-DEV-004 both describe the July 2026 specification
-  architecture, not the system as built. The full documents enter the repo
-  after the Phase 0 delta report annotates the deltas; WK-DEV-004's three
-  adopted 24 August conventions are carried now in
-  `WK-DEV-004_Additions_2026-08-24.md`.
+- WK-DEV-003 and WK-DEV-004 carry descriptive claims not yet verified
+  line-by-line against the system as built. Much of WK-DEV-004's layout is
+  real here, and verified deltas also exist (tRPC and WatermelonDB appear
+  nowhere in this repo; packages/ui and packages/config do not exist). The
+  full documents enter the repo after the Phase 0 delta report annotates
+  the deltas; WK-DEV-004's three adopted 24 August conventions are carried
+  now in `WK-DEV-004_Additions_2026-08-24.md`.
 - INSTRUCTION_UPDATES_2026-08-05_v2 is held out of docs/: the dated
   verbatim check found its REQ-078..082 wording diverges from the repo
   copy, and the rulings resolved the divergence in the repo copy's favor,
