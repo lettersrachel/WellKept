@@ -21,7 +21,18 @@ premise found here.
 - **Never build per-person analytics.** No performance scoring, productivity
   ranking, leaderboards, or per-House-Manager rates. Usage analytics aggregate
   by provision or by rule, never by person. Founder-set boundary; if a task
-  seems to need it, stop and ask.
+  seems to need it, stop and ask. **One scoped exception, amended by name
+  (Ruling 1 of the 24 August 2026 dev-session rulings, founder-approved,
+  citing register A561): capacity measurement is not performance scoring.**
+  Per-HOM utilization (service hours per household per month, households per
+  HOM) exists in exactly two surfaces: the monthly lender covenant report
+  (REQ-083) and the capacity-gate evaluation that triggers hiring. Visibility:
+  founder, CFO, and the lender via the covenant report. Expressly barred,
+  unchanged from the boundary: performance scoring, productivity ranking,
+  leaderboards, comparative display to HOMs, use in evaluation or
+  compensation, and any appearance on operational dashboards.
+  Churn-with-cause is household-level and unaffected. Sunset review at the
+  launch-year close.
 - **Never load real household data into fixtures or tests.** Fernbrook DEMO and
   the Smoke Test Fixture only.
 
