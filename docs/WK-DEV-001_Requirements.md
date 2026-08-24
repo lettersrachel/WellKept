@@ -68,8 +68,8 @@ Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = l
 - REQ-077 (P2) Non-client record lifecycle. ADDED 1 August 2026, replacing withdrawn REQ-076. The member_circle_entry register (scoped by WK-PLAY-003 Addendum A) plus a recipient-shaped erasure path (erase-household.mjs is household-shaped; a recipient is not a household). WK-STD-026's four rules stand as COMPANY POLICY: deletion on request, 24-month retention ceiling, the deletion itself audited with the audit row surviving, and a non-marketable constraint excluding these rows from every export and analytics view by default. Tombstone-pattern mechanics satisfy the policy (counsel confirmed the mechanism is unconstrained); audit identity follows ADR-006 tokenisation. GATE: no non-client record may be created on the platform before this is built; the pilot runs the Member Circle ON PAPER per the founder's stricter-than-required choice (Ruling 5).
 - REQ-072 (P0) Availability target 99.5%; RPO 24h (nightly encrypted backups), RTO 8h; status page.
 - REQ-073 (P0) Performance: briefing opens < 2s on cached data; search results < 500ms p95 within a household.
-- REQ-074 (P1) Accessibility: WCAG 2.1 AA on client portal.
-- REQ-075 (P0) Scale envelope: design for 150 households, 60 staff users, 5-year photo retention (~1TB) without re-architecture (covers the 2032 plan with headroom).
+- REQ-074 (P1) Accessibility: WCAG 2.2 AA is the engineering baseline for critical client, HOM, and corporate workflows, enforced through the shared component library's accessibility contract. PROMOTED 24 August 2026 per WK-DEV-006 D2 (register A567); was "WCAG 2.1 AA on client portal".
+- REQ-075 (P0) Scale envelope: design for 150 households, 60 staff users, 5-year photo retention (~1TB) without re-architecture (comfortably covers the 2031 plan of 56 households with headroom for gated growth beyond; parenthetical corrected 24 August 2026 from a retired-plan reference, per the dev-session rulings).
 
 ## I. Response architecture (WK-STD-028, ADOPTED 2 August 2026, ruling A121; appended 5 August 2026)
 
@@ -81,3 +81,19 @@ per item. Do not renumber existing requirements.
 - REQ-080 (P1) Response-time capture: inbound and first-response timestamps per channel, reported quarterly against the WK-STD-028 commitment table (feeds WK-QA-019 M-23). GATE: with REQ-078.
 - REQ-081 (P2) Emergency line: dedicated number to the on-call Ops Lead, call log with member attribution and a non-emergency flag, on-call rotation administration. Conduct governed by WK-STD-022 and the emergency-response procedure, not by the platform. GATE: after AR.
 - REQ-082 (P2) After-hours HM contact incident capture (feeds WK-QA-019 M-24, expected zero). GATE: after AR.
+
+## J. Adopted 24 August 2026 (two-key, registers A561/A566/A567; appended per the dev-session rulings of 24 August 2026)
+
+The rulings document calls this the "section I append"; the library copy of
+this document letters it I because it lacks the repo's Response-architecture
+section above. Lettered J here; the requirement ids, not the section letters,
+are the public API. Text below is verbatim from the rulings document.
+Canonicity after this merge: the repo copy is canonical for REQ-078..082
+(the 5 August append; the dated verbatim check found wording-level divergence
+from INSTRUCTION_UPDATES v2 and the rulings resolved it in the repo copy's
+favor), the library copy contributed REQ-083..085, and the merged 070..085
+set is canonical in both.
+
+- REQ-083 (P0) Covenant metrics as first-class events: visit arrival/departure events produce per-household monthly HOM utilization; every household departure carries a structured cause code; the monthly lender covenant report (utilization per household, churn with cause) generates from these events, not from spreadsheets. Gate: production-ready before the first covenant reporting month. Source: register A561; SBA support workbook Exhibit 9. Scope per Ruling 1 of the 24 August dev-session rulings (capacity measurement, never performance scoring; see the amended boundary in CLAUDE.md).
+- REQ-084 (P0, policy control) Property-data enrichment prohibition: no integration, import, scrape, or API enrichment from parcel records, deeds, assessor data, MLS or consumer property-data services, or people-search sources, for any feature, expressly including capital-plan prefill. Record data originates only from the household, the HOM's own observation, and member-provided documents. CI fails any dependency or integration matching this class.
+- REQ-085 (P1) Software cost gate: stack run-rate and build spend tracked against the modeled software budget line; any commitment above the modeled line requires a two-key model change before it is incurred. Gate 0 deliverables include a current run-rate statement.

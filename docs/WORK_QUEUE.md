@@ -16,6 +16,20 @@ in a session prompt.
 
 ## State
 
+**24 August 2026: the build now runs under WK-DEV-006** (two-key adopted,
+register A567; in repo as `WK-DEV-006_Execution_Directive.md` with the
+dev-session rulings and the implementation handoff beside it). Phase 0
+(Truth) is open: suite proven green before any change (22/22 local), the
+REQ-070..085 merge landed, the CLAUDE.md boundary amendment landed
+(Ruling 1), and the remaining Phase 0 deliverables are the WK-DEV-003
+delta report, the run-rate statement (founder-side input), the
+per-workflow system-of-record map, and CAND owners/dates from handoff
+section 24. The Temporal Layer gate is OPEN (Household Zero field list
+held) but its migration is Phase 2 schema work and waits for Phase 1
+custody per the directive. Weekly build notes begin with the first
+Phase 0 note. The Ruling 3 terminology sweep (House Manager to HOM in
+display copy and prose, identifiers frozen) is its own queued session.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
