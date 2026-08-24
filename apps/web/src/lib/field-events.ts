@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { runTriggerPass, type FieldChangeEvent } from "@wellkept/trigger-engine";
-import { fieldEventOutbox } from "@wellkept/schema";
+import { eventOutbox } from "@wellkept/schema";
 import { db } from "./db";
 
 export type { FieldChangeEvent };
@@ -23,16 +23,22 @@ export type { FieldChangeEvent };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** Durable: insert the outbox row using the caller's transaction handle. */
+/** Durable: insert the outbox row using the caller's transaction handle.
+ * CAND-OUTBOX-01: the generalized event_outbox carries this as the first
+ * kind, field.changed; the payload shape IS FieldChangeEvent. */
 export async function outboxFieldEvent(tx: Tx, event: FieldChangeEvent): Promise<void> {
-  await tx.insert(fieldEventOutbox).values({
+  await tx.insert(eventOutbox).values({
     id: randomUUID(),
     householdId: event.householdId,
-    fieldId: event.fieldId,
-    fieldName: event.fieldName,
-    section: event.section,
-    newValue: event.newValue,
-    changedAt: new Date(event.changedAt),
+    kind: "field.changed",
+    payload: {
+      fieldId: event.fieldId,
+      fieldName: event.fieldName,
+      section: event.section,
+      newValue: event.newValue,
+      changedAt: event.changedAt,
+    },
+    occurredAt: new Date(event.changedAt),
   });
 }
 

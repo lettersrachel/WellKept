@@ -72,7 +72,8 @@ fail-closed is deliberate.
   pattern. **Seven tables are documented, reasoned exceptions that DELETE
   rows** (`apps/web/scripts/erase-household.mjs`'s own header names each):
   `vault_item` (the crypto-shred), `condition_flag`, `object_observation`,
-  `paused_decision`, `notification`, `field_event_outbox`, and
+  `paused_decision`, `notification`, `event_outbox` (the CAND-OUTBOX-01
+  generalization of `field_event_outbox`, same reason), and
   `audit_subject_token` (ADR-006: deleting the mapping IS the audit-identity
   erasure mechanism). Each reason is written where the deletion happens. An
   eighth exception needs the same: a reason in the erasure tool, not a

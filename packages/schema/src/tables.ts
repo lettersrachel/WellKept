@@ -712,24 +712,27 @@ export const objectObservation = pgTable("object_observation", {
     sql`${t.registryEntryId} IS NOT NULL OR ${t.conditionFlagId} IS NOT NULL`),
 ]);
 
-// Transactional outbox for field-change events (durable trigger delivery).
-// Written in the SAME transaction as the playbook_field write, so a field
-// change and its trigger event commit atomically or not at all — no change
-// can silently fail to generate its prompts. The worker drains unprocessed
-// rows and runs the trigger pass (deterministic ids make it idempotent with
-// the inline pass). processedAt stamps completion; attempts bounds retries.
-export const fieldEventOutbox = pgTable("field_event_outbox", {
+// CAND-OUTBOX-01 (substrate week one): THE transactional outbox. Any
+// cross-primitive fact travels as an event through here, never as a second
+// copy (WK-DEV-007 section 4); field_event_outbox was the seed and its
+// field.changed events are the first kind. A row is written in the SAME
+// transaction as the state change it announces, so the change and its
+// event commit atomically or not at all. The worker drains unprocessed
+// rows through a per-kind consumer registry (consumers are idempotent);
+// a kind with no registered consumer is left untouched, attempts unspent,
+// so a primitive may start emitting before its consumer ships without
+// being dead-lettered. processedAt stamps completion; attempts bounds
+// retries for kinds that DO have a consumer.
+export const eventOutbox = pgTable("event_outbox", {
   id: uuid("id").primaryKey(),
   householdId: uuid("household_id").notNull(),
-  fieldId: uuid("field_id").notNull(),
-  fieldName: text("field_name").notNull(),
-  section: integer("section").notNull(),
-  newValue: text("new_value").notNull(),
-  changedAt: timestamp("changed_at", { withTimezone: true }).notNull(),
+  kind: text("kind").notNull(), // e.g. field.changed; work/decision kinds follow
+  payload: jsonb("payload").notNull(), // kind-specific; validated by the consumer
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
   attempts: integer("attempts").notNull().default(0),
   processedAt: timestamp("processed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [index("field_event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);
+}, (t) => [index("event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);
 
 // ---------------------------------------------------------------------------
 // The standards store (WK-APP-003 Addendum A1): the fourth top-level shape.
