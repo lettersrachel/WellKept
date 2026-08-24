@@ -66,6 +66,8 @@ test.afterAll(async () => {
   // the product; a local test tears its own synthetic household down the
   // way airplane.spec tears down its visit commands).
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken]]);
 });
@@ -108,6 +110,43 @@ test("consent journey: warning, then recorded with its audit row; a future date 
   await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
   const { rows: [after] } = await pool.query("SELECT consent_doc_version FROM household WHERE id=$1", [synId]);
   expect(after.consent_doc_version).toBe(docVersion);
+});
+
+test("departure journey: a cancel refuses without its cause code, then lands with the covenant event, reason text never in the payload", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByRole("button", { name: "Record event" })).toBeVisible({ timeout: 30_000 });
+
+  const fill = async (withCause: boolean) => {
+    await page.getByLabel("Event kind").selectOption("cancel");
+    await page.locator('input[name="effectiveOn"]').fill("2026-08-24");
+    await page.locator('select[name="initiatedBy"]').selectOption("client");
+    if (withCause) await page.locator('select[name="causeCode"]').selectOption("life_event");
+    await page.getByLabel("Reason (required on cancel)").fill("family relocating for a season");
+    await page.getByRole("button", { name: "Record event" }).click();
+  };
+
+  // The refusing direction: REQ-083's done-when, visibly.
+  await fill(false);
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  expect(await count("SELECT count(*)::int n FROM membership_event WHERE household_id=$1")).toBe(0);
+
+  // The accepting direction: the row and its covenant event in one
+  // transaction. The database is the honest signal, not the banner.
+  await fill(true);
+  await expect.poll(async () =>
+    (await pool.query("SELECT count(*)::int n FROM membership_event WHERE household_id=$1 AND kind='cancel'", [synId])).rows[0].n,
+  { timeout: 20_000 }).toBe(1);
+  const { rows: [ev] } = await pool.query(
+    "SELECT cause_code, reason FROM membership_event WHERE household_id=$1 AND kind='cancel'", [synId]);
+  expect(ev.cause_code).toBe("life_event");
+  const { rows: [cov] } = await pool.query(
+    "SELECT payload FROM event_outbox WHERE household_id=$1 AND kind='household.departure'", [synId]);
+  expect(cov).toBeTruthy();
+  expect((cov.payload as { causeCode: string }).causeCode).toBe("life_event");
+  const raw = JSON.stringify(cov.payload);
+  expect(raw.includes("relocating")).toBe(false); // the s2 reason never rides the covenant stream
 });
 
 test("permissions journey: a client is walled out of staff surfaces and still sees their own", async ({ context, page }) => {

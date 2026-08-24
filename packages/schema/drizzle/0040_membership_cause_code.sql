@@ -1,0 +1,2 @@
+ALTER TABLE "membership_event" ADD COLUMN "cause_code" text;--> statement-breakpoint
+ALTER TABLE "membership_event" ADD CONSTRAINT "membership_event_cause_code_known" CHECK ("membership_event"."cause_code" IS NULL OR "membership_event"."cause_code" IN ('relocated','ended_by_member','ended_by_company','financial','life_event','other_documented'));

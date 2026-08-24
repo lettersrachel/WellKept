@@ -87,8 +87,21 @@ export const membershipEvent = pgTable("membership_event", {
   priceCents: integer("price_cents"), // the price at this event, where one applies
   reason: text("reason"), // required on cancel (enforced in the action), s2
   initiatedBy: text("initiated_by"), // client | corporate — required on cancel
+  // REQ-083 churn-with-cause, taxonomy v1 adopted 24 Aug 2026 evening
+  // (section 8 default under the proceed-with-recommendations
+  // authorization; see FOUNDER_INPUTS_2026-08-24_EVENING.md). Required on
+  // cancel at the action, the reason/initiatedBy pattern; the vocabulary
+  // is a DB CHECK. Household-level by construction, never per-person.
+  causeCode: text("cause_code"),
   recordedBy: text("recorded_by").notNull().references(() => authUser.id),
-}, (t) => [index("membership_event_household_idx").on(t.householdId, t.effectiveOn)]);
+}, (t) => [
+  index("membership_event_household_idx").on(t.householdId, t.effectiveOn),
+  // The six adopted codes; other_documented requires the reason column's
+  // note by the action's done-when. NULL passes (non-departure kinds, and
+  // rows predating the taxonomy).
+  check("membership_event_cause_code_known",
+    sql`${t.causeCode} IS NULL OR ${t.causeCode} IN ('relocated','ended_by_member','ended_by_company','financial','life_event','other_documented')`),
+]);
 
 // REQ-011/012: the field record, rich from day one (WK-APP-003 "why the field is rich").
 // S3 VALUES ARE NEVER STORED HERE; the vault_item table holds them (REQ-013).

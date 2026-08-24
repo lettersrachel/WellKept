@@ -281,6 +281,13 @@
       "when": 1787613740428,
       "tag": "0039_stranger_visible",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787614452140,
+      "tag": "0040_membership_cause_code",
+      "breakpoints": true
     }
   ]
 }
