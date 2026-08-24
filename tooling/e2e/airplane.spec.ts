@@ -119,3 +119,54 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   // its claim to submitted.
   await expect(page.getByText("Visit submitted")).toBeVisible();
 });
+
+/**
+ * Input spine build 1: the airplane drill extended past the wizard. A
+ * condition flag captured OFFLINE claims saved-on-this-device (never
+ * recorded), writes nothing, then applies attributed on reconnect - the
+ * WK-DEV-007 section 2 acceptance shape (capture, then sync) for the
+ * visit-page surfaces.
+ */
+test("a condition flag captured offline queues on-device, then applies on reconnect", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: token, url: BASE }]);
+  const subject = `airplane grout ${randomUUID().slice(0, 8)}`;
+  const flagCount = async (): Promise<number> => {
+    const { rows } = await pool.query(
+      "SELECT count(*)::int n FROM condition_flag WHERE household_id=$1 AND subject=$2", [householdId, subject]);
+    return rows[0].n;
+  };
+
+  await page.goto("/visit");
+  await expect(page.getByRole("heading", { name: "Flag a condition" })).toBeVisible({ timeout: 30_000 });
+  // Let the shared queue hydrate (the wizard's status bar renders once it has).
+  await expect(page.getByRole("heading", { name: "Confirm today's tasks" })).toBeVisible({ timeout: 30_000 });
+
+  // ---- go offline, capture the flag ----
+  await context.setOffline(true);
+  await page.getByLabel("What", { exact: true }).fill(subject);
+  await page.getByLabel("Where", { exact: true }).fill("guest bathroom");
+  await page.getByLabel("Concern").fill("cracking along the rear shower wall");
+  await page.getByLabel("Revisit condition").fill("after the next deep clean");
+  await page.getByRole("button", { name: "Raise the flag" }).click();
+
+  // The honest chip: saved on this device, and nothing reached the DB.
+  await expect(page.getByText("Saved on this device; syncing.")).toBeVisible({ timeout: 10_000 });
+  expect(await flagCount()).toBe(0);
+
+  // ---- reconnect: the browser's online event kicks the shared drain ----
+  await context.setOffline(false);
+  await expect.poll(async () => flagCount(), { timeout: 20_000, intervals: [500] }).toBe(1);
+
+  // Attributed to the session's own principal, server-stamped.
+  const { rows: [flag] } = await pool.query(
+    "SELECT raised_by, status FROM condition_flag WHERE household_id=$1 AND subject=$2", [householdId, subject]);
+  const { rows: [u] } = await pool.query("SELECT id FROM auth_user WHERE email='jordan@wellkept.demo'");
+  expect(flag.raised_by).toBe(u.id);
+  expect(flag.status).toBe("open");
+
+  // The chip upgrades its claim only now.
+  await expect(page.getByText("Recorded.")).toBeVisible({ timeout: 15_000 });
+
+  // Cleanup this test's flag and its command row.
+  await pool.query("DELETE FROM condition_flag WHERE household_id=$1 AND subject=$2", [householdId, subject]);
+});

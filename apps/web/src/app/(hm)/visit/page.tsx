@@ -5,8 +5,9 @@ import { bindProvisions } from "@wellkept/schema";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, recordPromptOutcome, createTimeEntry, createCostEntry, createConditionFlag, recordFlagLook, closeConditionFlag, resolveDeferral, createPausedDecision, resolvePausedDecision } from "@/lib/actions";
+import { logStrangerTest, createTimeEntry, createCostEntry, createPausedDecision } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
+import { FlagCaptureForm, FlagLookForm, FlagCloseForm, ResolveButtons, OutcomeButton } from "./OfflineCapture";
 import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
 import { ProvisionList } from "../../ProvisionList";
@@ -27,17 +28,13 @@ const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
  * driveway answer beats a modal. Each choice is its own form because only
  * the clicked submit button's value travels with the POST.
  */
-function OutcomeChoice({ promptId, outcome, label, wasNews, dismissReason }: {
-  promptId: string; outcome: string; label: string; wasNews?: string; dismissReason?: string;
+function OutcomeChoice({ householdId, promptId, outcome, label, wasNews, dismissReason }: {
+  householdId: string; promptId: string; outcome: string; label: string; wasNews?: string; dismissReason?: string;
 }) {
+  // Input spine build 1: the tap enqueues offline-first; same one-tap shape.
   return (
-    <form action={recordPromptOutcome} style={{ display: "inline" }}>
-      <input type="hidden" name="promptId" value={promptId} />
-      <input type="hidden" name="outcome" value={outcome} />
-      {wasNews !== undefined && <input type="hidden" name="wasNews" value={wasNews} />}
-      {dismissReason !== undefined && <input type="hidden" name="dismissReason" value={dismissReason} />}
-      <button className="act subtle">{label}</button>
-    </form>
+    <OutcomeButton householdId={householdId} promptId={promptId} outcome={outcome}
+      label={label} wasNews={wasNews} dismissReason={dismissReason} />
   );
 }
 
@@ -203,24 +200,9 @@ export default async function VisitPage({ searchParams }: {
               {f.looks.length > 0 && <> · condition {f.looks.map((l) => l.value).join(" then ")}</>}
               {f.ratePer30Days !== null && f.ratePer30Days > 0 && <> · losing {f.ratePer30Days.toFixed(1)} points per 30 days</>}
             </div>
-            <form action={recordFlagLook} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
-              <input type="hidden" name="householdId" value={hh.id} />
-              <input type="hidden" name="flagId" value={f.id} />
-              <input type="hidden" name="returnTo" value="/visit" />
-              {/* W-4 carried (session Y): the direction is printed at the
-                  point of entry, same as the registry form; two HMs reading
-                  "3 of 5" oppositely is the calibration failure. */}
-              <input name="value" aria-label="Condition 1-5 (5 = like new, 1 = failing)" placeholder="condition 1-5 (5 = like new, 1 = failing)" inputMode="numeric" style={{ width: 250, marginTop: 0 }} />
-              <input name="note" aria-label="Look note (internal)" placeholder="note (optional)" style={{ flex: 1, marginTop: 0 }} />
-              <button className="act">Log look</button>
-            </form>
-            <form action={closeConditionFlag} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
-              <input type="hidden" name="householdId" value={hh.id} />
-              <input type="hidden" name="flagId" value={f.id} />
-              <input type="hidden" name="returnTo" value="/visit" />
-              <input name="closeReason" aria-label="Close reason" placeholder="close: what resolved it" style={{ flex: 1, marginTop: 0 }} />
-              <button className="act subtle">Close flag</button>
-            </form>
+            {/* Input spine build 1: looks and closes enqueue offline-first. */}
+            <FlagLookForm householdId={hh.id} flagId={f.id} />
+            <FlagCloseForm householdId={hh.id} flagId={f.id} />
           </div>
         ))
       )}
@@ -247,17 +229,7 @@ export default async function VisitPage({ searchParams }: {
               </span>
               <div className="fval sans" style={{ fontSize: 13 }}>{d.reason}</div>
               <div className="prov">planned for {d.revisitDate ?? d.revisitCondition}</div>
-              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                {(["done", "no_longer_needed", "superseded"] as const).map((r) => (
-                  <form key={r} action={resolveDeferral} style={{ display: "inline" }}>
-                    <input type="hidden" name="householdId" value={hh.id} />
-                    <input type="hidden" name="deferralId" value={d.id} />
-                    <input type="hidden" name="resolution" value={r} />
-                    <input type="hidden" name="returnTo" value="/visit" />
-                    <button className="act subtle">{r.replace(/_/g, " ")}</button>
-                  </form>
-                ))}
-              </div>
+              <ResolveButtons householdId={hh.id} kind="deferral" targetId={d.id} />
             </div>
           ))}
         </div>
@@ -269,25 +241,8 @@ export default async function VisitPage({ searchParams }: {
           Something worth watching, in your own words. Every flag needs a revisit
           plan: a date, or the condition that would bring you back to it.
         </p>
-        <form action={createConditionFlag}>
-          <input type="hidden" name="householdId" value={hh.id} />
-          <input type="hidden" name="returnTo" value="/visit" />
-          <input name="subject" aria-label="What" placeholder="what (grout, rear shower wall)" />
-          <input name="location" aria-label="Where" placeholder="where (guest bathroom)" />
-          <input name="concern" aria-label="Concern" placeholder="the concern, as you would say it" />
-          <select name="registryEntryId" aria-label="Registry object (optional)" defaultValue="" className="inline">
-            <option value="">no registry object (a surface, a room)</option>
-            {registries.map((r) => (
-              <option key={r.id} value={r.id}>{r.label}</option>
-            ))}
-          </select>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
-            <input name="revisitDate" aria-label="Revisit date" type="date" style={{ marginTop: 0 }} />
-            <span className="note">or</span>
-            <input name="revisitCondition" aria-label="Revisit condition" placeholder="revisit when (after the next deep clean)" style={{ flex: 1, marginTop: 0 }} />
-          </div>
-          <p><button className="act">Raise the flag</button></p>
-        </form>
+        {/* Input spine build 1: flag capture enqueues offline-first. */}
+        <FlagCaptureForm householdId={hh.id} registries={registries.map((r) => ({ id: r.id, label: r.label }))} />
       </div>
 
       {/* AD (W-7): research done and then paused, logged so it is not
@@ -308,17 +263,7 @@ export default async function VisitPage({ searchParams }: {
             </span>
             <div className="fval sans" style={{ fontSize: 13 }}>{p.research}</div>
             <div className="prov">revisit {p.revisitDate ?? p.revisitCondition}</div>
-            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-              {(["done", "no_longer_needed", "superseded"] as const).map((res) => (
-                <form key={res} action={resolvePausedDecision} style={{ display: "inline" }}>
-                  <input type="hidden" name="householdId" value={hh.id} />
-                  <input type="hidden" name="pausedDecisionId" value={p.id} />
-                  <input type="hidden" name="resolution" value={res} />
-                  <input type="hidden" name="returnTo" value="/visit" />
-                  <button className="act subtle">{res.replace(/_/g, " ")}</button>
-                </form>
-              ))}
-            </div>
+            <ResolveButtons householdId={hh.id} kind="pausedDecision" targetId={p.id} />
           </div>
         ))}
         <form action={createPausedDecision}>
@@ -372,15 +317,15 @@ export default async function VisitPage({ searchParams }: {
               <div style={{ marginTop: 8 }}>
                 <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   <span className="prov">Acted:</span>
-                  <OutcomeChoice promptId={i.id} outcome="acted" wasNews="true" label="Good catch" />
-                  <OutcomeChoice promptId={i.id} outcome="acted" wasNews="false" label="Already on it" />
-                  <OutcomeChoice promptId={i.id} outcome="already_done" label="Already done" />
-                  <OutcomeChoice promptId={i.id} outcome="not_applicable" label="Not applicable" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="acted" wasNews="true" label="Good catch" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="acted" wasNews="false" label="Already on it" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="already_done" label="Already done" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="not_applicable" label="Not applicable" />
                 </div>
                 <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
                   <span className="prov">Dismiss:</span>
-                  <OutcomeChoice promptId={i.id} outcome="dismissed" dismissReason="wrong" label="Wrong for this home" />
-                  <OutcomeChoice promptId={i.id} outcome="dismissed" dismissReason="bad_timing" label="Bad timing" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="dismissed" dismissReason="wrong" label="Wrong for this home" />
+                  <OutcomeChoice householdId={hh.id} promptId={i.id} outcome="dismissed" dismissReason="bad_timing" label="Bad timing" />
                 </div>
               </div>
             )}

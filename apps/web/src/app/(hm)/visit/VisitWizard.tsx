@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createCloseFlow, type CloseFlow, type CloseFlowState } from "@wellkept/close-flow";
 import { ZONE_DRIFT_NONE } from "@wellkept/trigger-engine";
 import { backoffDelayMs, type QueueConflict, type QueueItem } from "@wellkept/offline-queue";
-import { createVisitSync, MAX_SEND_ATTEMPTS, type VisitSync } from "@/lib/client/visit-sync";
+import { MAX_SEND_ATTEMPTS, type VisitSync } from "@/lib/client/visit-sync";
+import { drainShared, getSharedSync, subscribeSync } from "@/lib/client/shared-sync";
 
 // Task-list configuration is a later sprint; a fixed checklist exercises the
 // real close-flow contract end to end (same call the foundation repo made).
@@ -46,16 +47,6 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const [lifeChange, setLifeChange] = useState<boolean | null>(null);
   const [photos, setPhotos] = useState<{ photoId: string; preview: string; base64: string; uploaded: boolean }[]>([]);
 
-  const transport = useCallback(async (item: QueueItem) => {
-    const response = await fetch("/api/visit-commands", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ idempotencyKey: item.idempotencyKey, type: item.type, payload: item.payload }),
-    });
-    if (!response.ok) throw new Error("visit-commands request failed");
-    return response.json() as Promise<{ conflict?: boolean; reason?: string }>;
-  }, []);
-
   const refreshQueueStatus = useCallback(() => {
     if (!syncRef.current) return;
     setQueueStatus({
@@ -74,7 +65,9 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const attemptSync = useCallback(async () => {
     if (!syncRef.current) return;
     if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
-    const result = await syncRef.current.sync(transport);
+    // Input spine build 1: the drain is shared and serialized with the
+    // capture components; this loop stays the pacing owner.
+    const result = await drainShared(householdId);
     refreshQueueStatus();
     const waiting = syncRef.current.queue.pending().length;
     if (result.attempted && waiting > 0 && result.sent.length === 0) {
@@ -89,7 +82,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
       }
     }
     refreshQueueStatus();
-  }, [transport, refreshQueueStatus]);
+  }, [householdId, refreshQueueStatus]);
 
   // AF: the operator's two ways out of a dead-lettered command. Discard
   // writes the audit row FIRST via the server; only an ok response
@@ -139,12 +132,15 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     setState(flowRef.current.state);
 
     let cancelled = false;
-    void createVisitSync({ householdId }).then((sync) => {
+    // Input spine build 1: the sync instance is the tab-wide singleton the
+    // capture components share; a capture enqueue notifies this status bar.
+    void getSharedSync(householdId).then((sync) => {
       if (cancelled) return;
       syncRef.current = sync;
       refreshQueueStatus();
       void attemptSync();
     });
+    const unsubscribe = subscribeSync(householdId, () => { refreshQueueStatus(); });
 
     const handleOnline = () => { setOnline(true); void attemptSync(); };
     const handleOffline = () => setOnline(false);
@@ -153,6 +149,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     window.addEventListener("offline", handleOffline);
     return () => {
       cancelled = true;
+      unsubscribe();
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
