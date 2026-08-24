@@ -6,7 +6,7 @@ status: living
 Everything a coder needs that the specs imply but do not spell out. Read after WK-DEV-000-004 and WK-APP-001/002/003.
 
 ## 1. Domain glossary (use these exact terms in code and UI)
-Playbook (the household's 24-section record; never "manual"), House Manager / HM (never "cleaner" or "maid"),
+Playbook (the household's 24-section record; never "manual"), Household Operations Manager / HOM (Ruling 3, 24 Aug 2026; formerly House Manager / HM; never "cleaner" or "maid"; the house_manager identifier is frozen),
 dot (verbatim overheard detail), gesture (small unbilled kindness, WK-funded), Stranger Test (coverage quality gate),
 sentinel sweep (per-visit early-warning inspection), horizon list (predictable future events), commitments ledger,
 away mode, zone readiness (1-4 room score), Foundation reset (paid onboarding project), tiers: essential | family_ops | concierge,

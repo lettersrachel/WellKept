@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 
 const ROLE_LABEL: Record<string, string> = {
   client: "Client",
-  house_manager: "House Manager",
-  backup_hm: "Backup HM",
+  house_manager: "HOM",
+  backup_hm: "Backup HOM",
   corporate_ops: "Corporate Ops",
   corporate_admin: "Corporate",
   cfo_readonly: "CFO (read-only)",

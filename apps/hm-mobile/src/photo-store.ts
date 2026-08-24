@@ -1,5 +1,5 @@
 /**
- * Durable holding for un-synced photos. A house manager who captures photos
+ * Durable holding for un-synced photos. A HOM who captures photos
  * offline shouldn't lose them if the app is backgrounded or killed before the
  * next sync — so pending photos (bytes included) are persisted to AsyncStorage
  * per household and rehydrated on launch. Uploaded photos live on the server,

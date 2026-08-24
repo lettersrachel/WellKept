@@ -563,7 +563,7 @@ export const observationMeasureEnum = pgEnum("observation_measure", [
 // "flags first" section) - the K-class naming collision, avoided at birth.
 // No kinds (founder decision 1: a taxonomy invented before a single real
 // flag exists shapes what people record). A flag is a subject, a concern
-// in the House Manager's own words, and a revisit trigger.
+// in the HOM's own words, and a revisit trigger.
 export const conditionFlagStatusEnum = pgEnum("condition_flag_status", ["open", "closed"]);
 
 export const conditionFlag = pgTable("condition_flag", {

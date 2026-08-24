@@ -9,7 +9,7 @@ const FIELD_ROLES = new Set(["house_manager", "backup_hm", "corporate_admin"]);
 
 /**
  * AF (sync-defect sessions): discarding a dead-lettered visit command is
- * exactly the event a dispute turns on - a command a House Manager
+ * exactly the event a dispute turns on - a command a HOM
  * believed was submitted, then thrown away. The audit row is therefore
  * written FIRST, here, server-side; the client removes its local copy
  * only after this responds ok. No audit, no discard - the same ordering

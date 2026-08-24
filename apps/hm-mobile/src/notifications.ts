@@ -1,5 +1,5 @@
 /**
- * In-app alerts for the house manager — e.g. corporate raised a WATCH or
+ * In-app alerts for the HOM — e.g. corporate raised a WATCH or
  * LIFE-EVENT on one of their households. Fetched from the auth-gated
  * /api/mobile/notifications and shown in the app. (Lock-screen push would need
  * an EAS dev build; Expo Go can't receive remote push. The same rows drive it

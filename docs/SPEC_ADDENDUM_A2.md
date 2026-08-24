@@ -92,7 +92,7 @@ Trailing 90 days.
 Retirement candidate flag fires only when act_rate is below the founder-set
 floor AND distinct_households >= 3 AND distinct_users >= 2. Both guards are
 required. A fleet rule must not be retired on the evidence of one household or
-one House Manager having a bad month.
+one HOM having a bad month.
 
 ### Lead-time calibration
 
@@ -148,7 +148,7 @@ month and `observed_at` is at least 300 days old, ordered by relevance.
 
 A distinct briefing section titled from the household's own language, sitting
 after the radar and before dots. It carries recall lines only. Each line is
-attributable: it names the anchor it came from so a House Manager can see why it
+attributable: it names the anchor it came from so a HOM can see why it
 appeared.
 
 ### Guardrails
@@ -166,7 +166,7 @@ appeared.
 
 Repeat-season memory produces nothing until a household has twelve months of
 history. Built during the 2027 pilot, it stays dark until 2028. That is not a
-defect and the briefing should say so, or the first House Manager will report it
+defect and the briefing should say so, or the first HOM will report it
 as broken. It is also the argument for building it in the pilot year: the
 feature has to exist before the data it needs starts accumulating.
 

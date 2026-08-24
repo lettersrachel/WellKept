@@ -62,7 +62,7 @@ const COPY_SOURCES = [
 // clients; they carry the same voice rule as the app.
 const DOC_DIRS = ["../../../docs/legal"];
 
-// J1 (round five): packName reached House Managers and no guard saw it.
+// J1 (round five): packName reached HOMs and no guard saw it.
 // Staff surfaces are rendered strings too - pack names, labels, buttons,
 // empty states, error text leak internal vocabulary and machine voice
 // the same way prose does. Same em-dash floor, comments stripped.
@@ -173,5 +173,5 @@ test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {
     });
   }
   assert.deepEqual(offenders, [],
-    `em dash on a staff surface (J1; a House Manager is a user): ${offenders.join(", ")}`);
+    `em dash on a staff surface (J1; a HOM is a user): ${offenders.join(", ")}`);
 });

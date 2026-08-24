@@ -80,7 +80,7 @@ export default async function VisitPage({ searchParams }: {
   const pausedDecisions = await getPausedDecisions(hh.id);
   const today = new Date().toISOString().slice(0, 10);
   // AB/AD: an overdue deferral (date-based timing passed, unresolved) is
-  // SHOWN to the House Manager, who decides what it means. Nothing
+  // SHOWN to the HOM, who decides what it means. Nothing
   // promotes or fires automatically; the system shows what it noticed.
   const openDeferrals = deferrals.filter((d) => !d.resolvedAt);
   const overdueDeferrals = openDeferrals.filter((d) => d.revisitDate && d.revisitDate < today);

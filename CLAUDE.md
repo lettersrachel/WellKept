@@ -19,7 +19,7 @@ premise found here.
 - **Never echo `DATABASE_URL`, `WK_KMS_KEY`, `AUTH_SECRET`, or the contents of
   `.neon-connection`.** Refer to them by name.
 - **Never build per-person analytics.** No performance scoring, productivity
-  ranking, leaderboards, or per-House-Manager rates. Usage analytics aggregate
+  ranking, leaderboards, or per-HOM rates. Usage analytics aggregate
   by provision or by rule, never by person. Founder-set boundary; if a task
   seems to need it, stop and ask. **One scoped exception, amended by name
   (Ruling 1 of the 24 August 2026 dev-session rulings, founder-approved,
@@ -54,7 +54,7 @@ fail-closed is deliberate.
 - **A new data category updates `legal/README.md` and the privacy notice
   collection table in the same PR.** Both copies of the notice: the master doc
   and the published `/privacy` page.
-- **No capture surface attributing data to a named House Manager** ships before
+- **No capture surface attributing data to a named HOM** ships before
   the G-13 staff disclosure is approved and acknowledged. `time_entry` and
   `object_observation` already exist under this rule.
 - **No record about a person who is not a client ships before REQ-077 is
@@ -63,7 +63,7 @@ fail-closed is deliberate.
   are all non-client records; WK-STD-026's four rules stand as company
   policy. Counsel confirmed on 1 August 2026 that no statute obliges
   deletion (REQ-076 withdrawn, REQ-077 replaces it at P2), and the founder
-  chose paper-first through the pilot anyway, a stricter-than-required
+  chose paper-first through the training phase anyway, a stricter-than-required
   policy, never a compliance claim. See WORK_QUEUE.md W-15 and
   GAP_REGISTER G-56.
 - **Payload guards on every new client-facing route.** They re-assert in the

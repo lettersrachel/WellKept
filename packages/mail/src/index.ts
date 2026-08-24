@@ -79,7 +79,7 @@ export function composeFleetDigest(
   // window gets its own line; the record not knowing about a visit is
   // exactly what a stuck client cannot report about itself.
   const missingLine = missing.length
-    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${missing.length} household(s) may be missing a visit record: ${missing.map((h) => `${h.name} (${h.visitGapDays}d)`).join(", ")}. Check with the House Manager; a device may be holding unsynced work.</p>`
+    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${missing.length} household(s) may be missing a visit record: ${missing.map((h) => `${h.name} (${h.visitGapDays}d)`).join(", ")}. Check with the HOM; a device may be holding unsynced work.</p>`
     : "";
   const html = `<div style="max-width:620px;margin:0 auto">
     <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.14em;color:${BRAND.gold};font-weight:700">WELL KEPT · FLEET DIGEST · WEEK OF ${weekOf}</p>

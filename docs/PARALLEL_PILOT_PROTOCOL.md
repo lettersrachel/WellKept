@@ -50,7 +50,7 @@ reconciliation leaves evidence (G-21): one dated sign-off row per quarter.
 
 ## How the field client is opened (adopted 2026-07-28, from the G-52 review)
 
-The House Manager opens the app from a HOME-SCREEN INSTALL, never a
+The HOM opens the app from a HOME-SCREEN INSTALL, never a
 browser tab. This is onboarding doctrine, not preference: iOS requires
 every browser to use WebKit, and Safari deletes a site's stored data
 (including the offline queue's IndexedDB) after seven days without a
