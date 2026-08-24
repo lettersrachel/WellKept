@@ -21,7 +21,9 @@ interface Seed {
   fields: SeedField[];
 }
 
-const seedPath = process.argv[2]
+const args = process.argv.slice(2).filter((a) => a !== "--with-demo-accounts");
+const withDemoAccounts = process.argv.includes("--with-demo-accounts") || args.length === 0;
+const seedPath = args[0]
   ?? new URL("../../../tooling/seed/fernbrook_template_seed.json", import.meta.url).pathname;
 const seed = JSON.parse(await readFile(seedPath, "utf8")) as Seed;
 
@@ -68,12 +70,19 @@ console.log(`seeded household "${seed.household.name}" (${seed.household.id}): $
 
 // Demo identities (magic-link sign-in; links surface at /dev/last-email).
 // Role comes from household_role_assignment, never from the client.
+// GATED (HO sprint dry run, 2026-08-24): attaching these to EVERY loaded
+// household would grant demo identities roles on a real household the day
+// the real import runs, and a second house_manager assignment makes the
+// field-surface resolution order-dependent (data.ts getFieldHouseholdAndPrincipal
+// takes the first assignment with no ORDER BY). Default ON only for the
+// bare `db:seed` (the Fernbrook dev template); any explicit seed path must
+// opt in with --with-demo-accounts.
 const DEMO_ACCOUNTS = [
   { email: "lisa@fernbrook.demo", name: "Lisa (client demo)", role: "client" as const },
   { email: "rachel@wellkept.demo", name: "Rachel (corporate demo)", role: "corporate_admin" as const },
   { email: "jordan@wellkept.demo", name: "Jordan (HM demo)", role: "house_manager" as const },
 ];
-for (const acct of DEMO_ACCOUNTS) {
+for (const acct of withDemoAccounts ? DEMO_ACCOUNTS : []) {
   const userId = randomUUID();
   await db.insert(authUser).values({ id: userId, email: acct.email, name: acct.name })
     .onConflictDoNothing({ target: authUser.email });
