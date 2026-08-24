@@ -10,7 +10,7 @@ import path from "node:path";
  * treatment or it does not ship — was half-applied within one commit of
  * being written, and the mechanical version of this check found four more
  * missing tables the day it was drafted (anticipation_exclusion,
- * notification, field_event_outbox, trigger_rule). Same move G-37 made for
+ * notification, event_outbox, trigger_rule). Same move G-37 made for
  * version skew: detect the CLASS of failure automatically.
  *
  * Mechanism: every table whose definition carries a household reference

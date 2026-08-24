@@ -72,7 +72,8 @@ fail-closed is deliberate.
   pattern. **Seven tables are documented, reasoned exceptions that DELETE
   rows** (`apps/web/scripts/erase-household.mjs`'s own header names each):
   `vault_item` (the crypto-shred), `condition_flag`, `object_observation`,
-  `paused_decision`, `notification`, `field_event_outbox`, and
+  `paused_decision`, `notification`, `event_outbox` (the CAND-OUTBOX-01
+  generalization of `field_event_outbox`, same reason), and
   `audit_subject_token` (ADR-006: deleting the mapping IS the audit-identity
   erasure mechanism). Each reason is written where the deletion happens. An
   eighth exception needs the same: a reason in the erasure tool, not a
@@ -100,6 +101,7 @@ row here fails CI, so the table cannot silently go stale.
 | `provisional-markers.test.ts` | every `counsel-pending` marker parses, resolves in `docs/PROVISIONAL.md`, and fails the build past 90 days unresolved | whether the marked assumption is still accurate; `pilot-calibrated` markers, which are counted but never fail |
 | `decline-class-exclusion.test.ts` | no trigger rule reads a decline-class field without a reviewed exclusion; no new Section 1/3 field ships unclassified | fields predating the 1 August 2026 baseline, grandfathered rather than classified; the taxonomy's own completeness |
 | `client-duration.test.ts` | no client route or client-reaching copy builder carries a duration-typed schema column or D7 staffing-wall quantity (WK-DEV-006 D7, register A564) | prose copy stating a duration without touching an identifier; surfaces outside the walked set |
+| `telemetry-discipline.test.ts` | the Sentry scrubber cuts row-value leak shapes and stays wired in both inits with sendDefaultPii false; no shipped console call interpolates a sensitive-value identifier (CAND-PRIV-01) | free text a developer writes into a message; telemetry channels other than Sentry and console |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first

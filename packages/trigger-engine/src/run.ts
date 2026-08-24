@@ -180,38 +180,65 @@ export async function materializeSeasonObservations(db: any, opts: { householdId
 }
 
 /**
- * Drain the transactional field-event outbox (durable trigger delivery).
- * Claims a batch of unprocessed rows, runs the trigger pass for each
- * (idempotent via deterministic ids), and stamps processed_at. Bounded
- * retries via the attempts column. Runs anywhere, any number of times.
+ * CAND-OUTBOX-01: drain THE transactional outbox through a per-kind
+ * consumer registry. Claims a batch of unprocessed rows in order, runs
+ * the registered consumer for each (consumers are idempotent), and
+ * stamps processed_at; a failure counts against the row's bounded
+ * attempts. A kind with NO registered consumer is left untouched with
+ * attempts unspent and is reported in the result, so a primitive may
+ * emit events before its consumer ships without being dead-lettered.
+ * Runs anywhere, any number of times.
  */
-export async function drainFieldOutbox(db: any, opts: { batch?: number; maxAttempts?: number } = {}) {
-  const { fieldEventOutbox } = await import("@wellkept/schema");
+export type OutboxConsumer = (db: any, householdId: string, payload: Record<string, unknown>) => Promise<void>;
+
+export const OUTBOX_CONSUMERS: Record<string, OutboxConsumer> = {
+  "field.changed": async (db, householdId, payload) => {
+    await runTriggerPass(db, {
+      householdId,
+      fieldId: String(payload.fieldId),
+      fieldName: String(payload.fieldName),
+      section: Number(payload.section),
+      newValue: String(payload.newValue),
+      changedAt: new Date(String(payload.changedAt)).toISOString(),
+    });
+  },
+};
+
+export async function drainEventOutbox(
+  db: any,
+  opts: { batch?: number; maxAttempts?: number; consumers?: Record<string, OutboxConsumer> } = {},
+) {
+  const { eventOutbox } = await import("@wellkept/schema");
   const { isNull, and, lt, asc } = await import("drizzle-orm");
   const batch = opts.batch ?? 100;
   const maxAttempts = opts.maxAttempts ?? 10;
+  const consumers = opts.consumers ?? OUTBOX_CONSUMERS;
 
-  const pending = await db.select().from(fieldEventOutbox)
-    .where(and(isNull(fieldEventOutbox.processedAt), lt(fieldEventOutbox.attempts, maxAttempts)))
-    .orderBy(asc(fieldEventOutbox.createdAt))
+  const pending = await db.select().from(eventOutbox)
+    .where(and(isNull(eventOutbox.processedAt), lt(eventOutbox.attempts, maxAttempts)))
+    .orderBy(asc(eventOutbox.createdAt))
     .limit(batch);
 
   let processed = 0;
+  let unconsumed = 0;
   for (const row of pending) {
+    const consumer = consumers[row.kind];
+    if (!consumer) { unconsumed += 1; continue; }
     try {
-      await runTriggerPass(db, {
-        householdId: row.householdId, fieldId: row.fieldId, fieldName: row.fieldName,
-        section: row.section, newValue: row.newValue, changedAt: new Date(row.changedAt).toISOString(),
-      });
-      await db.update(fieldEventOutbox).set({ processedAt: new Date() }).where(eq(fieldEventOutbox.id, row.id));
+      await consumer(db, row.householdId, row.payload as Record<string, unknown>);
+      await db.update(eventOutbox).set({ processedAt: new Date() }).where(eq(eventOutbox.id, row.id));
       processed += 1;
     } catch (err) {
-      await db.update(fieldEventOutbox).set({ attempts: row.attempts + 1 }).where(eq(fieldEventOutbox.id, row.id));
-      console.error(`[outbox] row ${row.id} failed (attempt ${row.attempts + 1}):`, err instanceof Error ? err.message : err);
+      await db.update(eventOutbox).set({ attempts: row.attempts + 1 }).where(eq(eventOutbox.id, row.id));
+      console.error(`[outbox] ${row.kind} row ${row.id} failed (attempt ${row.attempts + 1}):`, err instanceof Error ? err.message : err);
     }
   }
-  return { pending: pending.length, processed };
+  if (unconsumed > 0) console.error(`[outbox] ${unconsumed} row(s) of kinds with no registered consumer left waiting (not an error; their consumer has not shipped)`);
+  return { pending: pending.length, processed, unconsumed };
 }
+
+/** The pre-generalization name, kept so existing schedulers keep working. */
+export const drainFieldOutbox = drainEventOutbox;
 
 /**
  * REQ-051 threshold family: the load signal (STD-023.2.7 / APP-002's

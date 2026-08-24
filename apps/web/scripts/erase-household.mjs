@@ -53,8 +53,9 @@
  *    blanked - both are personal (what not to raise, and about whom).
  *  - notification: DELETED - ephemeral UX rows whose titles carry the
  *    household name; no business-record claim.
- *  - field_event_outbox: DELETED - transient trigger-delivery rows whose
- *    payloads carry actual field values.
+ *  - event_outbox: DELETED - transient event-delivery rows (the
+ *    CAND-OUTBOX-01 generalization of field_event_outbox; same reason)
+ *    whose payloads carry actual field values and primitive facts.
  *  - audit_subject_token: DELETED - the ADR-006 audit-identity mapping;
  *    deleting the mapping row IS the erasure mechanism (the audit rows
  *    referencing these tokens survive, append-only, and become
@@ -149,7 +150,7 @@ const counts = {
   membershipEvents: await count("SELECT count(*) n FROM membership_event WHERE household_id=$1"),
   exclusions: await count("SELECT count(*) n FROM anticipation_exclusion WHERE household_id=$1"),
   notifications: await count("SELECT count(*) n FROM notification WHERE household_id=$1"),
-  outbox: await count("SELECT count(*) n FROM field_event_outbox WHERE household_id=$1"),
+  outbox: await count("SELECT count(*) n FROM event_outbox WHERE household_id=$1"),
   scopedRules: await count("SELECT count(*) n FROM trigger_rule WHERE household_id=$1"),
   objectObservations: await count("SELECT count(*) n FROM object_observation WHERE household_id=$1"),
   conditionFlags: await count("SELECT count(*) n FROM condition_flag WHERE household_id=$1"),
@@ -229,7 +230,7 @@ try {
   // check found missing the day it was written (G-40 addendum).
   await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
-  await c.query("DELETE FROM field_event_outbox WHERE household_id=$1", [householdId]);
+  await c.query("DELETE FROM event_outbox WHERE household_id=$1", [householdId]);
   // object_observation (G-49, 2026-07-27): DELETED — the condition/fill
   // series describes the household's objects; operational data, no
   // business-record claim once the household is erased.
