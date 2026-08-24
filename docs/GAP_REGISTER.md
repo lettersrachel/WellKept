@@ -2016,3 +2016,14 @@ because the screen is wrong today and the fix is two lines; (b) rides
 the Temporal Layer window rather than spending this cycle's migration
 on it. The founder decides scope and timing; also open is whether the
 fix belongs to this sitting or to its own session.
+
+**RESOLVED, option (a), 2026-08-24.** Executed under the founder's
+proceed-with-recommendations authorization of the same day: the two
+date-only fields render in UTC at every site (the consent line and the
+incident occurred column on the oversight drill-in, and the incident
+line on the triggers board, a third render of the same field found
+during the fix), so the stored date displays as written. The consent
+journey e2e now pins the rendered date string, which is the regression
+guard: a return to a zone-shifted render fails CI. Option (b), the
+date-column migration, stays queued in the Temporal Layer window with
+the other durability items; this entry does not close that queue item.

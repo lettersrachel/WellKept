@@ -262,7 +262,7 @@ export default async function TriggersPage({ searchParams }: {
                   <span className="fname">{m.householdName}</span>
                   <div className="fval">{m.description.length > 140 ? `${m.description.slice(0, 140)}…` : m.description}</div>
                   <div className="prov">
-                    occurred {m.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}
+                    occurred {m.occurredAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) /* G-61: date-only fact; UTC shows it as recorded */}
                     {" · "}severity {m.severity} · resolved
                   </div>
                 </div>
