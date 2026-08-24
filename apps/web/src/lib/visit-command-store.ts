@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import {
   visitCommand, timeEntry, deferral, conditionFlag, objectObservation,
-  registryEntry, pausedDecision, promptPackItem, promptOutcome,
+  registryEntry, pausedDecision, promptPackItem, promptOutcome, eventOutbox,
 } from "@wellkept/schema";
 import { db } from "./db";
 import {
@@ -215,6 +215,26 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
           source: "visit_close",
           visitCommandId: idempotencyKey,
         });
+        // REQ-083 (register A561): the covenant event stream. The applied
+        // visit's hours ARE the arrival and departure taps, so the events
+        // ride the same transaction as the visit and the time entry.
+        // Deliberately NO person in the payload: attribution already lives
+        // in time_entry under the approved G-13 item, and the covenant
+        // report joins through visitCommandId when it is built (Phase 2).
+        // No consumer exists yet; unconsumed kinds wait in the outbox
+        // untouched, attempts unspent, which is the outbox working.
+        await tx.insert(eventOutbox).values([
+          {
+            id: randomUUID(), householdId: payload.householdId, kind: "visit.arrival",
+            payload: { visitCommandId: idempotencyKey, occurredAt: start.toISOString() },
+            occurredAt: start,
+          },
+          {
+            id: randomUUID(), householdId: payload.householdId, kind: "visit.departure",
+            payload: { visitCommandId: idempotencyKey, occurredAt: end.toISOString() },
+            occurredAt: end,
+          },
+        ]);
       }
       // AC (W-6 follow-on): deferrals captured in the close flow land in
       // the same transaction as the visit they belong to, carrying this

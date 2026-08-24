@@ -39,7 +39,9 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  // Remove only what this test created, then the session.
+  // Remove only what this test created, then the session. The applied
+  // visit now emits its covenant events (REQ-083); sweep those too.
+  await pool.query("DELETE FROM event_outbox WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM visit_command WHERE household_id=$1 AND received_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM auth_session WHERE session_token=$1", [token]);
   await pool.end();
