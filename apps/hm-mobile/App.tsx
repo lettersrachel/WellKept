@@ -583,6 +583,12 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
     );
   }
   const { flags, changed, specials, radar, lastYear, dots, household } = briefing;
+  // Open-loops parity (Cockpit baseline build 1): the web /visit page has
+  // always shown these; the phone now does too. Candidates first, per W-5.
+  const conditionFlags = [...(briefing.conditionFlags ?? [])]
+    .sort((a, b) => Number(b.promotionCandidate) - Number(a.promotionCandidate));
+  const overdueDeferrals = briefing.overdueDeferrals ?? [];
+  const overduePaused = briefing.overduePausedDecisions ?? [];
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
     <View style={s.card}>
@@ -601,6 +607,48 @@ function BriefingView({ briefing, stale }: { briefing: Briefing | null; stale: b
           <ProvisionsBlock provisions={f.provisions} />
         </View>
       ))}
+
+      {conditionFlags.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Flagged for revisit</Text>
+          {conditionFlags.map((f) => (
+            <View key={f.id} style={[s.flagRow, { borderLeftColor: f.promotionCandidate ? C.brick : C.gold }]}>
+              {f.promotionCandidate ? <Text style={[s.flagTag, { color: C.brick }]}>MOVING FAST</Text> : null}
+              <Text style={s.briefName}>{f.subject} · {f.location}</Text>
+              <Text style={s.briefVal}>{f.concern}</Text>
+              <Text style={s.prov}>
+                {f.looks.length > 0 ? `looks: ${f.looks.join(" → ")} · ` : ""}revisit: {f.revisit ?? "unset"}
+              </Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {overdueDeferrals.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Past its timing</Text>
+          {overdueDeferrals.map((d) => (
+            <View key={d.id} style={s.briefItem}>
+              <Text style={s.briefName}>{d.noticed}</Text>
+              <Text style={s.briefVal}>{d.reason}</Text>
+              <Text style={s.prov}>planned for {d.plannedFor ?? "an unset date"} · you decide; nothing fires on its own</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {overduePaused.length > 0 ? (
+        <>
+          <Text style={s.briefLabel}>Paused decisions, timing arrived</Text>
+          {overduePaused.map((p) => (
+            <View key={p.id} style={s.briefItem}>
+              <Text style={s.briefName}>{p.decision}</Text>
+              <Text style={s.briefVal}>{p.research}</Text>
+              <Text style={s.prov}>paused until {p.plannedFor ?? "its condition"} · internal; the client never sees this</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
 
       {changed.length > 0 ? (
         <>
