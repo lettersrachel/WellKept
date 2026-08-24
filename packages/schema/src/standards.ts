@@ -154,6 +154,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("decision", "research")) {
       throw new Error(`SEVERE: a paused_decision row reached a client payload at ${path}`);
     }
+    // WK-DEV-007 s3: shadow-log output is engine-internal (founder, CFO,
+    // developer only); no client projection exists, so any recognizable
+    // row is the violation.
+    if (has("triggerKey", "inputsHash") || has("trigger_key", "inputs_hash")
+      || has("proposedClass", "confidence") || has("proposed_class", "confidence_pct")) {
+      throw new Error(`SEVERE: a shadow_log row reached a client payload at ${path}`);
+    }
     for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
       assertNoAnticipationRows(v, `${path}.${k}`);
     }

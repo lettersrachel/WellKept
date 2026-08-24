@@ -923,3 +923,42 @@ export const anticipationExclusion = pgTable("anticipation_exclusion", {
   effectiveTo: timestamp("effective_to", { withTimezone: true }), // null = indefinite
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("anticipation_exclusion_household_idx").on(t.householdId)]);
+
+// WK-DEV-007 section 3: the shadow log. What the anticipation engine WOULD
+// have surfaced, and nothing else: signal, confidence, evidence, proposed
+// authority class, and the inputs hash that makes the evaluation
+// replayable. No HOM notification, no client output, no task creation
+// originates here; the only doors out are the founder's per-trigger
+// promotion flags and the A0 cap, both enforced in code
+// (surfacesBeyondShadow). Visible to founder, CFO, and the developer only.
+// The founder's weekly scoring (true signal / noise / unknowable) lives on
+// the row, whole-or-absent like every resolution in this schema; per-
+// trigger precision accumulates from it, and promotion is earned on that
+// evidence. One row per DISTINCT input state per trigger per household
+// (the unique index): determinism is proven in the engine suite, so an
+// identical re-evaluation adds nothing but scoring noise.
+export const shadowScoreEnum = pgEnum("shadow_score", ["true_signal", "noise", "unknowable"]);
+
+export const shadowLog = pgTable("shadow_log", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  triggerKey: text("trigger_key").notNull(),
+  signal: text("signal").notNull(), // s2: derived from household content, staff-only
+  confidence: integer("confidence_pct").notNull(), // 0..100, integer per the money-in-cents discipline
+  evidence: jsonb("evidence").notNull(), // string[]; s2, same rule as signal
+  proposedClass: text("proposed_class").notNull(),
+  inputsHash: text("inputs_hash").notNull(),
+  evaluatedAt: timestamp("evaluated_at", { withTimezone: true }).notNull(),
+  score: shadowScoreEnum("score"),
+  scoredBy: text("scored_by").references(() => authUser.id),
+  scoredAt: timestamp("scored_at", { withTimezone: true }),
+}, (t) => [
+  index("shadow_log_household_idx").on(t.householdId),
+  index("shadow_log_trigger_idx").on(t.triggerKey, t.evaluatedAt),
+  uniqueIndex("shadow_log_distinct_evaluation").on(t.triggerKey, t.householdId, t.inputsHash),
+  check("shadow_log_confidence_bounded", sql`${t.confidence} >= 0 AND ${t.confidence} <= 100`),
+  check("shadow_log_class_known", sql`${t.proposedClass} IN ('A0','A1','A2','A3','A4','A5')`),
+  // The house resolution pattern: a score is whole or absent, never half.
+  check("shadow_log_score_is_whole",
+    sql`(${t.score} IS NULL AND ${t.scoredBy} IS NULL AND ${t.scoredAt} IS NULL) OR (${t.score} IS NOT NULL AND ${t.scoredBy} IS NOT NULL AND ${t.scoredAt} IS NOT NULL)`),
+]);

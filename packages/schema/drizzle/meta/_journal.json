@@ -267,6 +267,13 @@
       "when": 1787605071863,
       "tag": "0037_event_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787611470210,
+      "tag": "0038_shadow_log",
+      "breakpoints": true
     }
   ]
 }

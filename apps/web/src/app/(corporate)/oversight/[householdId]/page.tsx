@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -65,6 +65,17 @@ export default async function Oversight({ params, searchParams }: {
     .where(and(eq(costEntry.householdId, hh.id), gte(costEntry.incurredOn, since30.toISOString().slice(0, 10))))
     .orderBy(desc(costEntry.incurredOn))
     .limit(20);
+  // WK-DEV-007 s3: the shadow log, founder/CFO/developer visibility ONLY.
+  // corporate_ops never receives these rows; the query is role-gated, not
+  // merely the render.
+  const canSeeShadow = role === "corporate_admin" || role === "cfo_readonly";
+  const shadowRows = canSeeShadow
+    ? await db.select().from(shadowLog)
+        .where(eq(shadowLog.householdId, hh.id))
+        .orderBy(desc(shadowLog.evaluatedAt))
+        .limit(20)
+    : [];
+  const unscoredFirst = [...shadowRows].sort((a, b) => Number(Boolean(a.score)) - Number(Boolean(b.score)));
   // Capture session 3: the household's commercial history, oldest first —
   // reconstructable from the event sequence.
   const membershipEvents = await db.select().from(membershipEvent)
@@ -541,6 +552,46 @@ export default async function Oversight({ params, searchParams }: {
           billing system of record (ADR-004); this records that state changed.
         </div>
       </div>
+
+      {canSeeShadow && (
+        <div className="card">
+          <h2>Shadow log (WK-DEV-007 §3 · engine in shadow mode)</h2>
+          <div className="note">
+            What the anticipation engine WOULD have surfaced, and nothing else. Nothing here
+            reaches a HOM, a client, or a task until a per-trigger promotion flag flips, and
+            the A0 cap holds regardless. Weekly scoring is the calibration input: per-trigger
+            precision accumulates from these rows, and promotion is earned on that evidence.
+          </div>
+          {unscoredFirst.length === 0 && <div className="prov">No shadow evaluations recorded for this household yet.</div>}
+          {unscoredFirst.map((s) => (
+            <div key={s.id} className="field">
+              <div className="fname">
+                {s.signal}
+                <span className="prov" style={{ marginLeft: 8 }}>
+                  {s.triggerKey} · confidence {s.confidence}% · proposes {s.proposedClass} · {s.evaluatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}
+                </span>
+              </div>
+              <div className="prov">{Array.isArray(s.evidence) ? (s.evidence as string[]).join(" · ") : ""}</div>
+              {s.score ? (
+                <div className="prov">scored: {s.score.replace("_", " ")}</div>
+              ) : isAdmin ? (
+                <div className="row" style={{ gap: 6, marginTop: 4 }}>
+                  {(["true_signal", "noise", "unknowable"] as const).map((sc) => (
+                    <form key={sc} action={scoreShadowSignal}>
+                      <input type="hidden" name="householdId" value={hh.id} />
+                      <input type="hidden" name="shadowLogId" value={s.id} />
+                      <input type="hidden" name="score" value={sc} />
+                      <button className="act subtle">{sc.replace("_", " ")}</button>
+                    </form>
+                  ))}
+                </div>
+              ) : (
+                <div className="prov">unscored; the founder scores weekly</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="card">
         <h2>Household consent (ADR-001 guardrail 3 · LAUNCH 1.5)</h2>

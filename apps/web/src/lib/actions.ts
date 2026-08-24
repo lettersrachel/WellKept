@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1306,4 +1306,37 @@ export async function closeConditionFlag(formData: FormData) {
     .where(eq(conditionFlag.id, flagId));
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `flag closed: ${flag.subject}`);
+}
+
+/**
+ * WK-DEV-007 section 3, the measurement loop: the founder scores a shadow
+ * signal true_signal / noise / unknowable, and per-trigger precision
+ * accumulates from these rows. The log is visible to founder, CFO, and
+ * the developer; SCORING is the founder's, so corporate_admin only (the
+ * CFO reads, never writes). A correction is a re-record, the consent
+ * pattern: the audit row keeps the prior score.
+ */
+export async function scoreShadowSignal(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) refuse(null, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (principal?.role !== "corporate_admin") refuse(householdId, "forbidden"); // fail closed
+  const id = String(formData.get("shadowLogId") ?? "");
+  const score = String(formData.get("score") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuse(householdId, "bad-input");
+  if (!["true_signal", "noise", "unknowable"].includes(score)) refuse(householdId, "bad-input");
+  const [row] = await db.select().from(shadowLog).where(eq(shadowLog.id, id));
+  if (!row || row.householdId !== householdId) refuse(householdId, "missing");
+  await db.update(shadowLog)
+    .set({ score: score as "true_signal" | "noise" | "unknowable", scoredBy: principal.userId, scoredAt: new Date(), updatedAt: new Date() })
+    .where(eq(shadowLog.id, id));
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+    kind: "shadow_scored",
+    detail: {
+      shadowLogId: id, triggerKey: row.triggerKey, score,
+      prior: row.score ? { score: row.score, scoredAt: row.scoredAt?.toISOString() } : null,
+    },
+  });
+  revalidatePath(`/oversight/${householdId}`);
 }

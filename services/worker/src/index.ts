@@ -174,6 +174,13 @@ export function createWorker() {
       if (job.name === "client-digest") { const { runClientWeeklyDigest } = await import("./client-digest.ts"); return runClientWeeklyDigest(pool); }
       if (job.name === "cpsc-recall") { const { runCpscRecallSweep } = await import("./cpsc.ts"); return runCpscRecallSweep(db); }
       if (job.name === "drain-outbox") return drainFieldOutbox(db);
+      if (job.name === "shadow-eval") {
+        // WK-DEV-007 section 3: the shadow pass. Sink-only; the flags
+        // record carries the per-trigger kill switches (REL-01).
+        const { runShadowPass } = await import("@wellkept/trigger-engine");
+        const { readFeatureFlags } = await import("@wellkept/schema");
+        return runShadowPass(db, { flags: await readFeatureFlags(db as never) });
+      }
       if (job.name === "uptime-check") return handleUptimeCheck();
       if (job.name === FLOOR_CONFLICT_JOB) return handleFloorConflict(job.data as FloorConflictEvent);
       return handleEvent(job.data as FieldChangeEvent);
@@ -204,6 +211,10 @@ export async function ensureSweepScheduled() {
   // REQ-047: recalls move on week timescales; Tuesdays after the digest.
   await queue.upsertJobScheduler("cpsc-recall-weekly", { pattern: "0 14 * * 2" }, { name: "cpsc-recall" });
   await queue.upsertJobScheduler("drain-outbox", { every: 300000 }, { name: "drain-outbox" }); // backstop only; the inline pass is primary
+  // WK-DEV-007 section 3: the shadow evaluation pass, hourly at :30 (an
+  // engineering proposal; "continuously" at household timescales). The
+  // distinct-evaluation index makes any cadence idempotent.
+  await queue.upsertJobScheduler("shadow-eval-hourly", { pattern: "30 * * * *" }, { name: "shadow-eval" });
   await queue.upsertJobScheduler("uptime-check", { every: 300000 }, { name: "uptime-check" });
   await queue.close();
 }
