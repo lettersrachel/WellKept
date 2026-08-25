@@ -546,6 +546,13 @@ export const registryEntry = pgTable("registry_entry", {
   kind: registryKindEnum("kind").notNull(),
   label: text("label").notNull(),
   detail: jsonb("detail").notNull().default({}),
+  // G-61 latency (25 Aug 2026 re-verification): timestamp-typed like the
+  // fixed consent/incident pair, but no capture path writes it; the seed
+  // scripts stamp noon UTC, which renders the same day in every US zone.
+  // A future capture form MUST NOT feed this from a date input parsed to
+  // UTC midnight (that resurrects the one-day-early render on
+  // RegistryCard and the context route); use a `date` column convention
+  // or a midday stamp.
   keyDate: timestamp("key_date", { withTimezone: true }),
   cadence: text("cadence"),
   // G-49 part two (intake-capture review §1): the horizon-derivation

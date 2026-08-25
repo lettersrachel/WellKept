@@ -2214,3 +2214,18 @@ removed doc row, green restored; joined the guard manifest and the
 CLAUDE.md table in the same change. The legal/README and
 privacy-notice PROSE stay on the same-PR rule, stated in the guard's
 own not-covered column.
+
+**G-61 class re-verification (2026-08-25, from the section 4
+sitting):** the deployed fix was observed in the pulled tree (both
+members UTC-pinned; the sitting's check 6 doubles as the live proof on
+the fixture's stored 2026-08-05 consent). The founder's local session
+then surveyed the ten remaining zoned renders; every one traced to a
+true instant (audit createdAt, vault access, deferral resolvedAt,
+quiet-hours fireAt arithmetic), so the entry's exactly-two-members
+claim survives. ONE LATENT MEMBER recorded: registry_entry.key_date is
+timestamp-typed like the broken pair but has NO capture path today
+(seed scripts only, stamped noon UTC, which renders the same day in
+every US zone). The day a capture form feeds it from a date input
+parsed to UTC midnight, the defect returns on RegistryCard and the
+context route; a warning comment now sits at the column for that
+form's future author.
