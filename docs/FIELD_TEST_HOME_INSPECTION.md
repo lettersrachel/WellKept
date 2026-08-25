@@ -41,11 +41,12 @@ order, and note anything surprising:
    if a drain ever completed; confirm what actually stands).
 4. **Incidents, photos, vault items**: expected none or test-only;
    a vault_item row would raise the stakes of the disposition.
-5. **Role assignments**: as it ran, TWO were correct and expected:
-   the granted corporate identity plus the founder's own pre-existing
-   `house_manager` (the reason an alter identity was needed at all,
-   step 4). After the step 5 revoke, one remains. A third identity, or
-   any identity that is not the founder's, is a finding.
+5. **Role assignments**: TWO are correct and expected, and two is
+   what stands: the granted corporate identity plus the founder's own
+   pre-existing `house_manager` (the reason an alter identity was
+   needed at all, step 4; the attempted revoke did not write, step 5).
+   A third identity, or any identity that is not the founder's, is a
+   finding.
 6. **The audit trail**: what the household's history says about who
    touched it and when it went quiet.
 
@@ -105,21 +106,35 @@ so the disposition decision has them:
   which is the founder's own Tell Well Kept test from the section 4
   sitting: /visit resolved to this household (see G-65), so the
   sitting's "test capture awaiting dismissal" was sitting here, in a
-  queue nobody could open. **DISMISSED the same evening** with its
-  reason recorded, as the ftc-admin identity (filing is corporate
-  only, so the primary account saw the capture and no control).
+  queue nobody could open. A dismissal was attempted the same evening
+  as the ftc-admin identity and reported clean, but it is UNVERIFIED:
+  the revoke attempted in the same sitting turned out not to have
+  written, so this one is not claimed until its own audit row is read.
+  (Filing is corporate only, so the primary account sees the capture
+  and no control, which is not the failure mode here.)
 
-## Step 5: the field role, revoked (25 August, evening)
+## Step 5: the field role, NOT revoked (correction, 25 August)
 
-The founder revoked her primary account's `house_manager` assignment
-on Field Test Home through the audited path, again as the ftc-admin
-identity: `revokeRole` refuses a self-target, so a single dual-role
-account could not have done it, which is the alter identity earning
-its keep a second time. `role_revoked` is on the trail.
+**This section previously recorded the revoke as done. It was not, and
+the correction is kept in place rather than rewritten away.** The
+founder reported the action clean, and this document, the weekly note,
+and G-65's interim line all recorded it. A verification query the same
+evening found the truth: `role_revoked` rows on this household number
+ZERO, and `lettersrachel@gmail.com` still holds `house_manager`
+(assignment aa4b7053). The screen said one thing and the trail said
+another; the trail wins, which is the whole reason the standing rule
+reads query the database, never trust the screen.
 
-What this does and does not do: Field Test Home leaves her field
-surface, and Field Test Home still passes check 15 on the ftc-admin
-corporate assignment. It does NOT answer G-65: /visit re-resolves to
-the next field-role household by the same first-by-age rule, so the
-arbitrary pointer moved rather than settled. The resolution rule
-remains her decision between the three shapes in the register.
+Not a permissions problem: the Revoke control renders whenever the
+viewer is corporate_admin on the household and the row is not their
+own, both true for the ftc-admin identity here, and every refusal path
+in `revokeRole` redirects to a VISIBLE banner. A clean-looking click
+that wrote nothing is the documented stale-server-action hazard
+(DEPLOY.md's own sharp edge) or a click that never landed on that
+control. Undiagnosed, deliberately: the cheap decisive test is one
+retry from a hard-refreshed tab with the audit row checked
+immediately after, and that is the next action rather than a theory.
+
+So Field Test Home remains on the founder's field surface, she holds
+both roles there across two identities, and G-65 is untouched in every
+respect.

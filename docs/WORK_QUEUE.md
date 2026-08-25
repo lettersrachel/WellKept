@@ -745,7 +745,19 @@ exists today). The first reachable look also found the household's
 oldest rows are a JULY IMPORT OF 258 TEMPLATE FIELDS, a fully
 provisioned tenant invisible to every corporate operator for a month,
 which is the strongest case the census could be given for existing.
-**G-65 FILED, reported not fixed:** /visit resolves the field surface
+**CORRECTION, later the same evening:** the follow-up revoke of the
+founder's field role there was recorded as done in three documents
+and DID NOT WRITE (zero role_revoked rows; the assignment stands),
+with the paired capture dismissal unverified for the same reason; all
+three records are corrected in place rather than rewritten away, and
+retry-with-verification is the next action. The verification also
+surfaced **G-66: role assignments predating 25 August carry NO audit
+history at all** (the July Field Test Home row has no role_assigned
+behind it, actor and reason and its nda_approved claim all unsourced).
+Backfill REFUSED by decision: it would have to invent an actor and a
+reason, the one thing G-63 and G-64 were careful not to do; the row
+stands and the register carries the silence. The fleet-wide count is
+open and founder-side. **G-65 FILED, reported not fixed:** /visit resolves the field surface
 to the first house_manager/backup_hm assignment by household age
 (data.ts:46), so the founder's own Tell Well Kept test at the sitting
 captured onto Field Test Home and then sat in a queue she could not
