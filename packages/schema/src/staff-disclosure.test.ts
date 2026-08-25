@@ -95,6 +95,10 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  visit_brief_snapshot:
+    "WK-DEV-009 s2.1, 2026-08-25: briefed_user records which staff member each brief was " +
+    "composed for, evidence of what was shown rather than judgment about the person; " +
+    "shipped after the disclosure was approved; founder line candidate for the next revision",
   capture_artifact:
     "WK-DEV-009 s8, 2026-08-25: captured_by attributes the HOM's own free-text capture " +
     "and filed_by the corporate router's filing; shipped after the disclosure was " +

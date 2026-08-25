@@ -118,6 +118,20 @@ child-data surface list extended and proven red then green, and the
 register entry names the candidate guard (a computed free-text-table
 census, the staff-disclosure pattern) as its own future session.
 
+**And the section 2.1 evidence rail:** the Visit Brief Snapshot
+(WK-DEV-009 section 2.1, a section 10 substrate object) is BUILT:
+migration 0045 `visit_brief_snapshot` persists every brief the mobile
+briefing route composes, verbatim, deduped by content hash (the
+unique index proven refusing a duplicate and accepting a changed
+brief and the stranger projection as distinct evidence), so what a
+staff member was shown is always reconstructable. Proven live: three
+GETs against the dev server wrote exactly two snapshots. Append-only
+by code; erasure blanks the payload and keeps the skeleton and hash
+(the audit value-hash precedent); the full guard-and-legal set
+shipped in the same PR per the G-62 correction. The web /visit brief
+joins when the Cockpit perfection pass unifies composition; per-open
+noise never enters the table by construction.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

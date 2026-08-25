@@ -5,6 +5,7 @@ import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackIt
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { staffMfaCleared } from "@/lib/totp";
+import { recordBriefSnapshot } from "@/lib/brief-snapshot";
 
 // AJ decision (founder, 2026-07-28, option 2): the briefing serves
 // whoever runs the visit, including the admin covering one.
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest) {
     promotionCandidate: f.promotionCandidate,
   }));
 
-  return NextResponse.json({
+  const payload = {
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: strangerMode },
     flags,
     conditionFlags,
@@ -116,5 +117,12 @@ export async function GET(req: NextRequest) {
     radar,
     lastYear,
     dots: openDots,
+  };
+  // WK-DEV-009 s2.1: the brief is persisted as composed (deduped by
+  // content), so what was shown is always reconstructable.
+  await recordBriefSnapshot({
+    householdId: hh.id, briefedUser: principal.userId, role: principal.role,
+    strangerMode, payload,
   });
+  return NextResponse.json(payload);
 }

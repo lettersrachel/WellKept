@@ -32,7 +32,8 @@ export default function PrivacyPage() {
         your membership record (how you found us, and your membership history);
         operational records (follow-up work we track on your household&apos;s behalf, items
         our system surfaces to our staff for attention, choices we route internally for a
-        decision, notes a staff member captures in their own words for filing, and what
+        decision, notes a staff member captures in their own words for filing, the
+        pre-visit briefs we show our staff (kept exactly as shown), and what
         our reminder engine would have suggested while we tune it) to run the service
         reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to

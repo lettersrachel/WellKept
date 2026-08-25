@@ -36,6 +36,7 @@ constraints where expressible.
 | `decision_record` (RFC-PRIM-01, 2026-08-25; row added in the 2026-08-25 catch-up, one PR late) | a question, recommendation, or evidence line may concern a child | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guard (decision_record signature) |
 | `shadow_log` (WK-DEV-007 s3, 2026-08-25; row added in the 2026-08-25 catch-up) | evidence lines derive from condition flags that may mention a child's room or belongings | engine-internal; visible only to founder/CFO/developer roles; free-text policy applies as everywhere | role-gated query + payload guard (shadow_log signature) |
 | `capture_artifact` (WK-DEV-009 s8, 2026-08-25) | the HOM's free-text capture may mention a child's room, schedule, or belongings | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guard (capture_artifact signature) |
+| `visit_brief_snapshot` (WK-DEV-009 s2.1, 2026-08-25) | the persisted brief carries whatever the staff projection carried, including child-related fields | internal (s2); never shown to any client; a snapshot is the staff view verbatim, so the projection rules that governed the brief govern the snapshot | code (no client render path) + payload guard (visit_brief_snapshot signature) |
 
 ## The rules this document adds
 

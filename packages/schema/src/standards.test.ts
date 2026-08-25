@@ -252,4 +252,16 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
   );
   // The innocent keys: a client note with content alone is not a row.
   assert.ok(assertNoAnticipationRows([{ content: "welcome note text" }]));
+
+  // WK-DEV-009 s2.1: a visit_brief_snapshot never reaches a client.
+  assert.throws(
+    () => assertNoAnticipationRows([{ contentHash: "abc", strangerMode: false }]),
+    /visit_brief_snapshot/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { briefed_user: "u1", payload: { flags: [] } } }),
+    /visit_brief_snapshot/,
+  );
+  // Innocent: a generic payload key alone is not a snapshot row.
+  assert.ok(assertNoAnticipationRows([{ payload: { ok: true } }]));
 });

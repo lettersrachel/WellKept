@@ -1158,3 +1158,32 @@ export const captureArtifact = pgTable("capture_artifact", {
   check("capture_artifact_work_item_is_filed",
     sql`${t.workItemId} IS NULL OR ${t.status} = 'filed'`),
 ]);
+
+// WK-DEV-009 v1.1 section 2.1: the Visit Brief Snapshot, a section 10
+// substrate object. Every brief COMPOSED for a staff member is persisted
+// as sent, so what the HOM was shown is always reconstructable; the
+// record is append-only BY CODE (no update action exists anywhere) and
+// deduped by content: the unique index makes re-showing an unchanged
+// brief a no-op insert, so the table holds every DISTINCT brief without
+// per-open noise (engineering choice, reported as a proposal). v1
+// snapshots the mobile briefing route, the canonical composed brief; the
+// web /visit brief joins when the Cockpit perfection pass unifies
+// composition. On erasure the payload blanks and the skeleton keeps
+// (that a brief was shown, when, to whom, under which projection); the
+// content hash stays, the audit-row value-hash precedent.
+export const visitBriefSnapshot = pgTable("visit_brief_snapshot", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  briefedUser: text("briefed_user").notNull().references(() => authUser.id),
+  role: text("role").notNull(),
+  strangerMode: boolean("stranger_mode").notNull().default(false),
+  contentHash: text("content_hash").notNull(), // sha256 of the payload as sent
+  payload: jsonb("payload").notNull(), // the brief, verbatim; s2
+}, (t) => [
+  index("visit_brief_snapshot_household_idx").on(t.householdId, t.createdAt),
+  // The AJ option 2 field roles, the only projections a brief composes for.
+  check("visit_brief_snapshot_role_known",
+    sql`${t.role} IN ('house_manager','backup_hm','corporate_admin')`),
+  uniqueIndex("visit_brief_snapshot_distinct_content")
+    .on(t.householdId, t.briefedUser, t.strangerMode, t.contentHash),
+]);
