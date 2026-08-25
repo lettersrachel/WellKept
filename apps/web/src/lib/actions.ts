@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, eventOutbox } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, emitOutboxEvent } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -189,7 +189,7 @@ export async function reviewEdit(formData: FormData) {
         kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(edit.proposedValue),
         detail: { via: "client_edit_approval", editId },
       });
-      await outboxFieldEvent(tx, event);
+      await outboxFieldEvent(tx, event, { actor: principal.userId, sensitivity: f.sensitivity === "s1" ? "s1" : "s2" });
     });
     await emitFieldChange(event);
   }
@@ -407,7 +407,7 @@ export async function promoteDot(formData: FormData) {
       kind: "field_write", fieldId: f.id, oldValueHash: sha256(f.value), newValueHash: sha256(value),
       detail: { via: "dot_promotion", dotId },
     });
-    await outboxFieldEvent(tx, event);
+    await outboxFieldEvent(tx, event, { actor: actor.userId, sensitivity: f.sensitivity === "s1" ? "s1" : "s2" });
   });
   await emitFieldChange(event);
   revalidatePath(`/oversight/${d.householdId}`);
@@ -520,7 +520,7 @@ export async function captureField(formData: FormData) {
       detail: { via: "intake_capture" },
     });
     // s3 and no-op saves emit nothing: outbox payloads carry plaintext.
-    if (valueChanged && sensitivity !== "s3" && value) await outboxFieldEvent(tx, event);
+    if (valueChanged && sensitivity !== "s3" && value) await outboxFieldEvent(tx, event, { actor: principal.userId, sensitivity: sensitivity === "s1" ? "s1" : "s2" });
   });
   if (valueChanged && sensitivity !== "s3" && value) await emitFieldChange(event);
   revalidatePath("/intake");
@@ -1032,7 +1032,7 @@ export async function recordMembershipEvent(formData: FormData) {
   const causeRaw = String(formData.get("causeCode") ?? "");
   const causeCode = (CAUSES as readonly string[]).includes(causeRaw) ? (causeRaw as (typeof CAUSES)[number]) : null;
   if (kind === "cancel" && (!reason || !initiatedBy || !causeCode)) refuse(householdId, "gate-unmet");
-  const { membershipEvent, eventOutbox } = await import("@wellkept/schema");
+  const { membershipEvent } = await import("@wellkept/schema");
   // One transaction: an audit row without its event (or vice versa) must be
   // impossible. And success is now as legible as refusal (the 2026-07-27
   // lesson, round two): redirect with ?recorded= so the page SAYS it landed
@@ -1054,10 +1054,12 @@ export async function recordMembershipEvent(formData: FormData) {
     // carries the code and the ids, never a person and never the reason
     // text (which is s2 and stays on the membership row).
     if (kind === "cancel" && causeCode) {
-      await tx.insert(eventOutbox).values({
-        id: randomUUID(), householdId, kind: "household.departure",
+      await emitOutboxEvent(tx, {
+        householdId, kind: "household.departure",
         payload: { membershipEventId: eventId, causeCode, effectiveOn },
         occurredAt: new Date(`${effectiveOn}T12:00:00Z`),
+        provenance: "action:recordMembershipEvent", objectId: eventId,
+        actor: principal.userId, correlationId: eventId,
       });
     }
     if (tier) {
@@ -1393,9 +1395,10 @@ export async function createWorkItem(formData: FormData) {
       id, householdId, title, detail, kind, source,
       ownerId: principal.userId, dueDate, windowCondition,
     });
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "work_item.opened",
-      payload: { workItemId: id, kind, source }, occurredAt: new Date(),
+    await emitOutboxEvent(tx, {
+      householdId, kind: "work_item.opened",
+      payload: { workItemId: id, kind, source },
+      provenance: "action:createWorkItem", objectId: id, actor: principal.userId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -1433,9 +1436,10 @@ export async function progressWorkItem(formData: FormData) {
         status: decision as "done" | "abandoned", blockedReason: null,
         resolution: note, resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date(),
       }).where(eq(workItem.id, id));
-      await tx.insert(eventOutbox).values({
-        id: randomUUID(), householdId, kind: "work_item.resolved",
-        payload: { workItemId: id, status: decision }, occurredAt: new Date(),
+      await emitOutboxEvent(tx, {
+        householdId, kind: "work_item.resolved",
+        payload: { workItemId: id, status: decision },
+        provenance: "action:progressWorkItem", objectId: id, actor: principal.userId,
       });
     }
     await tx.insert(auditEvent).values({
@@ -1495,9 +1499,11 @@ export async function resolveAttention(formData: FormData) {
     await tx.update(attentionRecord).set({
       status: "resolved", resolution: note, resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date(),
     }).where(eq(attentionRecord.id, id));
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "attention_record.resolved",
-      payload: { attentionRecordId: id, sourceKind: row.sourceKind }, occurredAt: new Date(),
+    await emitOutboxEvent(tx, {
+      householdId, kind: "attention_record.resolved",
+      payload: { attentionRecordId: id, sourceKind: row.sourceKind },
+      provenance: "action:resolveAttention", objectId: id, actor: principal.userId,
+      correlationId: row.sourceId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -1539,9 +1545,10 @@ export async function routeDecision(formData: FormData) {
       id, householdId, question, recommendation, alternatives, evidence,
       authorityClass, audience, routedBy: principal.userId,
     });
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "decision_record.routed",
-      payload: { decisionRecordId: id, audience, authorityClass }, occurredAt: new Date(),
+    await emitOutboxEvent(tx, {
+      householdId, kind: "decision_record.routed",
+      payload: { decisionRecordId: id, audience, authorityClass },
+      provenance: "action:routeDecision", objectId: id, actor: principal.userId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -1578,9 +1585,10 @@ export async function decideDecision(formData: FormData) {
       outcome: outcome as "accepted" | "declined", outcomeNote: note,
       decidedAt: new Date(), decidedBy: principal.userId, updatedAt: new Date(),
     }).where(eq(decisionRecord.id, id));
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "decision_record.decided",
-      payload: { decisionRecordId: id, outcome }, occurredAt: new Date(),
+    await emitOutboxEvent(tx, {
+      householdId, kind: "decision_record.decided",
+      payload: { decisionRecordId: id, outcome },
+      provenance: "action:decideDecision", objectId: id, actor: principal.userId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -1620,9 +1628,11 @@ export async function tellWellKept(formData: FormData) {
     await tx.insert(captureArtifact).values({
       id, householdId, kind: "text", content, capturedBy: principal.userId, visitCommandId,
     });
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "capture_artifact.created",
-      payload: { captureArtifactId: id, kind: "text" }, occurredAt: new Date(),
+    await emitOutboxEvent(tx, {
+      householdId, kind: "capture_artifact.created",
+      payload: { captureArtifactId: id, kind: "text" },
+      provenance: "action:tellWellKept", objectId: id, actor: principal.userId,
+      correlationId: visitCommandId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
@@ -1663,19 +1673,22 @@ export async function fileCaptureArtifact(formData: FormData) {
         detail: `Filed from a Tell Well Kept capture. ${disposition}`.slice(0, 1000),
         kind: "followup", source: "hm_capture", ownerId: principal.userId,
       });
-      await tx.insert(eventOutbox).values({
-        id: randomUUID(), householdId, kind: "work_item.opened",
-        payload: { workItemId, kind: "followup", source: "hm_capture" }, occurredAt: now,
+      await emitOutboxEvent(tx, {
+        householdId, kind: "work_item.opened",
+        payload: { workItemId, kind: "followup", source: "hm_capture" },
+        occurredAt: now, provenance: "action:fileCaptureArtifact",
+        objectId: workItemId, actor: principal.userId, correlationId: id,
       });
     }
     await tx.update(captureArtifact).set({
       status: decision === "work_item" ? "filed" : "dismissed",
       disposition, workItemId, filedAt: now, filedBy: principal.userId, updatedAt: now,
     }).where(eq(captureArtifact.id, id));
-    await tx.insert(eventOutbox).values({
-      id: randomUUID(), householdId, kind: "capture_artifact.filed",
+    await emitOutboxEvent(tx, {
+      householdId, kind: "capture_artifact.filed",
       payload: { captureArtifactId: id, outcome: decision === "work_item" ? "filed" : "dismissed", workItemId },
-      occurredAt: now,
+      occurredAt: now, provenance: "action:fileCaptureArtifact",
+      objectId: id, actor: principal.userId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,

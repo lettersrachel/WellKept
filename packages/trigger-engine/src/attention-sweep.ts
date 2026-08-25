@@ -1,5 +1,5 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
-import { deferral, pausedDecision, workItem, attentionRecord, decisionRecord, eventOutbox } from "@wellkept/schema";
+import { deferral, pausedDecision, workItem, attentionRecord, decisionRecord, emitOutboxEvent } from "@wellkept/schema";
 
 /**
  * RFC-PRIM-01 build 2: the attention sweep. The computed overdue
@@ -57,10 +57,11 @@ export async function sweepAttentionRecords(db: Db): Promise<{ raised: number }>
     }).returning({ id: attentionRecord.id });
     if (inserted.length > 0) {
       raised += 1;
-      await (db as any).insert(eventOutbox).values({
-        id: crypto.randomUUID(), householdId: c.householdId, kind: "attention_record.opened",
+      await emitOutboxEvent(db as any, {
+        householdId: c.householdId, kind: "attention_record.opened",
         payload: { attentionRecordId: inserted[0].id, sourceKind: c.sourceKind, sourceId: c.sourceId },
-        occurredAt: new Date(),
+        provenance: "sweep:attention", objectId: inserted[0].id,
+        correlationId: c.sourceId,
       });
     }
   }
@@ -80,9 +81,10 @@ export async function sweepDecisionExpiry(db: Db): Promise<{ expired: number }> 
     await (db as any).update(decisionRecord)
       .set({ expiredAt: now, updatedAt: now })
       .where(and(eq(decisionRecord.id, d.id), isNull(decisionRecord.outcome), isNull(decisionRecord.expiredAt)));
-    await (db as any).insert(eventOutbox).values({
-      id: crypto.randomUUID(), householdId: d.householdId, kind: "decision_record.expired",
+    await emitOutboxEvent(db as any, {
+      householdId: d.householdId, kind: "decision_record.expired",
       payload: { decisionRecordId: d.id }, occurredAt: now,
+      provenance: "sweep:decision-expiry", objectId: d.id,
     });
     expired += 1;
   }

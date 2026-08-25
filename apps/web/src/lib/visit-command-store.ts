@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import {
   visitCommand, timeEntry, deferral, conditionFlag, objectObservation,
-  registryEntry, pausedDecision, promptPackItem, promptOutcome, eventOutbox,
+  registryEntry, pausedDecision, promptPackItem, promptOutcome,
+  emitOutboxEvent,
 } from "@wellkept/schema";
 import { db } from "./db";
 import {
@@ -223,18 +224,21 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
         // report joins through visitCommandId when it is built (Phase 2).
         // No consumer exists yet; unconsumed kinds wait in the outbox
         // untouched, attempts unspent, which is the outbox working.
-        await tx.insert(eventOutbox).values([
-          {
-            id: randomUUID(), householdId: payload.householdId, kind: "visit.arrival",
-            payload: { visitCommandId: idempotencyKey, occurredAt: start.toISOString() },
-            occurredAt: start,
-          },
-          {
-            id: randomUUID(), householdId: payload.householdId, kind: "visit.departure",
-            payload: { visitCommandId: idempotencyKey, occurredAt: end.toISOString() },
-            occurredAt: end,
-          },
-        ]);
+        // s4 envelope (0046): actor deliberately stays null here, the
+        // same no-person rule the payload already follows; the covenant
+        // report joins attribution through time_entry, never this row.
+        await emitOutboxEvent(tx, {
+          householdId: payload.householdId, kind: "visit.arrival",
+          payload: { visitCommandId: idempotencyKey, occurredAt: start.toISOString() },
+          occurredAt: start, provenance: "sink:visit-commands",
+          objectId: idempotencyKey, correlationId: idempotencyKey,
+        });
+        await emitOutboxEvent(tx, {
+          householdId: payload.householdId, kind: "visit.departure",
+          payload: { visitCommandId: idempotencyKey, occurredAt: end.toISOString() },
+          occurredAt: end, provenance: "sink:visit-commands",
+          objectId: idempotencyKey, correlationId: idempotencyKey,
+        });
       }
       // AC (W-6 follow-on): deferrals captured in the close flow land in
       // the same transaction as the visit they belong to, carrying this

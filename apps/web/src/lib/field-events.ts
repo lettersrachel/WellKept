@@ -1,6 +1,5 @@
-import { randomUUID } from "node:crypto";
 import { runTriggerPass, type FieldChangeEvent } from "@wellkept/trigger-engine";
-import { eventOutbox } from "@wellkept/schema";
+import { emitOutboxEvent } from "@wellkept/schema";
 import { db } from "./db";
 
 export type { FieldChangeEvent };
@@ -26,9 +25,17 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 /** Durable: insert the outbox row using the caller's transaction handle.
  * CAND-OUTBOX-01: the generalized event_outbox carries this as the first
  * kind, field.changed; the payload shape IS FieldChangeEvent. */
-export async function outboxFieldEvent(tx: Tx, event: FieldChangeEvent): Promise<void> {
-  await tx.insert(eventOutbox).values({
-    id: randomUUID(),
+export async function outboxFieldEvent(
+  tx: Tx,
+  event: FieldChangeEvent,
+  // WK-DEV-010 s4 envelope (0046): who wrote, and the field's OWN
+  // sensitivity, because this payload carries the plaintext value (the
+  // one event kind that does; s3 never reaches here, excluded at every
+  // call site). Optional so the trigger-engine type stays untouched;
+  // callers that know pass both.
+  envelope?: { actor?: string; sensitivity?: "s1" | "s2" },
+): Promise<void> {
+  await emitOutboxEvent(tx, {
     householdId: event.householdId,
     kind: "field.changed",
     payload: {
@@ -39,6 +46,10 @@ export async function outboxFieldEvent(tx: Tx, event: FieldChangeEvent): Promise
       changedAt: event.changedAt,
     },
     occurredAt: new Date(event.changedAt),
+    provenance: "web:field-events",
+    objectId: event.fieldId,
+    actor: envelope?.actor ?? null,
+    sensitivity: envelope?.sensitivity ?? "s2",
   });
 }
 

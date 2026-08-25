@@ -185,6 +185,14 @@ test("work-item journey: refused short, opened with its event, blocked with reas
   const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
   await expect.poll(() => count("SELECT count(*)::int n FROM work_item WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
   expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_item.opened'")).toBe(1);
+  // WK-DEV-010 s4 (0046): the envelope rides the real action's event.
+  const { rows: [env] } = await pool.query(
+    "SELECT provenance, actor, object_id, sensitivity, event_version FROM event_outbox WHERE household_id=$1 AND kind='work_item.opened'", [synId]);
+  expect(env.provenance).toBe("action:createWorkItem");
+  expect(env.actor).toBe(rachelId);
+  expect(env.object_id).toBeTruthy();
+  expect(env.sensitivity).toBe("s1");
+  expect(env.event_version).toBe(1);
 
   // Block with its reason, then resolve whole.
   await page.getByLabel("Work item decision").selectOption("block");

@@ -744,7 +744,7 @@ export const objectObservation = pgTable("object_observation", {
 // being dead-lettered. processedAt stamps completion; attempts bounds
 // retries for kinds that DO have a consumer.
 export const eventOutbox = pgTable("event_outbox", {
-  id: uuid("id").primaryKey(),
+  id: uuid("id").primaryKey(), // the event_id of the WK-DEV-010 s4 law
   householdId: uuid("household_id").notNull(),
   kind: text("kind").notNull(), // e.g. field.changed; work/decision kinds follow
   payload: jsonb("payload").notNull(), // kind-specific; validated by the consumer
@@ -752,6 +752,18 @@ export const eventOutbox = pgTable("event_outbox", {
   attempts: integer("attempts").notNull().default(0),
   processedAt: timestamp("processed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // WK-DEV-010 section 4, the event law's envelope (0046). Events
+  // describe STATE TRANSITIONS, never copies of full records; the
+  // payload keeps carrying ids and vocabulary only, which is why s1 is
+  // the honest default sensitivity (a writer whose payload ever exceeds
+  // that passes the higher label explicitly). provenance names the
+  // emitting component; rows predating the law read 'pre_event_law'.
+  eventVersion: integer("event_version").notNull().default(1),
+  correlationId: uuid("correlation_id"), // ties a chain (a visit, a slice) together
+  objectId: uuid("object_id"), // the row whose transition this is, lifted from the payload
+  actor: text("actor").references(() => authUser.id), // null = the system's own act
+  sensitivity: sensitivityEnum("sensitivity").notNull().default("s1"),
+  provenance: text("provenance").notNull().default("pre_event_law"),
 }, (t) => [index("event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);
 
 // ---------------------------------------------------------------------------
