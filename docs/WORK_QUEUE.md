@@ -68,6 +68,24 @@ legal), and verbatim REQ text keep their original wording as records.
 Open-gate pilot framing in this file and CLAUDE.md moved to the
 launch/training language; dated entries keep "pilot" as written.
 
+**25 August 2026, overnight:** WK-DEV-009 v1.1 (the unified ambient
+brief: Tier D authorized now and IS the input-spine work; Tier M gated
+on one future two-key entry; the voice ruling; the notification
+firewall) and WK-DEV-010 v1.1 (the unified implementation directive:
+leverage/tax RFC law, event law, the ServiceEvent spec, the ten-stage
+vendor slice as the first workstream after the HO go/no-go with vendor
+links internal-simulation-only until the pen test covers the surface,
+external access law, the Training Household, the work sequence) are
+ADOPTED into docs/, frozen (registers A573, A575). The substrate
+window's three primitives are BUILT (work_item 0041, attention_record
+0042 with the overdue sweep, decision_record 0043 with route/decide
+and system expiry), each to the section 4 definition of done, every
+rail proven both directions, journeys in CI. On the WK-DEV-010
+section 12 propose-default 48-hour clock: the no-app vendor link
+authentication shape, proposed as the directive's own expected shape
+(short-lived signed link plus a per-event verification factor, no
+account); the clock runs from this entry.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

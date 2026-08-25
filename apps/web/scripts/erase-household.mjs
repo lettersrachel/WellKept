@@ -79,6 +79,10 @@
  *    deferral is a client-visible service record (the visit-report
  *    posture), so the business-record skeleton survives while the
  *    household specifics do not.
+ *  - decision_record (RFC-PRIM-01, 2026-08-25): free text BLANKED
+ *    (question, recommendation, alternatives, evidence, outcome note),
+ *    skeleton kept - THAT a choice was routed and how it ended is
+ *    operational history; what the choice concerned is the household's.
  *  - attention_record (RFC-PRIM-01, 2026-08-25): free text BLANKED
  *    (reason, resolution kept as markers), skeleton kept - the record
  *    THAT attention was raised and answered is operational history; the
@@ -228,6 +232,8 @@ try {
   await c.query("UPDATE season_observation SET summary=$2 WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE prompt_pack_item SET item_text=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE prompt_outcome SET note=NULL WHERE household_id=$1", [householdId]);
+  // decision_record: blank the words, keep the lifecycle (see header).
+  await c.query(`UPDATE decision_record SET question=$2, recommendation=$2, alternatives='[]', evidence='[]', outcome_note=CASE WHEN outcome_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1`, [householdId, E]);
   // attention_record: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE attention_record SET reason=$2, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // work_item: blank the words, keep the lifecycle (see header).

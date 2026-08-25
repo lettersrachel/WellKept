@@ -154,6 +154,11 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("decision", "research")) {
       throw new Error(`SEVERE: a paused_decision row reached a client payload at ${path}`);
     }
+    // RFC-PRIM-01 build 3: a decision_record routes to staff only until
+    // the client freeze lifts; no client projection exists.
+    if (has("question", "recommendation") || has("authorityClass", "audience") || has("authority_class", "audience")) {
+      throw new Error(`SEVERE: a decision_record row reached a client payload at ${path}`);
+    }
     // RFC-PRIM-01 build 2: an attention_record's reason derives from
     // household content (s2); no client projection exists.
     if (has("audience", "urgency") || has("audience", "sourceKind") || has("audience", "source_kind")) {

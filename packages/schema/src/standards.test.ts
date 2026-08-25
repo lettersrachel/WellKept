@@ -230,4 +230,14 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /attention_record/,
   );
   assert.ok(assertNoAnticipationRows([{ audience: "the dinner party guest list" }]));
+  // RFC-PRIM-01 build 3: a decision_record never reaches a client.
+  assert.throws(
+    () => assertNoAnticipationRows([{ question: "vendor choice", recommendation: "the second quote" }]),
+    /decision_record/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { authority_class: "A3", audience: "founder" } }),
+    /decision_record/,
+  );
+  assert.ok(assertNoAnticipationRows([{ question: "what time works for the walkthrough" }]));
 });

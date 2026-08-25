@@ -171,9 +171,10 @@ export function createWorker() {
         // RFC-PRIM-01 build 2: the overdue surfaces write attention
         // records on the same daily pass. Idempotent by the
         // one-per-source index; only genuine inserts emit events.
-        const { sweepAttentionRecords } = await import("@wellkept/trigger-engine");
+        const { sweepAttentionRecords, sweepDecisionExpiry } = await import("@wellkept/trigger-engine");
         const attention = await sweepAttentionRecords(db);
-        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged, attentionRaised: attention.raised };
+        const expiry = await sweepDecisionExpiry(db);
+        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged, attentionRaised: attention.raised, decisionsExpired: expiry.expired };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "client-digest") { const { runClientWeeklyDigest } = await import("./client-digest.ts"); return runClientWeeklyDigest(pool); }

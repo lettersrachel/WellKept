@@ -79,3 +79,11 @@ export const attentionAudienceSchema = z.enum(["hom", "corporate", "founder"]);
 export type AttentionAudience = z.infer<typeof attentionAudienceSchema>;
 export const attentionSourceSchema = z.enum(["work_item", "deferral", "paused_decision", "condition_flag", "reconciliation", "system"]);
 export type AttentionSource = z.infer<typeof attentionSourceSchema>;
+
+// RFC-PRIM-01 build 3: the DecisionRecord vocabulary (zod parity).
+export const decisionOutcomeSchema = z.enum(["accepted", "declined"]);
+export type DecisionOutcome = z.infer<typeof decisionOutcomeSchema>;
+export const decisionAudienceSchema = z.enum(["hom", "corporate", "founder"]);
+export type DecisionAudience = z.infer<typeof decisionAudienceSchema>;
+export const authorityClassSchema = z.enum(["A0", "A1", "A2", "A3", "A4", "A5"]);
+export type AuthorityClassName = z.infer<typeof authorityClassSchema>;
