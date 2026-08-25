@@ -832,6 +832,26 @@ export const appSetting = pgTable("app_setting", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// The v5 intake ruling (section 3, audit C-06) requires the capacity
+// configuration stored as VERSIONED configuration, and STD-016 section 7's
+// see-what-changed-and-why doctrine applies to every knob equally: this is
+// the provision_version discipline for app_setting. Append-only; every
+// versioned write records what it replaced, who set it, and the reason in
+// words. Writes go through setAppSettingVersioned (app-config.ts), which
+// no-ops on an unchanged value so a re-run never mints an empty version.
+export const appSettingVersion = pgTable("app_setting_version", {
+  id: uuid("id").primaryKey(),
+  key: text("key").notNull(),
+  version: integer("version").notNull(),
+  value: jsonb("value").notNull(), // the value as of this version
+  priorValue: jsonb("prior_value"), // what it replaced; null on the first version
+  setBy: text("set_by").notNull().references(() => authUser.id),
+  reason: text("reason").notNull(), // why, in words; cites the authorizing ruling
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("app_setting_version_key_version_unique").on(t.key, t.version),
+]);
+
 // Append-only version history: every write to standard_provision records the
 // full prior row here first (same discipline as audit_event — never updated,
 // never deleted). A visit record references the version in force on its date.

@@ -113,6 +113,12 @@ const ALLOWLIST: Record<string, string> = {
     "covenant events' no-person posture, and attribution joins through time_entry " +
     "under the approved G-13 item; the surface waits on the refinement UI, so no row " +
     "can carry it yet",
+  app_setting_version:
+    "v5 intake ruling section 3, 2026-08-25: set_by attributes a corporate " +
+    "CONFIGURATION change (who set a knob, and why, in the reason column), the " +
+    "provision_versions class exactly, which is already allowlisted as " +
+    "corporate-generic; no member or field data rides the row, and the write path " +
+    "refuses without an attributed identity by design",
   work_requirement:
     "WL Gate 1, 2026-08-25: created_by, completed_by, and verified_by attribute planned " +
     "work instances (the written-work item's territory); shipped after the disclosure " +

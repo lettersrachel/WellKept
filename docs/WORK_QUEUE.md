@@ -404,6 +404,33 @@ Six SQL refusals, three accepting shapes; twenty-one e2e green.
 WK-DEV-008; the Task Evidence Store and Source Registry are their
 own later sessions.
 
+**And the capacity configuration lands (0055), the v5 intake's first
+code-side item:** `app_setting_version` exists, the provision_versions
+discipline applied to every knob (append-only: key, version, the
+value, WHAT IT REPLACED, who set it, the reason in words), with
+`setAppSettingVersioned` as the one write path (no-op on an unchanged
+value, so a re-run never mints an empty version). `pnpm db:capacity
+--set-by <email>` loads EXACTLY the ruling's figures (cap=5,
+band=3..5, the authority string naming the ruling); it takes no value
+arguments at all, because the cap is covenant-relevant and a cap
+change is a two-key model change before it is a config change; a
+different value can only arrive by editing the constant in a reviewed
+change citing its register entry. The board now reads the knob (never
+the constant): GATE UNSET preserved for null, and when set it renders
+cap, band, the two-key sentence, and the AGGREGATE evaluation (fleet
+load, a headcount ratio against founder-stated figures; still nothing
+per person, Ruling 1 held, the section 5 conflict still standing as
+reported). Proven: the loader refused without --set-by, wrote v1,
+and no-opped on re-run; THE PROOF RUN CAUGHT A REAL DEFECT: jsonb
+does not preserve key order, so the first no-op comparison read the
+round-tripped value as changed and minted an empty v2; fixed with
+canonical comparison, the reorder case now in the integration test
+(the it-tests-its-logic-not-its-inputs lesson, again). The board
+journey proves both halves (unset and set) with the knob state
+restored after. Production loading is founder-side: run `pnpm
+db:capacity --set-by <founder email>` against production after the
+0055 migration applies.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

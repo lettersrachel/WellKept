@@ -500,21 +500,45 @@ test("corporate board: aggregate only, honest unset thresholds, and no per-HOM u
   // WK-DEV-007 s5, built on the stricter reading of the section 5 /
   // Ruling 1 disagreement (reported, not reconciled): the board renders
   // coverage, the exception queue, aggregate capacity, churn, and the
-  // covenant preview, and NOTHING per person.
-  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
-  await page.goto("/oversight/board");
-  await expect(page.getByRole("heading", { name: "Corporate board" })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: "Coverage" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Exception queue" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible();
-  // The gate ships unset and says so; no invented threshold.
-  await expect(page.getByText(/GATE UNSET/)).toBeVisible();
-  // The Ruling 1 posture, visible on the page itself.
-  await expect(page.getByText(/Per-HOM\s+utilization is deliberately absent/)).toBeVisible();
-  // And structurally: no per-person capacity figures render. The demo HOM
-  // identity's name appearing under Capacity would be the violation shape.
-  const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
-  await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
+  // covenant preview, and NOTHING per person. 0055: the capacity_gate
+  // knob is cleared for the unset half and restored after, since
+  // db:capacity loads it locally and the shipped-null state must still
+  // be provable.
+  const { rows: savedGate } = await pool.query("SELECT value FROM app_setting WHERE key='capacity_gate'");
+  await pool.query("DELETE FROM app_setting WHERE key='capacity_gate'");
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto("/oversight/board");
+    await expect(page.getByRole("heading", { name: "Corporate board" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Coverage" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Exception queue" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible();
+    // The gate ships unset and says so; no invented threshold.
+    await expect(page.getByText(/GATE UNSET/)).toBeVisible();
+    // The Ruling 1 posture, visible on the page itself.
+    await expect(page.getByText(/Per-HOM\s+utilization is deliberately absent/)).toBeVisible();
+    // And structurally: no per-person capacity figures render. The demo HOM
+    // identity's name appearing under Capacity would be the violation shape.
+    const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
+    await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
+
+    // 0055, the set half: with the ruling's figures loaded (the shape
+    // db:capacity writes), the board reads the knob and evaluates the
+    // aggregate state; still nothing per person.
+    await pool.query(
+      "INSERT INTO app_setting (key, value) VALUES ('capacity_gate', $1)",
+      [JSON.stringify({ cap: 5, bandMin: 3, bandMax: 5, authority: "test" })]);
+    await page.reload();
+    await expect(page.getByText(/Gate set: cap 5, band 3 to 5/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/two-key\s+model change/)).toBeVisible();
+    await expect(page.getByText(/GATE UNSET/)).toHaveCount(0);
+    await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
+  } finally {
+    await pool.query("DELETE FROM app_setting WHERE key='capacity_gate'");
+    if (savedGate.length > 0) {
+      await pool.query("INSERT INTO app_setting (key, value) VALUES ('capacity_gate', $1)", [JSON.stringify(savedGate[0].value)]);
+    }
+  }
 });
 
 test("contextual entry: the scan URL opens resolved context, capture is one gesture from it, and another tenant's entry refuses", async ({ context, page }) => {
