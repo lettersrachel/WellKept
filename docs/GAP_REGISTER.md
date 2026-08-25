@@ -2270,14 +2270,64 @@ keeps one gesture but invents a rule about what "my household" means.
 Adjacent, not the same: AJ's one-role constraint (2026-07-28) is about
 two roles on ONE household; this is one role across SEVERAL.
 
-**Interim TAKEN, no code (25 Aug 2026, evening):** the founder
-dismissed the stray capture and revoked her own field role on Field
-Test Home through the audited path, both as the ftc-admin corporate
-identity (her primary could not: filing is corporate-gated and
-revokeRole refuses a self-target, which is the alter identity earning
-its keep a second time). Her /visit now resolves to the next field
-household by the same rule, so the pointer MOVED rather than settled:
-G-65 stays open as a decision, and the three shapes above are
-unchanged. Field Test Home still passes check 15 on the ftc-admin
-corporate assignment. The grant run's own finding stands as the
-evidence that produced all of this.
+**Interim ATTEMPTED AND NOT TAKEN (25 Aug 2026, evening; this entry
+previously recorded it as taken, corrected in place):** the founder
+attempted the revoke as the ftc-admin corporate identity and reported
+it clean, and this line, the inspection document, and the weekly note
+all recorded it as done. Verification the same evening found ZERO
+role_revoked rows on the household and the assignment still standing
+(aa4b7053). The revoke did not write; the accompanying capture
+dismissal is unverified for the same reason. So the interim is NOT in
+place: Field Test Home remains on her field surface, and everything
+above stands unchanged. Field Test Home still passes check 15 on the
+ftc-admin corporate assignment, which the failed revoke does not
+touch. Retry-with-verification is the next action, and G-66 records
+the surrounding finding.
+
+### G-66. Role assignments made before 25 August carry no audit history at all, and the backfill is refused on purpose
+
+Filed 2026-08-25, from the verification that corrected G-65's interim
+line. Field Test Home holds two assignments and exactly ONE role audit
+row: today's `db:grant` write. The July assignment (aa4b7053,
+2026-07-19, `lettersrachel@gmail.com` to house_manager with
+`nda_approved = true` on a non-fixture household) has no
+`role_assigned` row behind it: no actor, no reason, no recorded
+ndaApproved claim, nothing. It was a direct write, made before either
+of today's two fixes existed.
+
+**Same defect class as G-64, in a place nobody had looked.** db:hg
+created Household Green with no audit history until G-64 added the
+backfill; db:grant exists precisely so that a corporate grant is not a
+silent SQL write. This row predates both and is what those fixes are
+for. The finding is the founder's local session's, on its own
+initiative during a different query.
+
+**The nda_approved flag is unsourced in the strong sense.** It asserts
+that an NDA familiarisation happened, and the only evidence for the
+assertion is the column itself. It is inert today (NDA mode does not
+gate corporate s3 access per the matrix, and Field Test Home is old
+test data), and it is inconsistent across the same person's roles
+(true here and on Household Green, false on both demos, the fixture,
+and today's deliberately conservative db:grant write). What that flag
+is meant to assert, and who may set it, is a founder question
+separate from this entry.
+
+**DECIDED: no backfill.** The two options were a `recordedLate` audit
+row in the db:hg style, or leaving the row and recording the silence.
+The backfill is REFUSED because it would have to invent an actor and a
+reason, which is the exact thing today's fixes were careful not to do:
+G-64's backfill was honest only because `--by` supplied a real actor
+and the script knew its own provenance. Here nobody knows who created
+the July row or why, and a manufactured attribution in an append-only
+trail is worse than an acknowledged hole. So the treatment is: the row
+stands as it is, and this entry is the record that **role assignments
+predating 25 August 2026 carry no audit history**.
+
+**Open, and deliberately not answered here:** the fleet-wide count.
+The same pattern that produced aa4b7053 plausibly produced the
+assignments on the demo households and the fixture, so the honest
+scope is a census (assignments with no corresponding `role_assigned`
+audit row), not one row. That count is a founder-side query; when it
+lands it belongs in this entry, and if the number is large it argues
+for a computed guard in the staff-disclosure/legal-census pattern
+rather than more prose.
