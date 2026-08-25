@@ -579,6 +579,12 @@ sitting's own test capture awaiting dismissal in the router queue,
 Lauren's first sign-in, the run-rate amounts, the Apple Developer
 enrollment, the Task Inventory ruling, the section 5 / Ruling 1
 one-line ruling, the eight CAND blanks, and the staging clicks.
+(CLOSED LATER THE SAME EVENING, recorded here rather than in the
+frozen sitting record: the Field Test Home disposition ran as
+grant-and-inspect, and the test capture was dismissed with its
+reason; see the grant paragraph below. The section 5 / Ruling 1
+ruling, the Task Inventory ruling, and the CAND blanks also landed
+the same evening.)
 
 **25 August 2026, evening: the founder's proceed instructions landed
 (register drafts A553-A581; A581 records the confirmations).**
