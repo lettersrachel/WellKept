@@ -104,7 +104,14 @@ const [priorAssignment] = await db.select().from(householdRoleAssignment).where(
   eq(householdRoleAssignment.userId, tester!.id), eq(householdRoleAssignment.householdId, HG),
 ));
 await db.insert(householdRoleAssignment).values({
-  id: randomUUID(), userId: tester!.id, householdId: HG, role: "house_manager", ndaApproved: true,
+  id: randomUUID(), userId: tester!.id, householdId: HG, role: "house_manager",
+  // ndaApproved: the provisioning doc's own statement (WK_Tester_Provisioning
+  // section 5: confidentiality covered under the existing advisor
+  // relationship, contractor/advisor paperwork in the counsel queue as the
+  // durable home), confirmed directly by the founder 2026-08-25. Functionally
+  // inert while HG is not an NDA household; recorded because the audit row
+  // repeats it into an append-only trail.
+  ndaApproved: true,
 }).onConflictDoNothing();
 console.log(`HG tenant + tester provisioned: ${email} -> house_manager on Household Green (is_tester=true)`);
 
