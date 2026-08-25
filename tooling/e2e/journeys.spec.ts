@@ -502,16 +502,23 @@ test("tester journey: a tester-flagged HOM reads only their one household; corpo
   }
 });
 
-test("corporate board: aggregate only, honest unset thresholds, and no per-HOM utilization anywhere on it", async ({ context, page }) => {
-  // WK-DEV-007 s5, built on the stricter reading of the section 5 /
-  // Ruling 1 disagreement (reported, not reconciled): the board renders
-  // coverage, the exception queue, aggregate capacity, churn, and the
-  // covenant preview, and NOTHING per person. 0055: the capacity_gate
-  // knob is cleared for the unset half and restored after, since
-  // db:capacity loads it locally and the shipped-null state must still
-  // be provable.
+test("corporate board: honest unset thresholds, and the A581 per-HOM section renders for the founder seat and NOT for corporate_ops", async ({ context, page }) => {
+  // WK-DEV-007 s5 under Ruling 1 AS AMENDED (register A581, option (b),
+  // 25 Aug 2026): the founder/CFO capacity section is the display
+  // surface of the capacity-gate evaluation; every other role is
+  // refused at the permission-matrix function, and this journey proves
+  // the rendered page in both directions. 0055: the capacity_gate knob
+  // is cleared for the unset half and restored after.
   const { rows: savedGate } = await pool.query("SELECT value FROM app_setting WHERE key='capacity_gate'");
   await pool.query("DELETE FROM app_setting WHERE key='capacity_gate'");
+  const opsId = randomUUID();
+  const opsToken = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,'SYN-01 ops identity')",
+    [opsId, `syn-ops-${opsId.slice(0, 8)}@journeys.test`]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'corporate_ops',true)",
+    [randomUUID(), opsId, synId]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
+    [opsToken, opsId, new Date(Date.now() + 3600_000)]);
   try {
     await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
     await page.goto("/oversight/board");
@@ -521,16 +528,9 @@ test("corporate board: aggregate only, honest unset thresholds, and no per-HOM u
     await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible();
     // The gate ships unset and says so; no invented threshold.
     await expect(page.getByText(/GATE UNSET/)).toBeVisible();
-    // The Ruling 1 posture, visible on the page itself.
-    await expect(page.getByText(/Per-HOM\s+utilization is deliberately absent/)).toBeVisible();
-    // And structurally: no per-person capacity figures render. The demo HOM
-    // identity's name appearing under Capacity would be the violation shape.
-    const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
-    await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
 
-    // 0055, the set half: with the ruling's figures loaded (the shape
-    // db:capacity writes), the board reads the knob and evaluates the
-    // aggregate state; still nothing per person.
+    // 0055, the set half: with the ruling's figures loaded the board
+    // reads the knob and evaluates the aggregate state.
     await pool.query(
       "INSERT INTO app_setting (key, value) VALUES ('capacity_gate', $1)",
       [JSON.stringify({ cap: 5, bandMin: 3, bandMax: 5, authority: "test" })]);
@@ -538,12 +538,30 @@ test("corporate board: aggregate only, honest unset thresholds, and no per-HOM u
     await expect(page.getByText(/Gate set: cap 5, band 3 to 5/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/two-key\s+model change/)).toBeVisible();
     await expect(page.getByText(/GATE UNSET/)).toHaveCount(0);
-    await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
+
+    // The founder seat (corporate_admin) carries the A581 section, with
+    // its own no-ranking sentence rendered as part of the surface.
+    const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
+    await expect(capacity.getByText(/Per-HOM utilization \(founder\/CFO seat/)).toBeVisible();
+    await expect(capacity.getByText(/never by rate/)).toBeVisible();
+
+    // The corporate_ops seat is REFUSED the section: same page, same
+    // knob state, the per-HOM block absent and the refusal line present.
+    await context.clearCookies();
+    await context.addCookies([{ name: "authjs.session-token", value: opsToken, url: BASE }]);
+    await page.goto("/oversight/board");
+    await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible({ timeout: 30_000 });
+    const opsCapacity = page.locator("div.card", { hasText: "Capacity against the gates" });
+    await expect(opsCapacity.getByText(/Per-HOM utilization \(founder\/CFO seat/)).toHaveCount(0);
+    await expect(opsCapacity.getByText(/this seat does not carry them/)).toBeVisible();
   } finally {
     await pool.query("DELETE FROM app_setting WHERE key='capacity_gate'");
     if (savedGate.length > 0) {
       await pool.query("INSERT INTO app_setting (key, value) VALUES ('capacity_gate', $1)", [JSON.stringify(savedGate[0].value)]);
     }
+    await pool.query("DELETE FROM auth_session WHERE session_token=$1", [opsToken]);
+    await pool.query("DELETE FROM household_role_assignment WHERE user_id=$1", [opsId]);
+    await pool.query("DELETE FROM auth_user WHERE id=$1", [opsId]);
   }
 });
 
