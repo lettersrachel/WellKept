@@ -547,6 +547,34 @@ prose copies. Rider: the 0056 situation vocabulary gains its zod
 parity line, caught by this unit's definition-of-done read.
 Twenty-four e2e green.
 
+**25 August 2026, late afternoon: the section 4 sitting RAN COMPLETE
+against `50ecd0f` and its record is frozen**
+(SECTION4_SITTING_2026-08-25.md, superseding the 6 August sitting).
+Every standing check has now run against a live build: checks 8, 10,
+11, 13b, and 14 earned their first live-build passes, and check 13
+produced the strongest guard proof yet on record: the erasure tool
+REFUSED with incident 51a380e1 open (13a, exit 2) and PRINTED ITS
+PLAN after the incident's resolution (13b), the same tool proven both
+directions in the same sitting. Check 3 passed on a REAL value change
+(the hashes differ, unlike the 6 August no-op); check 5 was a true
+vault round-trip twice over with audit-before-value ordering read
+directly from the trail; check 9's end wrote visibly (the G-55 shape
+did not recur). Recorded AT the sitting: Household Green's consent
+(signed 25 Aug, doc version corrected by re-record, the G-61 render
+proven on the recorded date) and the revocation of the fixture's
+stray fourth identity (the founder's own unused alternate address,
+confirmed and revoked through the audited path). Observed working:
+the reconciliation knob flagging all four active households, HG
+included, exactly as predicted. Honest partials, named in the record:
+check 7's fresh-log half and check 9's suppression half stand on the
+prior sittings' proofs; the Railway worker log was read by effect,
+not directly. STILL OPEN founder-side after the sitting: the Field
+Test Home disposition (check 15's one excusal holds the door), the
+sitting's own test capture awaiting dismissal in the router queue,
+Lauren's first sign-in, the run-rate amounts, the Apple Developer
+enrollment, the Task Inventory ruling, the section 5 / Ruling 1
+one-line ruling, the eight CAND blanks, and the staging clicks.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
