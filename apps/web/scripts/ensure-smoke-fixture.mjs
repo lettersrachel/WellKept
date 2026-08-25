@@ -2,16 +2,16 @@
  * Deploy runbook phase 0, as one idempotent command: create-or-find the
  * permanent Smoke Test Fixture household, set its fixture flag, optionally
  * grant a corporate_admin contact, and print the uuid the checklist needs.
- * Safe to run every deploy session — it changes nothing that already holds.
+ * Safe to run every deploy session - it changes nothing that already holds.
  *
  * Run from apps/web so `pg` resolves. The admin email comes from the arg or
- * the WK_ADMIN_EMAIL env var — no personal address hardcoded anywhere:
+ * the WK_ADMIN_EMAIL env var - no personal address hardcoded anywhere:
  *   DATABASE_URL="<url>" node scripts/ensure-smoke-fixture.mjs [admin-email]
  *   DATABASE_URL="<url>" WK_ADMIN_EMAIL=you@example.com node scripts/ensure-smoke-fixture.mjs
  *
  * WK_KMS_KEY (the same KEK the app runs on) additionally seeds the s3 value
  * checklist item 5 reveals. Without it every other prop still seeds and the
- * s3 step says so — it is never sealed under a fallback key.
+ * s3 step says so - it is never sealed under a fallback key.
  *
  * G-50/G-51 (2026-07-28): the admin email also derives a house_manager and
  * a client identity by plus-addressing (three roles, three users, one
@@ -136,13 +136,13 @@ if (photos.length === 0) {
 
 // Checklist item 5 needs a revealable s3 value (2026-07-28): the fixture had
 // no s3 field and no vault item, so the reveal check could only ever run on a
-// demo household — the fourth time a checklist item was routed at the fixture
+// demo household - the fourth time a checklist item was routed at the fixture
 // and the prop was missing.
 //
 // Sealed with the SAME KEK the app reads (WK_KMS_KEY), in the same storage
 // shape as lib/vault's vaultWrite: ciphertext = the sealed box JSON, key_ref =
 // the household's KMS-wrapped data key. If WK_KMS_KEY is absent we SKIP rather
-// than fall back to a dev key — a vault item sealed under the wrong KEK is
+// than fall back to a dev key - a vault item sealed under the wrong KEK is
 // worse than no vault item, because the reveal fails at the moment someone is
 // trying to verify that reveals work.
 //
@@ -171,7 +171,7 @@ if (!kek) {
     );
     if (!s3field) {
       const id = randomUUID();
-      // playbook_field.value stays EMPTY for s3 — the plaintext lives only in
+      // playbook_field.value stays EMPTY for s3 - the plaintext lives only in
       // the vault (vault law); the field row is the handle the UI reveals from.
       await c.query(
         `INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, created_at, updated_at)
@@ -187,7 +187,7 @@ if (!kek) {
     );
     if (vaulted.length === 0) {
       // Reuse the household's existing wrapped data key if one exists, exactly
-      // as vaultWrite does — one data key per household, not one per value.
+      // as vaultWrite does - one data key per household, not one per value.
       const { rows: [keyed] } = await c.query(
         "SELECT key_ref FROM vault_item WHERE household_id=$1 AND key_ref IS NOT NULL LIMIT 1",
         [hh.id],
