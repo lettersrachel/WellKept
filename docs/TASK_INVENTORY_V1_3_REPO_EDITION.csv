@@ -1,0 +1,345 @@
+Task ID,Level,Pack,Category,Task
+T-001,1,Universal,Walkthrough & watch,Full-house walkthrough to standard
+T-002,1,Universal,Walkthrough & watch,Room-by-room state check
+T-003,1,Universal,Walkthrough & watch,"Leak, pest, damage watch"
+T-004,1,Universal,Walkthrough & watch,Freeze and heat watch checks
+T-005,1,Universal,Walkthrough & watch,"Sump, detector, safety glance"
+T-006,1,Universal,Walkthrough & watch,Post-storm exterior check
+T-007,1,Universal,Walkthrough & watch,Vacant-home checks
+T-008,1,Universal,Walkthrough & watch,Plant care and watering
+T-009,1,Universal,Walkthrough & watch,Fireplace and candle safety glance
+T-010,1,Universal,Kitchen & consumables,Par checks and restock lists
+T-011,1,Universal,Kitchen & consumables,Fridge audit and spoilage pull
+T-012,1,Universal,Kitchen & consumables,"Pantry rotation, dates forward"
+T-013,1,Universal,Kitchen & consumables,Freezer inventory touch
+T-014,1,Universal,Kitchen & consumables,Dishwasher run and unload
+T-015,1,Universal,Kitchen & consumables,Counters reset to standard
+T-016,1,Universal,Kitchen & consumables,Coffee and breakfast station reset
+T-017,1,Universal,Kitchen & consumables,Lunchbox supply check
+T-018,1,Universal,Kitchen & consumables,Kosher or overlay-conform handling
+T-019,1,Universal,Kitchen & consumables,Household cycles
+T-020,1,Universal,Kitchen & consumables,Laundry cycles per standing plan
+T-021,1,Universal,Kitchen & consumables,Linen changes per schedule
+T-022,1,Universal,Kitchen & consumables,Trash and recycling staging
+T-023,1,Universal,Kitchen & consumables,Compost handling
+T-024,1,Universal,Kitchen & consumables,Battery and bulb swaps
+T-025,1,Universal,Kitchen & consumables,Filter changes on cycle
+T-026,1,Universal,Kitchen & consumables,Light seasonal item swaps
+T-027,1,Universal,Kitchen & consumables,Seasonal pre-staging per the anticipation calendar
+T-028,1,Universal,Kitchen & consumables,Mail triage to the tray
+T-029,1,Universal,Kitchen & consumables,Package intake and log
+T-030,1,Universal,Rooms & resets,Playroom reset and toy surface
+T-031,1,Universal,Rooms & resets,Mudroom and entry reset
+T-032,1,Universal,Rooms & resets,Guest room readiness glance
+T-033,1,Universal,Rooms & resets,Bathroom consumables restock
+T-034,1,Universal,Rooms & resets,Bed making per preference
+T-035,1,Universal,Rooms & resets,Kid-kit and go-bag refresh
+T-036,1,Universal,Rooms & resets,Sports gear staging by season
+T-037,1,Universal,Rooms & resets,Sitter card refresh
+T-038,1,Universal,Rooms & resets,Emergency card check
+T-039,1,Universal,Record & capture,Where Registry photo capture
+T-040,1,Universal,Record & capture,New-item intake and tagging
+T-041,1,Universal,Record & capture,Receipt and document photographing
+T-042,1,Universal,Record & capture,Paint and manual archive additions
+T-043,1,Universal,Record & capture,Meter and model number capture
+T-044,1,Universal,Record & capture,Field notes to the record
+T-045,1,Universal,Record & capture,Delight observation notes
+T-046,1,Universal,Record & capture,"Threshold sensing and field notes, outgrowing and readiness signs"
+T-047,1,Universal,Record & capture,Record freshness reconciliation during walkthrough
+T-048,1,Universal,Record & capture,Countdown and clock confirms
+T-049,1,Universal,Record & capture,Safety & Compliance (per the standards library)
+T-050,1,Universal,Record & capture,"Firearms protocol compliance, never handle, note per STD-036"
+T-051,1,Universal,Record & capture,Camera and recording awareness per consent map
+T-052,1,Universal,Record & capture,Child-safeguarding protocol compliance
+T-053,1,Universal,Record & capture,Key and access custody per procedure
+T-054,1,Universal,Record & capture,Alarm arm and disarm per household protocol
+T-055,1,Universal,Record & capture,Utility shutoff location verification
+T-056,1,Universal,Record & capture,Door and visitor verification protocol
+T-057,1,Universal,Record & capture,Product safety and allergen cross-contact discipline
+T-058,1,Universal,Record & capture,Ladder and two-person task limits
+T-059,1,Universal,Record & capture,Media capture per retention and deletion rules
+T-060,1,Universal,Record & capture,Professional Practice (the HOM's own duties)
+T-061,1,Universal,Record & capture,Self-audits per QA-022
+T-062,1,Universal,Record & capture,Coverage attestations per cycle
+T-063,1,Universal,Record & capture,Training modules and standards-refresh reading
+T-064,1,Universal,Record & capture,Incident and near-miss reporting
+T-065,1,Universal,Record & capture,Hours and documentation hygiene
+T-066,1,Universal,Record & capture,Pets (in-home only)
+T-067,1,Universal,Record & capture,Feeding station reset
+T-068,1,Universal,Record & capture,Litter and cage service
+T-069,1,Universal,Record & capture,Supply par checks
+T-070,1,Universal,Record & capture,Water fountains and tanks glance
+T-071,1,Universal,Record & capture,Walk coordination handoff
+T-072,2,Universal,Vendors & services,Vendor scheduling and confirmations
+T-073,2,Universal,Vendors & services,Being home for the vendor
+T-074,2,Universal,Vendors & services,Quality watch and follow-up
+T-075,2,Universal,Vendors & services,Invoice intake to corporate
+T-076,2,Universal,Vendors & services,Service reminder tracking
+T-077,2,Universal,Vendors & services,Recall and notice intake
+T-078,2,Universal,Vendors & services,Warranty window tracking
+T-079,2,Universal,Calendar & family ops,Calendar absorption from feeds
+T-080,2,Universal,Calendar & family ops,School comms triage
+T-081,2,Universal,Calendar & family ops,Forms completion and return
+T-082,2,Universal,Calendar & family ops,RSVP handling
+T-083,2,Universal,Calendar & family ops,Appointment booking
+T-084,2,Universal,Calendar & family ops,Prescription pickup runs
+T-085,2,Universal,Calendar & family ops,Dry clean and repair circuits
+T-086,2,Universal,Calendar & family ops,Returns processing
+T-087,2,Universal,Calendar & family ops,Library and errand circuits
+T-088,2,Universal,Calendar & family ops,Bulk run execution
+T-089,2,Universal,Queues & windows,Queue-day registrations
+T-090,2,Universal,Queues & windows,Waitlist joins and position checks
+T-091,2,Universal,Queues & windows,Lottery entries
+T-092,2,Universal,Queues & windows,Renewal executions
+T-093,2,Universal,Queues & windows,Open-window watches confirmed
+T-094,2,Universal,Queues & windows,Ticket purchases per approval
+T-095,2,Universal,Queues & windows,Purchasing
+T-096,2,Universal,Queues & windows,Approved restock ordering
+T-097,2,Universal,Queues & windows,Default-product purchasing
+T-098,2,Universal,Queues & windows,Gift shelf replenishment
+T-099,2,Universal,Queues & windows,Size-up purchasing per thresholds
+T-100,2,Universal,Queues & windows,Sale-timed purchases from the backlog
+T-101,2,Universal,Queues & windows,Goods receipt and staging
+T-102,2,Universal,Queues & windows,Communication
+T-103,2,Universal,Queues & windows,Same-service-day replies
+T-104,2,Universal,Queues & windows,Photo-first answers
+T-105,2,Universal,Queues & windows,Decision card preparation
+T-106,2,Universal,Queues & windows,Digest inputs
+T-107,2,Universal,Queues & windows,Handoff notes
+T-108,2,Universal,Queues & windows,Meal-train responses
+T-109,3,Universal,Substitutions & standards,Brand substitution within standard
+T-110,3,Universal,Substitutions & standards,Schedule rearrangement within week
+T-111,3,Universal,Substitutions & standards,Small purchases within budget
+T-112,3,Universal,Substitutions & standards,Vendor swap recommendation
+T-113,3,Universal,Substitutions & standards,Overlay-guided decisions
+T-114,3,Universal,Substitutions & standards,Par adjustment proposals
+T-115,3,Universal,Substitutions & standards,Standing instruction proposals
+T-116,3,Universal,Substitutions & standards,Standing-instruction execution on their clocks
+T-117,3,Universal,Discovery & delight,Wonder briefing contributions
+T-118,3,Universal,Discovery & delight,Brief entry local verification
+T-119,3,Universal,Discovery & delight,Delight drop execution
+T-120,3,Universal,Discovery & delight,Whimsy staging
+T-121,3,Universal,Discovery & delight,Tradition pre-staging
+T-122,3,Universal,Discovery & delight,Signature honoring
+T-123,3,Universal,Discovery & delight,Moment day-of adjustments
+T-124,3,Universal,Discovery & delight,People-aware work
+T-125,3,Universal,Discovery & delight,Guest prep to preferences
+T-126,3,Universal,Discovery & delight,Elder rhythm adaptations
+T-127,3,Universal,Discovery & delight,Au pair support coordination
+T-128,3,Universal,Discovery & delight,Teen proposal handling
+T-129,3,Universal,Discovery & delight,Two-household kit parity
+T-130,3,Universal,Discovery & delight,Quiet-season sensitivity
+T-131,3,Universal,Discovery & delight,Showing Up execution
+T-132,4,Universal,Builds & turns,Kit builds all classes
+T-133,4,Universal,Builds & turns,Room age-up turns
+T-134,4,Universal,Builds & turns,"Closet, garage, attic seasons"
+T-135,4,Universal,Builds & turns,Deep spring and fall turns
+T-136,4,Universal,Builds & turns,Holiday decorating up and down
+T-137,4,Universal,Builds & turns,Party staging and strike
+T-138,4,Universal,Builds & turns,Guest room full turn
+T-139,4,Universal,Builds & turns,Home office standing-up
+T-140,4,Universal,Builds & turns,Nursery and dorm builds
+T-141,4,Universal,Builds & turns,Freezer reset
+T-142,4,Universal,Builds & turns,Wardrobe swaps
+T-143,4,Universal,Builds & turns,Playroom builds
+T-144,4,Universal,Builds & turns,Toy rotation service
+T-145,4,Universal,Inventory & records,Full-house Where inventory
+T-146,4,Universal,Inventory & records,Insurance inventory
+T-147,4,Universal,Inventory & records,House Manual drafting
+T-148,4,Universal,Inventory & records,Vault assembly
+T-149,4,Universal,Inventory & records,Tax packet gathering
+T-150,4,Universal,Inventory & records,FSA receipt assembly
+T-151,4,Universal,Inventory & records,Photo box prep for digitization
+T-152,4,Universal,Inventory & records,Seasonal property
+T-153,4,Universal,Inventory & records,Patio open and close
+T-154,4,Universal,Inventory & records,Grill service staging
+T-155,4,Universal,Inventory & records,Planter program execution
+T-156,4,Universal,Inventory & records,Firewood receipt and stack
+T-157,4,Universal,Inventory & records,Playset mulch and check
+T-158,4,Universal,Inventory & records,Pool-vendor season coordination
+T-159,5,Universal,General,Projects
+T-160,5,Universal,General,Minor and major project PM
+T-161,5,Universal,General,Renovation runway management
+T-162,5,Universal,General,Restoration coordination
+T-163,5,Universal,General,Bid gathering and normalization
+T-164,5,Universal,General,Permit and HOA shepherding
+T-165,5,Universal,General,Specialty vendor sourcing
+T-166,5,Universal,General,Punch-list pursuit
+T-167,5,Universal,General,Appliance replacement PM
+T-168,5,Universal,General,Project closeout to vault
+T-169,5,Universal,General,Life arcs
+T-170,5,Universal,General,All Runway classes end to end
+T-171,5,Universal,General,Move management
+T-172,5,Universal,General,Estate transitions
+T-173,5,Universal,General,PCS and deployment arcs
+T-174,5,Universal,General,Foster rapid-arrival
+T-175,5,Universal,General,Elder move-in
+T-176,5,Universal,General,Blended merge
+T-177,5,Universal,General,Settling-in-America
+T-178,5,Universal,Events & travel,Milestone event production
+T-179,5,Universal,Events & travel,Holiday hosting production
+T-180,5,Universal,Events & travel,Gala and party tiers
+T-181,5,Universal,Events & travel,The Trip Planned
+T-182,5,Universal,Events & travel,The Family Trip matrix
+T-183,5,Universal,Events & travel,International circuit
+T-184,5,Universal,Events & travel,Big-park trip planning
+T-185,5,Universal,Events & travel,Programs
+T-186,5,Universal,Events & travel,Flowers and linen programs
+T-187,5,Universal,Events & travel,Premium pantry program
+T-188,5,Universal,Events & travel,Chef-day coordination
+T-189,5,Universal,Events & travel,Security coordination per consent
+T-190,5,Universal,Events & travel,Emergency plan authoring
+T-191,5,Universal,Events & travel,Sponsored membership reassurance ops
+T-192,5,Universal,Events & travel,"Never, At Any Level"
+T-193,5,Universal,Events & travel,Absolute boundaries
+T-194,5,Universal,Events & travel,No driving household members
+T-195,5,Universal,Events & travel,No childcare or supervision
+T-196,5,Universal,Events & travel,No medication management
+T-197,5,Universal,Events & travel,No medical or personal care
+T-198,5,Universal,Events & travel,No legal or financial advice
+T-199,5,Universal,Events & travel,No placement of caregivers
+T-200,5,Universal,Events & travel,No on-call availability
+T-201,5,Universal,Events & travel,No surveillance of household members
+T-202,5,Universal,Events & travel,No entry to declared-private zones
+T-203,5,Universal,Events & travel,No purchases without consent
+T-204,5,Universal,Events & travel,No AI-only decisions
+T-205,5,Universal,Events & travel,"No commissions accepted, ever"
+T-206,5,Universal,Events & travel,Total tasks: 192
+T-207,1,Universal,Appointment preparation,Stage appointment case: objects the visit requires
+T-208,1,Universal,Appointment preparation,Assemble bring-list from the household record
+T-209,2,Universal,Appointment preparation,Confirm provider requirements before the visit
+T-210,2,Universal,Appointment preparation,Capture guided photographs the appointment requires
+T-211,2,Universal,Appointment preparation,Maintain the between-visits question list
+T-212,2,Universal,Appointment preparation,Record post-visit outcome and follow-up interval
+T-213,2,Universal,Appointment preparation,Arm the next appointment clock from the stated interval
+T-214,2,Universal,Appointment preparation,Book-by trigger from provider scheduling lead
+T-215,2,Universal,Appointment preparation,Records release and prior-result request
+T-216,2,Universal,Appointment preparation,Forms requiring signature at the visit staged
+T-217,1,Universal,Appointment preparation,"Retainer, guard, glasses and device staging"
+T-218,2,Universal,Appointment preparation,Insurance card and coverage detail current
+T-219,2,Universal,Vehicle obligations,Inspection and registration document payload
+T-220,2,Universal,Vehicle obligations,Open recall check before service appointment
+T-221,2,Universal,Vehicle obligations,Prior invoice and warranty pull for the visit
+T-222,2,Universal,Warranty and claims,Proof-of-purchase retrieval for claim
+T-223,2,Universal,Warranty and claims,Claim-check before authorising paid repair
+T-224,2,Universal,Warranty and claims,Warranty expiry watch against known defect
+T-225,2,Universal,Government and legal,Document checklist assembly for identity appointments
+T-226,2,Universal,Government and legal,Processing-time watch and lead recompute
+T-227,2,Universal,Government and legal,Notarisation and witness arrangement
+T-228,2,Universal,School obligations,Conference preparation: prior report and question list
+T-229,2,Universal,School obligations,"Form, physical and record payload for enrolment"
+T-230,2,Universal,Vendor arrival prep,"Model, serial and access payload to vendor"
+T-231,2,Universal,Vendor arrival prep,Pre-arrival condition photographs
+T-232,2,Universal,Vendor arrival prep,Scope confirmation to prevent a dead trip
+T-233,1,Universal,Pet obligations,"Vet visit payload: samples, food brand, weight history"
+T-234,2,Universal,Pet obligations,"Licence, chip registry and vaccination currency"
+T-235,2,Universal,Registration windows,"Watch registration open dates, not season dates"
+T-236,2,Universal,Registration windows,Deposit and form submission at window open
+T-237,2,Universal,Registration windows,Waitlist entry and dormant position resurfacing
+T-238,2,Universal,Booking leads,Compute book-by from provider lead per clock
+T-239,2,Universal,Seasonal capacity,Book seasonal trades ahead of demand peak
+T-240,2,Universal,Financial windows,Enrolment and contribution window watch
+T-241,2,Universal,Financial windows,Use-or-lose balance watch before expiry
+T-242,2,Universal,Made to order,Personalisation lead attached to the occasion
+T-243,2,Universal,Made to order,Proof approval and production deadline tracking
+T-244,2,Universal,Reorder cycles,Reorder-by triggers for supplies and prescriptions
+T-245,2,Universal,Growth trajectory,Size trend projection for gear and clothing
+T-246,3,Universal,Growth trajectory,"Propose replacement ahead of the season, not at it"
+T-247,2,Universal,Licences and permits,Permit application ahead of dependent work
+T-248,2,Universal,Licences and permits,Licence and registration renewal watch
+T-249,3,Universal,Review cycles,Event-triggered review prompts after a life change
+T-250,3,Universal,Blockers,Gate check: hold downstream work until the blocker clears
+T-251,3,Universal,Severity,Escalate catastrophic-consequence deadlines early
+T-252,2,Observance,Observance calendar,Source shifting observance dates each year
+T-253,2,Observance,Observance calendar,"Arm the order-by date, not the observance date"
+T-254,1,Observance,Observance preparation,Retrieve stored observance equipment and dishware
+T-255,1,Observance,Observance preparation,Stage observance materials to the declared list
+T-256,2,Observance,Observance preparation,Guest count reconciliation for materials
+T-257,2,Observance,Observance preparation,Pre-observance household preparation sequence
+T-258,4,Observance,Observance preparation,Kitchen changeover for observance requirements
+T-259,2,Observance,Observance preparation,Garment lead time for one-time ceremonies
+T-260,4,Observance,Observance preparation,Structure or installation build against a fixed date
+T-261,2,Observance,Observance preparation,Fasting-cycle provisioning and rhythm support
+T-262,1,Tradition,Family tradition,Retrieve tradition equipment from storage
+T-263,1,Tradition,Family tradition,Bulk ingredient and supply staging for the tradition
+T-264,2,Tradition,Family tradition,Extra-hands invitation and coordination
+T-265,2,Tradition,Family tradition,Tradition build-date scheduling and materials
+T-266,2,Tradition,Family tradition,Lapsed tradition noticed and offered back
+T-267,2,Hobby,Hobby cycles,Season-open equipment inventory and condition check
+T-268,2,Hobby,Hobby cycles,Pre-season service booking for equipment
+T-269,2,Hobby,Hobby cycles,"Consumables reordered before season, not during"
+T-270,2,Hobby,Hobby cycles,Licence and safety-equipment expiry watch
+T-271,1,Hobby,Hobby cycles,Repeat packing list staged for events
+T-272,2,Hobby,Hobby cycles,Garden lead: counted back from last frost
+T-273,2,Hobby,Hobby cycles,"Instrument rental, service and recital preparation"
+T-274,4,Hobby,Hobby cycles,"Season-close cleaning, repair and storage"
+T-275,1,Universal,Laundry and linens,"Laundry cycles run, folded and put away"
+T-276,1,Universal,Laundry and linens,Linen rotation and bed reset to standard
+T-277,1,Universal,Travel support,Unpacking and travel laundry on return
+T-278,1,Universal,Travel support,Packing to the household's travel list
+T-279,1,Universal,Errands,Return runs and exchange handling
+T-280,1,Universal,Errands,Errand stacking across the route
+T-281,1,Universal,Decluttering,Decluttering pass staged for member decision
+T-282,2,Federal,Cleared workforce,Reinvestigation document assembly window
+T-283,2,Federal,Cleared workforce,Foreign-travel notification before booking
+T-284,2,Federal,Cleared workforce,Federal benefit and retirement window watch
+T-285,2,Military,PCS,Report-date backward runway instantiation
+T-286,2,Military,PCS,"Housing, schools and licensing sequence"
+T-287,2,Military,PCS,"Pet transport lead, longest in the chain"
+T-288,2,Military,Deployment,Pre-departure household payload and authorities
+T-289,2,Military,Deployment,Re-entry sequence on return
+T-290,2,Military,Identity,Identification and enrolment renewal watch
+T-291,2,Military,Spouse support,Professional licence portability tracking
+T-292,2,Diplomatic,Posting,Posting-cycle backward runway
+T-293,2,Diplomatic,Posting,International school application season
+T-294,2,Diplomatic,Posting,Household goods shipping and storage lead
+T-295,2,Diplomatic,Posting,Visa and status document sequence
+T-296,2,Immigrant,Filing,Filing and renewal window watch
+T-297,2,Immigrant,Filing,Consular appointment lead and payload
+T-298,2,Immigrant,Family,Annual home-country trip booked at lead
+T-299,2,Immigrant,Family,Visiting-relative hosting preparation
+T-300,2,Immigrant,School,Heritage-language school registration
+T-301,2,Immigrant,School,Dual school calendar reconciliation
+T-302,2,AgingParent,Enrolment,"Annual enrolment window watch, catastrophic tier"
+T-303,2,AgingParent,Care,In-home care scheduling and coverage
+T-304,2,AgingParent,Care,Medication review cycle preparation
+T-305,2,AgingParent,Care,Equipment ordering lead and delivery
+T-306,2,AgingParent,Transitions,Discharge-ready home: compressed backward runway
+T-307,2,AgingParent,Documents,Directive and authority document currency
+T-308,5,AgingParent,Transitions,Move or level-of-care transition coordination
+T-309,2,Disability,Authorisation,Prior-authorisation lead as a blocking gate
+T-310,2,Disability,Scheduling,Specialist booking at long lead
+T-311,2,Disability,Equipment,Durable equipment reorder cycles
+T-312,2,Disability,Programmes,Waitlist and programme queue maintenance
+T-313,2,Disability,School,Support-plan timeline compliance
+T-314,4,Disability,Home,Accessibility modification permitting and build
+T-315,2,Custody,Calendar,Custody calendar as a scheduling constraint
+T-316,2,Custody,Logistics,Handoff logistics and duplicate equipment
+T-317,2,Custody,Communications,Dual-address school and provider records
+T-318,2,Custody,Legal,Court and mediation date preparation
+T-319,2,Custody,Travel,Both-parent consent before child travel
+T-320,2,LaterLife,Teen,Permit and licence milestones with insurance change
+T-321,2,LaterLife,Teen,Testing registration and application deadlines
+T-322,2,LaterLife,College,Aid and scholarship deadline watch
+T-323,4,LaterLife,Transitions,Downsizing and household reduction project
+T-324,2,LaterLife,Documents,Estate and beneficiary review after life events
+T-325,2,Estate,Grounds,Well and septic service cycles
+T-326,2,Estate,Grounds,Generator service and fuel currency
+T-327,4,Estate,Grounds,Tree assessment and scheduled work
+T-328,2,Waterfront,Property,Dock permit and seasonal haul-out
+T-329,2,Waterfront,Property,Flood insurance renewal and certificate currency
+T-330,2,Historic,Property,Architectural review submission lead
+T-331,2,Historic,Property,Period-appropriate material sourcing lead
+T-332,2,HOA,Property,Association application and vote calendar
+T-333,2,HOA,Property,Assessment and reserve notice tracking
+T-334,2,SecondHome,Property,Duplicate calendar in the second jurisdiction
+T-335,2,SecondHome,Property,Opening and closing sequences by season
+T-336,3,Universal,Reconciliation,Merge per-person horizons into one household plan
+T-337,3,Universal,Reconciliation,Detect attention contention in the week
+T-338,3,Universal,Reconciliation,Detect capital contention in the quarter
+T-339,3,Universal,Reconciliation,Detect presence contention in the hour
+T-340,3,Universal,Reconciliation,Deduplicate identical clocks across members
+T-341,3,Universal,Reconciliation,Sequence a cascade from a single announced event
+T-342,3,Universal,Reconciliation,Maintain the forward load view for the household
+T-343,3,Universal,Reconciliation,Assign an owner to every merged item
+T-344,3,Universal,Reconciliation,Apply the attention budget to the week's asks

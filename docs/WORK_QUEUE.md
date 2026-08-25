@@ -655,6 +655,29 @@ flags, freezes the document, and admits the Inventory loader. WL Gate
 2's estimator queues behind the ADOPTION, and scaffolding that binds
 no task ids may begin meanwhile per the instruction.
 
+**Same evening, Task Inventory v1.3 FOUND and the adoption path
+opens (register A582):** the master library held the complete
+344-row catalog, and the confirmed architecture makes both id
+families canonical BY DESIGN: v1.3 is the COMMERCIAL inventory
+(T-ids frozen, the figure-free extract committed as
+TASK_INVENTORY_V1_3_REPO_EDITION.csv, sha256 8dc63328..., read-only
+reference; the full workbook stays library-side), v1.4 is the
+OPERATIONAL inventory (WKT rows, the execution grain task_definition
+and estimates bind to), and MAPS_TO joins them. The premise-check
+refusal to fabricate T-ids is endorsed and registered. Rev2 of the
+draft is DELIVERED: the five review decisions applied (WKT-003
+removed to the conduct set with its close-flow surfacing noted; no
+service-level column permanently, scoping derives through the
+mapping; categories and cadences settled), the MAPS_TO proposal on
+all 64 rows (one-to-many throughout, 15 NO-MAP each with its one
+line, 8 UNCERTAIN for the founder to rule), the CSV's header-artifact
+rows and never-list reported on intake rather than edited, and the
+unclaimed v1.3 families listed as candidates rather than
+force-mapped. The freeze, the provisional flip, the loader, and WL
+Gate 2's estimator all wait on the founder's row verdicts from the
+combined review afternoon, applied through the floor-importer
+discipline.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
