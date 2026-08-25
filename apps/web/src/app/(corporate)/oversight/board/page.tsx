@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, isNull, sql as dsql } from "drizzle-orm";
 import {
   household, visitCommand, timeEntry, membershipEvent, eventOutbox,
   attentionRecord, captureArtifact, incidentReport, workItem, appSetting,
+  householdRoleAssignment,
 } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -89,10 +90,31 @@ export default async function CorporateBoard() {
     inArray(timeEntry.householdId, homeIds),
     eq(timeEntry.category, "delivery"), gte(timeEntry.startedAt, d30),
   ));
+  // The v5 intake ruling (section 3, C-06): cap=5, band=3..5, stored as
+  // versioned config through db:capacity, never hard-coded here; this
+  // page only reads the knob. Null stays the honest unset state.
   const [gateKnob] = await db.select({ value: appSetting.value }).from(appSetting)
     .where(eq(appSetting.key, "capacity_gate"));
-  const gate = gateKnob?.value as { maxHouseholdsPerHom?: number | null } | undefined;
-  const gateThreshold = gate?.maxHouseholdsPerHom ?? null;
+  const gate = (gateKnob?.value ?? null) as import("@wellkept/schema").CapacityGateConfig | null;
+  const gateSet = gate !== null && typeof gate.cap === "number";
+  // The AGGREGATE evaluation the ruling's figures allow: a headcount of
+  // HOM roles across active households and the fleet-wide load against
+  // the band. Arithmetic on founder-stated values, never a per-person
+  // figure (Ruling 1 holds; the reported section 5 conflict stands).
+  const [homCount] = homeIds.length === 0 ? [{ n: 0 }] : await db.select({
+    n: dsql<number>`count(distinct ${householdRoleAssignment.userId})::int`,
+  }).from(householdRoleAssignment).where(and(
+    inArray(householdRoleAssignment.householdId, homeIds),
+    eq(householdRoleAssignment.role, "house_manager"),
+  ));
+  const homs = homCount?.n ?? 0;
+  const load = homs > 0 ? Math.round((homes.length / homs) * 10) / 10 : null;
+  const gateState = !gateSet ? null
+    : homs === 0 ? "no HOM roles assigned; the gate has nothing to evaluate"
+    : load! > gate!.cap! ? `OVER CAP: fleet load ${load} exceeds the covenant-relevant cap of ${gate!.cap}; the hiring gate is tripped`
+    : load! === gate!.cap! ? `AT CAP: fleet load ${load} sits on the cap of ${gate!.cap}`
+    : load! >= gate!.bandMin! ? `WITHIN BAND: fleet load ${load} inside ${gate!.bandMin}..${gate!.bandMax}`
+    : `BELOW BAND: fleet load ${load} under the band floor of ${gate!.bandMin}`;
 
   // Churn: household-level cause codes, never the reason text (s2 stays
   // on the membership row).
@@ -193,15 +215,22 @@ export default async function CorporateBoard() {
           {homes.length} active household{homes.length === 1 ? "" : "s"}
         </div>
         <div className="prov">
-          Hiring-trigger state: {gateThreshold === null
-            ? "GATE UNSET. The capacity_gate knob ships null and nothing triggers until the founder sets it (the flag_promotion posture)."
-            : `households per HOM capped at ${gateThreshold}; evaluation runs in the capacity-gate surface, not here.`}
+          Hiring-trigger state: {!gateSet
+            ? "GATE UNSET. The capacity_gate knob ships null and nothing triggers until db:capacity loads the ruling's figures (the flag_promotion posture)."
+            : gateState}
         </div>
+        {gateSet && (
+          <div className="prov">
+            Gate set: cap {gate!.cap}, band {gate!.bandMin} to {gate!.bandMax} (versioned
+            config; the cap is covenant-relevant, and a cap change is a two-key
+            model change before it is a config change).
+          </div>
+        )}
         <div className="prov">
           Aggregate by construction: per-HOM figures live in the covenant
           report and the capacity-gate evaluation only (Ruling 1).
         </div>
-        <Discipline owner="the founder" threshold={gateThreshold === null ? "founder-unset (capacity_gate knob)" : String(gateThreshold)} />
+        <Discipline owner="the founder" threshold={!gateSet ? "founder-unset (capacity_gate knob)" : `cap ${gate!.cap}, band ${gate!.bandMin}..${gate!.bandMax}`} />
       </div>
 
       <div className="card">

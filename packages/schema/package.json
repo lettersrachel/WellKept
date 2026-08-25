@@ -17,7 +17,8 @@
     "db:hg": "node src/provision-hg.ts",
     "db:dump": "node src/dump-seed.ts",
     "db:rewrap-kek": "node src/rewrap-kek.ts",
-    "db:tasks": "node src/seed-tasks.ts"
+    "db:tasks": "node src/seed-tasks.ts",
+    "db:capacity": "node src/set-capacity.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
