@@ -191,6 +191,12 @@ test("work-item journey: refused short, opened with its event, blocked with reas
   await page.getByLabel("Reason or completion note").fill("waiting on the vendor's quote");
   await page.getByRole("button", { name: "Apply" }).click();
   await expect.poll(() => count("SELECT count(*)::int n FROM work_item WHERE household_id=$1 AND status='blocked'"), { timeout: 20_000 }).toBe(1);
+  // Wait for the page's OWN post-action render before touching the form
+  // again: the DB row landing does not mean the redirect finished, and a
+  // selectOption against the stale pre-block DOM submits a form that the
+  // navigation then discards (the race CI caught on 2026-08-25; the row
+  // count stayed 0 because the second Apply never really fired).
+  await expect(page.getByText("blocked: waiting on the vendor's quote")).toBeVisible({ timeout: 15_000 });
 
   await page.getByLabel("Work item decision").selectOption("done");
   await page.getByLabel("Reason or completion note").fill("vendor booked for the second week of October");
@@ -218,6 +224,10 @@ test("attention journey: seen is a whole pair, resolving demands words, and the 
   await expect.poll(async () =>
     (await pool.query("SELECT count(*)::int n FROM attention_record WHERE id=$1 AND acknowledged_at IS NOT NULL AND acknowledged_by IS NOT NULL", [attnId])).rows[0].n,
   { timeout: 20_000 }).toBe(1);
+  // Same stale-DOM hazard as the work-item journey: the Resolve form
+  // existed before the Seen redirect, so wait for the acknowledged
+  // render (the Seen button disappears) before clicking into it.
+  await expect(page.getByRole("button", { name: "Seen" })).toHaveCount(0, { timeout: 15_000 });
 
   // Resolving without words refuses visibly.
   await page.getByRole("button", { name: "Resolve" }).click();

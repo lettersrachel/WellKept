@@ -171,6 +171,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("windowCondition", "blockedReason") || has("window_condition", "blocked_reason")) {
       throw new Error(`SEVERE: a work_item row reached a client payload at ${path}`);
     }
+    // WK-DEV-009 s2.1: a brief snapshot is the staff projection verbatim
+    // (s2 by construction); no client projection exists, so any
+    // recognizable row is the violation.
+    if (has("contentHash", "strangerMode") || has("content_hash", "stranger_mode")
+      || has("briefedUser", "payload") || has("briefed_user", "payload")) {
+      throw new Error(`SEVERE: a visit_brief_snapshot row reached a client payload at ${path}`);
+    }
     // WK-DEV-009 s8: a capture artifact is the HOM's own words about the
     // household (s2), pre-filing; no client projection exists, so any
     // recognizable row is the violation. The key pair is the object's

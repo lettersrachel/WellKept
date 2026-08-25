@@ -146,6 +146,14 @@ Four documents, one per audience and direction:
   deleted with the household on erasure once filed onward. Recorded by
   a named staff member, also STAFF data (captured_by, filed_by); joins
   the G-13 founder line candidates.
+- **Visit brief snapshots** (added 2026-08-25, WK-DEV-009 §2.1): every
+  pre-visit brief composed for a staff member, kept exactly as shown
+  (deduped by content), so what a staff member was told about the
+  household is always reconstructable. Internal (s2); never shown to
+  the client; on erasure the brief content is blanked and the skeleton
+  kept (that a brief was shown, when, to whom). Also STAFF data
+  (which staff member was briefed); joins the G-13 founder line
+  candidates.
 - **Account & activity**, email, role, and an append-only audit log of who
   accessed or changed what.
 
