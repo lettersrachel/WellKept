@@ -1249,3 +1249,29 @@ export const taskDefinition = pgTable("task_definition", {
   check("task_definition_provisional_xor_canonical",
     sql`(${t.provisional} = true AND ${t.canonicalTaskId} IS NULL) OR (${t.provisional} = false AND ${t.canonicalTaskId} IS NOT NULL)`),
 ]);
+
+// WL Gate 1 object 2 (WK-DEV-010 section 3): the Household Task
+// Profile, how a reusable task manifests in ONE household. The
+// boundaries hold by construction: semantics live on task_definition
+// (global), date/context instances are Work Requirements (next object),
+// and DURATIONS ARE ABSENT on purpose: estimates belong to the Estimate
+// Snapshot object, so no duration-typed column enters here and the D7
+// wall stays wide. cadence is the household's rhythm in words (the
+// registry's cadence posture; a structured cadence vocabulary is a
+// taxonomy the founder owns); notes are how THIS household wants the
+// task done, s2. One profile per task per household, held by the unique
+// index. Erasure follows the registry posture: free text blanks,
+// skeleton tombstones.
+export const householdTaskProfile = pgTable("household_task_profile", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  taskDefinitionId: uuid("task_definition_id").notNull().references(() => taskDefinition.id),
+  active: boolean("active").notNull().default(true),
+  cadence: text("cadence"), // the household's rhythm, in words
+  notes: text("notes").notNull().default(""), // how this household wants it done; s2
+  configuredBy: text("configured_by").notNull().references(() => authUser.id),
+  tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }),
+}, (t) => [
+  index("household_task_profile_household_idx").on(t.householdId),
+  uniqueIndex("household_task_profile_one_per_task").on(t.householdId, t.taskDefinitionId),
+]);

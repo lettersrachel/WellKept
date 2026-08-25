@@ -95,6 +95,10 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  household_task_profile:
+    "WL Gate 1, 2026-08-25: configured_by records which corporate user set how a task " +
+    "manifests in a household; a corporate configuration act, generic action-log " +
+    "coverage; a named line is a founder decision, not a drift",
   task_definition:
     "WL Gate 1, 2026-08-25: created_by records which corporate user authored a global " +
     "task definition (reusable semantics, no member data), the provision_versions " +

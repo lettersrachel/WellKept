@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -94,6 +94,16 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(attentionRecord.householdId, hh.id))
     .orderBy(desc(attentionRecord.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
+  // WL Gate 1 object 2: how tasks manifest here, with the global library
+  // for the configure form.
+  const taskProfiles = await db.select({
+    id: householdTaskProfile.id, cadence: householdTaskProfile.cadence,
+    notes: householdTaskProfile.notes, active: householdTaskProfile.active,
+    tombstonedAt: householdTaskProfile.tombstonedAt, taskName: taskDefinition.name,
+  }).from(householdTaskProfile)
+    .innerJoin(taskDefinition, eq(taskDefinition.id, householdTaskProfile.taskDefinitionId))
+    .where(eq(householdTaskProfile.householdId, hh.id));
+  const taskDefs = await db.select().from(taskDefinition).orderBy(taskDefinition.name);
   // RFC-PRIM-01 build 3: routed choices, pending first.
   const decisions = (await db.select().from(decisionRecord)
     .where(eq(decisionRecord.householdId, hh.id))
@@ -759,6 +769,43 @@ export default async function Oversight({ params, searchParams }: {
           <input name="windowCondition" aria-label="Or a stated window" placeholder="or a stated window" style={{ flex: 1, marginTop: 0, minWidth: 120 }} />
           <button className="act">Open work item</button>
         </form>
+      </div>
+
+      <div className="card">
+        <h2>Task profiles (WL Gate 1)</h2>
+        <div className="note">
+          How each reusable task manifests HERE: the household&apos;s rhythm and
+          how they want it done. Semantics live in the global library
+          (<Link href="/oversight/tasks">task definitions</Link>); durations
+          never enter a profile (estimates are the Estimate Snapshot
+          object&apos;s, and the D7 wall stays wide).
+        </div>
+        {taskProfiles.filter((p) => !p.tombstonedAt).length === 0 && (
+          <div className="prov">No task profiles configured on this household yet.</div>
+        )}
+        {taskProfiles.filter((p) => !p.tombstonedAt).map((p) => (
+          <div key={p.id} className="field">
+            <span className="fname">{p.taskName}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {p.active ? "active" : "inactive"}{p.cadence ? ` · ${p.cadence}` : ""}
+              </span>
+            </span>
+            {p.notes && <div className="fval sans" style={{ fontSize: 13 }}>{p.notes}</div>}
+          </div>
+        ))}
+        {isAdminOrOps && taskDefs.filter((d) => !d.tombstonedAt).length > 0 && (
+          <form action={configureTaskProfile} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="taskDefinitionId" className="inline" aria-label="Task to configure">
+              {taskDefs.filter((d) => !d.tombstonedAt).map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            <input name="cadence" aria-label="Rhythm here" placeholder="rhythm here (weekly; every visit)" style={{ flex: 1, marginTop: 0, minWidth: 140 }} />
+            <input name="notes" aria-label="How this household wants it done" placeholder="how this household wants it done" style={{ flex: 2, marginTop: 0, minWidth: 180 }} />
+            <button className="act subtle">Configure</button>
+          </form>
+        )}
       </div>
 
       <div className="card">

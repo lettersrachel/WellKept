@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ marginTop: 18 }}>What we collect</h2>
       <div className="fval">
-        Household operating details (routines, preferences, standards, layout) to run your
+        Household operating details (routines, preferences, standards, layout, and how each standing task is done in your home) to run your
         household; secured details (access codes, alarm info) to care for the home, held
         encrypted with every access logged; visit records (tasks, hours, notes, photos, and
         what we noticed but deliberately set aside for later, with the reason and the
