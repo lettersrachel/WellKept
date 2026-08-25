@@ -63,9 +63,43 @@ drill-in read raises questions; everything here is read-only.
 
 ## Step 4: closing the loop
 
-Once the grant has run in production, the check-15 allowlist entry for
-`d05ab5a2` comes OUT of tooling/smoke-mechanical.sh (the household
-holds a corporate role and passes the census on its own); the removal
-rides the next repo session after the founder confirms the run, and
-the weekly note records the grant's audit reference per the proceed
-instructions.
+**DONE 25 August 2026, evening.** The founder ran the grant in
+production: `lettersrachel+ftc-admin@gmail.com` holds corporate_admin
+on Field Test Home, `ndaApproved` false as designed, the
+`audit_subject_token` minted (32a207a2, kind=email) and the
+`role_assigned` row carrying `provisionedVia: db:grant` with the
+register citation in its reason. The census then read **no household
+without a corporate holder**, so the check-15 allowlist entry came out
+of tooling/smoke-mechanical.sh and the allowlist is empty again: the
+first exception was disposed of, not carried.
+
+An alter identity was used rather than the founder's own login, which
+is the right call and worth recording: her primary account already
+holds `house_manager` on this household, and the one-role index
+constrains (user, household), so a corporate grant to the same user
+would have collided with her field role. Two users, two roles, no
+index change, and the audit reads honestly on both.
+
+**One unaudited write, recorded rather than papered over:** the
+grantee's `auth_user` row was inserted directly, because `db:grant`
+deliberately refuses to create people and `auth_user` has no household
+to attach an audit row to. There is no audited path for creating an
+identity today. That is a real gap in the trail, small and known; if a
+second one ever appears, the fix is an identity-creation act that
+attributes to the corporate actor rather than a script that quietly
+creates people.
+
+## What the inspection found on arrival (25 August)
+
+Two facts from the founder's first reachable look, both recorded here
+so the disposition decision has them:
+
+- The household's oldest rows are a **July import of 258 template
+  fields**: a fully provisioned tenant that no corporate operator
+  could see for a month. This is the strongest argument the check-15
+  census could have been given for existing.
+- A **capture_artifact written 16:41 on 25 August as house_manager**,
+  which is the founder's own Tell Well Kept test from the section 4
+  sitting: /visit resolved to this household (see G-65), so the
+  sitting's "test capture awaiting dismissal" was sitting here, in a
+  queue nobody could open. It can be dismissed now.

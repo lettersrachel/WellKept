@@ -720,6 +720,34 @@ vocabulary: the estimate hierarchy and calibration models remain
 Gate 2's verbatim adoptions, gated on HG actuals and the Inventory
 adoption. Twenty-four e2e green.
 
+**And the Field Test Home grant RAN in production (A581 item 1, the
+same evening), closing the check-15 exception and opening G-65:** the
+founder ran `pnpm db:grant` against production, granting an ALTER
+corporate identity (her primary account already holds house_manager
+there, and the one-role index constrains user-by-household, so two
+users was the correct shape and no index changed); the audit reads
+role_assigned at 18:34:35 with its minted subject token,
+ndaApproved false, and the register citation in the reason field. The
+census then read NO household without a corporate holder, so the
+check-15 allowlist ENTRY CAME OUT and the allowlist is empty again:
+the guard's first exception was disposed of rather than carried, which
+is the escape-hatch rule finishing its own sentence. Recorded rather
+than papered over: the grantee's auth_user row was an unaudited direct
+insert, because db:grant refuses to create people and auth_user has no
+household to attach an audit row to (no audited identity-creation path
+exists today). The first reachable look also found the household's
+oldest rows are a JULY IMPORT OF 258 TEMPLATE FIELDS, a fully
+provisioned tenant invisible to every corporate operator for a month,
+which is the strongest case the census could be given for existing.
+**G-65 FILED, reported not fixed:** /visit resolves the field surface
+to the first house_manager/backup_hm assignment by household age
+(data.ts:46), so the founder's own Tell Well Kept test at the sitting
+captured onto Field Test Home and then sat in a queue she could not
+open; the resolution rule is her decision between three named shapes
+(leave it, an explicit chooser, or a meaningful ordering), and the
+interim needs no code (revoking her field role there re-resolves
+/visit by the same rule after the inspection).
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
