@@ -671,3 +671,69 @@ test("work requirement: instantiated from a profile with timing, verified only f
     await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
   }
 });
+
+test("estimate snapshot: appended never updated, blank is an honest unknown, zero refused server-side", async ({ context, page }) => {
+  // WL Gate 1 object 4: history is the point; the latest renders, the
+  // count says the estimate moved, and zero can never impersonate
+  // unknown.
+  const defId = randomUUID();
+  const profId = randomUUID();
+  const reqId = randomUUID();
+  await pool.query("INSERT INTO task_definition (id, name, created_by) VALUES ($1,$2,$3)",
+    [defId, `Journey gutter clear ${defId.slice(0, 8)}`, rachelId]);
+  await pool.query(
+    "INSERT INTO household_task_profile (id, household_id, task_definition_id, configured_by) VALUES ($1,$2,$3,$4)",
+    [profId, synId, defId, rachelId]);
+  await pool.query(
+    "INSERT INTO work_requirement (id, household_id, task_profile_id, context_window, created_by) VALUES ($1,$2,$3,$4,$5)",
+    [reqId, synId, profId, "first dry week", rachelId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await expect(page.getByRole("heading", { name: /Work requirements/ })).toBeVisible({ timeout: 30_000 });
+
+    // First estimate, with minutes.
+    await page.getByLabel("Estimated minutes").fill("45");
+    await page.getByLabel("Estimate basis").fill("manual corporate judgment");
+    await page.getByRole("button", { name: "Record estimate" }).click();
+    const count = async () => (await pool.query(
+      "SELECT count(*)::int n FROM estimate_snapshot WHERE household_id=$1", [synId])).rows[0].n as number;
+    await expect.poll(count, { timeout: 20_000 }).toBe(1);
+    const { rows: [ev] } = await pool.query(
+      "SELECT provenance, actor, object_id, correlation_id, event_version FROM event_outbox WHERE household_id=$1 AND kind='estimate_snapshot.recorded'",
+      [synId]);
+    expect(ev.provenance).toBe("action:recordEstimate");
+    expect(ev.actor).toBe(rachelId);
+    expect(ev.correlation_id).toBe(reqId);
+    expect(ev.event_version).toBe(1);
+    await expect(page.getByText(/Estimate: 45 min/)).toBeVisible({ timeout: 15_000 });
+
+    // Second estimate, blank minutes: an APPEND recording an honest
+    // unknown; the first row survives untouched.
+    await page.getByLabel("Estimated minutes").fill("");
+    await page.getByLabel("Estimate basis").fill("waiting on the first timed run");
+    await page.getByRole("button", { name: "Record estimate" }).click();
+    await expect.poll(count, { timeout: 20_000 }).toBe(2);
+    const { rows: history } = await pool.query(
+      "SELECT estimated_minutes, basis FROM estimate_snapshot WHERE household_id=$1 ORDER BY created_at DESC",
+      [synId]);
+    expect(history[0].estimated_minutes).toBeNull();
+    expect(history[1].estimated_minutes).toBe(45);
+    expect(history[1].basis).toBe("manual corporate judgment");
+    await expect(page.getByText(/Estimate: unknown/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("2 estimates on record")).toBeVisible();
+
+    // Zero refused SERVER-SIDE: the input carries no HTML min, so the
+    // action's refusal (and behind it the CHECK) is what fires.
+    await page.getByLabel("Estimated minutes").fill("0");
+    await page.getByLabel("Estimate basis").fill("a zero pretending to be unknown");
+    await page.getByRole("button", { name: "Record estimate" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count()).toBe(2); // nothing landed
+  } finally {
+    await pool.query("DELETE FROM estimate_snapshot WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM work_requirement WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM household_task_profile WHERE id=$1", [profId]);
+    await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
+  }
+});

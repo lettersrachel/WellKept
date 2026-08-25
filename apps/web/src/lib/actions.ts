@@ -1881,3 +1881,52 @@ export async function progressWorkRequirement(formData: FormData) {
   };
   recordedTo(returnTo, `work requirement ${SAID[decision]}`);
 }
+
+/**
+ * WL Gate 1 object 4: recording an estimate is an APPEND, never an
+ * update; the requirement's estimate history is the whole point. Blank
+ * minutes records an honest unknown (NULL); zero is refused here and by
+ * the CHECK, because an unknown duration must never silently become
+ * zero. The basis is required in words; the hierarchy vocabulary waits
+ * for Gate 2's verbatim adoption, so basis is free text for now.
+ * Estimates describe the task, never the estimator (Ruling 1).
+ */
+export async function recordEstimate(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const workRequirementId = String(formData.get("workRequirementId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(workRequirementId)) refuseTo(returnTo, "bad-input");
+  const minutesRaw = String(formData.get("estimatedMinutes") ?? "").trim();
+  let estimatedMinutes: number | null = null;
+  if (minutesRaw !== "") {
+    const parsed = Number(minutesRaw);
+    if (!Number.isInteger(parsed) || parsed <= 0) refuseTo(returnTo, "bad-input"); // zero is not unknown
+    estimatedMinutes = parsed;
+  }
+  const basis = String(formData.get("basis") ?? "").trim().slice(0, 500);
+  if (basis.length < 4) refuseTo(returnTo, "gate-unmet");
+  const { workRequirement, estimateSnapshot } = await import("@wellkept/schema");
+  const [req] = await db.select().from(workRequirement).where(eq(workRequirement.id, workRequirementId));
+  if (!req || req.householdId !== householdId) refuseTo(returnTo, "missing");
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(estimateSnapshot).values({
+      id, householdId, workRequirementId, estimatedMinutes, basis, estimatedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "estimate_snapshot.recorded",
+      payload: { estimateSnapshotId: id, workRequirementId },
+      provenance: "action:recordEstimate", objectId: id,
+      actor: principal.userId, correlationId: workRequirementId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "estimate_snapshot", detail: { estimateSnapshotId: id, workRequirementId, action: "recorded" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, estimatedMinutes === null ? "estimate recorded as unknown" : "estimate recorded");
+}
