@@ -106,6 +106,13 @@ const ALLOWLIST: Record<string, string> = {
     "no-HOM-speed-coefficient guardrail), so the record attributes the writing of the " +
     "actuals, never the performing of the work; generic action-log coverage; a named " +
     "line is a founder decision, not a drift",
+  time_segment:
+    "WL Gate 1, 2026-08-25: recorded_by exists ONLY on a hom_refinement row (the " +
+    "CHECK refuses it on every derived source), attributing a HOM's own optional " +
+    "after-the-fact subdivision; derived segments carry no person by CHECK, the " +
+    "covenant events' no-person posture, and attribution joins through time_entry " +
+    "under the approved G-13 item; the surface waits on the refinement UI, so no row " +
+    "can carry it yet",
   work_requirement:
     "WL Gate 1, 2026-08-25: created_by, completed_by, and verified_by attribute planned " +
     "work instances (the written-work item's territory); shipped after the disclosure " +

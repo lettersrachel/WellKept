@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import {
   household, authUser, conditionFlag, objectObservation, deferral,
-  pausedDecision, visitCommand, eventOutbox, timeEntry,
+  pausedDecision, visitCommand, eventOutbox, timeEntry, timeSegment,
 } from "@wellkept/schema";
 import { db } from "./db";
 import { applyVisitCommand } from "./visit-command-store";
@@ -42,6 +42,7 @@ afterAll(async () => {
   await db.delete(deferral).where(eq(deferral.householdId, H));
   await db.delete(pausedDecision).where(eq(pausedDecision.householdId, H));
   await db.delete(eventOutbox).where(eq(eventOutbox.householdId, H));
+  await db.delete(timeSegment).where(eq(timeSegment.householdId, H));
   await db.delete(timeEntry).where(eq(timeEntry.householdId, H));
   if (created.commands.length) await db.delete(visitCommand).where(inArray(visitCommand.id, created.commands));
   await db.delete(household).where(eq(household.id, H));
@@ -158,7 +159,10 @@ test("REQ-083: an applied visit with hours emits the two covenant events in the 
 
   const events = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
   const kinds = events.map((e) => e.kind).sort();
-  assert.deepEqual(kinds, ["visit.arrival", "visit.departure"], "exactly the arrival and departure taps");
+  // 0054: the taps also derive the visit's active time segment in the
+  // same transaction, so its event rides beside the covenant pair.
+  assert.deepEqual(kinds, ["time_segment.derived", "visit.arrival", "visit.departure"],
+    "the arrival and departure taps plus the segment they derive");
   const arrival = events.find((e) => e.kind === "visit.arrival")!;
   const departure = events.find((e) => e.kind === "visit.departure")!;
   assert.equal(arrival.occurredAt.toISOString(), "2026-08-24T09:00:00.000Z");
@@ -182,7 +186,23 @@ test("REQ-083: an applied visit with hours emits the two covenant events in the 
     },
   });
   const after = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
-  assert.equal(after.length, 2, "replay must not double the covenant events");
+  assert.equal(after.length, 3, "replay must not double the covenant events or the segment");
+});
+
+test("WL Gate 1 (0054): the applied visit's taps derive its active segment, personless, in the same transaction", async () => {
+  const segments = await db.select().from(timeSegment).where(eq(timeSegment.householdId, H));
+  assert.equal(segments.length, 1, "exactly one segment derived from the one applied-with-hours visit");
+  const seg = segments[0]!;
+  assert.equal(seg.kind, "active");
+  assert.equal(seg.source, "derived_taps");
+  assert.equal(seg.startedAt.toISOString(), "2026-08-24T09:00:00.000Z");
+  assert.equal(seg.endedAt.toISOString(), "2026-08-24T12:30:00.000Z");
+  // A derived segment is a system row: no person, by CHECK; the HOM
+  // joins through time_entry when attribution is needed.
+  assert.equal(seg.recordedBy, null);
+  // The evidence pointer is the visit command itself.
+  const [cmd] = await db.select().from(visitCommand).where(eq(visitCommand.id, seg.derivedFrom));
+  assert.equal(cmd?.householdId, H, "derived_from names the applied visit command");
 });
 
 test("REQ-083, the refusing directions: no hours means no taps, and a conflicted visit emits nothing", async () => {

@@ -307,4 +307,15 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     () => assertNoAnticipationRows({ deep: { actual_minutes: 40, variance_note: "shutoff stuck" } }),
     /task_occurrence/,
   );
+
+  // WL Gate 1: a time segment never reaches a client (the D7 wall
+  // covers the window a duration computes from).
+  assert.throws(
+    () => assertNoAnticipationRows([{ derivedFrom: "cmd-1", startedAt: "2026-08-25T14:00:00Z" }]),
+    /time_segment/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { derived_from: "cmd-1", kind: "active" } }),
+    /time_segment/,
+  );
 });

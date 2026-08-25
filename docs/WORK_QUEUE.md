@@ -368,6 +368,42 @@ with the envelope, the exception append (count 2, first row
 untouched, no performer column), and the zero refusal. Twenty-one
 e2e green. Remaining Gate 1: Time Segment.
 
+**And Gate 1 CLOSES (0054):** `time_segment` exists, the WK-DEV-008
+section 3 ruling adopted whole: the nine-kind taxonomy verbatim as
+the STORAGE model, and MANUAL PER-SEGMENT FIELD TIMING
+UNREPRESENTABLE the way 0052 made zero unrepresentable. Four walls,
+all structural: the source vocabulary carries only the three
+derivations plus the ruling's one sanctioned hom_refinement (no
+manual value exists to claim, proven refused in SQL); every row
+names its evidence (derived_from, never NULL); a derived row is a
+system row carrying NO person while a refinement row requires its
+author (whole-or-absent both directions by CHECK); and the window is
+ordered with the DURATION COMPUTED, never stored, so no minutes
+column exists to drift or to enter the client-duration census.
+Re-derivation is a no-op on a partial unique index (refinement rows
+excluded, since a HOM may subdivide one visit into several same-kind
+segments; proven refusing the duplicate and accepting the two
+refinements). v1 derivation is LIVE: an applied visit's taps become
+its active segment in the visit's own transaction (the time_entry
+precedent), personless, with time_segment.derived on the s4 envelope
+riding beside the covenant pair; the sink integration suite asserts
+the third event deliberately and the airplane drill proves the
+offline visit derived its segment with the HOM entering no analytics
+event. derived_close_flow and derived_travel are named in the
+vocabulary so their sweeps arrive without a migration; the optional
+refinement surface likewise. Erasure is the time_entry class exactly
+(no free text exists at all; kept by default, deleted under the
+counsel-directed flag with the entries), guard proven red first;
+payload signature, disclosure allowlist (red first), and the
+service-time category extension in both privacy copies same-PR.
+Six SQL refusals, three accepting shapes; twenty-one e2e green.
+**WL GATE 1 IS COMPLETE: all six objects built and merged**
+(task_definition 0049, household_task_profile 0050, work_requirement
+0051, estimate_snapshot 0052, task_occurrence 0053, time_segment
+0054). Gate 2 (estimator and calibration) waits on HG actuals per
+WK-DEV-008; the Task Evidence Store and Source Registry are their
+own later sessions.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
