@@ -184,6 +184,7 @@ export default async function Oversight({ params, searchParams }: {
           {isAdmin && <Link className="pill" href={`/oversight/${hh.id}/preview/hm`}>View as HM</Link>}
           {isAdmin && <Link className="pill" href={`/oversight/${hh.id}/preview/client`}>View as client</Link>}
           <Link className="pill" href={`/oversight/${hh.id}/exhibit`}>Exhibit pack</Link>
+          <Link className="pill" href={`/oversight/${hh.id}/scan-sheet`}>Scan sheet</Link>
         </div>
         <form action={setStatusTag} className="row">
           <span>Status tag (drives app-wide behavior, REQ-041)</span>

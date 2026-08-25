@@ -212,6 +212,23 @@ Off-shift boundaries wait on shift data the system does not hold
 (recorded, not approximated); SITUATIONS bundling is its own session,
 stubbed by name in the policy module.
 
+**And contextual entry (section 3.3, no migration):** scanning an
+asset opens the operational context, not a label page: /context/[id]
+(staff-gated through the principal's own assignment, sensitivity
+through the permission core, behind the staff second factor) renders
+the entry's facts, maintenance clocks computed from facts that only
+change when the world does (key_date wins where set), open condition
+flags and the observation series on the object, and a Tell Well Kept
+box already resolved to the asset, one gesture from the scan and
+returning to the context with the recorded banner. The per-household
+scan sheet on the drill-in lists the paths to encode; the QR encoder
+stays a founder tool under the pinned no-new-dependencies stack.
+Warranty, consumables, vendor, and the governing standard join when
+those facts exist on the entry, named rather than faked; work items
+link when assets gain a work reference (WL Gate 1). The journey
+proves the resolved context, the computed clock, the one-gesture
+capture, and the tenant wall. Sixteen e2e green.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
