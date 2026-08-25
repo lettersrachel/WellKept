@@ -639,6 +639,22 @@ ledger (response sheet section 6, delivered 25 Aug), with the two
 holds standing: RelationshipMomentRecord schema-free until her
 written definition, AIHumanHandoff only in the Tier M gate's PR.
 
+**And Task Inventory v1.4 is DRAFTED (A581 item 5, the same evening,
+delivered for founder review):** TASK_INVENTORY_V1_4_DRAFT.md, a
+DERIVED catalog, not a reconstruction, exactly as the premise finding
+required: the citation trail is not repository-side, so the draft
+derives 65 recurring work units from the two sources that exist (the
+whole 1,146-provision store read section by section, and the live
+close-flow list), in a NEW WKT-### namespace that can never claim the
+T-001..344 identities, with every row citing the store sections it
+derives from and the founder's columns deliberately blank (service
+levels, pack taxonomy, cadences, plus the four rule-shaped rows
+flagged for her call). The four live provisional definitions are
+mapped to draft rows; adoption is the event that resolves provisional
+flags, freezes the document, and admits the Inventory loader. WL Gate
+2's estimator queues behind the ADOPTION, and scaffolding that binds
+no task ids may begin meanwhile per the instruction.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
