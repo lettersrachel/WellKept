@@ -1,0 +1,88 @@
+---
+status: frozen
+---
+# WK-DEV-009 v1.1 · HOM Ambient Attention: Unified Developer Brief
+24 August 2026 · Supersedes the standalone ambient brief and the v1.0 incorporation as the single developer-facing document (both remain filed as lineage). Adopted under the standing two-key software authorization; register A573. Figure-free; enters docs/. Reads with WK-DEV-006 (discipline), WK-DEV-007 (build authorization and the input-spine perfection standard), and WK-DEV-008 (the workload evidence layer this document fills).
+
+## 0. Core design rule and the one tag that governs everything
+The HOM manages the household. The software observes, organizes, drafts, remembers, and learns around the HOM, and the frontline gets QUIETER as household knowledge matures. Sophistication belongs in the backend.
+
+Every capability below carries one of two tags:
+- **[D]** Deterministic: needs no model inference. Authorized NOW; this work IS the input-spine perfection priority in WK-DEV-007 section 2, not competition for it.
+- **[M]** Model-gated: requires AI inference. Designed and stubbed now behind flags; NOTHING infers until the founders open the Tier M gate (section 12). Building [D] first is not a compromise: most of the friction reduction in this document is [D].
+
+## 1. The HOM Attention Budget [D]
+HOM attention is a scarce operating resource. Every field, prompt, timer, notification, and confirmation passes this ladder before reaching the frontline:
+1. Derive automatically from Playbook, task profile, trigger state, schedule, asset, workflow state, or household history.
+2. Import from an existing approved source (calendar, feed, system input already required for the work).
+3. Extract via AI from voice, photo, scan, document, or natural language [M].
+4. Prefill and confirm: show the predicted value or compact change; the HOM corrects.
+5. Exception-only question: ask only because something differs from expected or a required field cannot be inferred.
+6. Manual entry: last resort for genuinely novel information or professional judgment.
+
+**Engineering review question, standing:** before any new HOM-facing input lands, the PR states why it cannot be derived, imported, extracted, or deferred to batch review. If the only answer is "analytics need it," redesign the analytics capture.
+
+**Attention telemetry [D]:** instrument manual_fields_entered, confirmations, searches, screen_transitions, notification_interruptions, playbook_manual_edits, ai_corrections, duplicate_entry_events, close_flow_seconds, and avoidable_admin_touch. Governance rule, enforced in the permission matrix like utilization (Ruling 1): this telemetry exists for product and process improvement, is corporate-visible only, never appears in any per-HOM comparative or evaluative surface, and never becomes a speed score. The weekly build note reports avoidable touches per visit, trending down.
+
+## 2. The three-interaction day
+**2.1 Before: one intelligent brief [D].** No hunting across Calendar, Tasks, Inventory, Vendors, Standards, Notes, Messages, Weather, and Open Loops. The briefing service composes one screen: what is different from normal household state; priority outcomes as groups, not a flat task list; time and constraint changes; only the history that materially changes today's work; true unresolved decisions (explicitly "none" when none); known risk or friction; an optional micro-window opportunity, never a productivity countdown. Every brief is persisted as an immutable Visit Brief Snapshot so what the HOM was shown is always reconstructable.
+
+**2.2 During: stay in the physical work.** Normal recurring work requires no task-by-task form completion [D]. One universal "Tell Well Kept" action accepts voice, photo, or short text for anything unexpected; classification is the system's job, never the HOM's (routing rules [D]; content extraction [M]). Context-aware shortcuts [D]: inside Household A, scanning Asset X opens the household, asset, governing standard, and open history already resolved. Conditional standards show only the branch the observed condition needs. Detailed timing appears only in calibration mode or meaningful exceptions (WK-DEV-008's ruling stands: manual per-segment timing is prohibited in v1; segments derive from taps and timestamps).
+
+**2.3 After: the drafted close.** At departure the system already knows the planned Work Requirements, workflow events, arrival and departure, scans, photos, vendor actions, purchases, open loops, and any voice notes. A close draft is assembled from deterministic events now [D]; AI-composed prose and voice-note integration come with Tier M. The rendering contract, either way:
+- Routine completions ("11 expected outcomes completed as planned") are batchable in ONE gesture. Ruling: this is the HOM confirming their own account of their own work, and it is the only thing batch confirmation ever covers.
+- Detected changes and exceptions are itemized one by one.
+- Anything touching household rules, authority, safety, money, or client commitments is mandatory-individual, drawn out of any batch, under Decision Rights and the single-consent rule, which this document does not modify.
+- The close always ends with "Anything missing?" before "Confirm close."
+A follow-on utterance like "the plumber also recommended checking the upstairs faucet next time" becomes a drafted requirement, vendor-history note, and provenance record [M]; the HOM never decides which screen receives information.
+
+## 3. Ambient capture patterns
+**3.1 Voice [M], under the voice ruling.** Natural speech becomes proposed structured updates (the field-service and clinical ambient pattern: draft for human review, never recreate the encounter afterward). Example: "Pantry is good. We're low on toddler snacks and dishwasher tabs. Bottom shelf is overcrowded again. I moved the backup paper towels to the utility closet." becomes four proposed updates (two inventory.low, one knowledge.location_change, one friction_signal) plus applicable replenishment rules, surfaced as "4 updates captured. Review changes?"
+**The voice ruling, binding:** HOM-initiated dictation only, ever. No ambient listening, no wake words, no continuous capture, in either direction: the software never surveils the HOM and nothing records passively in a member's home. Training guidance: prefer dictating between homes; discretion inside. Member voices are never intentionally captured; incidental capture is purged at transcription. Raw audio is S2-vault data, transcribe-then-purge on the REQ-077 schedule; transcripts inherit the sensitivity of what they describe.
+
+**3.2 Photos as multi-purpose evidence [D storage, M inference].** A photo taken for operational reasons serves completion evidence, state comparison, inventory hypothesis, asset identification, or drift detection. Uncertain visual inferences never commit directly: high-confidence low-consequence metadata may auto-apply, reversible and audited; inventory and location inferences are proposals unless unambiguous and covered by standing policy. Photos are never required solely to feed analytics. Media rules from WK-DEV-007 section 2 stand: release-flag gated, vault-stored, EXIF location stripped.
+
+**3.3 QR/NFC contextual entry [D].** Scanning opens the operational context, not a label page: an appliance scan surfaces model, manual facts, last service, open issues, consumables, warranty, preferred vendor, governing standard, and next maintenance; a supply-bin scan surfaces contents, PAR state, location, substitutes, and open replenishment; safety equipment surfaces its clock, standard, prior exceptions, and emergency boundary.
+
+**3.4 Conversational retrieval [M].** "Where are the guest sheets?", "Who fixed this dishwasher?", "What filter does this use?", "Did the client approve this before?" answered from verified household knowledge only, grounded, with freshness and source shown. No general web knowledge in household answers; REQ-084's wall applies to retrieval as everywhere.
+
+## 4. Task evidence without a time-study operator
+Three measurement modes [D]:
+- **Normal operation:** arrival/departure and workflow events captured automatically; batch completion confirmation under the section 2.3 contract.
+- **Calibration mode:** corporate selects task families for a limited observation window; temporary structured capture of quantity and a few segments; calibration requests are interruptions and are rationed under the Attention Budget like any other.
+- **Exception mode:** ask only for the variance reason and, if needed, the one missing measurement that explains it.
+**Known-normal rule [D]:** if the system expected the task, the method was unchanged, quantity was within normal range, no exception occurred, and the outcome met the standard, one "Done as expected" action confirms the occurrence. Never re-ask "3 loads, 2 beds, 4 packages" when a reliable baseline exists; the HOM corrects only when reality differs.
+**Quality stays sovereign:** short duration never reads as good performance unless the outcome met the governing standard; completion-to-standard, rework, and exception state remain in the learning record, collected through exception signals and QA sampling, not per-occurrence inspection.
+
+## 5. Conditional standards [D]
+Sophistication in the backend, simplicity in view: compact normal-path question first, then only the branch the condition needs. The sump pattern generalizes: "Anything abnormal? [No] completes the standard path; [Yes] picks water/alarm/power/odor/other, reveals that branch's follow-ups, requires evidence only where that branch requires it, and creates the action or escalation." Apply across asset checks, inventory exceptions, guest readiness, vendor verification, and safety events.
+
+## 6. The Notification Firewall [D]
+Every trigger, QA signal, evidence change, feed, or model finding enters the internal event stream first; a policy engine decides frontline worthiness. "Event exists" never maps to "push notification." Five destinations: immediate interrupt (only when delay materially changes safety, access, a client commitment, or imminent execution); next-transition prompt (surfaced when the HOM reaches the relevant house, task, or zone); previsit brief; end-of-visit review (the batch home for low-urgency proposals); corporate/learning queue (analytics, QA, model health, drift). Related signals group into SITUATIONS: one winter-storm situation carrying school, trash, freeze prep, plants, and generator work, not five notifications; same for travel, hosting, moves, school start, renovations. Off-shift boundaries are absolute for routine notifications; urgent escalation rules are explicit and role-governed.
+
+## 7. Familiarity-adaptive guidance [D]
+Guidance Mode is derived, not configured: **Guided** (new household, backup HOM, new standard, low confidence) shows locations, steps, completion standard, history, and decision boundaries; **Normal** (established HOM, stable household) shows outcome, differences, and exceptions only; **Exception** reveals the condition branch, related history, and escalation options. Safety-critical content is never abbreviated; only its foregrounding changes. This is the continuity promise inverted: the same system that lets a stranger brief in ninety seconds lets a veteran see almost nothing.
+
+## 8. "Tell Well Kept" [routing D, extraction M]
+The universal escape hatch: the HOM never needs the database taxonomy during an unexpected situation. "This shelf is pulling away from the wall" with a photo becomes: class property/safety, an issue created, related storage work suspended, evidence attached, severity-routed internal alert, and a proposed qualified evaluation; the HOM sees one line confirming capture and the pause. Until Tier M opens, the hatch still exists: capture lands as a Capture Artifact with rule-based routing to a human queue, so the promise to the HOM ("say it once, we handle the filing") holds from day one, with AI replacing the human router later, not the promise.
+
+## 9. Confidence times consequence [M, mapped onto existing authority]
+Not every AI output needs confirmation; no high-confidence output gets unlimited autonomy. The matrix: high confidence + low consequence applies automatically, audited and reversible (completion timestamps, normalized state transitions); medium confidence drafts a compact diff for confirmation; low confidence asks ONE targeted question ("main-floor or basement utility closet?"); consequential-regardless-of-confidence (spending, safety, privacy, vendor commitments, member-facing rules) is mandatory human review under Decision Rights. This matrix maps onto the WK-DEV-007 authority classes and their register-gated promotions; it does not create a parallel autonomy system.
+**Diffs, not forms:** a Playbook change renders as before/after/source/confidence with Apply, Edit, Do-not-save. The HOM never navigates to a record to re-enter a value.
+
+## 10. Data and event architecture [D]
+Workflow events create analytics automatically; the HOM never enters an analytics event. Event families to emit: requirement lifecycle (generated, activated, ready, scheduled, started, completed, verified, reopened, deferred); visit lifecycle (previsit_opened, arrived, departed, close_confirmed); decision lifecycle (decision_needed, proposed, approved, declined, standing_rule_created); vendor lifecycle (contacted, scheduled, arrived, service_complete, callback, verified_resolved); knowledge lifecycle (fact_observed, proposed_change, verified, stale, superseded); exception lifecycle (variance_reported, safety_escalation, missing_supply, access_failure, rework); AI lifecycle (suggestion_created, auto_applied, confirmed, corrected, rejected, escalated). The canonical covenant events (visit_arrival, visit_departure, household_departure + cause_code) remain the audit-grade spine per WK-DEV-004; these families extend, never duplicate, that spine.
+
+New objects, built in the WK-DEV-007 substrate window to the standard definition of done: HOM Attention Policy; Visit Brief Snapshot; Capture Artifact (voice/photo/scan/text with provenance and extraction status); AI Draft Change (proposal, confidence, consequence class, target, diff); Calibration Assignment; Admin Touch Event; Situation/Event Bundle; Guidance Mode. Weave with WK-DEV-008: Capture Artifacts and confirmations are the byproduct inputs that fill the Task Evidence Store; calibration assignments are the targeted-question tier of the attention ladder; the shared test across both layers is capture cost flat or falling while evidence coverage rises.
+
+## 11. QA stays corporate [D]
+HOMs see quality information only when it changes current work: a changed standard affecting today, one requested calibration observation, a friction pattern with a concrete proposed improvement, or prior history that materially changes the current action. Corporate-only by default: estimate error distributions and P80 coverage, evidence confidence and staleness, drift and exception rates, AI correction/rejection rates, HOM administrative-friction analytics, process-mining variants, cross-household sampling, and model health. Enforcement is the permission matrix, proven by the same role-based retrieval tests as utilization.
+
+## 12. The Tier M gate
+One future two-key register entry opens every [M] capability at once by adopting: (a) the named provider or on-device approach, with due diligence recorded (no training on Well Kept or member data, data processing agreement, residency, deletion terms); (b) the AI-01 test suite, landing in the same PR as the dependency; (c) the counsel-reviewed member consent clause for AI processing of household information, shipping before any [M] feature touches a real household's data; (d) the inference cost line entering the run-rate statement (REQ-085). Until that entry exists, [M] surfaces are designed, stubbed, and flagged off, and the weekly note's "deliberately not built" line carries ambient inference beside the optimizer.
+
+## 13. Privacy, workforce trust, and safety constraints (binding, unchanged)
+No live HOM location monitoring. No indefinite task timing. No completion evidence demanded beyond what the governing standard requires. No speed scores, leaderboards, or per-HOM performance analytics anywhere (Ruling 1, binding at schema and permission level). Capacity self-report authority preserved. No QA or model-health pushes to HOMs by default. No silent AI changes to anything materially affecting household rules, authority, safety, money, or client commitments. No surveillance of members or their homes; REQ-084's enrichment wall applies to every capability in this document, including retrieval.
+
+## 14. Zero-entry steady state and acceptance
+The explicit maturity target for a stable household: an ordinary visit requires the brief, the work itself, ambient capture only when something is worth saying, and one confirmation gesture at close. Acceptance for this document's work, reported weekly: interactions per observation at or under three; close-flow under two minutes; avoidable admin touches per visit trending down; notification interrupts per visit near zero for routine weeks; and every [M] stub demonstrably inert until the gate entry exists. RFC-HOM backlog IDs remain the working labels, promoted to controlled REQ numbers per gate by register entry, exactly as RFC-WL. External systems named in the source brief (field-service voice-to-form, clinical ambient drafting, conditional-inspection logic) are design patterns with usage-rights metadata in the Source Registry; nothing is scraped, ingested, or reproduced from protected systems.

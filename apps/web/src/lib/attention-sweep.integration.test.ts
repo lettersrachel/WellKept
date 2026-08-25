@@ -2,8 +2,8 @@ import { test, beforeAll, afterAll } from "vitest";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { household, authUser, deferral, workItem, attentionRecord, eventOutbox } from "@wellkept/schema";
-import { sweepAttentionRecords } from "@wellkept/trigger-engine";
+import { household, authUser, deferral, workItem, attentionRecord, decisionRecord, eventOutbox } from "@wellkept/schema";
+import { sweepAttentionRecords, sweepDecisionExpiry } from "@wellkept/trigger-engine";
 import { db } from "./db";
 
 /**
@@ -31,6 +31,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(attentionRecord).where(eq(attentionRecord.householdId, H));
+  await db.delete(decisionRecord).where(eq(decisionRecord.householdId, H));
   await db.delete(eventOutbox).where(eq(eventOutbox.householdId, H));
   await db.delete(deferral).where(eq(deferral.householdId, H));
   await db.delete(workItem).where(eq(workItem.householdId, H));
@@ -72,4 +73,34 @@ test("the sweep raises once per source with its event, stays idempotent, and nev
   rows = await mine();
   assert.equal(rows.length, 2, "no resurrection");
   assert.equal(rows.filter((r) => r.status === "resolved").length, 1);
+});
+
+test("expiry is the system's: a pending decision past its window expires once with its event; a decided one never does", async () => {
+  const expired = randomUUID();
+  const decided = randomUUID();
+  await db.insert(decisionRecord).values([
+    {
+      id: expired, householdId: H, question: "expire me", recommendation: "either way",
+      alternatives: [], evidence: [], authorityClass: "A3", audience: "corporate",
+      routedBy: U, expiresAt: new Date(Date.now() - 3600_000),
+    },
+    {
+      id: decided, householdId: H, question: "already chosen", recommendation: "yes",
+      alternatives: [], evidence: [], authorityClass: "A3", audience: "corporate",
+      routedBy: U, expiresAt: new Date(Date.now() - 3600_000),
+      outcome: "accepted", decidedAt: new Date(), decidedBy: U,
+    },
+  ]);
+  const first = await sweepDecisionExpiry(db);
+  assert.equal(first.expired, 1, "only the undecided one expires");
+  const [row] = await db.select().from(decisionRecord).where(eq(decisionRecord.id, expired));
+  assert.ok(row!.expiredAt);
+  assert.equal(row!.outcome, null);
+  const [kept] = await db.select().from(decisionRecord).where(eq(decisionRecord.id, decided));
+  assert.equal(kept!.expiredAt, null, "decided-xor-expired holds in practice");
+  // idempotent: a second pass expires nothing and emits nothing new
+  const second = await sweepDecisionExpiry(db);
+  assert.equal(second.expired, 0);
+  const events = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
+  assert.equal(events.filter((e) => e.kind === "decision_record.expired").length, 1);
 });

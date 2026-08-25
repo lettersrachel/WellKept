@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, eventOutbox } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, eventOutbox } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1506,4 +1506,87 @@ export async function resolveAttention(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, "attention resolved");
+}
+
+/**
+ * RFC-PRIM-01 build 3: a genuine choice, routed and decided. The
+ * single-consent rule is structural: this action takes EXACTLY ONE
+ * decision per call and no batch path exists. Routing is corporate
+ * (the engine joins later through the promotion path); deciding maps
+ * the audience to roles. The client audience does not exist until the
+ * client freeze lifts (WK-DEV-010 section 5 / WK-DEV-007 section 0).
+ */
+export async function routeDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const question = String(formData.get("question") ?? "").trim().slice(0, 300);
+  const recommendation = String(formData.get("recommendation") ?? "").trim().slice(0, 400);
+  const alternativesRaw = String(formData.get("alternatives") ?? "").trim();
+  const evidenceRaw = String(formData.get("evidence") ?? "").trim();
+  const authorityClass = String(formData.get("authorityClass") ?? "");
+  const audience = String(formData.get("audience") ?? "");
+  if (question.length < 8 || recommendation.length < 4) refuseTo(returnTo, "bad-input");
+  if (!["A0", "A1", "A2", "A3", "A4", "A5"].includes(authorityClass)) refuseTo(returnTo, "bad-input");
+  if (!["hom", "corporate", "founder"].includes(audience)) refuseTo(returnTo, "bad-input");
+  const alternatives = alternativesRaw ? alternativesRaw.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 8) : [];
+  const evidence = evidenceRaw ? evidenceRaw.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 8) : [];
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(decisionRecord).values({
+      id, householdId, question, recommendation, alternatives, evidence,
+      authorityClass, audience, routedBy: principal.userId,
+    });
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "decision_record.routed",
+      payload: { decisionRecordId: id, audience, authorityClass }, occurredAt: new Date(),
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "decision_record", detail: { decisionRecordId: id, action: "routed", audience },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "decision routed");
+}
+
+const DECIDER_ROLES: Record<string, readonly string[]> = {
+  hom: ["house_manager", "backup_hm", "corporate_admin"], // AJ option 2: the admin may cover field surfaces
+  corporate: ["corporate_admin", "corporate_ops"],
+  founder: ["corporate_admin"],
+};
+
+export async function decideDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("decisionId") ?? "");
+  const outcome = String(formData.get("outcome") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  if (!["accepted", "declined"].includes(outcome)) refuseTo(returnTo, "bad-input");
+  const [row] = await db.select().from(decisionRecord).where(eq(decisionRecord.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.outcome || row.expiredAt) refuseTo(returnTo, "bad-input"); // decided is decided; expired is expired
+  if (!(DECIDER_ROLES[row.audience] ?? []).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 400) || null;
+  await db.transaction(async (tx) => {
+    await tx.update(decisionRecord).set({
+      outcome: outcome as "accepted" | "declined", outcomeNote: note,
+      decidedAt: new Date(), decidedBy: principal.userId, updatedAt: new Date(),
+    }).where(eq(decisionRecord.id, id));
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "decision_record.decided",
+      payload: { decisionRecordId: id, outcome }, occurredAt: new Date(),
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "decision_record", detail: { decisionRecordId: id, action: outcome },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `decision ${outcome}`);
 }

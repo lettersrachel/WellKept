@@ -68,6 +68,7 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
@@ -215,6 +216,31 @@ test("attention journey: seen is a whole pair, resolving demands words, and the 
   const { rows: [ev] } = await pool.query(
     "SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='attention_record.resolved'", [synId]);
   expect(ev.n).toBe(1);
+});
+
+test("decision journey: routed with its event, decided whole with a note, and decided-is-decided refuses", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByRole("button", { name: "Route decision" })).toBeVisible({ timeout: 30_000 });
+
+  await page.getByLabel("The choice, in words").fill("Replace or repair the guest bath fan");
+  await page.getByLabel("Recommendation").fill("replace; the motor is at end of life");
+  await page.getByLabel("Who decides").selectOption("corporate");
+  await page.getByLabel("Authority class").selectOption("A3");
+  await page.getByRole("button", { name: "Route decision" }).click();
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  await expect.poll(() => count("SELECT count(*)::int n FROM decision_record WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='decision_record.routed'")).toBe(1);
+
+  await page.getByLabel("Decision outcome").selectOption("accepted");
+  await page.getByLabel("Decision note (optional)").fill("replace it; schedule with the electrician visit");
+  await page.getByRole("button", { name: "Decide" }).click();
+  await expect.poll(() => count("SELECT count(*)::int n FROM decision_record WHERE household_id=$1 AND outcome='accepted' AND decided_by IS NOT NULL AND decided_at IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='decision_record.decided'")).toBe(1);
+
+  // Decided is decided: the form is gone from the page, and the record shows the outcome.
+  await expect(page.getByText("accepted: replace it; schedule with the electrician visit")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Decide" })).toHaveCount(0);
 });
 
 test("permissions journey: a client is walled out of staff surfaces and still sees their own", async ({ context, page }) => {

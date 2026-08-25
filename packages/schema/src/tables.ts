@@ -1068,3 +1068,45 @@ export const attentionRecord = pgTable("attention_record", {
   check("attention_record_resolution_is_whole",
     sql`(${t.status} = 'resolved' AND ${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL) OR (${t.status} <> 'resolved' AND ${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL)`),
 ]);
+
+// RFC-PRIM-01 build 3: the DecisionRecord primitive, where the shadow
+// engine's promotion path will terminate. A GENUINE CHOICE routed to an
+// authorized person: recommendation, alternatives, evidence, the
+// authority rule it would execute under, outcome, decider, time, expiry.
+// The single-consent rule is structural here: one row is one choice with
+// one decider, the service layer accepts exactly one decision per call,
+// and no batch path exists by design. The client audience is DELIBERATELY
+// absent until the client freeze lifts (WK-DEV-007 section 0); routing a
+// choice to the household is a later, founder-gated addition. A decision
+// is decided OR expires, never both, and an outcome is the house triple.
+export const decisionOutcomeEnum = pgEnum("decision_outcome", ["accepted", "declined"]);
+
+export const decisionRecord = pgTable("decision_record", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  question: text("question").notNull(), // the choice, in words; s2
+  recommendation: text("recommendation").notNull(),
+  alternatives: jsonb("alternatives").notNull(), // string[]
+  evidence: jsonb("evidence").notNull(), // string[] provenance lines
+  authorityClass: text("authority_class").notNull(),
+  audience: text("audience").notNull(),
+  workItemId: uuid("work_item_id").references(() => workItem.id),
+  attentionRecordId: uuid("attention_record_id").references(() => attentionRecord.id),
+  routedBy: text("routed_by").notNull().references(() => authUser.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  outcome: decisionOutcomeEnum("outcome"),
+  outcomeNote: text("outcome_note"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decidedBy: text("decided_by").references(() => authUser.id),
+  expiredAt: timestamp("expired_at", { withTimezone: true }),
+}, (t) => [
+  index("decision_record_household_idx").on(t.householdId),
+  check("decision_record_class_known",
+    sql`${t.authorityClass} IN ('A0','A1','A2','A3','A4','A5')`),
+  check("decision_record_audience_known",
+    sql`${t.audience} IN ('hom','corporate','founder')`),
+  check("decision_record_outcome_is_whole",
+    sql`(${t.outcome} IS NOT NULL AND ${t.decidedAt} IS NOT NULL AND ${t.decidedBy} IS NOT NULL) OR (${t.outcome} IS NULL AND ${t.decidedAt} IS NULL AND ${t.decidedBy} IS NULL)`),
+  check("decision_record_decided_xor_expired",
+    sql`NOT (${t.outcome} IS NOT NULL AND ${t.expiredAt} IS NOT NULL)`),
+]);

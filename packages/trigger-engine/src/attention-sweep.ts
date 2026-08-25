@@ -1,5 +1,5 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
-import { deferral, pausedDecision, workItem, attentionRecord, eventOutbox } from "@wellkept/schema";
+import { deferral, pausedDecision, workItem, attentionRecord, decisionRecord, eventOutbox } from "@wellkept/schema";
 
 /**
  * RFC-PRIM-01 build 2: the attention sweep. The computed overdue
@@ -65,4 +65,26 @@ export async function sweepAttentionRecords(db: Db): Promise<{ raised: number }>
     }
   }
   return { raised };
+}
+
+/** RFC-PRIM-01 build 3: pending decisions past their expiry EXPIRE on
+ * the daily pass; expiry is the system's, never a decider (the
+ * decided-xor-expired CHECK holds the two apart). Each expiry emits its
+ * event once. */
+export async function sweepDecisionExpiry(db: Db): Promise<{ expired: number }> {
+  const now = new Date();
+  const pending = await (db as any).select().from(decisionRecord)
+    .where(and(isNull(decisionRecord.outcome), isNull(decisionRecord.expiredAt), lt(decisionRecord.expiresAt, now)));
+  let expired = 0;
+  for (const d of pending) {
+    await (db as any).update(decisionRecord)
+      .set({ expiredAt: now, updatedAt: now })
+      .where(and(eq(decisionRecord.id, d.id), isNull(decisionRecord.outcome), isNull(decisionRecord.expiredAt)));
+    await (db as any).insert(eventOutbox).values({
+      id: crypto.randomUUID(), householdId: d.householdId, kind: "decision_record.expired",
+      payload: { decisionRecordId: d.id }, occurredAt: now,
+    });
+    expired += 1;
+  }
+  return { expired };
 }

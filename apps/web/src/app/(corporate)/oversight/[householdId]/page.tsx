@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -78,6 +78,11 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(attentionRecord.householdId, hh.id))
     .orderBy(desc(attentionRecord.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
+  // RFC-PRIM-01 build 3: routed choices, pending first.
+  const decisions = (await db.select().from(decisionRecord)
+    .where(eq(decisionRecord.householdId, hh.id))
+    .orderBy(desc(decisionRecord.createdAt)).limit(20))
+    .sort((a, b) => Number(Boolean(a.outcome ?? a.expiredAt)) - Number(Boolean(b.outcome ?? b.expiredAt)));
   const canSeeShadow = role === "corporate_admin" || role === "cfo_readonly";
   const shadowRows = canSeeShadow
     ? await db.select().from(shadowLog)
@@ -570,6 +575,63 @@ export default async function Oversight({ params, searchParams }: {
           Append-only: corrections add a superseding event. QuickBooks remains the
           billing system of record (ADR-004); this records that state changed.
         </div>
+      </div>
+
+      <div className="card">
+        <h2>Decisions (RFC-PRIM-01)</h2>
+        <div className="note">
+          A genuine choice, routed to a person: the recommendation, the alternatives, the
+          evidence, and the authority rule it would run under. One choice, one decider,
+          never a batch; a decision expires if nobody takes it, and expiry is the
+          system&apos;s, never a decider.
+        </div>
+        {decisions.length === 0 && <div className="prov">No decisions routed on this household.</div>}
+        {decisions.map((d) => (
+          <div key={d.id} className="field">
+            <span className="fname">
+              {d.question}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {d.audience} decides · runs under {d.authorityClass}
+              </span>
+            </span>
+            <div className="prov">recommended: {d.recommendation}</div>
+            {Array.isArray(d.alternatives) && (d.alternatives as string[]).length > 0 && (
+              <div className="prov">alternatives: {(d.alternatives as string[]).join(" · ")}</div>
+            )}
+            {d.outcome ? (
+              <div className="prov">{d.outcome}{d.outcomeNote ? `: ${d.outcomeNote}` : ""}</div>
+            ) : d.expiredAt ? (
+              <div className="prov">expired undecided</div>
+            ) : (
+              <form action={decideDecision} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="decisionId" value={d.id} />
+                <select name="outcome" defaultValue="accepted" className="inline" aria-label="Decision outcome">
+                  <option value="accepted">accept</option>
+                  <option value="declined">decline</option>
+                </select>
+                <input name="note" aria-label="Decision note (optional)" placeholder="note (optional)" style={{ flex: 1, marginTop: 0, minWidth: 120 }} />
+                <button className="act subtle">Decide</button>
+              </form>
+            )}
+          </div>
+        ))}
+        {isAdmin && (
+          <form action={routeDecision} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <input name="question" aria-label="The choice, in words" placeholder="the choice, in words" required style={{ flex: 2, marginTop: 0, minWidth: 170 }} />
+            <input name="recommendation" aria-label="Recommendation" placeholder="recommendation" required style={{ flex: 1, marginTop: 0, minWidth: 130 }} />
+            <select name="audience" defaultValue="corporate" className="inline" aria-label="Who decides">
+              <option value="hom">the HOM</option>
+              <option value="corporate">corporate</option>
+              <option value="founder">the founder</option>
+            </select>
+            <select name="authorityClass" defaultValue="A3" className="inline" aria-label="Authority class">
+              {["A0", "A1", "A2", "A3", "A4", "A5"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button className="act">Route decision</button>
+          </form>
+        )}
       </div>
 
       <div className="card">
