@@ -164,6 +164,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
     if (has("audience", "urgency") || has("audience", "sourceKind") || has("audience", "source_kind")) {
       throw new Error(`SEVERE: an attention_record row reached a client payload at ${path}`);
     }
+    // 0056: a situation bundles staff noticing (its label is s2 household
+    // content in the bundler's words); no client projection exists. The
+    // pair is the signature: "label" alone in prose stays innocent.
+    if (has("label", "createdBy") || has("label", "created_by")
+      || has("label", "situationId") || has("label", "situation_id")) {
+      throw new Error(`SEVERE: a situation row reached a client payload at ${path}`);
+    }
     // RFC-PRIM-01: a work_item is staff work about the household (s2 by
     // default, no client projection); any recognizable row is the
     // violation. The key pair is the primitive's own shape.

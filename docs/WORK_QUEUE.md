@@ -495,6 +495,30 @@ The README and privacy-notice prose stay on the same-PR rule, named
 in the guard's not-covered column. Thirteen guard files, forty-nine
 schema tests.
 
+**And SITUATIONS exist (0056):** related noticing bundles into one
+thing a person meets once (WK-DEV-009 sections 6 and 10: one
+winter-storm situation, not five notifications). The `situation`
+table carries the bundle in the bundler's words with NO kind
+taxonomy (storm/travel/hosting is the founder's vocabulary, the
+condition_flag no-kinds posture), and `attention_record.situation_id`
+joins through a composite (household_id, id) foreign key, so
+cross-tenant bundling is UNREPRESENTABLE, proven refused in SQL along
+with the resolution whole-or-absent CHECK (five refusals, three
+accepting shapes). Bundling is a HUMAN corporate act in v1 (create,
+bundle, unbundle, resolve, each audited with its s4-envelope event);
+automatic grouping stays unbuilt by decision, stubbed by name in the
+firewall module, because relatedness rules are the founder's (the
+capture-router posture). The brief delivers a bundle as ONE situation
+card carrying its members on both field surfaces, riding the s2.1
+snapshot so grouped delivery is evidenced; members keep their own
+lifecycle, and resolving a situation closes the grouping, never the
+noticing inside it. Erasure blanks label and resolution to markers
+and keeps the skeleton (the attention_record class; census guard
+proven red first); the full guard-and-legal set shipped same-PR
+(situation payload signature both directions, disclosure allowlist,
+CHILD_DATA row red then green, the internal-records category extended
+in all three prose copies). Twenty-three e2e green.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the

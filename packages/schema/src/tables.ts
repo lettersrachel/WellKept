@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import {
   pgTable, uuid, text, integer, smallint, boolean, timestamp, jsonb, index, pgEnum,
-  primaryKey, uniqueIndex, date, check,
+  primaryKey, uniqueIndex, date, check, foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const sensitivityEnum = pgEnum("sensitivity", ["s1", "s2", "s3"]);
@@ -1082,6 +1082,39 @@ export const workItem = pgTable("work_item", {
 export const attentionUrgencyEnum = pgEnum("attention_urgency", ["fyi", "soon", "now"]);
 export const attentionStatusEnum = pgEnum("attention_status", ["open", "resolved"]);
 
+// WK-DEV-009 sections 6 and 10 (0056): a SITUATION bundles related
+// noticing into one thing a person meets once ("one winter-storm
+// situation carrying five works, not five notifications"). The label is
+// the situation in the bundler's words (s2); there is NO kind taxonomy,
+// because naming the situation classes (storm, travel, hosting, moves)
+// is the founder's vocabulary, the condition_flag no-kinds posture.
+// Bundling is a HUMAN act in v1: which signals relate is judgment, and
+// no automatic grouper ships until the founder's rules exist (the
+// capture-router posture; the rule-based grouper is stubbed by name in
+// the firewall module). A situation groups delivery only: member
+// records keep their own destination, lifecycle, and resolution, so
+// resolving the bundle closes the grouping, never the noticing inside
+// it. Declared before attention_record because the member table's
+// composite FK points here.
+export const situation = pgTable("situation", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  label: text("label").notNull(), // the situation, in words; s2
+  createdBy: text("created_by").notNull().references(() => authUser.id),
+  status: text("status").notNull().default("open"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedBy: text("resolved_by").references(() => authUser.id),
+}, (t) => [
+  index("situation_household_idx").on(t.householdId, t.status),
+  // The composite-FK target: (household_id, id) lets attention_record
+  // prove tenant agreement structurally rather than by discipline.
+  uniqueIndex("situation_household_id_key").on(t.householdId, t.id),
+  check("situation_status_known", sql`${t.status} IN ('open','resolved')`),
+  check("situation_resolution_is_whole",
+    sql`(${t.status} = 'resolved' AND ${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL) OR (${t.status} <> 'resolved' AND ${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL)`),
+]);
+
 export const attentionRecord = pgTable("attention_record", {
   ...stamps,
   householdId: uuid("household_id").notNull().references(() => household.id),
@@ -1103,6 +1136,11 @@ export const attentionRecord = pgTable("attention_record", {
   // router's posture). The vocabulary carries all five so the founder's
   // rules need no migration when they arrive.
   destination: text("destination").notNull().default("previsit_brief"),
+  // 0056: the situation this record rides in, when a person bundled it.
+  // Null means unbundled (the ordinary case). The composite FK below
+  // pins the situation to the SAME household, so cross-tenant bundling
+  // is unrepresentable, not merely checked in the action.
+  situationId: uuid("situation_id"),
   acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
   acknowledgedBy: text("acknowledged_by").references(() => authUser.id),
   status: attentionStatusEnum("status").notNull().default("open"),
@@ -1112,6 +1150,11 @@ export const attentionRecord = pgTable("attention_record", {
 }, (t) => [
   index("attention_record_household_idx").on(t.householdId, t.status),
   uniqueIndex("attention_record_one_per_source").on(t.sourceKind, t.sourceId),
+  foreignKey({
+    name: "attention_record_situation_same_household_fk",
+    columns: [t.householdId, t.situationId],
+    foreignColumns: [situation.householdId, situation.id],
+  }),
   check("attention_record_source_known",
     sql`${t.sourceKind} IN ('work_item','deferral','paused_decision','condition_flag','reconciliation','system')`),
   check("attention_record_audience_known",

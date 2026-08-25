@@ -153,6 +153,12 @@ const ALLOWLIST: Record<string, string> = {
     "RFC-PRIM-01 build 2, 2026-08-25: acknowledged_by and resolved_by attribute who " +
     "noticed and who answered; shipped after the disclosure was approved (the action-log " +
     "clause's territory); founder line candidate for the next revision",
+  situation:
+    "WK-DEV-009 s10, 2026-08-25: created_by and resolved_by attribute a corporate " +
+    "user's bundling of related noticing (a grouping act over records already " +
+    "disclosed or excused, never new observation of a person); the action-log " +
+    "clause's territory, the attention_record posture; founder line candidate for " +
+    "the next revision",
   work_item:
     "RFC-PRIM-01, 2026-08-25: owner_id and resolved_by attribute tracked work; the " +
     "surface shipped after the disclosure was approved (the written-work item is the " +

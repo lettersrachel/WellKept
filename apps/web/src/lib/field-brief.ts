@@ -1,5 +1,5 @@
 import { and, eq, isNull, inArray } from "drizzle-orm";
-import { attentionRecord } from "@wellkept/schema";
+import { attentionRecord, situation } from "@wellkept/schema";
 import { db } from "./db";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
@@ -113,14 +113,28 @@ export async function composeFieldBrief(
     eq(attentionRecord.householdId, hh.id), eq(attentionRecord.status, "open"),
     eq(attentionRecord.audience, "hom"), eq(attentionRecord.destination, "previsit_brief"),
   ));
-  const needsNoticing = noticing.map((a) => ({
+  const toBriefShape = (a: (typeof noticing)[number]) => ({
     id: a.id, reason: a.reason, sourceKind: a.sourceKind, deadline: a.deadline,
     seen: a.acknowledgedAt !== null,
+  });
+  // WK-DEV-009 s10 (0056): bundled records deliver as ONE situation
+  // carrying its members ("one winter-storm situation, not five
+  // notifications"); unbundled records stay individual. Delivery
+  // stamping below covers both, so bundling never un-evidences delivery.
+  const bundledIds = [...new Set(noticing.map((a) => a.situationId).filter((s): s is string => s !== null))];
+  const situationRows = bundledIds.length > 0
+    ? await db.select().from(situation).where(inArray(situation.id, bundledIds))
+    : [];
+  const situations = situationRows.map((s) => ({
+    id: s.id, label: s.label,
+    records: noticing.filter((a) => a.situationId === s.id).map(toBriefShape),
   }));
+  const needsNoticing = noticing.filter((a) => a.situationId === null).map(toBriefShape);
   const undeliveredAttentionIds = noticing.filter((a) => a.deliveredVia === null).map((a) => a.id);
 
   const payload = {
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: strangerMode },
+    situations,
     needsNoticing,
     flags,
     conditionFlags,

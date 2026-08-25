@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, emitOutboxEvent } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, emitOutboxEvent } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1516,6 +1516,108 @@ export async function resolveAttention(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, "attention resolved");
+}
+
+/**
+ * WK-DEV-009 sections 6 and 10 (0056): SITUATIONS. Related noticing
+ * bundles into one thing a person meets once. Bundling is a HUMAN,
+ * corporate act in v1 (which signals relate is judgment; the rule-based
+ * grouper waits on the founder's rules, the capture-router posture),
+ * and a situation groups DELIVERY only: member records keep their own
+ * destination and lifecycle, and resolving the bundle closes the
+ * grouping, never the noticing inside it.
+ */
+export async function createSituation(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const label = String(formData.get("label") ?? "").trim().slice(0, 200);
+  if (label.length < 4) refuseTo(returnTo, "bad-input"); // the situation, in words
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(situation).values({ id, householdId, label, createdBy: principal.userId });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "situation.opened", payload: { situationId: id },
+      provenance: "action:createSituation", objectId: id, actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "situation", detail: { situationId: id, action: "opened" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "situation opened");
+}
+
+export async function bundleAttention(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const attentionId = String(formData.get("attentionId") ?? "");
+  const situationRaw = String(formData.get("situationId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(attentionId)) refuseTo(returnTo, "bad-input");
+  const detach = situationRaw === "none";
+  if (!detach && !/^[0-9a-f-]{36}$/i.test(situationRaw)) refuseTo(returnTo, "bad-input");
+  const [record] = await db.select().from(attentionRecord).where(eq(attentionRecord.id, attentionId));
+  if (!record || record.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (!detach) {
+    // The composite FK is the structural wall; this read is for the honest
+    // refusal (a cross-tenant or unknown id reads as missing, not a 500).
+    const [target] = await db.select().from(situation).where(eq(situation.id, situationRaw));
+    if (!target || target.householdId !== householdId) refuseTo(returnTo, "missing");
+    if (target.status === "resolved") refuseTo(returnTo, "bad-input"); // a closed bundle stays closed
+  }
+  await db.transaction(async (tx) => {
+    await tx.update(attentionRecord)
+      .set({ situationId: detach ? null : situationRaw, updatedAt: new Date() })
+      .where(eq(attentionRecord.id, attentionId));
+    await emitOutboxEvent(tx, {
+      householdId, kind: detach ? "attention_record.unbundled" : "attention_record.bundled",
+      payload: { attentionRecordId: attentionId, situationId: detach ? null : situationRaw },
+      provenance: "action:bundleAttention", objectId: attentionId, actor: principal.userId,
+      correlationId: detach ? record.situationId : situationRaw,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "situation", detail: { attentionRecordId: attentionId, situationId: detach ? null : situationRaw, action: detach ? "unbundled" : "bundled" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, detach ? "record unbundled" : "record bundled");
+}
+
+export async function resolveSituation(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("situationId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 400);
+  if (note.length < 4) refuseTo(returnTo, "gate-unmet"); // closed, in words
+  const [row] = await db.select().from(situation).where(eq(situation.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.status === "resolved") refuseTo(returnTo, "bad-input");
+  await db.transaction(async (tx) => {
+    await tx.update(situation).set({
+      status: "resolved", resolution: note, resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date(),
+    }).where(eq(situation.id, id));
+    await emitOutboxEvent(tx, {
+      householdId, kind: "situation.resolved", payload: { situationId: id },
+      provenance: "action:resolveSituation", objectId: id, actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "situation", detail: { situationId: id, action: "resolved" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "situation resolved");
 }
 
 /**

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -94,6 +94,12 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(attentionRecord.householdId, hh.id))
     .orderBy(desc(attentionRecord.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
+  // 0056: the bundles a person made of the noticing, open first.
+  const situations = (await db.select().from(situation)
+    .where(eq(situation.householdId, hh.id))
+    .orderBy(desc(situation.createdAt)).limit(30))
+    .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
+  const openSituations = situations.filter((s) => s.status === "open");
   // WL Gate 1 object 2: how tasks manifest here, with the global library
   // for the configure form.
   const taskProfiles = await db.select({
@@ -734,6 +740,7 @@ export default async function Oversight({ params, searchParams }: {
               {a.reason}
               <span className="prov" style={{ marginLeft: 8 }}>
                 {a.sourceKind.replace(/_/g, " ")} · {a.urgency}{a.deadline ? ` · since ${a.deadline}` : ""} · for the {a.audience}
+                {a.situationId && ` · in: ${situations.find((s) => s.id === a.situationId)?.label ?? "a situation"}`}
               </span>
             </span>
             {a.status === "resolved" ? (
@@ -753,10 +760,60 @@ export default async function Oversight({ params, searchParams }: {
                   <input name="note" aria-label="How it was answered" placeholder="how it was answered" style={{ marginTop: 0, minWidth: 160 }} />
                   <button className="act subtle">Resolve</button>
                 </form>
+                {isAdminOrOps && (openSituations.length > 0 || a.situationId) && (
+                  <form action={bundleAttention} className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+                    <input type="hidden" name="householdId" value={hh.id} />
+                    <input type="hidden" name="attentionId" value={a.id} />
+                    <select name="situationId" defaultValue={a.situationId ?? ""} className="inline" aria-label="Bundle into a situation">
+                      <option value="" disabled>bundle into…</option>
+                      {a.situationId && <option value="none">take out of its situation</option>}
+                      {openSituations.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                    </select>
+                    <button className="act subtle">Bundle</button>
+                  </form>
+                )}
               </div>
             )}
           </div>
         ))}
+      </div>
+
+      <div className="card">
+        <h2>Situations (WK-DEV-009 §10)</h2>
+        <div className="note">
+          Related noticing, bundled by a person into one thing the HOM meets once: one
+          winter-storm situation, not five notifications. A bundle groups delivery only;
+          each record inside keeps its own life, and which signals relate is your judgment,
+          never a rule the system applies on its own.
+        </div>
+        {situations.length === 0 && <div className="prov">No situations on this household.</div>}
+        {situations.map((s) => (
+          <div key={s.id} className="field">
+            <span className="fname">
+              {s.label}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {attention.filter((a) => a.situationId === s.id).length} bundled · {s.status}
+              </span>
+            </span>
+            {s.status === "resolved" ? (
+              <div className="prov">resolved: {s.resolution}</div>
+            ) : isAdminOrOps && (
+              <form action={resolveSituation} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="situationId" value={s.id} />
+                <input name="note" aria-label="How the situation closed" placeholder="how it closed" style={{ marginTop: 0, minWidth: 160 }} />
+                <button className="act subtle">Resolve situation</button>
+              </form>
+            )}
+          </div>
+        ))}
+        {isAdminOrOps && (
+          <form action={createSituation} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <input name="label" aria-label="The situation, in words" placeholder="the situation, in words" required style={{ flex: 1, marginTop: 0, minWidth: 200 }} />
+            <button className="act">Open situation</button>
+          </form>
+        )}
       </div>
 
       <div className="card">

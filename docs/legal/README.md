@@ -127,7 +127,10 @@ Four documents, one per audience and direction:
   catch-up, one PR late, recorded as G-62): the follow-up work we track
   on a household's behalf (title, detail, due timing, how it ended),
   the items the system surfaces to staff for attention (the reason, who
-  saw it, how it was answered), and the choices routed internally for a
+  saw it, how it was answered), the situations a staff member bundles
+  related items into so they arrive as one thing (the bundle's label,
+  in the bundler's words; added 2026-08-25, same-PR), and the choices
+  routed internally for a
   decision (question, recommendation, evidence, outcome). Internal
   (s2); never shown to the client; on erasure the free text is blanked
   and the record skeletons kept (operational history without the

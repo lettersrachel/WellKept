@@ -230,6 +230,17 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /attention_record/,
   );
   assert.ok(assertNoAnticipationRows([{ audience: "the dinner party guest list" }]));
+  // 0056: a situation row never reaches a client, either casing; "label"
+  // alone in prose stays innocent (the pair is the signature).
+  assert.throws(
+    () => assertNoAnticipationRows([{ label: "Winter storm prep", createdBy: "u-1" }]),
+    /situation/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { label: "Winter storm prep", situation_id: "s-1" } }),
+    /situation/,
+  );
+  assert.ok(assertNoAnticipationRows([{ label: "gift tag label the client asked about" }]));
   // RFC-PRIM-01 build 3: a decision_record never reaches a client.
   assert.throws(
     () => assertNoAnticipationRows([{ question: "vendor choice", recommendation: "the second quote" }]),
