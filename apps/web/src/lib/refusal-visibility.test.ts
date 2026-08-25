@@ -56,6 +56,20 @@ function refusalTargets(): Set<string> {
   // target, plus any call site naming one literally.
   const surfaces = [bodyOf(src, "refuse"), bodyOf(src, "resolveReturnTo")];
   for (const m of src.matchAll(/refuseTo\(\s*(["`])(\/[^"`]*)\1/g)) surfaces.push(m[2]!);
+  // 2026-08-25: the sibling success guard's red-proof found this hole
+  // here first. An action that pins its surface in a local const
+  // (`const returnTo = "/oversight/tasks"`) and refuses to the VARIABLE
+  // was invisible to a scan that only read literal arguments, so that
+  // page could have lost its banner with this guard still green.
+  for (const m of src.matchAll(/export async function \w+\(/g)) {
+    const body = src.slice(m.index!, src.indexOf("\nexport ", m.index! + 1) + 1 || undefined);
+    const locals = new Map<string, string>();
+    for (const d of body.matchAll(/const (\w+)\s*=\s*(["`])(\/[^"`]*)\2\s*;/g)) locals.set(d[1]!, d[3]!);
+    for (const c of body.matchAll(/refuseTo\(\s*(\w+)\s*,/g)) {
+      const literal = locals.get(c[1]!);
+      if (literal) surfaces.push(literal);
+    }
+  }
 
   const targets = new Set<string>();
   for (const s of surfaces) {

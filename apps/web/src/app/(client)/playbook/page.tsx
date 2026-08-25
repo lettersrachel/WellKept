@@ -7,6 +7,7 @@ import { isClientEditable } from "@/lib/client-allowlist";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { getRegistries, getStewardship, getClientDeferrals } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -131,9 +132,11 @@ function ClientField({
 export default async function ClientPlaybook({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  // G-68: a member who suggests a change used to get nothing back at all.
+  // The confirmation is theirs, in their words, not our word "recorded".
+  searchParams: Promise<{ q?: string; recorded?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, recorded } = await searchParams;
   const { hh, principal } = await getHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
@@ -177,6 +180,7 @@ export default async function ClientPlaybook({
 
   return (
     <>
+      <RecordedBanner what={recorded} label="Sent:" />
       <VisitReportCard householdId={hh.id} />
 
       {summary ? (

@@ -15,6 +15,7 @@ import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default: this page makes many sequential DB
@@ -219,11 +220,7 @@ export default async function Oversight({ params, searchParams }: {
       {/* Success made legible (2026-07-27, round two of G-29's lesson): a
           write that landed SAYS so. No green line = it did not happen —
           the table's existing rows can no longer impersonate a new one. */}
-      {recorded && (
-        <div className="card" role="status" style={{ borderColor: "#2E6B3F", marginBottom: 12 }}>
-          <strong>Recorded:</strong> {recorded}; it is in the table below and in the audit trail.
-        </div>
-      )}
+      <RecordedBanner what={recorded} note="it is in the table below and in the audit trail" />
       <div className="card">
         <h2>The ninety-second brief (WK-DEV-007 §5)</h2>
         <div className="fval" style={{ fontSize: 13 }}>

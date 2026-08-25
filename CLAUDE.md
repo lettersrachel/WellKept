@@ -114,6 +114,7 @@ row here fails CI, so the table cannot silently go stale.
 | `client-duration.test.ts` | no client route or client-reaching copy builder carries a duration-typed schema column or D7 staffing-wall quantity (WK-DEV-006 D7, register A564) | prose copy stating a duration without touching an identifier; surfaces outside the walked set |
 | `telemetry-discipline.test.ts` | the Sentry scrubber cuts row-value leak shapes and stays wired in both inits with sendDefaultPii false; no shipped console call interpolates a sensitive-value identifier (CAND-PRIV-01) | free text a developer writes into a message; telemetry channels other than Sentry and console |
 | `legal-census.test.ts` | every household-referencing table, computed from the schema, is named in CHILD_DATA.md or excused with a written reason (the G-62 candidate guard) | the legal/README and privacy-notice prose, which name categories not tables and stay on the same-PR rule; whether a named treatment is correct |
+| `success-visibility.test.ts` | every action that changes stored state confirms it, and every page a confirmation can land on renders the banner bound to the redirect's own param (G-68, refusal-visibility's twin) | whether the confirmation is TRUE: a redirect proves the code path ran, never that the write committed; free text a future author interpolates into a message |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first

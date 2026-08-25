@@ -8,6 +8,7 @@ import { getAssignedHouseholds } from "@/lib/data";
 import { getPrincipal } from "@/lib/session";
 import { setTriggerRuleEnabled, createTriggerRule } from "@/lib/actions";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 import { collapseItemText } from "@wellkept/trigger-engine";
 
 export const dynamic = "force-dynamic";
@@ -112,9 +113,9 @@ const pct = (n: number, d: number) => (d === 0 ? "–" : `${Math.round((n / d) *
 export default async function TriggersPage({ searchParams }: {
   // G-29: setTriggerRuleEnabled refuses back to this page with a reason
   // rather than returning silently.
-  searchParams: Promise<{ refused?: string }>;
+  searchParams: Promise<{ refused?: string; recorded?: string }>;
 }) {
-  const { refused } = await searchParams;
+  const { refused, recorded } = await searchParams;
   const assigned = await getAssignedHouseholds();
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
@@ -152,6 +153,7 @@ export default async function TriggersPage({ searchParams }: {
   return (
     <>
       <RefusalBanner reason={refused} />
+      <RecordedBanner what={recorded} />
       <div className="card">
         <div className="row" style={{ alignItems: "center", gap: 10 }}>
           <h2 style={{ border: "none", margin: 0, padding: 0, flex: 1 }}>

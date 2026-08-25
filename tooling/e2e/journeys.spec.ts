@@ -92,6 +92,9 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken, synHomToken]]);
   await pool.query("DELETE FROM auth_user WHERE id = $1", [synHomId]); // assignment already cascaded with the household
+  // G-68's journey mints one identity per run through the app's own
+  // assign path; the household cascade takes its assignment, not the user.
+  await pool.query("DELETE FROM auth_user WHERE email LIKE 'syn-g68-%@journeys.test'");
 });
 
 test("consent journey: warning, then recorded with its audit row; a future date refuses visibly and changes nothing", async ({ context, page }) => {
@@ -353,9 +356,20 @@ test("intake journey: capture, then correct, both audited as hashes; s3 reclassi
       [intakeHhId, coffeeFieldId]);
     return rows[0].n as number;
   };
+  // G-68: a capture now CONFIRMS, which means it navigates. The nonce on
+  // the confirmation URL is the honest signal that one particular save
+  // landed and the page it landed on is the one now on screen; touching a
+  // second form before it arrives edits a page about to be replaced.
+  const nonce = () => new URL(page.url()).searchParams.get("r");
+  const saved = async (card: ReturnType<typeof page.locator>) => {
+    const before = nonce();
+    await card.getByRole("button", { name: "Save" }).click();
+    await expect.poll(nonce, { timeout: 30_000 }).not.toBe(before);
+  };
+
   const coffee = page.locator("div.card", { hasText: "Coffee ritual" });
   await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 7");
-  await coffee.getByRole("button", { name: "Save" }).click();
+  await saved(coffee);
   // The textarea keeps the typed value client-side either way, so the
   // database is the only honest signal the server action landed. Generous
   // on the first write: dev mode may still be compiling the action route.
@@ -368,7 +382,7 @@ test("intake journey: capture, then correct, both audited as hashes; s3 reclassi
 
   // Correct: the simulated Day 5 correction, same surface, new value.
   await coffee.getByLabel("Value for Coffee ritual").fill("Half-caf drip ready by 6:30, grinder on 4");
-  await coffee.getByRole("button", { name: "Save" }).click();
+  await saved(coffee);
   await expect.poll(writeCount, { timeout: 15_000 }).toBe(2);
 
   // The audit trail carries BOTH writes, hashes only, actor stamped.
@@ -386,10 +400,11 @@ test("intake journey: capture, then correct, both audited as hashes; s3 reclassi
 
   // The s3 rail: reclassifying a valued field to s3 clears its plaintext
   // (the value goes to the vault through corporate, never this row).
-  const entry = page.locator("div.card", { hasText: "Entry sequence" });
+  const entry = page.locator("div.card", { hasText: "Entry sequence" }).last();
   await entry.getByLabel("Sensitivity").selectOption("s3");
-  await entry.getByRole("button", { name: "Save" }).click();
-  await expect(entry.getByText("Secured field:")).toBeVisible({ timeout: 15_000 });
+  await saved(entry);
+  await expect(page.locator("div.card", { hasText: "Entry sequence" }).last()
+    .getByText("Secured field:")).toBeVisible({ timeout: 15_000 });
   const { rows: [sec] } = await pool.query("SELECT value, sensitivity FROM playbook_field WHERE id=$1", [entryFieldId]);
   expect(sec.sensitivity).toBe("s3");
   expect(sec.value).toBe("");
@@ -1001,4 +1016,57 @@ test("preference rules: explicit-only recording with its event, a short rule ref
     await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
     await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
   }
+});
+
+/**
+ * G-68, the journey the 25 August evening should have had: two corporate
+ * actions were clicked, reported clean by the operator, and one of them
+ * (the revoke) had written nothing. Nobody could tell, because a working
+ * click and a dead click looked the same on that page.
+ *
+ * This proves the pair end to end on the exact controls: the click, the
+ * banner that names what was recorded, AND the database row behind it.
+ * A confirmation that renders without the write would fail here, which is
+ * the whole reason the DB half is in the test.
+ */
+test("G-68: assign and revoke SAY what they did, and the trail agrees", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  const email = `syn-g68-${randomUUID().slice(0, 8)}@journeys.test`;
+
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByText("SYN-01 consent journey").first()).toBeVisible({ timeout: 30_000 });
+
+  // Assign. Before G-68 this ended at revalidatePath and said nothing.
+  await page.getByLabel("Email address to add").fill(email);
+  await page.locator('form select[name="role"]').selectOption("backup_hm");
+  await page.getByRole("button", { name: "Assign" }).click();
+  await expect(page.getByText("role assigned: backup hm")).toBeVisible({ timeout: 30_000 });
+
+  const assignments = async () => {
+    const { rows } = await pool.query(
+      `SELECT a.id FROM household_role_assignment a JOIN auth_user u ON u.id = a.user_id
+       WHERE a.household_id = $1 AND u.email = $2`, [synId, email]);
+    return rows;
+  };
+  expect((await assignments()).length).toBe(1);
+  // ADR-006: the confirmation names the ROLE and never the address, because
+  // it rides in a URL and the audit trail carries a token, not an email.
+  expect(page.url()).not.toContain(email.split("@")[0]);
+
+  // Revoke, the click that said nothing on 25 August. The banner is the
+  // operator's half; the audit row is the trail's.
+  const row = page.locator("tr", { hasText: email });
+  await row.getByRole("button", { name: "Revoke" }).click();
+  await expect(page.getByText("role revoked")).toBeVisible({ timeout: 30_000 });
+  expect((await assignments()).length).toBe(0);
+  const { rows: revoked } = await pool.query(
+    "SELECT id FROM audit_event WHERE household_id=$1 AND kind='role_revoked'", [synId]);
+  expect(revoked.length).toBe(1);
+
+  // The refusal half of this page is not re-proven here on purpose: the
+  // assign form's email input is type=email + required, so a bad address
+  // is stopped by the BROWSER and never reaches the server wall. Proving
+  // a server refusal through it would be proving the wrong thing;
+  // refusal-visibility.test.ts and the drill-in's own journeys hold that
+  // half.
 });

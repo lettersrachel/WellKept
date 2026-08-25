@@ -776,6 +776,45 @@ open; the resolution rule is her decision between three named shapes
 interim needs no code (revoking her field role there re-resolves
 /visit by the same rule after the inspection).
 
+**And the founder's one-line question opened G-68, filed and FIXED the
+same night: "it says nothing when revoked, its gone".** The saying
+nothing WAS the finding. A census of all 57 exported server actions
+split nearly in half: 30 confirmed with a green line naming what
+landed, and **27 changed stored state and said nothing at all**, ending
+at `revalidatePath`. Not the obscure half: assignRole, revokeRole,
+setStatusTag, reviewEdit, setVaultValue, recordHouseholdConsent,
+resolveIncident, both exclusion actions, forceSignOut, resetTotp,
+captureField, setMonthlyRate, the gesture trio, the photo toggles.
+G-29's 2026-07-27 lesson (an operator cannot tell "declined" from
+"down") was only ever applied to refusals; the same reasoning was never
+run in the success direction, which is exactly why the G-67 evening was
+unresolvable in the moment. Fixed in three parts: `recorded(householdId,
+what)` beside `refuse(householdId, reason)`, with every silent action on
+it and the two hand-built redirects normalized (all 57 now confirm); a
+`RecordedBanner` component replacing four copied inline blocks and
+added to the five confirmation surfaces that had none (fleet board,
+economics, triggers, /intake, the client /playbook); and **the
+sixteenth guard, success-visibility.test.ts**, computing both halves of
+its input, allowlist EMPTY, proven red five ways. Riders: the red-proof
+found a hole in the ELEVENTH guard (refusal-visibility read literal
+arguments only, so the three task actions' `const returnTo =
+"/oversight/tasks"` surface was invisible and that page could have lost
+its refusal banner with CI green; both guards now resolve local consts,
+proven by deleting the banner and watching the older guard fail), and
+G-29's conversion is now complete on every STAFF surface, with
+`proposeEdit` the deliberate exception and an open founder item (a
+member's refusal copy is her call, not a guess; its success confirms in
+client voice today). **Stated rather than blurred: this does NOT close
+G-67.** A confirmation proves the code path ran to its end, never that
+the row committed, and it says nothing about a POST that never leaves
+the browser, which is what G-67 is about; what changes is that the same
+evening would now be legible, and the network-panel click is still
+owed. Copy is a proposal throughout (the AG precedent), one string
+each; the one rule that is not copy is that a message names WHAT was
+recorded and never a value, since it rides in a URL. Twenty-five e2e
+green, the new journey proving assign and revoke on the exact controls
+with the audit row read behind the banner.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the

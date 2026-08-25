@@ -4,6 +4,8 @@ import { SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { getFieldHouseholdAndPrincipal, getFields } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { captureField } from "@/lib/actions";
+import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 import { ProvisionList } from "../../ProvisionList";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +24,7 @@ const FIELD_ROLES = new Set(["house_manager", "backup_hm"]);
 export default async function IntakePage({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ section?: string; refused?: string; recorded?: string }>;
 }) {
   const { hh, principal } = await getFieldHouseholdAndPrincipal();
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
@@ -33,7 +35,7 @@ export default async function IntakePage({
   const provisionsFor = (f: Record<string, unknown>) =>
     bindProvisions(f["governingProvisions"] as string[] | null, provisionsById(), "hm", seedReviewed);
 
-  const { section } = await searchParams;
+  const { section, refused, recorded } = await searchParams;
   const sectionNum = section ? Number(section) : null;
   const captured = fields.filter((f) => f.value).length;
 
@@ -47,6 +49,8 @@ export default async function IntakePage({
   if (sectionNum === null || !bySection.has(sectionNum)) {
     return (
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
+        <RefusalBanner reason={refused} />
+        <RecordedBanner what={recorded} />
         <div className="card" style={{ background: "var(--green)", color: "#fff" }}>
           <div className="sans" style={{ fontSize: 11, color: "var(--sage)", letterSpacing: "0.1em" }}>
             INTAKE MODE
@@ -91,6 +95,8 @@ export default async function IntakePage({
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <RefusalBanner reason={refused} />
+      <RecordedBanner what={recorded} />
       <div className="card" style={{ background: "var(--green)", color: "#fff" }}>
         <div className="sans" style={{ fontSize: 11, color: "var(--sage)", letterSpacing: "0.1em" }}>
           INTAKE MODE · {hh.name.toUpperCase()}
@@ -121,6 +127,9 @@ export default async function IntakePage({
           </span>
           <form action={captureField}>
             <input type="hidden" name="fieldId" value={f.id} />
+            {/* G-68: the section rides with the write so the confirmation
+                comes back to the section being walked, not the index. */}
+            <input type="hidden" name="section" value={sectionNum} />
             {f.sensitivity === "s3" ? (
               <div className="note">
                 Secured field: the value lives in the vault, set by corporate. Capture the note

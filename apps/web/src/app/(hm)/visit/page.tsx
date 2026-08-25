@@ -16,6 +16,7 @@ import { VisitAlerts } from "./VisitAlerts";
 import { PushRegister } from "./PushRegister";
 import { ProvisionList } from "../../ProvisionList";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -225,11 +226,7 @@ export default async function VisitPage({ searchParams }: {
       )}
 
       <RefusalBanner reason={refused} />
-      {recorded && (
-        <div className="card" role="status" style={{ borderColor: "#2E6B3F", marginBottom: 10 }}>
-          <strong>Recorded:</strong> {recorded}.
-        </div>
-      )}
+      <RecordedBanner what={recorded} />
       <VisitAlerts />
       <PushRegister />
 

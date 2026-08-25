@@ -2389,3 +2389,94 @@ does.
 **Adjacent, in scope when the cause is known:** the same silence would
 apply to every other corporate action on that page, which is most of
 the ways a person changes anything in this product.
+
+### G-68. Half the action layer changed stored state and said nothing, so a working click and a dead click looked identical
+
+Filed and FIXED 2026-08-25, the same evening as G-67 and directly out
+of it. The question that produced it was the founder's own, one line
+long: clicking Revoke, "it says nothing when revoked, its gone".
+
+**It says nothing was the finding.** A census of every exported server
+action in `apps/web/src/lib/actions.ts` (57 of them, all writing) split
+almost exactly in half: 30 ended in `recordedTo(...)`, which redirects
+carrying `?recorded=<what>` and renders a green line naming what
+landed; **27 ended at `revalidatePath` and said nothing at all.** The
+silent list is not the obscure half. It is `assignRole`, `revokeRole`,
+`setStatusTag`, `reviewEdit`, `setVaultValue`, `recordHouseholdConsent`,
+`resolveIncident`, `createAnticipationExclusion`,
+`endAnticipationExclusion`, `forceSignOut`, `resetTotp`, `captureField`,
+`setMonthlyRate`, the three gesture actions, the two photo-permission
+toggles, `scoreShadowSignal`, and the rest: most of the ways a person
+changes anything in this product.
+
+**This is G-29's lesson, never finished in the other direction.** G-29
+(2026-07-27) replaced the action layer's silent `return` guards with a
+visible refusal, on the reasoning that an operator cannot tell "the
+system declined this" from "the system is down". The same reasoning
+applies unchanged to success, and success was left alone. For those 27
+actions the operator's only evidence was the table below re-rendering
+with rows that look the same as they did a second ago.
+
+**Why it matters more than a missing green line.** It is what made the
+G-67 evening unresolvable in the moment. Two actions were clicked,
+reported clean, and wrote nothing, and no one could tell, because a
+click that works and a click that dies produced identical screens. The
+diagnosis had to wait for a database query the next morning.
+
+**FIXED, in three parts.**
+
+1. `recorded(householdId, what)` now exists beside `refuse(householdId,
+   reason)`, the symmetric twin, redirecting to the same surface the
+   operator is standing on. Every one of the 27 silent actions calls it
+   or its path-taking form; the two that had hand-built the redirect
+   themselves (`setReferralSource`, `recordMembershipEvent`) moved onto
+   the helper. All 57 exported actions now confirm.
+2. `RecordedBanner` is a component rather than four hand-copied inline
+   blocks, and it is now rendered on every page a confirmation can land
+   on: the four that already had one, plus the fleet board,
+   `/oversight/economics`, `/oversight/triggers`, `/intake`, and the
+   client `/playbook`.
+3. **The sixteenth guard, `success-visibility.test.ts`**, holds it:
+   every action that changes stored state must reach a confirmation or
+   be excused in an allowlist with a written reason (the allowlist is
+   EMPTY today, deliberately), and every page a confirmation can land
+   on must render the banner bound to the redirect's own param. Both
+   inputs are computed from the source, both carry floors, and it was
+   proven red five ways (a lost confirmation, a lost banner, a banner
+   bound to nothing, a value interpolated into a message, a broken
+   extractor) before being trusted.
+
+**What the fix does NOT do, stated because the temptation is real: it
+does not close G-67.** A confirmation proves that the code path ran to
+its end. It cannot prove the row committed, and it says nothing at all
+about the case where the POST never leaves the browser, which is
+exactly the case G-67 is about. What it changes is that the same
+evening would now be legible: a click that produces no green line is
+visibly a click that did not run. G-67's decisive evidence, one click
+with the network panel open, is still owed.
+
+**Two riders, both from proving the guard rather than writing it.**
+
+- The red-proof found a hole in the ELEVENTH guard, not the sixteenth.
+  `refusal-visibility.test.ts` extracted refusal targets from literal
+  arguments only, so an action pinning its surface in a local const
+  (`const returnTo = "/oversight/tasks"`, as the three task actions do)
+  was invisible to it: that page could have lost its refusal banner
+  with CI green. Both guards now resolve local-const surfaces, and the
+  extension was itself proven by deleting the tasks page's banner and
+  watching the older guard finally fail.
+- The G-29 conversion is now complete on every STAFF surface: the
+  remaining bare-return guards in `logStrangerTest`, `captureField`,
+  `setMonthlyRate` and `recordPromptOutcome` refuse visibly.
+  **`proposeEdit` is the deliberate exception and an open founder
+  item:** it is the member-facing surface, and every message in
+  `RefusalBanner` is written in staff voice ("Your role on this
+  household does not permit that action"). A member's refusal copy is
+  the founder's call, not a guess. Its SUCCESS confirms today, in
+  client voice, as a proposal.
+
+**Copy is a proposal throughout** (the AG precedent): every message is
+one string, and the founder adjusts any of them without touching logic.
+The one rule that is not copy: a message names WHAT was recorded and
+never a value, because it rides in a URL and lands in browser history.
+The guard enforces that for the actions that hash or seal their input.
