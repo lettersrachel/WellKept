@@ -194,6 +194,16 @@ Four documents, one per audience and direction:
   the client; on erasure the words blank and the skeleton tombstones
   (the registry posture). Configured by a named corporate user, also
   STAFF data (configured_by).
+- **Preference rules** (added 2026-08-25, WK-DEV-007 §4): an instance
+  of the operating-details category above, named for precision: one
+  stated fact per row about how the household wants things done
+  (standing approvals and decision style included), each carrying its
+  provenance (every rule today is explicit: the household said it) and
+  an optional review date. Internal (s2); never shown to the client;
+  a rule never edits in place (retirement with its reason is the only
+  change); on erasure the words blank and the skeleton keeps (the
+  task-profile posture). Recorded and retired by named corporate
+  users, also STAFF data (recorded_by, retired_by).
 - **Visit brief snapshots** (added 2026-08-25, WK-DEV-009 §2.1): every
   pre-visit brief composed for a staff member, kept exactly as shown
   (deduped by content), so what a staff member was told about the

@@ -92,6 +92,13 @@
  *    exactly: THAT noticing was bundled and closed is operational
  *    history; what the bundle was about is the household's. Blanking
  *    preserves the resolution whole-or-absent CHECK.
+ *  - preference_rule (0057, 2026-08-25): free text BLANKED (rule and
+ *    retirement reason to markers; a confidence value, where one ever
+ *    exists on a non-explicit row, to a marker too so the
+ *    whole-or-absent CHECK survives), skeleton kept - the
+ *    household_task_profile posture: how they wanted it done is the
+ *    household's words; THAT preferences were kept and pruned is
+ *    operational history.
  *  - work_item (RFC-PRIM-01, 2026-08-25): free text BLANKED (title,
  *    detail, window, block reason, resolution), skeleton kept - the
  *    record THAT work was tracked and how it ended is business history;
@@ -296,6 +303,8 @@ try {
   await c.query("UPDATE attention_record SET reason=$2, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // situation: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE situation SET label=$2, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // preference_rule: blank the words, keep the lifecycle (see header).
+  await c.query("UPDATE preference_rule SET rule=$2, confidence=CASE WHEN confidence IS NULL THEN NULL ELSE $2 END, retired_reason=CASE WHEN retired_reason IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // work_item: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE work_item SET title=$2, detail='', window_condition=CASE WHEN window_condition IS NULL THEN NULL ELSE $2 END, blocked_reason=CASE WHEN blocked_reason IS NULL THEN NULL ELSE $2 END, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // Capture-session tables (G-40): business/employer rows survive by

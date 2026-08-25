@@ -159,6 +159,12 @@ const ALLOWLIST: Record<string, string> = {
     "disclosed or excused, never new observation of a person); the action-log " +
     "clause's territory, the attention_record posture; founder line candidate for " +
     "the next revision",
+  preference_rule:
+    "WK-DEV-007 s4, 2026-08-25: recorded_by and retired_by attribute which corporate " +
+    "user recorded or pruned a household operating preference; a corporate " +
+    "configuration act about the household, never about the staff member (the " +
+    "household_task_profile configured_by posture): generic action-log coverage; a " +
+    "named line is a founder decision, not a drift",
   work_item:
     "RFC-PRIM-01, 2026-08-25: owner_id and resolved_by attribute tracked work; the " +
     "surface shipped after the disclosure was approved (the written-work item is the " +

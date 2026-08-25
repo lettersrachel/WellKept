@@ -241,6 +241,19 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /situation/,
   );
   assert.ok(assertNoAnticipationRows([{ label: "gift tag label the client asked about" }]));
+  // 0057: a preference_rule row never reaches a client, either casing;
+  // "rule" and "provenance" each stay innocent alone (a playbook field
+  // carries provenance without a "rule" key).
+  assert.throws(
+    () => assertNoAnticipationRows([{ rule: "No vendors before 9am", provenance: "explicit" }]),
+    /preference_rule/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { rule: "No vendors before 9am", recorded_by: "u-1" } }),
+    /preference_rule/,
+  );
+  assert.ok(assertNoAnticipationRows([{ rule: "the club's guest rule the client mentioned" }]));
+  assert.ok(assertNoAnticipationRows([{ name: "Florist", provenance: "confirmed" }]));
   // RFC-PRIM-01 build 3: a decision_record never reaches a client.
   assert.throws(
     () => assertNoAnticipationRows([{ question: "vendor choice", recommendation: "the second quote" }]),

@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, emitOutboxEvent } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, emitOutboxEvent } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1618,6 +1618,76 @@ export async function resolveSituation(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, "situation resolved");
+}
+
+/**
+ * WK-DEV-007 s4 substrate backfill (0057): the PreferenceRule
+ * primitive's two acts. Recording takes NO provenance input: every row
+ * the app creates is 'explicit' (a fact the household stated), so the
+ * never-silently-convert rule holds at the surface as well as in the
+ * CHECK. No mutation edits rule text or provenance; the only lifecycle
+ * act is retirement with its reason (STD-016 s7: a later reader sees
+ * what was pruned and why). Confirming a future observed/inferred row
+ * means recording a NEW explicit rule and retiring the old one.
+ */
+export async function recordPreferenceRule(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const rule = String(formData.get("rule") ?? "").trim().slice(0, 400);
+  if (rule.length < 4) refuseTo(returnTo, "bad-input"); // the fact, in words
+  const reviewRaw = String(formData.get("reviewBy") ?? "");
+  const reviewBy = /^\d{4}-\d{2}-\d{2}$/.test(reviewRaw) ? reviewRaw : null;
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(preferenceRule).values({
+      id, householdId, rule, provenance: "explicit", recordedBy: principal.userId, reviewBy,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "preference_rule.recorded",
+      payload: { preferenceRuleId: id, provenance: "explicit" },
+      provenance: "action:recordPreferenceRule", objectId: id, actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "preference_rule", detail: { preferenceRuleId: id, action: "recorded" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "preference recorded");
+}
+
+export async function retirePreferenceRule(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("preferenceRuleId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 400);
+  if (reason.length < 4) refuseTo(returnTo, "gate-unmet"); // pruned, with why
+  const [row] = await db.select().from(preferenceRule).where(eq(preferenceRule.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.status === "retired") refuseTo(returnTo, "bad-input");
+  await db.transaction(async (tx) => {
+    await tx.update(preferenceRule).set({
+      status: "retired", retiredReason: reason, retiredAt: new Date(), retiredBy: principal.userId, updatedAt: new Date(),
+    }).where(eq(preferenceRule.id, id));
+    await emitOutboxEvent(tx, {
+      householdId, kind: "preference_rule.retired",
+      payload: { preferenceRuleId: id },
+      provenance: "action:retirePreferenceRule", objectId: id, actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "preference_rule", detail: { preferenceRuleId: id, action: "retired" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "preference retired");
 }
 
 /**

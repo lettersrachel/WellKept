@@ -519,6 +519,34 @@ proven red first); the full guard-and-legal set shipped same-PR
 CHILD_DATA row red then green, the internal-records category extended
 in all three prose copies). Twenty-three e2e green.
 
+**And the substrate backfill opens with PreferenceRule (0057):**
+`preference_rule` exists, the WK-DEV-007 section 4 next-unbuilt
+primitive from the handoff's nine (TrustCredential waits for the
+vendor slice per WK-DEV-010; the IdentityAccessGrant expansion
+touches auth and is its own session). A household-specific operating
+FACT in words, with the handoff's design rule held structurally: the
+provenance vocabulary carries all three classes while THE APP CREATES
+ONLY EXPLICIT ROWS (the action takes no provenance input at all);
+confidence belongs to non-explicit rows alone, whole or absent BOTH
+directions by CHECK, with the confidence SCALE deliberately not
+invented (the estimate-hierarchy precedent, arrives with the engine);
+NEVER-SILENTLY-CONVERT is the service layer's shape (no mutation
+edits rule text or provenance; retirement with its reason is the only
+act, the STD-016 section 7 pruning-visibility rule, and the journey
+proves the retired row's text untouched); review_by is a surfacing
+cue that tags, never triggers. Six SQL refusals, three accepting
+shapes (including the engine's future inferred-with-confidence
+shape). Events through the s4 envelope (recorded, retired); the
+drill-in card renders active rules with provenance and the PAST ITS
+REVIEW tag. Erasure blanks words to markers CHECK-survivingly and
+keeps the skeleton (the task-profile posture); ALL THREE census
+guards proven red first on the new table (erasure, legal-census,
+staff-disclosure), then green with the treatments; payload signature
+both directions; the operating-details category extended in all three
+prose copies. Rider: the 0056 situation vocabulary gains its zod
+parity line, caught by this unit's definition-of-done read.
+Twenty-four e2e green.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the

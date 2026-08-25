@@ -171,6 +171,14 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("label", "situationId") || has("label", "situation_id")) {
       throw new Error(`SEVERE: a situation row reached a client payload at ${path}`);
     }
+    // 0057: a preference rule is how the household wants things done, in
+    // words (s2), staff-facing only; no client projection exists. The
+    // pair signs it ("rule" or "provenance" alone in prose stays
+    // innocent, and a playbook field's provenance never rides with a
+    // "rule" key).
+    if (has("rule", "provenance") || has("rule", "recordedBy") || has("rule", "recorded_by")) {
+      throw new Error(`SEVERE: a preference_rule row reached a client payload at ${path}`);
+    }
     // RFC-PRIM-01: a work_item is staff work about the household (s2 by
     // default, no client projection); any recognizable row is the
     // violation. The key pair is the primitive's own shape.

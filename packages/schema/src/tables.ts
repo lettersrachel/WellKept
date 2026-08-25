@@ -1211,6 +1211,50 @@ export const decisionRecord = pgTable("decision_record", {
     sql`NOT (${t.outcome} IS NOT NULL AND ${t.expiredAt} IS NOT NULL)`),
 ]);
 
+// WK-DEV-007 s4 substrate backfill (0057): the PreferenceRule
+// primitive. A household-specific FACT about how to operate (standing
+// approvals and decision style included), in words (s2). The handoff's
+// design rule, held structurally where SQL can hold it:
+//  - provenance carries all three classes (explicit / observed /
+//    inferred) so the engine's arrival needs no migration, and the v1
+//    app creates ONLY explicit rows (the action takes no provenance
+//    input at all).
+//  - confidence belongs to non-explicit rows alone, whole or absent in
+//    BOTH directions by CHECK: an explicit fact carries no confidence
+//    number (it is the household's word), and an observed or inferred
+//    row cannot exist without one. The confidence SCALE is deliberately
+//    not invented here (the estimate-hierarchy precedent); the CHECK
+//    demands presence, the vocabulary arrives with the engine.
+//  - NEVER SILENTLY CONVERT INFERENCE TO FACT: no mutation path edits
+//    rule text or provenance; the only lifecycle act is retirement
+//    (with its reason, the STD-016 s7 pruning-visibility rule), and
+//    confirming an observed/inferred rule will mean recording a NEW
+//    explicit row and retiring the old one, never flipping a column.
+//  - review_by is a surfacing cue, never a trigger: a passed date tags
+//    the row for a person to review; nothing retires automatically.
+export const preferenceRule = pgTable("preference_rule", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  rule: text("rule").notNull(), // the operating fact, in words; s2
+  provenance: text("provenance").notNull(),
+  confidence: text("confidence"),
+  reviewBy: date("review_by"),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+  status: text("status").notNull().default("active"),
+  retiredReason: text("retired_reason"),
+  retiredAt: timestamp("retired_at", { withTimezone: true }),
+  retiredBy: text("retired_by").references(() => authUser.id),
+}, (t) => [
+  index("preference_rule_household_idx").on(t.householdId, t.status),
+  check("preference_rule_provenance_known",
+    sql`${t.provenance} IN ('explicit','observed','inferred')`),
+  check("preference_rule_status_known", sql`${t.status} IN ('active','retired')`),
+  check("preference_rule_confidence_is_whole",
+    sql`(${t.provenance} = 'explicit' AND ${t.confidence} IS NULL) OR (${t.provenance} <> 'explicit' AND ${t.confidence} IS NOT NULL)`),
+  check("preference_rule_retirement_is_whole",
+    sql`(${t.status} = 'retired' AND ${t.retiredReason} IS NOT NULL AND ${t.retiredAt} IS NOT NULL AND ${t.retiredBy} IS NOT NULL) OR (${t.status} <> 'retired' AND ${t.retiredReason} IS NULL AND ${t.retiredAt} IS NULL AND ${t.retiredBy} IS NULL)`),
+]);
+
 // WK-DEV-009 v1.1 section 8, the Tier D half: "Tell Well Kept", the
 // universal escape hatch. The HOM captures the unexpected in their own
 // words and NEVER needs the database taxonomy; classification is the

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -100,6 +100,11 @@ export default async function Oversight({ params, searchParams }: {
     .orderBy(desc(situation.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
   const openSituations = situations.filter((s) => s.status === "open");
+  // 0057: how this household wants things done, active first.
+  const preferences = (await db.select().from(preferenceRule)
+    .where(eq(preferenceRule.householdId, hh.id))
+    .orderBy(desc(preferenceRule.createdAt)).limit(50))
+    .sort((a, b) => Number(a.status === "retired") - Number(b.status === "retired"));
   // WL Gate 1 object 2: how tasks manifest here, with the global library
   // for the configure form.
   const taskProfiles = await db.select({
@@ -812,6 +817,48 @@ export default async function Oversight({ params, searchParams }: {
             <input type="hidden" name="householdId" value={hh.id} />
             <input name="label" aria-label="The situation, in words" placeholder="the situation, in words" required style={{ flex: 1, marginTop: 0, minWidth: 200 }} />
             <button className="act">Open situation</button>
+          </form>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Preference rules (WK-DEV-007 §4)</h2>
+        <div className="note">
+          How this household wants things done, one fact per line, in words. Every rule
+          here is explicit: the household said it. A rule never edits in place; retiring
+          it (with why) is the only change, and a corrected preference is a new rule.
+          A passed review date tags the rule for a person to look at; nothing retires
+          on its own.
+        </div>
+        {preferences.length === 0 && <div className="prov">No preference rules on record.</div>}
+        {preferences.map((p) => (
+          <div key={p.id} className="field">
+            <span className="fname">
+              {p.rule}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {p.provenance}
+                {p.reviewBy ? ` · review by ${p.reviewBy}` : ""}
+                {p.status === "active" && p.reviewBy && p.reviewBy < new Date().toISOString().slice(0, 10) ? " · PAST ITS REVIEW" : ""}
+              </span>
+            </span>
+            {p.status === "retired" ? (
+              <div className="prov">retired: {p.retiredReason}</div>
+            ) : isAdminOrOps && (
+              <form action={retirePreferenceRule} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="preferenceRuleId" value={p.id} />
+                <input name="reason" aria-label="Why it no longer holds" placeholder="why it no longer holds" style={{ marginTop: 0, minWidth: 160 }} />
+                <button className="act subtle">Retire</button>
+              </form>
+            )}
+          </div>
+        ))}
+        {isAdminOrOps && (
+          <form action={recordPreferenceRule} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <input name="rule" aria-label="The preference, in words" placeholder="the preference, in words" required style={{ flex: 2, marginTop: 0, minWidth: 200 }} />
+            <input name="reviewBy" type="date" aria-label="Review by" style={{ marginTop: 0 }} />
+            <button className="act">Record preference</button>
           </form>
         )}
       </div>
