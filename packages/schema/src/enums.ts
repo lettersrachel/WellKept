@@ -69,3 +69,13 @@ export const workItemKindSchema = z.enum(["vendor", "followup", "runway", "inter
 export type WorkItemKind = z.infer<typeof workItemKindSchema>;
 export const workItemSourceSchema = z.enum(["hm_capture", "corporate", "system"]);
 export type WorkItemSource = z.infer<typeof workItemSourceSchema>;
+
+// RFC-PRIM-01 build 2: the AttentionRecord vocabulary (zod parity).
+export const attentionUrgencySchema = z.enum(["fyi", "soon", "now"]);
+export type AttentionUrgency = z.infer<typeof attentionUrgencySchema>;
+export const attentionStatusSchema = z.enum(["open", "resolved"]);
+export type AttentionStatus = z.infer<typeof attentionStatusSchema>;
+export const attentionAudienceSchema = z.enum(["hom", "corporate", "founder"]);
+export type AttentionAudience = z.infer<typeof attentionAudienceSchema>;
+export const attentionSourceSchema = z.enum(["work_item", "deferral", "paused_decision", "condition_flag", "reconciliation", "system"]);
+export type AttentionSource = z.infer<typeof attentionSourceSchema>;

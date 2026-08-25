@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -73,6 +73,11 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(workItem.householdId, hh.id))
     .orderBy(desc(workItem.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "done" || a.status === "abandoned") - Number(b.status === "done" || b.status === "abandoned"));
+  // RFC-PRIM-01 build 2: what needs noticing, open first.
+  const attention = (await db.select().from(attentionRecord)
+    .where(eq(attentionRecord.householdId, hh.id))
+    .orderBy(desc(attentionRecord.createdAt)).limit(30))
+    .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
   const canSeeShadow = role === "corporate_admin" || role === "cfo_readonly";
   const shadowRows = canSeeShadow
     ? await db.select().from(shadowLog)
@@ -565,6 +570,45 @@ export default async function Oversight({ params, searchParams }: {
           Append-only: corrections add a superseding event. QuickBooks remains the
           billing system of record (ADR-004); this records that state changed.
         </div>
+      </div>
+
+      <div className="card">
+        <h2>Needs noticing (RFC-PRIM-01)</h2>
+        <div className="note">
+          Reasons a person should look: the overdue surfaces write these once on the daily
+          sweep instead of every screen recomputing. A record informs; resolving it closes
+          the noticing, never the work it points at. Nothing here acts on its own.
+        </div>
+        {attention.length === 0 && <div className="prov">Nothing needs noticing on this household.</div>}
+        {attention.map((a) => (
+          <div key={a.id} className="field">
+            <span className="fname">
+              {a.reason}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {a.sourceKind.replace(/_/g, " ")} · {a.urgency}{a.deadline ? ` · since ${a.deadline}` : ""} · for the {a.audience}
+              </span>
+            </span>
+            {a.status === "resolved" ? (
+              <div className="prov">resolved: {a.resolution}</div>
+            ) : (
+              <div className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                {!a.acknowledgedAt && (
+                  <form action={acknowledgeAttention}>
+                    <input type="hidden" name="householdId" value={hh.id} />
+                    <input type="hidden" name="attentionId" value={a.id} />
+                    <button className="act subtle">Seen</button>
+                  </form>
+                )}
+                <form action={resolveAttention} className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+                  <input type="hidden" name="householdId" value={hh.id} />
+                  <input type="hidden" name="attentionId" value={a.id} />
+                  <input name="note" aria-label="How it was answered" placeholder="how it was answered" style={{ marginTop: 0, minWidth: 160 }} />
+                  <button className="act subtle">Resolve</button>
+                </form>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <div className="card">
