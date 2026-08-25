@@ -448,3 +448,50 @@ test("capture journey: the HOM says it once on /visit; the corporate router refu
   await expect(page.getByText("filed: vendor look at the pantry shelving")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "File" })).toHaveCount(0);
 });
+
+test("tester journey: a tester-flagged HOM reads only their one household; corporate and Ruling 1 surfaces refuse; the exclusion flag stands", async ({ context, page }) => {
+  // WK_Tester_Provisioning section 2 item 4: the tester's deny paths are
+  // release-blocking. A HOM-role user with is_tester=true, scoped to ONE
+  // household, provably walled from every other tenant and every
+  // corporate surface (the Ruling 1 views live behind those walls).
+  const testerId = randomUUID();
+  const testerToken = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO auth_user (id, email, name, is_tester) VALUES ($1,$2,$3,true)",
+    [testerId, `tester-${testerId.slice(0, 8)}@journeys.test`, "Tester journey identity"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'house_manager',true)",
+    [randomUUID(), testerId, synId]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
+    [testerToken, testerId, new Date(Date.now() + 3600_000)]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: testerToken, url: BASE }]);
+
+    // The field surface serves THEIR household and no other.
+    await page.goto("/visit");
+    await expect(page.getByText("SYN-01 consent journey").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Fernbrook")).toHaveCount(0);
+
+    // Another tenant's record: no assignment, no principal, no page.
+    await page.goto(`/oversight/${fernbrookId}`);
+    await page.waitForURL(/\/signin/, { timeout: 30_000 });
+
+    // The corporate drill-in refuses even for their OWN household: the
+    // corporate boards (where every Ruling 1 surface lives) are not a
+    // HOM surface, tester or not. The deny shape for a role-holding
+    // non-corporate user is the home redirect (page.tsx:40), landing
+    // them back on their own field surface, never the boards.
+    await page.goto(`/oversight/${synId}`);
+    await page.waitForURL((url) => !url.pathname.startsWith("/oversight"), { timeout: 30_000 });
+    await expect(page.getByText("BRIEFING FROM THE LIVE RECORD.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: /Household consent/ })).toHaveCount(0);
+
+    // Tenant isolation at the API layer: another household's briefing 403s.
+    const res = await page.request.get(`${BASE}/api/mobile/briefing?householdId=${fernbrookId}`);
+    expect(res.status()).toBe(403);
+
+    // The exclusion contract's handle exists: the single filter.
+    const { rows: [u] } = await pool.query("SELECT is_tester FROM auth_user WHERE id=$1", [testerId]);
+    expect(u.is_tester).toBe(true);
+  } finally {
+    await pool.query("DELETE FROM auth_user WHERE id=$1", [testerId]); // session + assignment cascade
+  }
+});

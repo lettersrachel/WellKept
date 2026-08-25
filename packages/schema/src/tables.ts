@@ -286,6 +286,12 @@ export const authUser = pgTable("auth_user", {
   email: text("email").notNull().unique(),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: text("image"),
+  // Tester provisioning (HG, 2026-08-25): an external tester holds a real
+  // role with real permissions; THIS flag is the single filter that keeps
+  // their events out of every covenant, payroll, and learning computation
+  // (the exclusion contract those computations must honor when built).
+  // Never a permission bit: access is the role's, exclusion is this.
+  isTester: boolean("is_tester").notNull().default(false),
 });
 
 export const authAccount = pgTable("auth_account", {

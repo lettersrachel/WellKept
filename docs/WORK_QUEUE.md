@@ -50,12 +50,20 @@ gates mapped into the substrate window; segments derive from existing
 taps, manual per-segment timing prohibited in v1; WL Gate 0 BLOCKED
 founder-side on the Task Inventory v1.3 locate-or-reconstruct ruling;
 the optimizer is the standing first entry of the weekly "deliberately
-not built" line). THIS WEEK: the Household One (HO) sprint
-(SPRINT_HOUSEHOLD_ONE_2026-08-24.md): Phase 1 internals gate real
-data; Day 5 go/no-go admits HO through production intake or the
-pseudonymized fallback. Still founder-only this week: the six staging
-dashboard clicks, the run-rate amounts, HO selection and written
-consent, the paper-kit capture, and the Task Inventory ruling. The Temporal Layer gate is OPEN (Household Zero field list
+not built" line). THIS WEEK: the Household Green (HG) sprint
+(WK_Sprint_Household_Green_HG_2026-08-24.md, superseding the
+Household One naming; the earlier SPRINT_HOUSEHOLD_ONE record keeps
+its wording as a dated record): Phase 1 internals gate real data; Day
+5 go/no-go admits HG through production intake or the pseudonymized
+fallback. Lauren Green is provisioned as the HOM-role external tester
+per WK_Tester_Provisioning_Household_Green_2026-08-24.md (tester
+flag, tenant-scoped, deny paths release-blocking; the test exercises
+the HOM and corporate side, client frozen at the digest). Still founder-only this week: the six staging
+dashboard clicks, the run-rate amounts, the HG written consent (HG is
+designated; selection is settled), the paper-kit capture, the tester's
+sign-in address for the production db:hg run, the Apple Developer
+enrollment (the pacing item for native-device testing), and the Task
+Inventory ruling. The Temporal Layer gate is OPEN (Household Zero field list
 held) but its migration is Phase 2 schema work and waits for Phase 1
 custody per the directive. Weekly build notes begin with the first
 Phase 0 note (docs/build-notes/2026-08-24.md). The Ruling 3 terminology
@@ -73,7 +81,7 @@ brief: Tier D authorized now and IS the input-spine work; Tier M gated
 on one future two-key entry; the voice ruling; the notification
 firewall) and WK-DEV-010 v1.1 (the unified implementation directive:
 leverage/tax RFC law, event law, the ServiceEvent spec, the ten-stage
-vendor slice as the first workstream after the HO go/no-go with vendor
+vendor slice as the first workstream after the HG go/no-go with vendor
 links internal-simulation-only until the pen test covers the surface,
 external access law, the Training Household, the work sequence) are
 ADOPTED into docs/, frozen (registers A573, A575). The substrate
