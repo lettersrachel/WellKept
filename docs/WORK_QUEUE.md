@@ -495,6 +495,21 @@ of them is held in G-63 meanwhile). Post-deploy steps standing:
 db:capacity, then db:hg with the tester's address (consent RECEIVED
 2026-08-25; the address never enters the repo), then the consent
 recorded on the HG drill-in with the paper as artifact.
+**Both database steps RAN in production the same afternoon** (founder,
+verified by query): capacity_gate at version 1 with the ruling's
+figures, attributed; Household Green provisioned pseudonymized with
+the tester scoped and flagged. The run surfaced G-64 (the script
+wrote no audit rows; the app path does), FILED AND FIXED the same
+day: db:hg now requires --by, gates it on a corporate_admin identity,
+and writes household_provisioned + role_assigned with ADR-006 subject
+tokens; a re-run BACKFILLS missing history marked recordedLate.
+FOUNDER ITEM: one command re-run of db:hg with --by <founder email>
+against production backfills HG's two audit rows. Also noted from the
+same run: HG counts in fleet totals and will correctly flag under the
+{"gapDays":10} reconciliation knob if no visit lands within ten days
+(the knob working, not a fault), and the consent-date render is
+G-61-fixed in the live build (an August 4 reading is the stale-tab
+shape; hard-refresh and re-read).
 
 The eighth run's record, kept for history: production served
 `12b9661` (2026-08-06, eighth clean run through
