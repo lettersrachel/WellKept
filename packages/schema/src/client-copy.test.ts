@@ -56,6 +56,14 @@ const COPY_SOURCES = [
   "../../../services/worker/src/digest.ts",
   "../../../packages/mail/src/index.ts",
   "../../../apps/web/src/lib/push.ts",
+  // 25 Aug 2026, from the section 4 sitting: the operator CLI scripts
+  // print user-facing copy too (the erasure tool's REFUSED message is
+  // the most consequential sentence the tooling prints), and no scanned
+  // root covered them; the 6 August em dashes sat there unguarded. The
+  // rule-wider-than-its-guard case, closed by scanning the scripts.
+  "../../../apps/web/scripts/erase-household.mjs",
+  "../../../apps/web/scripts/archive-demo-data.mjs",
+  "../../../apps/web/scripts/ensure-smoke-fixture.mjs",
 ];
 
 // W-13: the rule covers documents. The legal drafts travel to counsel and

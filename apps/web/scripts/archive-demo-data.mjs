@@ -1,7 +1,7 @@
 /**
  * Go-live cleanup: soft-archive demo households and revoke demo-account
  * sessions, so real pilot data starts clean. Nothing is hard-deleted
- * (DEV-005 S3) — households get archived_at, demo sessions are dropped, and
+ * (DEV-005 S3) - households get archived_at, demo sessions are dropped, and
  * demo accounts are only REPORTED (you revoke them from People & access, so a
  * real person accidentally matching a pattern is never removed by a script).
  *
@@ -20,7 +20,7 @@ if (!url) { console.error("Set DATABASE_URL (the Neon connection string)."); pro
 // FIXTURE households are exempt BY COLUMN, not by name (G-23 / runbook phase
 // 3): the permanent Smoke Test Fixture stays live so the post-deploy
 // checklist has somewhere safe to write. A go-live with NO fixture is a
-// mistake — the next deploy's checklist would have no target — so this
+// mistake - the next deploy's checklist would have no target - so this
 // script refuses to run until one exists (ensure-smoke-fixture.mjs).
 const HOUSEHOLD_MATCH = "(name ILIKE '%demo%' OR name = 'Field Test Home') AND NOT is_fixture";
 const DEMO_EMAIL = "email LIKE '%.demo'";
@@ -35,7 +35,7 @@ if (Number(fixtures) === 0) {
   console.error(
     "\nREFUSED: no live fixture household exists. Run\n"
     + "  DATABASE_URL=... node scripts/ensure-smoke-fixture.mjs <your-email>\n"
-    + "first, then re-run this script — go-live must not strand the deploy checklist.\n",
+    + "first, then re-run this script - go-live must not strand the deploy checklist.\n",
   );
   await c.end();
   process.exit(2);
@@ -44,7 +44,7 @@ if (Number(fixtures) === 0) {
 const households = (await c.query(`SELECT id, name, archived_at FROM household WHERE ${HOUSEHOLD_MATCH} ORDER BY name`)).rows;
 const demoUsers = (await c.query(`SELECT id, email FROM auth_user WHERE ${DEMO_EMAIL} ORDER BY email`)).rows;
 
-console.log(`\n${COMMIT ? "APPLYING" : "DRY RUN (no changes)"} — demo cleanup\n`);
+console.log(`\n${COMMIT ? "APPLYING" : "DRY RUN (no changes)"} - demo cleanup\n`);
 
 console.log("Demo households to archive:");
 for (const h of households) console.log(`  - ${h.name}${h.archived_at ? " (already archived)" : ""}`);
@@ -70,5 +70,5 @@ if (userIds.length) {
   const r = await c.query(`DELETE FROM auth_session WHERE user_id = ANY($1::text[])`, [userIds]);
   console.log(`Revoked ${r.rowCount} demo session(s).`);
 }
-console.log("Done. Demo accounts are left in place — revoke them from the People & access panel.\n");
+console.log("Done. Demo accounts are left in place - revoke them from the People & access panel.\n");
 await c.end();
