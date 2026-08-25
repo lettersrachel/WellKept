@@ -2075,3 +2075,45 @@ with written reasons). That converts this memory into a guard, the
 preferred fix per CLAUDE.md, but building it is its own small session
 and its detection pattern needs the same both-directions proof the
 disclosure guard got. Not built here; scope holds.
+
+### G-63. deploy.sh --preflight runs the production migration: a dry-run-shaped flag performs the batch's least reversible step
+
+Filed 2026-08-25, from the 0037-0055 deploy. The founder ran
+`--preflight` on the developer's advice that it was "all the checks,
+no deploy," which is exactly what the script's own usage comment says
+("checks only, no deploy"). Both statements are literally true and
+both mislead: the checks INCLUDE running `db:migrate` against
+production, because the three-way migration-count assertion needs the
+migrations applied to count them. The nineteen-migration batch
+(0037-0055) was therefore applied to the production database by a
+command both the tool and the operator's advisor described as a
+preflight.
+
+**What held:** the migrations were each individually proven and the
+batch had been reviewed line-by-line for destructive statements the
+same morning; a Neon branch snapshot was created BEFORE the run as
+the rollback hatch; and the schema-ahead-of-code state that resulted
+is the survivable direction for an additive batch. The one
+non-additive migration (0037's reviewed copy-then-drop of
+field_event_outbox) made the interim state genuinely broken for the
+old build's field-event path, which is why the web deploy followed
+promptly rather than sitting. No data was lost; the deploy closed the
+skew the same day.
+
+**The defect class:** a flag whose NAME promises read-only behavior
+performing a write is the sha-gate lesson in a new place: the tool's
+own description was trusted where its behavior should have been. The
+fix is structural, its own session: split the modes so `--preflight`
+performs NO writes at all (count on-disk files against the database
+WITHOUT migrating; report "N pending" instead of applying them), and
+prove the new mode in both directions: red that it refuses to write
+(a pending migration stays pending through a preflight), green that
+the full mode still applies. Until that lands, the honest reading is
+that deploy.sh has NO dry-run mode, and DEPLOY.md's usage comment
+should say so in the same change.
+
+**Also recorded here, unfiled until their details arrive:** the 6
+August sitting logged two defects that were never filed in this
+register (reported by the founder's local session, 25 Aug). They
+should be filed by whoever holds the sitting notes; this line exists
+so the fact of them is not lost with the superseded sitting.

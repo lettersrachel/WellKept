@@ -464,7 +464,35 @@ the canonical brief core both surfaces share, and rendering the whole
 page FROM the composed payload is the follow-on unification step,
 named not assumed. Twenty-two e2e green.
 
-Production serves `12b9661` (2026-08-06, eighth clean run through
+**Production serves `0cedc9f` (2026-08-25, the ninth run's record):**
+the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
+build id verified three times, mechanical checks 1/4a/4b/12 PASS. The
+deploy carries everything merged since the eighth run: the substrate
+primitives (work_item, attention_record, decision_record), the shadow
+engine, stranger mode, cause codes, Tell Well Kept, the Visit Brief
+Snapshot, the event-law envelope, HG/tester provisioning, the drafted
+close, the corporate board, the notification firewall, contextual
+entry, all six WL Gate 1 objects, the versioned capacity
+configuration, and Cockpit unification 1. THE RUN ITSELF FILED G-63:
+the migration batch was applied by `--preflight` on the developer's
+riskless-checks advice (the flag's own usage comment says "checks
+only, no deploy", and the checks include db:migrate); a Neon branch
+snapshot created BEFORE the run is the standing rollback hatch, the
+one non-additive migration (0037's reviewed copy-then-drop) made the
+interim schema-ahead-of-code state briefly real, and the web deploy
+closed the skew the same sitting. The fresh section 4 sitting against
+this build is THE remaining verification work: the 6 August sitting
+is SUPERSEDED with checks 8, 10, 11, 13b, 14 never run against any
+live build (its passes describe 12b9661), fixture incident 51a380e1
+is taken up at check 13, and the sitting's two still-unfiled 6 August
+defects get their register entries from the sitting notes (the fact
+of them is held in G-63 meanwhile). Post-deploy steps standing:
+db:capacity, then db:hg with the tester's address (consent RECEIVED
+2026-08-25; the address never enters the repo), then the consent
+recorded on the HG drill-in with the paper as artifact.
+
+The eighth run's record, kept for history: production served
+`12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
 all five required vars). The deploy carries everything merged since the
