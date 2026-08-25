@@ -2331,3 +2331,61 @@ audit row), not one row. That count is a founder-side query; when it
 lands it belongs in this entry, and if the number is large it argues
 for a computed guard in the staff-disclosure/legal-census pattern
 rather than more prose.
+
+### G-67. Two corporate server actions reported success and wrote nothing, in the same session, on the same page
+
+Filed 2026-08-25, from the retry verification that corrected G-65's
+interim line. On the Field Test Home drill-in, as the ftc-admin
+corporate identity, the founder performed two actions and reported
+both clean. Neither wrote:
+
+- `revokeRole` on the founder's own `house_manager` assignment: ZERO
+  `role_revoked` rows on the household; assignment aa4b7053 still
+  standing.
+- `fileCaptureArtifact` dismissing the 16:41 capture: the artifact is
+  still `status = captured`, `disposition` NULL, `filed_by` NULL.
+
+**One silent no-op is a click that missed. Two, in one session, on one
+page, is a pattern.** That is the finding; the cause is NOT diagnosed
+here, deliberately.
+
+**What is ruled out by reading the code.** Not permissions: the Revoke
+control renders only when the viewer is corporate_admin and the row is
+not their own, and the filing form renders only for
+corporate_admin/ops, both true for that identity, so the controls were
+present precisely because the gates passed. Not a refusal either: every
+failure path in both actions calls `refuse(...)`, which redirects to a
+page the eleventh guard (refusal-visibility.test.ts) proves renders the
+banner.
+
+**The gap that let this hide, which is the part worth keeping.**
+refusal-visibility proves a refusal is VISIBLE. It cannot prove an
+action EXECUTED. If the action never runs at all (a stale server-action
+id, client JS that never hydrated, a form post that never leaves the
+browser), no refusal is emitted, no banner appears, and the operator
+sees exactly what success looks like. This is the G-55 defect class
+recurring one level up: G-55 was a refusal that produced a click, a
+navigation and silence; this is a NON-refusal that produces the same
+three things. The 2026-07-28 fix closed the first and could not have
+closed the second.
+
+**Not a second bug, recorded so it is not counted twice:** the capture
+sitting at `captured` with a null disposition is the CORRECT resting
+state for an unfiled capture (`status` defaults to `captured` at
+0044:1284 and only `fileCaptureArtifact` moves it). It is evidence
+consistent with the dismissal never running, not an independent stuck
+flow. It is also the first production row that table has ever held, so
+there is no precedent to compare against.
+
+**The decisive evidence, not yet gathered:** whether a POST leaves the
+browser at all when the control is clicked. No request means the fault
+is client-side (hydration or a stale action id) and the honest fix is
+detection, since a silent client is indistinguishable from success
+today. A request that returns 200 while nothing changes means the fault
+is server-side and considerably more serious. One click with the
+network panel open settles it, and no fix should be designed before it
+does.
+
+**Adjacent, in scope when the cause is known:** the same silence would
+apply to every other corporate action on that page, which is most of
+the ways a person changes anything in this product.
