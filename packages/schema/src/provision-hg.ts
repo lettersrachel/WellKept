@@ -24,17 +24,25 @@
  *    exclusion contract rides the tester flag on the USER, per the
  *    provisioning doc, not the household).
  *
- * Usage: pnpm db:hg --email tester@example.com [--name "Lauren Green"]
+ * Usage: pnpm db:hg --email tester@example.com --by admin@example.com
+ *        [--name "Lauren Green"]
  * The tester's real email is REQUIRED and never lives in this repo; a
- * run without it refuses. Re-running is idempotent (fixed ids; the
- * user keys on the email given).
+ * run without it refuses. --by is the provisioning corporate identity
+ * (G-64: a real tenant and a staff assignment must leave audit
+ * history, exactly as the app path does); it must already exist and
+ * hold a corporate_admin role somewhere. Re-running is idempotent
+ * (fixed ids; the user keys on the email given), and a re-run against
+ * a tenant provisioned BEFORE this script wrote audit rows BACKFILLS
+ * them, marked recordedLate, which is the production remediation for
+ * the 25 August run.
  */
 import { randomUUID } from "node:crypto";
 import pg from "pg";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import {
   household, playbookField, authUser, householdRoleAssignment, registryEntry, workItem,
+  auditEvent, auditSubjectToken,
 } from "./tables.ts";
 
 const argv = process.argv.slice(2);
@@ -44,8 +52,13 @@ const argOf = (flag: string) => {
 };
 const email = argOf("--email");
 const name = argOf("--name") ?? "Lauren Green";
+const by = argOf("--by");
 if (!email || !email.includes("@")) {
   console.error("REFUSED: --email is required (the tester's real sign-in address; it never lives in this repo).");
+  process.exit(1);
+}
+if (!by || !by.includes("@")) {
+  console.error("REFUSED: --by is required (the provisioning corporate identity; a real tenant leaves audit history, G-64).");
   process.exit(1);
 }
 
@@ -54,6 +67,24 @@ const pool = new pg.Pool({
     process.env.DATABASE_URL ?? "postgresql://wellkept:wellkept_dev@localhost:5432/wellkept",
 });
 const db = drizzle(pool);
+
+// The actor gate, matching the app path's posture: assigning a role is a
+// corporate act, and the audit row attributes a real corporate identity.
+const [actor] = await db.select().from(authUser).where(eq(authUser.email, by));
+if (!actor) {
+  console.error(`REFUSED: no user with email ${by}; the provisioning identity must already exist.`);
+  await pool.end();
+  process.exit(1);
+}
+const [actorRole] = await db.select().from(householdRoleAssignment).where(and(
+  eq(householdRoleAssignment.userId, actor.id),
+  eq(householdRoleAssignment.role, "corporate_admin"),
+)).limit(1);
+if (!actorRole) {
+  console.error(`REFUSED: ${by} holds no corporate_admin role; provisioning a tenant is a corporate act.`);
+  await pool.end();
+  process.exit(1);
+}
 
 // Fixed ids: the whole provisioning converges on re-run.
 const HG = "01997700-0000-7000-8000-00000000a001";
@@ -69,10 +100,46 @@ await db.insert(authUser).values({ id: randomUUID(), email, name, isTester: true
   .onConflictDoNothing({ target: authUser.email });
 const [tester] = await db.select().from(authUser).where(eq(authUser.email, email));
 await db.update(authUser).set({ isTester: true }).where(eq(authUser.id, tester!.id));
+const [priorAssignment] = await db.select().from(householdRoleAssignment).where(and(
+  eq(householdRoleAssignment.userId, tester!.id), eq(householdRoleAssignment.householdId, HG),
+));
 await db.insert(householdRoleAssignment).values({
   id: randomUUID(), userId: tester!.id, householdId: HG, role: "house_manager", ndaApproved: true,
 }).onConflictDoNothing();
 console.log(`HG tenant + tester provisioned: ${email} -> house_manager on Household Green (is_tester=true)`);
+
+// G-64: the audit history the app path would have written, from the
+// script path too. The subject token is the ADR-006 pattern (the
+// tester's email never enters the audit row; the token resolves while
+// the mapping exists and stops resolving on erasure). Idempotent on
+// the marker: one provisioning history per tenant, however many times
+// the script re-runs. A re-run against a tenant provisioned before
+// this block existed BACKFILLS the rows, marked recordedLate: the
+// trail is honest about when it was written, never about less.
+const [auditMarker] = await db.select().from(auditEvent).where(and(
+  eq(auditEvent.householdId, HG), eq(auditEvent.kind, "role_assigned"),
+  sql`${auditEvent.detail}->>'provisionedVia' = 'db:hg'`,
+));
+if (!auditMarker) {
+  const recordedLate = Boolean(priorAssignment);
+  const tokenId = randomUUID();
+  await db.insert(auditSubjectToken).values({ id: tokenId, householdId: HG, kind: "email", value: email });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: HG, actorUser: actor.id, actorRole: "corporate_admin",
+    kind: "household_provisioned",
+    detail: { provisionedVia: "db:hg", pseudonymized: true, isFixture: false, recordedLate },
+  });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: HG, actorUser: actor.id, actorRole: "corporate_admin",
+    kind: "role_assigned",
+    detail: { subjectToken: tokenId, role: "house_manager", ndaApproved: true, provisionedVia: "db:hg", recordedLate },
+  });
+  console.log(recordedLate
+    ? "audit history BACKFILLED (household_provisioned + role_assigned, marked recordedLate)"
+    : "audit history written (household_provisioned + role_assigned)");
+} else {
+  console.log("audit history already on record; nothing written");
+}
 
 // The starter fixture set. Pseudonymized: rooms and assets carry no
 // address, no names beyond the codename; content is deliberately thin

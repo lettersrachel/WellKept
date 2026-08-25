@@ -2133,3 +2133,50 @@ the FULL mode the same way and asserts the migrate path DID fire
 refusals and four green paths. DEPLOY.md states the read-only
 guarantee in the same change. The two unfiled 6 August defects remain
 the entry's open remainder.
+
+### G-64. The HG provisioning script wrote a real tenant and a staff assignment with no audit history behind them
+
+Filed 2026-08-25, from the founder's production provisioning run the
+same afternoon: `db:hg` created Household Green (is_fixture=false, the
+first real tenant in production) and assigned the tester as its
+house_manager, and audit_event was unchanged at 62 rows. The same two
+acts through the app write a `role_assigned` audit row carrying an
+ADR-006 subject token (actions.ts assignRole), so the trail now
+depended on which door the act came through, which is the audit
+invariant's posture applied nowhere.
+
+**Boundaries of the gap, stated so the excusals are reviewed rather
+than assumed:** `db:capacity` is excused because app_setting_version
+IS its attributed, versioned record (who, when, what changed, what it
+replaced); `db:tasks` writes global reusable semantics with an
+--author requirement and no member data; `db:training` resets a
+fixture board (is_fixture=true, excluded from every real-record
+claim). The gap is specific to db:hg because HG is real.
+
+**FIXED the same day (this entry's PR):** db:hg now requires
+`--by <corporate email>` and refuses unless the identity exists and
+holds a corporate_admin role somewhere (the app path's posture:
+provisioning is a corporate act). It writes the audit history the app
+would have written, in the same shapes: `household_provisioned`
+(provisionedVia, pseudonymized, isFixture) and `role_assigned` with a
+minted audit_subject_token, so the tester's email never enters the
+audit row (G-59/ADR-006 held on the script path too). Idempotent on a
+marker row: one provisioning history per tenant however many times
+the script re-runs. A re-run against a tenant provisioned BEFORE the
+fix BACKFILLS the rows marked `recordedLate: true`, honest about when
+the trail was written. Proven locally against the exact pre-audit
+state production is in: three refusals (missing --by, unknown
+identity, non-admin identity), the backfill with recordedLate, the
+idempotent no-op, email absent from every detail payload, and the
+token resolving to the address through the mapping.
+
+**The production remediation is one founder command:** re-run
+`pnpm db:hg --email <tester address> --by <founder email>` against
+production; it backfills the two audit rows marked recordedLate and
+changes nothing else.
+
+**Residual:** future seeding scripts that create real records need the
+same discipline, currently held by memory plus this entry. If a third
+real-record script ever appears, a shared provision-audit helper (and
+a guard over scripts that insert into real-record tables) is the
+structural fix; two call sites do not yet justify it.
