@@ -14,7 +14,7 @@ status: living
 
 | Category | Examples | Why |
 |---|---|---|
-| Household operating details | routines, preferences, standards, layout, and how each standing task is done in your home | to run your household |
+| Household operating details | routines, preferences, standards, layout, how each standing task is done in your home, and your stated preference rules kept one fact per line with a review date | to run your household |
 | Secured details | access codes, alarm info, where valuables are kept | to care for the home; **encrypted**, access **logged** |
 | Visit records | tasks, hours, notes, photos, and what we noticed but deliberately set aside for later, with the reason and the planned timing | service delivery + accountability |
 | Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |

@@ -84,6 +84,7 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM capture_artifact WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM situation WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM preference_rule WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
@@ -936,6 +937,49 @@ test("situations: a short label refuses, bundled noticing arrives as ONE thing o
     await pool.query("DELETE FROM attention_record WHERE id = ANY($1)", [[inStorm, solo]]);
     await pool.query("DELETE FROM situation WHERE household_id=$1", [synId]);
     await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});
+
+test("preference rules: explicit-only recording with its event, a short rule refuses, and retirement is whole with the rule text untouched", async ({ context, page }) => {
+  // WK-DEV-007 s4 (0057): the PreferenceRule primitive. The app creates
+  // only explicit rows (the form carries no provenance input), a rule
+  // never edits in place, and pruning carries its reason (STD-016 s7).
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+
+    // Refusing direction: two characters is not a stated fact.
+    await page.getByLabel("The preference, in words").fill("ok");
+    await page.getByRole("button", { name: "Record preference" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    const rule = "No vendors before 9am; the household works from home";
+    await page.getByLabel("The preference, in words").fill(rule);
+    await page.getByLabel("Review by").fill("2027-03-01");
+    await page.getByRole("button", { name: "Record preference" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM preference_rule WHERE household_id=$1 AND status='active' AND provenance='explicit' AND confidence IS NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='preference_rule.recorded' AND payload->>'provenance'='explicit'")).toBe(1);
+    await expect(page.getByText(rule)).toBeVisible({ timeout: 15_000 });
+
+    // Retiring without a reason refuses (pruned, with why).
+    await page.getByRole("button", { name: "Retire" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    // Whole retirement: the triple lands, the rule TEXT is untouched
+    // (never edited in place), and the event follows.
+    await page.getByLabel("Why it no longer holds").fill("schedule changed at renewal");
+    await page.getByRole("button", { name: "Retire" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM preference_rule WHERE household_id=$1 AND status='retired' AND retired_reason IS NOT NULL AND retired_at IS NOT NULL AND retired_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    const { rows: [row] } = await pool.query("SELECT rule, provenance FROM preference_rule WHERE household_id=$1", [synId]);
+    expect(row.rule).toBe(rule);
+    expect(row.provenance).toBe("explicit");
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='preference_rule.retired'")).toBe(1);
+    await expect(page.getByText("retired: schedule changed at renewal")).toBeVisible({ timeout: 15_000 });
+  } finally {
+    await pool.query("DELETE FROM preference_rule WHERE household_id=$1", [synId]);
     await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
     await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
   }

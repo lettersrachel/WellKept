@@ -106,3 +106,22 @@ export const attentionDestinationSchema = z.enum([
   "end_of_visit_review", "corporate_queue",
 ]);
 export type AttentionDestinationName = z.infer<typeof attentionDestinationSchema>;
+
+// WK-DEV-009 section 10 (0056): the Situation vocabulary (zod parity
+// with the situation table's status CHECK). Added with 0057: the 0056
+// session shipped the table without this parity line; caught in the
+// next unit's read of the definition of done, a one-liner, not a
+// register entry.
+export const situationStatusSchema = z.enum(["open", "resolved"]);
+export type SituationStatus = z.infer<typeof situationStatusSchema>;
+
+// WK-DEV-007 s4 substrate backfill (0057): the PreferenceRule
+// vocabulary (zod parity with the preference_rule CHECKs). The
+// provenance vocabulary carries all three of the handoff's classes;
+// the v1 app creates ONLY explicit rows (observed and inferred arrive
+// with the engine, and never silently become fact - the firewall
+// carries-all-five precedent).
+export const preferenceProvenanceSchema = z.enum(["explicit", "observed", "inferred"]);
+export type PreferenceProvenance = z.infer<typeof preferenceProvenanceSchema>;
+export const preferenceStatusSchema = z.enum(["active", "retired"]);
+export type PreferenceStatus = z.infer<typeof preferenceStatusSchema>;
