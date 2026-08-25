@@ -25,12 +25,12 @@
 set -euo pipefail
 
 EXPECTED_PROJECT="wellkept"
-# The link file records the project by ID ONLY — Vercel writes projectId and
+# The link file records the project by ID ONLY - Vercel writes projectId and
 # orgId, never projectName. Checking a key Vercel does not write made the
 # guard read "linked to nothing" and refuse every deploy (2026-07-28). The ID
 # is the field that actually exists, and it is exact: no name-resolution call,
 # no network, no ambiguity. If the project is ever recreated this must be
-# re-pinned — that is the intended tradeoff for an offline, deterministic check.
+# re-pinned - that is the intended tradeoff for an offline, deterministic check.
 EXPECTED_PROJECT_ID="prj_15Q69KLCnnRMQQZp8Ou4tORuZBQq"
 PROD_HOST="https://wellkept-orcin.vercel.app"
 
@@ -41,7 +41,7 @@ linked_project_id() {
   node -e "console.log(require('./.vercel/project.json').projectId ?? '')" 2>/dev/null || echo ""
 }
 
-# /api/build-id answers {"id":"<sha>"} — the sha must be extracted before it
+# /api/build-id answers {"id":"<sha>"} - the sha must be extracted before it
 # can be compared. Comparing the raw body to a bare sha never matches, so step
 # 7 would have refused every deploy it reached.
 extract_build_id() {
@@ -77,7 +77,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "selftest 5/12: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
-  # guard suite that only tests red passes while refusing everything — which
+  # guard suite that only tests red passes while refusing everything - which
   # is exactly how the projectName and build-id bugs shipped. These two prove
   # the checks ACCEPT what they are supposed to accept.
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
