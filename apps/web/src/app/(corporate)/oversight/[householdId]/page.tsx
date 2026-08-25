@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
 import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
+import { requirementCalibration } from "@/lib/estimate-calibration";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -179,6 +180,12 @@ export default async function Oversight({ params, searchParams }: {
     bindProvisions(f["governingProvisions"] as string[] | null, provisionsById(), "corporate", seedReviewed);
   const totpEnrolled = await getTotpEnrolled(members.map((m) => m.userId));
   const visitPhotos = await getVisitPhotos(hh.id);
+  // WL Gate 2 scaffolding (A581): estimate-versus-actual on the record,
+  // requirement-keyed, person-free, null-honest. No catalog id enters.
+  const calibration = new Map<string, Awaited<ReturnType<typeof requirementCalibration>>>();
+  for (const r of requirements) {
+    calibration.set(r.id, await requirementCalibration(db, r.id));
+  }
   const isAdmin = role === "corporate_admin";
   const isAdminOrOps = role === "corporate_admin" || role === "corporate_ops";
   const ROLE_OPTIONS = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
@@ -977,6 +984,11 @@ export default async function Oversight({ params, searchParams }: {
                 {latestEstimate.get(r.id)!.count > 1 && (
                   <span className="prov" style={{ marginLeft: 8 }}>
                     {latestEstimate.get(r.id)!.count} estimates on record
+                  </span>
+                )}
+                {calibration.get(r.id)?.varianceMinutes !== null && calibration.get(r.id) !== undefined && (
+                  <span className="prov" style={{ marginLeft: 8 }}>
+                    latest actual {calibration.get(r.id)!.actualMinutes} min ({calibration.get(r.id)!.varianceMinutes! >= 0 ? "+" : ""}{calibration.get(r.id)!.varianceMinutes} vs estimate)
                   </span>
                 )}
               </div>

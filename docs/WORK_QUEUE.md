@@ -698,6 +698,28 @@ unclaimed families are confirmed future-WKT candidates. Everything
 else in the adoption path stands: verdicts, importer discipline,
 freeze, flip, loader, Gate 2.
 
+**And the day closes with the weekly note current and the Gate 2
+scaffolding opened (the standing proceed authorization):** the weekly
+build note's 25 August section is written to the WK-DEV-011 section 6
+contents (phase and acceptance status, the A581/A582/A584 execution,
+the grant-audit reference honestly PENDING the founder's run, the
+verification outputs referenced in the frozen sitting record, the
+provisional-flag and recall-job confirmations, run-rate pending with
+the Vercel free-tier observation, zero dependency delta, blockers
+with age, and the standing deliberately-not-built line). The
+estimator scaffolding A581 permitted is BUILT within its rails:
+lib/estimate-calibration.ts computes estimate-versus-actual on ONE
+work requirement, keyed on the requirement's own uuid and never a
+catalog id (T or WKT), person-free by construction, with NULL the
+honest unknown at every step (no estimate, unknown actual, and empty
+record all yield null variance, proven in integration tests along
+with the row's own shape carrying no person and no catalog id); the
+one consumer is the drill-in requirement card's latest-actual
+variance line, corporate-side under D7. No learning, no priors, no
+vocabulary: the estimate hierarchy and calibration models remain
+Gate 2's verbatim adoptions, gated on HG actuals and the Inventory
+adoption. Twenty-four e2e green.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
