@@ -516,3 +516,46 @@ test("corporate board: aggregate only, honest unset thresholds, and no per-HOM u
   const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
   await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
 });
+
+test("contextual entry: the scan URL opens resolved context, capture is one gesture from it, and another tenant's entry refuses", async ({ context, page }) => {
+  // WK-DEV-009 s3.3: an asset's link opens the operational context.
+  const entryId = randomUUID();
+  await pool.query(
+    "INSERT INTO registry_entry (id, household_id, kind, label, detail, installed_at, maintenance_interval_months, last_serviced_at) VALUES ($1,$2,'appliance','Journey furnace','{}','2020-01-15T00:00:00Z',12,'2026-02-10T00:00:00Z')",
+    [entryId, synId]);
+  await pool.query(
+    "INSERT INTO condition_flag (id, household_id, registry_entry_id, subject, location, concern, raised_by, revisit_condition) VALUES ($1,$2,$3,'rattle on startup','basement','worth a listen at next service',$4,'at the fall service')",
+    [randomUUID(), synId, entryId, synHomId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+    await page.goto(`/context/${entryId}`);
+    await expect(page.getByRole("heading", { name: "Journey furnace" })).toBeVisible({ timeout: 30_000 });
+    // The maintenance clock computes from service facts (Feb 2026 + 12mo).
+    await expect(page.getByText(/Next maintenance: 2027-02-10/)).toBeVisible();
+    // Open history resolved with the scan.
+    await expect(page.getByText("rattle on startup")).toBeVisible();
+
+    // Capture from context: prefilled with the asset, lands routed, and
+    // returns HERE with the recorded banner.
+    const box = page.getByLabel("Tell Well Kept about this object");
+    await expect(box).toHaveValue("Journey furnace: ");
+    await box.fill("Journey furnace: pilot light took two tries");
+    await page.getByRole("button", { name: "Tell Well Kept" }).click();
+    await expect(page.getByText("captured; we handle the filing")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(new RegExp(`/context/${entryId}`));
+    const { rows: [cap] } = await pool.query(
+      "SELECT count(*)::int n FROM capture_artifact WHERE household_id=$1 AND content='Journey furnace: pilot light took two tries'", [synId]);
+    expect(cap.n).toBe(1);
+
+    // Another tenant's entry: no assignment, no principal, no page.
+    const { rows: [fern] } = await pool.query(
+      "SELECT id FROM registry_entry WHERE household_id=$1 AND tombstoned_at IS NULL LIMIT 1", [fernbrookId]);
+    if (fern) {
+      await page.goto(`/context/${fern.id}`);
+      await page.waitForURL(/\/signin/, { timeout: 30_000 });
+    }
+  } finally {
+    await pool.query("DELETE FROM condition_flag WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM registry_entry WHERE id=$1", [entryId]);
+  }
+});

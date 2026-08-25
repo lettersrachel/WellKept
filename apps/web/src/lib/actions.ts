@@ -68,6 +68,10 @@ function refuse(householdId: string | null | undefined, reason: RefusalReason): 
 function resolveReturnTo(raw: string, householdId: string): string {
   if (raw === "/visit") return "/visit";
   if (householdId && raw === `/oversight/${householdId}`) return raw;
+  // s3.3 contextual entry: a capture made FROM an asset's context page
+  // returns to it. Fixed prefix plus a uuid, nothing else; the page
+  // itself re-checks tenancy and sensitivity on every render.
+  if (/^\/context\/[0-9a-f-]{36}$/i.test(raw)) return raw;
   return householdId ? `/oversight/${householdId}` : "/oversight";
 }
 
