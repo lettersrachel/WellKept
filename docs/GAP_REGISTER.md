@@ -2194,3 +2194,23 @@ same discipline, currently held by memory plus this entry. If a third
 real-record script ever appears, a shared provision-audit helper (and
 a guard over scripts that insert into real-record tables) is the
 structural fix; two call sites do not yet justify it.
+
+**G-62 residual RESOLVED (2026-08-25, evening): the candidate guard is
+BUILT.** legal-census.test.ts computes the household-referencing table
+set from tables.ts (the staff-disclosure pattern; count floor >= 30
+per the inputs doctrine) and requires every table to be named in
+CHILD_DATA.md's surface table or excused in an allowlist with a
+written reason. Its first red run surfaced TWENTY uncovered tables,
+which is the census the memory-held rule never had: fifteen received
+dated catch-up rows in CHILD_DATA.md (each restating the standing
+treatment, none deciding new policy: visit_command, client_edit,
+time_entry/cost_entry, membership_event, gesture,
+trigger_rule/prompt_pack_item, prompt_outcome, season_observation,
+stranger_test, notification, anticipation_exclusion,
+object_observation, event_outbox) and six carry written excusals
+(household, vault_item, audit_event, audit_subject_token,
+household_role_assignment, time_segment). Proven red on a deliberately
+removed doc row, green restored; joined the guard manifest and the
+CLAUDE.md table in the same change. The legal/README and
+privacy-notice PROSE stay on the same-PR rule, stated in the guard's
+own not-covered column.

@@ -482,6 +482,19 @@ incident 51a380e1 at check 13), the consent recording on the HG
 drill-in, and Lauren's first sign-in. HG will correctly flag on the
 {"gapDays":10} reconciliation knob if no visit lands within ten days.
 
+**And the G-62 candidate guard is BUILT (the fifteenth guard,
+legal-census.test.ts):** the same-PR legal rule's detection is now
+computed, not remembered. The census (household-referencing tables
+from the schema, count floor per the inputs doctrine) demands a
+CHILD_DATA.md row or a written excusal for every table; its first red
+run surfaced twenty uncovered tables, closed with fifteen dated
+catch-up rows (restating standing treatments, deciding nothing new)
+and six written excusals. Proven red on a removed row, green
+restored; manifest and CLAUDE.md table extended in the same change.
+The README and privacy-notice prose stay on the same-PR rule, named
+in the guard's not-covered column. Thirteen guard files, forty-nine
+schema tests.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
