@@ -80,8 +80,51 @@ process.exit(bad);
 EOF
   )
   need $? "check 12: app_setting knobs (detail above; REPAIRED counts as pass but read it)"
+
+  # 15 (added 2026-08-25, from the sitting that found Household Green and
+  # then Field Test Home invisible): REQ-001 has no fleet-wide wildcard,
+  # so a household with NO corporate assignment cannot be seen or reached
+  # by any corporate operator, including the founder - it exists, counts
+  # toward reconciliation surfaces, and nothing reports it. Every
+  # household must hold at least one corporate role, or be excused below
+  # with a written reason. The fix for a found orphan is an AUDITED grant
+  # (the app's assignRole, or the db:hg --by pattern), never silent SQL.
+  ( cd "$(dirname "$0")/../apps/web" && node --input-type=module - <<'EOF'
+import pg from "pg";
+// Excused orphans, each with the written reason the escape-hatch rule
+// requires. Remove a line when its household is disposed of.
+const ALLOWLIST = {
+  "d05ab5a2-7d9c-4cff-919a-250adafa0355":
+    "Field Test Home: pre-existing orphan from early field testing (carries the G-52 " +
+    "stuck command); found 25 Aug 2026, disposition pending the founder's decision - " +
+    "grant-and-inspect, erase, or fixture-flag",
+};
+const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
+await c.connect();
+const { rows } = await c.query(`
+  SELECT h.id, h.name FROM household h
+  WHERE NOT EXISTS (
+    SELECT 1 FROM household_role_assignment a
+    WHERE a.household_id = h.id
+      AND a.role IN ('corporate_admin','corporate_ops','cfo_readonly'))`);
+let bad = 0;
+for (const r of rows) {
+  if (r.id in ALLOWLIST) {
+    console.log(`         ${r.name}: orphan EXCUSED (${ALLOWLIST[r.id].split(";")[0]})`);
+  } else {
+    console.log(`         ${r.name} (${r.id}): NO corporate holder - invisible to every corporate operator`);
+    bad = 1;
+  }
+}
+if (rows.length === 0) console.log("         every household holds at least one corporate role");
+await c.end();
+process.exit(bad);
+EOF
+  )
+  need $? "check 15: no household is invisible (every household holds a corporate role, or is excused in writing)"
 else
   say SKIP "check 12: DATABASE_URL not set — knobs NOT verified; re-run with it before calling the checklist done"
+  say SKIP "check 15: DATABASE_URL not set — invisible-household census NOT run"
 fi
 
 echo
