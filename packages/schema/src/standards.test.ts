@@ -240,4 +240,16 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /decision_record/,
   );
   assert.ok(assertNoAnticipationRows([{ question: "what time works for the walkthrough" }]));
+
+  // WK-DEV-009 s8: a capture_artifact never reaches a client.
+  assert.throws(
+    () => assertNoAnticipationRows([{ content: "shelf pulling from wall", capturedBy: "u1" }]),
+    /capture_artifact/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { extraction_status: "none", disposition: "filed as work item" } }),
+    /capture_artifact/,
+  );
+  // The innocent keys: a client note with content alone is not a row.
+  assert.ok(assertNoAnticipationRows([{ content: "welcome note text" }]));
 });

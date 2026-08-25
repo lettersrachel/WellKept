@@ -171,6 +171,14 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("windowCondition", "blockedReason") || has("window_condition", "blocked_reason")) {
       throw new Error(`SEVERE: a work_item row reached a client payload at ${path}`);
     }
+    // WK-DEV-009 s8: a capture artifact is the HOM's own words about the
+    // household (s2), pre-filing; no client projection exists, so any
+    // recognizable row is the violation. The key pair is the object's
+    // own shape (content plus who captured, or the filing pair).
+    if (has("content", "capturedBy") || has("content", "captured_by")
+      || has("extractionStatus", "disposition") || has("extraction_status", "disposition")) {
+      throw new Error(`SEVERE: a capture_artifact row reached a client payload at ${path}`);
+    }
     // WK-DEV-007 s3: shadow-log output is engine-internal (founder, CFO,
     // developer only); no client projection exists, so any recognizable
     // row is the violation.

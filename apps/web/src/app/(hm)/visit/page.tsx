@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
-import { logStrangerTest, createTimeEntry, createCostEntry, createPausedDecision } from "@/lib/actions";
+import { logStrangerTest, createTimeEntry, createCostEntry, createPausedDecision, tellWellKept } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { FlagCaptureForm, FlagLookForm, FlagCloseForm, ResolveButtons, OutcomeButton } from "./OfflineCapture";
 import { VisitAlerts } from "./VisitAlerts";
@@ -257,6 +257,22 @@ export default async function VisitPage({ searchParams }: {
           ))}
         </div>
       )}
+
+      {/* WK-DEV-009 s8, Tier D: the universal escape hatch. One box, the
+          HOM's words, no taxonomy; the corporate router files it. */}
+      <div className="card">
+        <h2>Tell Well Kept</h2>
+        <p className="note" style={{ marginTop: 0 }}>
+          Anything unexpected, in your own words. Say it once; we handle the
+          filing. You never need to know which record it belongs in.
+        </p>
+        <form action={tellWellKept}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <input type="hidden" name="returnTo" value="/visit" />
+          <input name="content" aria-label="Tell Well Kept" placeholder="the shelf in the pantry is pulling away from the wall" />
+          <p><button className="act">Tell Well Kept</button></p>
+        </form>
+      </div>
 
       <div className="card">
         <h2>Flag a condition</h2>

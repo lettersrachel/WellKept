@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, eventOutbox } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, eventOutbox } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1589,4 +1589,99 @@ export async function decideDecision(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `decision ${outcome}`);
+}
+
+/**
+ * WK-DEV-009 section 8, the Tier D half: "Tell Well Kept". The HOM says
+ * what they saw, once, in their own words; the system NEVER asks them
+ * for the taxonomy. Until the Tier M gate opens, the router is a human:
+ * every artifact lands in the corporate queue and filing is a person's
+ * act (raise a work item, or dismiss with the reason in words). No
+ * automatic keyword or severity routing exists in v1 by decision: a
+ * severity vocabulary is a safety taxonomy, which no engineer picks.
+ * Events carry ids only; the HOM's words are s2 and stay on the row.
+ */
+export async function tellWellKept(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const kind = String(formData.get("kind") ?? "text");
+  // Only text is writable today: voice waits on the voice ruling's Tier M
+  // transcription path; photo and scan wait on their capture surfaces.
+  if (kind !== "text") refuseTo(returnTo, "gate-unmet");
+  const content = String(formData.get("content") ?? "").trim().slice(0, 2000);
+  if (content.length < 4) refuseTo(returnTo, "bad-input");
+  const visitRaw = String(formData.get("visitCommandId") ?? "");
+  const visitCommandId = /^[0-9a-f-]{36}$/i.test(visitRaw) ? visitRaw : null;
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(captureArtifact).values({
+      id, householdId, kind: "text", content, capturedBy: principal.userId, visitCommandId,
+    });
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "capture_artifact.created",
+      payload: { captureArtifactId: id, kind: "text" }, occurredAt: new Date(),
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "capture_artifact", detail: { captureArtifactId: id, action: "captured" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "captured; we handle the filing");
+}
+
+export async function fileCaptureArtifact(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  // Filing is the human router's act: corporate only.
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("captureArtifactId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  if (!["work_item", "dismiss"].includes(decision)) refuseTo(returnTo, "bad-input");
+  const [row] = await db.select().from(captureArtifact).where(eq(captureArtifact.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.status !== "captured") refuseTo(returnTo, "bad-input"); // filed is filed
+  const disposition = String(formData.get("disposition") ?? "").trim().slice(0, 400);
+  // The gate, BEFORE the transaction opens: filing carries where it went,
+  // and a dismissal carries why, in words.
+  if (disposition.length < 4) refuseTo(returnTo, "gate-unmet");
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    let workItemId: string | null = null;
+    if (decision === "work_item") {
+      // The filed work item is the HOM's capture, and says so: source
+      // hm_capture, titled from the HOM's words.
+      workItemId = randomUUID();
+      await tx.insert(workItem).values({
+        id: workItemId, householdId, title: row.content.slice(0, 200),
+        detail: `Filed from a Tell Well Kept capture. ${disposition}`.slice(0, 1000),
+        kind: "followup", source: "hm_capture", ownerId: principal.userId,
+      });
+      await tx.insert(eventOutbox).values({
+        id: randomUUID(), householdId, kind: "work_item.opened",
+        payload: { workItemId, kind: "followup", source: "hm_capture" }, occurredAt: now,
+      });
+    }
+    await tx.update(captureArtifact).set({
+      status: decision === "work_item" ? "filed" : "dismissed",
+      disposition, workItemId, filedAt: now, filedBy: principal.userId, updatedAt: now,
+    }).where(eq(captureArtifact.id, id));
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "capture_artifact.filed",
+      payload: { captureArtifactId: id, outcome: decision === "work_item" ? "filed" : "dismissed", workItemId },
+      occurredAt: now,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "capture_artifact", detail: { captureArtifactId: id, action: decision, workItemId },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, decision === "work_item" ? "capture filed as a work item" : "capture dismissed");
 }

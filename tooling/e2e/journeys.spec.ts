@@ -28,6 +28,8 @@ let rachelId = "";
 let fernbrookId = "";
 let synId = ""; // synthetic household rachel IS assigned to (consent journey)
 let orphanId = ""; // synthetic household NOBODY is assigned to (isolation journey)
+let synHomId = ""; // field identity assigned ONLY to synId (capture journey)
+let synHomToken = "";
 
 test.beforeAll(async () => {
   const { rows: [hh] } = await pool.query("SELECT id FROM household ORDER BY created_at LIMIT 1");
@@ -59,6 +61,18 @@ test.beforeAll(async () => {
     [orphanId, "SYN-01 isolation journey"]);
   await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'corporate_admin',true)",
     [randomUUID(), rachelId, synId]);
+
+  // A field identity whose ONLY assignment is the synthetic household, so
+  // /visit resolves it deterministically (getFieldHouseholdAndPrincipal
+  // prefers the field-role assignment) for the capture journey.
+  synHomId = randomUUID();
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [synHomId, `syn-hom-${synHomId.slice(0, 8)}@journeys.test`, "SYN-01 field identity"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'house_manager',true)",
+    [randomUUID(), synHomId, synId]);
+  synHomToken = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires, mfa_satisfied_at) VALUES ($1,$2,$3,now())",
+    [synHomToken, synHomId, expires]);
 });
 
 test.afterAll(async () => {
@@ -67,12 +81,14 @@ test.afterAll(async () => {
   // way airplane.spec tears down its visit commands).
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM capture_artifact WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
-  await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken]]);
+  await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken, synHomToken]]);
+  await pool.query("DELETE FROM auth_user WHERE id = $1", [synHomId]); // assignment already cascaded with the household
 });
 
 test("consent journey: warning, then recorded with its audit row; a future date refuses visibly and changes nothing", async ({ context, page }) => {
@@ -365,4 +381,52 @@ test("tenant isolation at the page layer: no assignment for a household means no
   await page.goto(`/oversight/${orphanId}`);
   await page.waitForURL(/\/signin/, { timeout: 30_000 });
   await expect(page.getByText("SYN-01 isolation journey")).toHaveCount(0);
+});
+
+test("capture journey: the HOM says it once on /visit; the corporate router refuses a wordless filing, then files it as hm_capture work", async ({ context, page }) => {
+  // The HOM half: one box, their words, no taxonomy.
+  await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+  await page.goto("/visit");
+  await expect(page.getByRole("button", { name: "Tell Well Kept" })).toBeVisible({ timeout: 30_000 });
+
+  // Refusing direction: two characters is not a capture.
+  await page.getByLabel("Tell Well Kept").fill("ok");
+  await page.getByRole("button", { name: "Tell Well Kept" }).click();
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+  const said = "The pantry shelf is pulling away from the wall by the door";
+  await page.getByLabel("Tell Well Kept").fill(said);
+  await page.getByRole("button", { name: "Tell Well Kept" }).click();
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  await expect.poll(() => count("SELECT count(*)::int n FROM capture_artifact WHERE household_id=$1 AND status='captured'"), { timeout: 20_000 }).toBe(1);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='capture_artifact.created'")).toBe(1);
+  const { rows: [cap] } = await pool.query("SELECT content, captured_by FROM capture_artifact WHERE household_id=$1", [synId]);
+  expect(cap.content).toBe(said);
+  expect(cap.captured_by).toBe(synHomId);
+
+  // The router half: corporate sees the words in the queue.
+  await context.clearCookies();
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByText(said)).toBeVisible({ timeout: 30_000 });
+
+  // A wordless filing refuses: the disposition is the record.
+  await page.getByRole("button", { name: "File" }).click();
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+  // Filed as a work item: the artifact closes whole, the work item is the
+  // HOM's capture and says so, and both events land.
+  await page.getByLabel("Filing decision").selectOption("work_item");
+  await page.getByLabel("Where it went, or why not").fill("vendor look at the pantry shelving");
+  await page.getByRole("button", { name: "File" }).click();
+  await expect.poll(() => count("SELECT count(*)::int n FROM capture_artifact WHERE household_id=$1 AND status='filed' AND disposition IS NOT NULL AND filed_by IS NOT NULL AND work_item_id IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+  const { rows: [w] } = await pool.query(
+    "SELECT title, source FROM work_item WHERE household_id=$1 AND source='hm_capture'", [synId]);
+  expect(w.title).toBe(said);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='capture_artifact.filed'")).toBe(1);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_item.opened' AND payload->>'source'='hm_capture'")).toBe(1);
+
+  // Filed is filed: the form is gone, the disposition renders.
+  await expect(page.getByText("filed: vendor look at the pantry shelving")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "File" })).toHaveCount(0);
 });

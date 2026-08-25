@@ -1110,3 +1110,51 @@ export const decisionRecord = pgTable("decision_record", {
   check("decision_record_decided_xor_expired",
     sql`NOT (${t.outcome} IS NOT NULL AND ${t.expiredAt} IS NOT NULL)`),
 ]);
+
+// WK-DEV-009 v1.1 section 8, the Tier D half: "Tell Well Kept", the
+// universal escape hatch. The HOM captures the unexpected in their own
+// words and NEVER needs the database taxonomy; classification is the
+// system's job. Until the Tier M gate (section 12) opens, the router is
+// a HUMAN: every artifact lands in the corporate queue and a person
+// files it (a work item, or a reasoned dismissal), so the promise
+// ("say it once, we handle the filing") holds from day one with AI
+// replacing the human router later, not the promise. NO automatic
+// keyword or severity routing ships in v1: a severity vocabulary is a
+// safety taxonomy, and no engineer picks the safety list (the
+// stranger-mode lesson); a founder-set rule set is the later knob.
+// kind admits the section 10 spec's four capture modes, but only 'text'
+// is writable today: voice is gated by the voice ruling (HOM-initiated
+// dictation only, transcribe-then-purge, Tier M), photo and scan wait
+// on their capture surfaces. The action refuses the other three; the
+// CHECK carrying them is the spec's shape, not a shipped feature.
+export const captureArtifact = pgTable("capture_artifact", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  kind: text("kind").notNull().default("text"),
+  content: text("content").notNull(), // the HOM's words, verbatim; s2
+  capturedBy: text("captured_by").notNull().references(() => authUser.id),
+  visitCommandId: uuid("visit_command_id"), // the visit it arose from, where one applies
+  // Tier M stub: nothing extracts until the section 12 gate entry
+  // exists; 'none' is the only value anything writes today.
+  extractionStatus: text("extraction_status").notNull().default("none"),
+  status: text("status").notNull().default("captured"),
+  disposition: text("disposition"), // where it was filed, or why dismissed
+  workItemId: uuid("work_item_id").references(() => workItem.id), // set when filing created one
+  filedAt: timestamp("filed_at", { withTimezone: true }),
+  filedBy: text("filed_by").references(() => authUser.id),
+}, (t) => [
+  index("capture_artifact_household_idx").on(t.householdId, t.status),
+  check("capture_artifact_kind_known",
+    sql`${t.kind} IN ('text','voice','photo','scan')`),
+  check("capture_artifact_extraction_known",
+    sql`${t.extractionStatus} IN ('none','pending','extracted')`),
+  check("capture_artifact_status_known",
+    sql`${t.status} IN ('captured','filed','dismissed')`),
+  // The house rule, structural: a terminal state carries the whole
+  // filing triple and a live one carries none of it, both directions.
+  check("capture_artifact_filing_is_whole",
+    sql`(${t.status} IN ('filed','dismissed') AND ${t.disposition} IS NOT NULL AND ${t.filedAt} IS NOT NULL AND ${t.filedBy} IS NOT NULL) OR (${t.status} = 'captured' AND ${t.disposition} IS NULL AND ${t.filedAt} IS NULL AND ${t.filedBy} IS NULL)`),
+  // A created work item is a product of FILING, never of capture.
+  check("capture_artifact_work_item_is_filed",
+    sql`${t.workItemId} IS NULL OR ${t.status} = 'filed'`),
+]);

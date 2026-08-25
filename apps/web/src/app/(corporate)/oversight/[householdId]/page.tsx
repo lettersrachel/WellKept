@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -73,6 +73,11 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(workItem.householdId, hh.id))
     .orderBy(desc(workItem.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "done" || a.status === "abandoned") - Number(b.status === "done" || b.status === "abandoned"));
+  // WK-DEV-009 s8: the human router's queue, unfiled first.
+  const captures = (await db.select().from(captureArtifact)
+    .where(eq(captureArtifact.householdId, hh.id))
+    .orderBy(desc(captureArtifact.createdAt)).limit(30))
+    .sort((a, b) => Number(a.status !== "captured") - Number(b.status !== "captured"));
   // RFC-PRIM-01 build 2: what needs noticing, open first.
   const attention = (await db.select().from(attentionRecord)
     .where(eq(attentionRecord.householdId, hh.id))
@@ -103,6 +108,7 @@ export default async function Oversight({ params, searchParams }: {
   const totpEnrolled = await getTotpEnrolled(members.map((m) => m.userId));
   const visitPhotos = await getVisitPhotos(hh.id);
   const isAdmin = role === "corporate_admin";
+  const isAdminOrOps = role === "corporate_admin" || role === "corporate_ops";
   const ROLE_OPTIONS = ["client", "house_manager", "backup_hm", "corporate_ops", "corporate_admin", "cfo_readonly"];
   const pendingGestures = gestures.filter((g) => !g.executedAt);
   const quietLog = gestures.filter((g) => g.executedAt);
@@ -723,6 +729,43 @@ export default async function Oversight({ params, searchParams }: {
           <input name="windowCondition" aria-label="Or a stated window" placeholder="or a stated window" style={{ flex: 1, marginTop: 0, minWidth: 120 }} />
           <button className="act">Open work item</button>
         </form>
+      </div>
+
+      <div className="card">
+        <h2>Tell Well Kept queue (WK-DEV-009 §8)</h2>
+        <div className="note">
+          What a HOM said once, in their words, so they never have to know the
+          filing system. Routing is a person until the Tier M gate opens: file
+          it as a work item or dismiss it with the reason. No automatic
+          severity routing exists in v1; that vocabulary is a founder decision.
+        </div>
+        {captures.length === 0 && <div className="prov">Nothing captured on this household yet.</div>}
+        {captures.map((c) => (
+          <div key={c.id} className="field">
+            <span className="fname">
+              {c.content}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {c.kind} · {c.status} · {c.createdAt.toISOString().slice(0, 10)}
+              </span>
+            </span>
+            {c.status !== "captured" ? (
+              <div className="prov">{c.status}: {c.disposition}</div>
+            ) : isAdminOrOps ? (
+              <form action={fileCaptureArtifact} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="captureArtifactId" value={c.id} />
+                <select name="decision" defaultValue="work_item" className="inline" aria-label="Filing decision">
+                  <option value="work_item">file as work item</option>
+                  <option value="dismiss">dismiss</option>
+                </select>
+                <input name="disposition" aria-label="Where it went, or why not" placeholder="where it went, or why not" style={{ flex: 1, marginTop: 0, minWidth: 160 }} />
+                <button className="act subtle">File</button>
+              </form>
+            ) : (
+              <div className="prov">awaiting the router</div>
+            )}
+          </div>
+        ))}
       </div>
 
       {canSeeShadow && (

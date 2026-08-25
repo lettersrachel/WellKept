@@ -2027,3 +2027,51 @@ journey e2e now pins the rendered date string, which is the regression
 guard: a return to a zone-shifted render fails CI. Option (b), the
 date-column migration, stays queued in the Temporal Layer window with
 the other durability items; this entry does not close that queue item.
+
+### G-62. Three new data categories merged without the same-PR legal updates the merge-gate rule requires; caught and corrected one day later
+
+Filed 2026-08-25 during the Tell Well Kept build, whose own legal pass
+surfaced the miss.
+
+**The rule** (CLAUDE.md, merge gates): "A new data category updates
+`legal/README.md` and the privacy notice collection table in the same
+PR. Both copies of the notice." The rule is memory-held; the guard
+table's own honesty row for `client-copy.test.ts` says the guard scans
+for em dashes, not for coverage, and `child-data-kinds.test.ts` covers
+CHILD_DATA surfaces only through a hardcoded list that also was not
+extended.
+
+**What happened:** the substrate-window PRs shipped four new
+household-content tables with erasure treatments, payload-guard
+signatures, and staff-disclosure entries, but with NO legal/README
+category, NO privacy-notice row in either copy, and NO CHILD_DATA
+row: `shadow_log` (0038, 24 Aug), `work_item` (0041), and
+`attention_record` (0042) and `decision_record` (0043, both 25 Aug
+overnight). Each PR's checklist discipline held everywhere a CI guard
+was standing and slipped exactly where memory was the enforcement,
+which is the depends-on-remembering pattern this register exists to
+name.
+
+**Correction, same day (this entry's PR):** legal/README gains the
+three catch-up categories (internal work/attention/decision records;
+the anticipation shadow log; Tell Well Kept captures, the last being
+the new category that shipped correctly in its own PR), both privacy
+notice copies gain the Operational records row, CHILD_DATA gains rows
+for all five tables, and child-data-kinds.test.ts's surface list is
+extended to include them (proven red on the missing rows, then green).
+Every catch-up entry is dated and marked as such; nothing pretends to
+have been there.
+
+**Exposure while open: none in practice.** No real household exists;
+the notice's audience is empty. The gap is procedural, not a
+disclosure breach.
+
+**Residual, a decision rather than a defect:** the same-PR legal rule
+has no guard. A structural option exists: extend the hardcoded surface
+list in child-data-kinds.test.ts into a computed census (the
+staff-disclosure pattern: derive free-text household tables from the
+schema, require each named in CHILD_DATA and legal/README, allowlist
+with written reasons). That converts this memory into a guard, the
+preferred fix per CLAUDE.md, but building it is its own small session
+and its detection pattern needs the same both-directions proof the
+disclosure guard got. Not built here; scope holds.
