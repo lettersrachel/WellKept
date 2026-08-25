@@ -48,6 +48,9 @@ test("the guard files exist where the manifest says they are", () => {
     "apps/web/src/lib/client-duration.test.ts",
     // CAND-PRIV-01: telemetry redaction wired and console discipline held.
     "packages/schema/src/telemetry-discipline.test.ts",
+    // G-62's candidate guard: the household-table census computed from
+    // the schema; every table gets a CHILD_DATA row or a written excusal.
+    "packages/schema/src/legal-census.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -110,7 +113,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "frozen-records.test.ts", "seed-binding.test.ts", "staff-disclosure.test.ts",
     "refusal-visibility.test.ts", "provisional-markers.test.ts",
     "decline-class-exclusion.test.ts", "client-duration.test.ts",
-    "telemetry-discipline.test.ts",
+    "telemetry-discipline.test.ts", "legal-census.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }
