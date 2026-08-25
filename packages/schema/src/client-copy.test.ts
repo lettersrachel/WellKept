@@ -64,6 +64,13 @@ const COPY_SOURCES = [
   "../../../apps/web/scripts/erase-household.mjs",
   "../../../apps/web/scripts/archive-demo-data.mjs",
   "../../../apps/web/scripts/ensure-smoke-fixture.mjs",
+  // Third location, same day: the tooling shell scripts print operator
+  // copy too, and one of the sitting's own additions copied the file's
+  // em-dash house style before the sweep reached it. Bash comments are
+  // not stripped by the comment-stripper, which is fine: the rule is
+  // unqualified, so the whole file holds the floor.
+  "../../../tooling/deploy.sh",
+  "../../../tooling/smoke-mechanical.sh",
 ];
 
 // W-13: the rule covers documents. The legal drafts travel to counsel and
