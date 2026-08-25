@@ -2232,3 +2232,45 @@ every US zone). The day a capture form feeds it from a date input
 parsed to UTC midnight, the defect returns on RegistryCard and the
 context route; a warning comment now sits at the column for that
 form's future author.
+
+### G-65. /visit pins the founder to whichever field-role household sorts first, and her sitting capture proved it live
+
+Filed 2026-08-25, from the founder's Field Test Home grant run, which
+surfaced an audit row nobody had placed: a `capture_artifact` on Field
+Test Home written at 16:41 as house_manager, during the section 4
+sitting. The cause is in the code, not the data.
+`getFieldHouseholdAndPrincipal` (apps/web/src/lib/data.ts:46) resolves
+the field surface's household as `assigned.find((a) => a.role ===
+"house_manager" || a.role === "backup_hm")`, over the list
+`getAssignedHouseholds` returns ordered by `household.created_at`. So
+/visit shows THE OLDEST household the signed-in person holds a field
+role on, whatever they are actually working on that day. The founder
+holds house_manager on Field Test Home (a July test tenant), so her
+Tell Well Kept glance at the sitting captured onto Field Test Home,
+which she then could not reach to dismiss it, because the same
+household was the check-15 orphan. Two independent gaps compounded
+into one invisible write.
+
+**Not a defect in the capture path.** The artifact recorded correctly,
+attributed correctly, and sat in the correct router queue; the queue
+was simply unreachable. The single-household case (Lauren on HG) is
+unaffected, which is why nothing caught this before a person held
+field roles on two households at once.
+
+**REPORTED, not fixed: the resolution rule is a founder decision.**
+Three shapes, none chosen here. (a) Leave it and treat the
+first-by-age rule as adequate while only the founder holds multiple
+field roles, accepting that her /visit is pinned to whichever test
+tenant is oldest. (b) Add an explicit household chooser to the field
+surface when the principal holds more than one field assignment, which
+is the honest UI but adds a step to the surface WK-DEV-007 section 2
+is trying to make quieter. (c) Order the resolution by something
+meaningful (most recent applied visit, or a founder-set primary), which
+keeps one gesture but invents a rule about what "my household" means.
+Adjacent, not the same: AJ's one-role constraint (2026-07-28) is about
+two roles on ONE household; this is one role across SEVERAL.
+
+**Interim, no code:** the founder's field role on Field Test Home can
+be revoked through the audited path once the inspection is done, which
+resolves her /visit to the next field household by the same rule. The
+grant run's own finding stands as the evidence.

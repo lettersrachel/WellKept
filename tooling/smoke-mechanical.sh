@@ -93,14 +93,14 @@ EOF
 import pg from "pg";
 // Excused orphans, each with the written reason the escape-hatch rule
 // requires. Remove a line when its household is disposed of.
-const ALLOWLIST = {
-  "d05ab5a2-7d9c-4cff-919a-250adafa0355":
-    "Field Test Home: pre-existing orphan from early field testing (carries the G-52 " +
-    "stuck command); found 25 Aug 2026. DISPOSITION DECIDED same day (register A581 " +
-    "item 1): grant-and-inspect via pnpm db:grant, per docs/FIELD_TEST_HOME_INSPECTION.md. " +
-    "This entry comes OUT once the founder's production grant run is confirmed - the " +
-    "household then passes the census on its own",
-};
+// EMPTY as of 25 Aug 2026, and that is the point: the census's first and
+// only excusal (Field Test Home, the pre-existing orphan) was DISPOSED of
+// rather than carried. The founder's audited grant ran in production the
+// same evening (register A581 item 1; audit role_assigned via db:grant,
+// with its reason recorded), so the household holds a corporate role and
+// passes on its own. Add an entry here only with a written reason, and
+// expect to remove it the same way.
+const ALLOWLIST = {};
 const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await c.connect();
 const { rows } = await c.query(`
