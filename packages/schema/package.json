@@ -13,6 +13,7 @@
     "db:bindings": "node src/load-bindings.ts",
     "db:template": "node src/load-template.ts",
     "db:demo": "node src/demo-content.ts",
+    "db:training": "node src/training-household.ts",
     "db:dump": "node src/dump-seed.ts",
     "db:rewrap-kek": "node src/rewrap-kek.ts"
   },

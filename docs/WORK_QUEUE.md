@@ -84,7 +84,17 @@ rail proven both directions, journeys in CI. On the WK-DEV-010
 section 12 propose-default 48-hour clock: the no-app vendor link
 authentication shape, proposed as the directive's own expected shape
 (short-lived signed link plus a per-event verification factor, no
-account); the clock runs from this entry.
+account); the clock runs from this entry. The Training Household
+(WK-DEV-010 section 10, Phase 7 brought forward as migration-free seed
+work) EXISTS: `pnpm db:training` seeds the synthetic Trainor household
+(is_fixture, three training identities including the backup_hm stranger
+case) with the buildable half of the section 10 scenario list, and
+re-running RESETS the board for the next trainee (proven by mutating
+every scenario and re-seeding; the pre-raised late-vendor attention
+record conflicts a live sweep pass to zero new rows and zero events).
+The offline visit, the disputed outcome and ServiceEvent lifecycle
+(Phase 4), the AI misclassification (Tier M), and TrainingState itself
+(Phase 7) are stubbed BY NAME in the seed's header.
 
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
