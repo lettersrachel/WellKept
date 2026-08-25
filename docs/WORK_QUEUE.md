@@ -750,7 +750,17 @@ founder's field role there was recorded as done in three documents
 and DID NOT WRITE (zero role_revoked rows; the assignment stands),
 with the paired capture dismissal unverified for the same reason; all
 three records are corrected in place rather than rewritten away, and
-retry-with-verification is the next action. The verification also
+the retry verification then found the paired capture dismissal ALSO
+wrote nothing (still `captured`, no disposition, no filer), so
+**G-67 is filed: two corporate server actions, one session, one page,
+both reported clean and both silent.** Not permissions (the controls
+render only when the gates pass) and not a refusal (every failure
+path redirects to the banner the eleventh guard proves renders): the
+gap is that refusal-visibility proves a refusal is VISIBLE and cannot
+prove an action EXECUTED, which is the G-55 class recurring one level
+up. Cause NOT diagnosed and no fix designed; the decisive evidence is
+whether a POST leaves the browser at all, one click with the network
+panel open. The verification also
 surfaced **G-66: role assignments predating 25 August carry NO audit
 history at all** (the July Field Test Home row has no role_assigned
 behind it, actor and reason and its nda_approved claim all unsourced).
