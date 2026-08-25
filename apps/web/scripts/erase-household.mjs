@@ -1,21 +1,21 @@
 /**
  * The erasure path (REQ-071 / legal drafts "right to erasure"): execute a
- * household's deletion request. This is the MECHANISM — whether and when to
+ * household's deletion request. This is the MECHANISM - whether and when to
  * run it for a given request is counsel + founder policy (the legal README's
  * tombstone-vs-erasure reconciliation). The tool is deliberately a CLI, not
  * a button: erasure is a considered act, run by a human, twice (dry-run
  * shows exactly what will happen; --commit does it).
  *
  * What it does, per table:
- *  - vault_item: rows DELETED — removing ciphertext + wrapped keys is a
+ *  - vault_item: rows DELETED - removing ciphertext + wrapped keys is a
  *    crypto-shred; the secrets are unrecoverable... in the LIVE database.
  *    Inside Neon's point-in-time-recovery window a restore branch can
  *    reconstitute deleted rows while the KEK is still live, so for that
- *    window erasure is a strong revocation of access, not destruction —
+ *    window erasure is a strong revocation of access, not destruction -
  *    the history-retention setting is the true floor on erasure latency
  *    (gap register G-04; counsel writes the notice knowing this).
  *  - visit_photo: image bytes cleared + purged_at stamped (tombstone rows
- *    remain). Retention holds are HONOURED by default — a hold exists
+ *    remain). Retention holds are HONOURED by default - a hold exists
  *    precisely because the photo substantiates an open incident or
  *    dispute; destroying it while preserving the incident row would keep
  *    the claim and burn the evidence (gap register G-03). Pass
@@ -140,7 +140,7 @@
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
- *    sessions revoked (client accounts lose access; auth_user rows remain —
+ *    sessions revoked (client accounts lose access; auth_user rows remain -
  *    remove them from People & access once no other household needs them).
  *
  * Usage (from apps/web so `pg` resolves):
@@ -177,13 +177,13 @@ if (!hh) { console.error(`No household ${householdId}.`); await c.end(); process
 const count = async (sql) => Number((await c.query(sql, [householdId])).rows[0].n);
 
 // G-03 guard: an open incident blocks the run entirely unless explicitly
-// overridden — the tool must never silently choose between a deletion
+// overridden - the tool must never silently choose between a deletion
 // request and a live dispute. Checked before anything else, dry run included.
 const openIncidents = await count("SELECT count(*) n FROM incident_report WHERE household_id=$1 AND status='open'");
 if (openIncidents > 0 && !DESPITE_OPEN) {
   console.error(
-    `\nREFUSED: household has ${openIncidents} OPEN incident(s). Resolve them first, or — if counsel`
-    + `\ndirects that the deletion request proceeds despite the dispute — re-run with --despite-open-incidents.\n`,
+    `\nREFUSED: household has ${openIncidents} OPEN incident(s). Resolve them first, or - if counsel`
+    + `\ndirects that the deletion request proceeds despite the dispute - re-run with --despite-open-incidents.\n`,
   );
   await c.end();
   process.exit(2);
@@ -227,12 +227,12 @@ const counts = {
   auditSubjectTokens: await count("SELECT count(*) n FROM audit_subject_token WHERE household_id=$1"),
 };
 
-console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} — household "${hh.name}" (${hh.id})\n`);
-if (openIncidents > 0) console.log(`  !! ${openIncidents} OPEN incident(s) — proceeding on --despite-open-incidents\n`);
+console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} - household "${hh.name}" (${hh.id})\n`);
+if (openIncidents > 0) console.log(`  !! ${openIncidents} OPEN incident(s) - proceeding on --despite-open-incidents\n`);
 console.log(`  vault items to CRYPTO-SHRED (rows deleted, unrecoverable*): ${counts.vault}`);
-console.log(`     *inside the Neon PITR window a restore can reconstitute them (G-04) — retention is the erasure-latency floor`);
+console.log(`     *inside the Neon PITR window a restore can reconstitute them (G-04) - retention is the erasure-latency floor`);
 console.log(`  photos to purge (bytes cleared, tombstones remain):        ${counts.photos}`);
-console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " — WILL BE PURGED (--override-holds)" : " — HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
+console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " - WILL BE PURGED (--override-holds)" : " - HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
 console.log(`  registry entries to clear + tombstone:                     ${counts.registries}`);
 console.log(`  object observations to DELETE (condition/fill series):     ${counts.objectObservations}`);
@@ -257,7 +257,7 @@ console.log(`  audit events: ${SCRUB_AUDIT ? "detail payloads WILL be scrubbed (
 console.log(`  role assignments to delete (sessions revoked):             ${counts.roles}`);
 
 if (!COMMIT) {
-  console.log("\nRe-run with --commit to execute. This is not reversible — the vault shred cannot be undone.\n");
+  console.log("\nRe-run with --commit to execute. This is not reversible - the vault shred cannot be undone.\n");
   await c.end();
   process.exit(0);
 }
@@ -317,7 +317,7 @@ try {
   await c.query("DELETE FROM event_outbox WHERE household_id=$1", [householdId]);
   // shadow_log: internal engine output about the household (see header).
   await c.query("DELETE FROM shadow_log WHERE household_id=$1", [householdId]);
-  // object_observation (G-49, 2026-07-27): DELETED — the condition/fill
+  // object_observation (G-49, 2026-07-27): DELETED - the condition/fill
   // series describes the household's objects; operational data, no
   // business-record claim once the household is erased.
   await c.query("DELETE FROM object_observation WHERE household_id=$1", [householdId]);
@@ -382,7 +382,7 @@ try {
   await c.query("COMMIT");
 } catch (err) {
   await c.query("ROLLBACK");
-  console.error("\nFAILED — rolled back, nothing changed:", err.message);
+  console.error("\nFAILED - rolled back, nothing changed:", err.message);
   await c.end();
   process.exit(1);
 }

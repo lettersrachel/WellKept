@@ -2134,6 +2134,20 @@ refusals and four green paths. DEPLOY.md states the read-only
 guarantee in the same change. The two unfiled 6 August defects remain
 the entry's open remainder.
 
+**Remainder RESOLVED (2026-08-25, evening):** the sitting notes named
+both defects. The first, date-only values rendering a day early on the
+consent card and incident register, was already filed as G-61 on 24
+August and its fix (UTC-pinned rendering at both sites) is live in the
+deployed build; the 6 August observation predates the filing. The
+second, em dashes in erase-household.mjs's refusal message, was
+narrower than the truth: the file carried roughly fifteen across its
+output strings and comments, because the W-10/W-13 sweeps covered
+pages, docs, and legal and never this script. All swept to plain
+hyphens the same evening, syntax verified. The founder-side selftest
+of the preflight fix also ran on the deploy machine (twelve cases,
+eight refusals, four green paths), which is the strongest home for
+that proof. Nothing of this entry remains open.
+
 ### G-64. The HG provisioning script wrote a real tenant and a staff assignment with no audit history behind them
 
 Filed 2026-08-25, from the founder's production provisioning run the

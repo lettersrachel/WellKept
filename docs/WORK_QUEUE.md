@@ -464,7 +464,26 @@ the canonical brief core both surfaces share, and rendering the whole
 page FROM the composed payload is the follow-on unification step,
 named not assumed. Twenty-two e2e green.
 
-**Production serves `0cedc9f` (2026-08-25, the ninth run's record):**
+**Production serves `50ecd0f` (2026-08-25 evening, the tenth clean
+run):** build id verified three times, mechanical checks pass,
+migrations steady at 56 (the fixed preflight reported "nothing
+pending" read-only first, and the founder ran the twelve-case selftest
+on the deploy machine itself: the strongest home for the G-63 proof).
+The deploy carries the day's three fixes into the tree: the read-only
+preflight (G-63), provisioning attribution with the recordedLate
+backfill (G-64, already exercised in production), and the sourced
+ndaApproved claim (founder-confirmed 25 Aug). The 6 August sitting's
+two unfiled defects are RESOLVED: one was G-61, filed 24 Aug and
+already fixed in the live build; the other (em dashes in
+erase-household.mjs, wider than reported: about fifteen) is swept the
+same evening. Still open founder-side: the fresh section 4 sitting
+(checks 8, 10, 11, 13b, 14 have never run against any live build;
+incident 51a380e1 at check 13), the consent recording on the HG
+drill-in, and Lauren's first sign-in. HG will correctly flag on the
+{"gapDays":10} reconciliation knob if no visit lands within ten days.
+
+The ninth run's record, kept for history: production served `0cedc9f`
+(2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
 build id verified three times, mechanical checks 1/4a/4b/12 PASS. The
 deploy carries everything merged since the eighth run: the substrate
