@@ -96,8 +96,10 @@ import pg from "pg";
 const ALLOWLIST = {
   "d05ab5a2-7d9c-4cff-919a-250adafa0355":
     "Field Test Home: pre-existing orphan from early field testing (carries the G-52 " +
-    "stuck command); found 25 Aug 2026, disposition pending the founder's decision - " +
-    "grant-and-inspect, erase, or fixture-flag",
+    "stuck command); found 25 Aug 2026. DISPOSITION DECIDED same day (register A581 " +
+    "item 1): grant-and-inspect via pnpm db:grant, per docs/FIELD_TEST_HOME_INSPECTION.md. " +
+    "This entry comes OUT once the founder's production grant run is confirmed - the " +
+    "household then passes the census on its own",
 };
 const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await c.connect();

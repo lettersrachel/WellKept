@@ -18,7 +18,9 @@
     "db:dump": "node src/dump-seed.ts",
     "db:rewrap-kek": "node src/rewrap-kek.ts",
     "db:tasks": "node src/seed-tasks.ts",
-    "db:capacity": "node src/set-capacity.ts"
+    "db:capacity": "node src/set-capacity.ts",
+    "db:grant": "node src/grant-corporate.ts",
+    "db:export-floors": "node src/export-floors.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
