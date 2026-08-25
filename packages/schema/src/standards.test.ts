@@ -208,4 +208,15 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /shadow_log/,
   );
   assert.ok(assertNoAnticipationRows([{ confidence: "the client expressed confidence in the plan" }]));
+  // RFC-PRIM-01: a work_item row never reaches a client, either casing;
+  // an innocent "title" key in prose stays innocent (the pair signs it).
+  assert.throws(
+    () => assertNoAnticipationRows([{ title: "gutter vendor visit", dependsOn: [] }]),
+    /work_item/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { window_condition: null, blocked_reason: "quote" } }),
+    /work_item/,
+  );
+  assert.ok(assertNoAnticipationRows([{ title: "a book the client mentioned" }]));
 });

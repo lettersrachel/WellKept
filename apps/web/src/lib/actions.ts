@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, eventOutbox } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1360,4 +1360,89 @@ export async function scoreShadowSignal(formData: FormData) {
     },
   });
   revalidatePath(`/oversight/${householdId}`);
+}
+
+/**
+ * RFC-PRIM-01 build 1: the WorkItem primitive's service layer. Every
+ * mutation through the permission wrapper, every write audited, the
+ * lifecycle facts on the outbox (work_item.opened / work_item.resolved,
+ * ids and vocabulary only; the title and notes are s2 and stay on the
+ * row). Field and corporate roles create and progress; clients never
+ * touch it (no client projection exists, held by the payload guard).
+ */
+const WORK_ROLES = ["house_manager", "backup_hm", "corporate_admin", "corporate_ops"] as const;
+
+export async function createWorkItem(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+  const detail = String(formData.get("detail") ?? "").trim().slice(0, 1000);
+  const kind = String(formData.get("kind") ?? "");
+  if (title.length < 4) refuseTo(returnTo, "bad-input");
+  if (!["vendor", "followup", "runway", "internal"].includes(kind)) refuseTo(returnTo, "bad-input");
+  const dueRaw = String(formData.get("dueDate") ?? "");
+  const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
+  const windowCondition = String(formData.get("windowCondition") ?? "").trim().slice(0, 200) || null;
+  const source = principal.role.startsWith("corporate") ? "corporate" : "hm_capture";
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(workItem).values({
+      id, householdId, title, detail, kind, source,
+      ownerId: principal.userId, dueDate, windowCondition,
+    });
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "work_item.opened",
+      payload: { workItemId: id, kind, source }, occurredAt: new Date(),
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "work_item", detail: { workItemId: id, action: "opened", itemKind: kind },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "work item opened");
+}
+
+export async function progressWorkItem(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("workItemId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  if (!["block", "reopen", "done", "abandoned"].includes(decision)) refuseTo(returnTo, "bad-input");
+  const [row] = await db.select().from(workItem).where(eq(workItem.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.status === "done" || row.status === "abandoned") refuseTo(returnTo, "bad-input"); // terminal is terminal
+  const note = String(formData.get("note") ?? "").trim().slice(0, 400);
+  // The done-when, checked BEFORE the transaction opens: a block carries
+  // its reason, and completion carries its evidence, in words.
+  if (decision !== "reopen" && note.length < 4) refuseTo(returnTo, "gate-unmet");
+  await db.transaction(async (tx) => {
+    if (decision === "block") {
+      await tx.update(workItem).set({ status: "blocked", blockedReason: note, updatedAt: new Date() }).where(eq(workItem.id, id));
+    } else if (decision === "reopen") {
+      await tx.update(workItem).set({ status: "open", blockedReason: null, updatedAt: new Date() }).where(eq(workItem.id, id));
+    } else {
+      await tx.update(workItem).set({
+        status: decision as "done" | "abandoned", blockedReason: null,
+        resolution: note, resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date(),
+      }).where(eq(workItem.id, id));
+      await tx.insert(eventOutbox).values({
+        id: randomUUID(), householdId, kind: "work_item.resolved",
+        payload: { workItemId: id, status: decision }, occurredAt: new Date(),
+      });
+    }
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "work_item", detail: { workItemId: id, action: decision },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `work item ${decision}`);
 }
