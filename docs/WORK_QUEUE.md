@@ -169,6 +169,32 @@ it), proven end to end in the airplane drill: batch gesture offline,
 answer offline, reconnect, the capture artifact tied to the visit by
 command id. Fourteen e2e green.
 
+**And the section 5 corporate board, on a REPORTED document conflict:**
+`/oversight/board` is BUILT (coverage with the reconciliation knob's
+honest quiet state, the exception queue with age and ownership,
+AGGREGATE capacity with a null-shipped `capacity_gate` knob and the
+hiring-trigger state reading GATE UNSET until the founder sets it,
+churn with cause codes only, the covenant stream preview, and an
+owner-plus-threshold discipline line on every block with unset
+thresholds named rather than invented), plus the ninety-second brief
+header on the household drill-in (completeness, open loops, next
+rhythm item, last applied visit; signals stay empty until a
+promotion). **DELIBERATELY ABSENT: per-HOM utilization, because two
+founder-adopted documents disagree.** WK-DEV-007 section 5 places
+per-HOM utilization on this board for founder/CFO roles with a
+role-based retrieval test; CLAUDE.md's Ruling 1 (the founder-approved
+boundary amendment, register A561) names exactly two capacity
+surfaces (the covenant report, the capacity-gate evaluation) and
+expressly bars "any appearance on operational dashboards". Per the
+standing doctrine the disagreement is reported here, not reconciled;
+the stricter reading holds meanwhile, and today's provable property
+(asserted in CI) is that NO route serves per-HOM utilization at all.
+The founder's two shapes: (a) Ruling 1 stands as written and the
+board never carries it, the section 5 sentence corrected in her copy;
+(b) Ruling 1 is amended by name to admit the board's founder/CFO
+section as a third surface, and the section 5 retrieval test then
+lands exactly as specified. A one-line ruling either way.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

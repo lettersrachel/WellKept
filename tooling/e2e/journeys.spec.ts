@@ -495,3 +495,24 @@ test("tester journey: a tester-flagged HOM reads only their one household; corpo
     await pool.query("DELETE FROM auth_user WHERE id=$1", [testerId]); // session + assignment cascade
   }
 });
+
+test("corporate board: aggregate only, honest unset thresholds, and no per-HOM utilization anywhere on it", async ({ context, page }) => {
+  // WK-DEV-007 s5, built on the stricter reading of the section 5 /
+  // Ruling 1 disagreement (reported, not reconciled): the board renders
+  // coverage, the exception queue, aggregate capacity, churn, and the
+  // covenant preview, and NOTHING per person.
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto("/oversight/board");
+  await expect(page.getByRole("heading", { name: "Corporate board" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: "Coverage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Exception queue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible();
+  // The gate ships unset and says so; no invented threshold.
+  await expect(page.getByText(/GATE UNSET/)).toBeVisible();
+  // The Ruling 1 posture, visible on the page itself.
+  await expect(page.getByText(/Per-HOM\s+utilization is deliberately absent/)).toBeVisible();
+  // And structurally: no per-person capacity figures render. The demo HOM
+  // identity's name appearing under Capacity would be the violation shape.
+  const capacity = page.locator("div.card", { hasText: "Capacity against the gates" });
+  await expect(capacity.getByText(/Jordan|per HOM|households\/HOM/)).toHaveCount(0);
+});

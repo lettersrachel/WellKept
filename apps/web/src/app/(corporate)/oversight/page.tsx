@@ -97,6 +97,7 @@ export default async function FleetBoard({ searchParams }: {
           <Link className="pill" href="/oversight/economics">Economics</Link>
           <Link className="pill" href="/oversight/triggers">Triggers</Link>
           <Link className="pill" href="/standards">Standards library</Link>
+          <Link className="pill" href="/oversight/board">Corporate board</Link>
           <a className="pill" href="/api/exhibits/fleet">Export exhibit CSV</a>
         </div>
         <table className="panel" style={{ marginTop: 10 }}>
