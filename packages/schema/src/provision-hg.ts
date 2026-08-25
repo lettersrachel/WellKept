@@ -123,9 +123,41 @@ console.log(`HG tenant + tester provisioned: ${email} -> house_manager on Househ
 // the script re-runs. A re-run against a tenant provisioned before
 // this block existed BACKFILLS the rows, marked recordedLate: the
 // trail is honest about when it was written, never about less.
+// The provisioning admin HOLDS the tenant. REQ-001 has no fleet-wide
+// wildcard, so a household nobody corporate is assigned to is INVISIBLE
+// to every corporate operator - found live at the 25 August sitting:
+// HG was absent from the founder's own fleet board, unreachable for
+// consent recording or oversight. The --by identity gains
+// corporate_admin on HG, the same act assignRole performs in the app,
+// with the same audit shape. ndaApproved true: the provisioning
+// corporate identity's own access (functionally inert while HG is not
+// an NDA household).
+const [adminAssignment] = await db.select().from(householdRoleAssignment).where(and(
+  eq(householdRoleAssignment.userId, actor.id), eq(householdRoleAssignment.householdId, HG),
+));
+if (!adminAssignment) {
+  await db.insert(householdRoleAssignment).values({
+    id: randomUUID(), userId: actor.id, householdId: HG, role: "corporate_admin", ndaApproved: true,
+  }).onConflictDoNothing();
+  const adminTokenId = randomUUID();
+  await db.insert(auditSubjectToken).values({ id: adminTokenId, householdId: HG, kind: "email", value: by });
+  await db.insert(auditEvent).values({
+    id: randomUUID(), householdId: HG, actorUser: actor.id, actorRole: "corporate_admin",
+    kind: "role_assigned",
+    detail: { subjectToken: adminTokenId, role: "corporate_admin", ndaApproved: true, provisionedVia: "db:hg" },
+  });
+  console.log(`provisioning admin assigned: ${by} -> corporate_admin on Household Green (audit row written)`);
+} else {
+  console.log("provisioning admin already holds the tenant; nothing written");
+}
+
 const [auditMarker] = await db.select().from(auditEvent).where(and(
   eq(auditEvent.householdId, HG), eq(auditEvent.kind, "role_assigned"),
-  sql`${auditEvent.detail}->>'provisionedVia' = 'db:hg'`,
+  // The TESTER's marker specifically: the admin grant above writes its
+  // own role_assigned with the same provenance tag, so the role
+  // disambiguates (caught before it shipped: the admin row would have
+  // satisfied a provenance-only match and skipped the tester history).
+  sql`${auditEvent.detail}->>'provisionedVia' = 'db:hg' AND ${auditEvent.detail}->>'role' = 'house_manager'`,
 ));
 if (!auditMarker) {
   const recordedLate = Boolean(priorAssignment);
