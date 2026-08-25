@@ -1217,3 +1217,35 @@ export const visitBriefSnapshot = pgTable("visit_brief_snapshot", {
   uniqueIndex("visit_brief_snapshot_distinct_content")
     .on(t.householdId, t.briefedUser, t.strangerMode, t.contentHash),
 ]);
+
+// WL Gate 1 opener (WK-DEV-008 section 4 / WK-DEV-010 section 3): the
+// TaskDefinition, reusable work semantics ACROSS households (global: no
+// household_id, so no member data ever lives here; how a task manifests
+// in one household is the Household Task Profile, a later Gate 1
+// object). WL Gate 0 is blocked founder-side on the canonical Task
+// Inventory (v1.3 locate-or-reconstruct), so every definition created
+// now is PROVISIONAL BY STRUCTURE: the CHECK below makes it impossible
+// for a row to claim non-provisional standing without carrying the
+// canonical Inventory id the founder's resolution will assign. No
+// evidence row binds permanently to an id that may renumber; the future
+// Inventory loader flips provisional off by writing the canonical id in
+// the same statement, and nothing else can. Categories are deliberately
+// absent: the Inventory owns the taxonomy, and inventing one now is the
+// collision the provisional posture exists to avoid. Tombstone, never
+// delete (the provision posture for global semantics).
+export const taskDefinition = pgTable("task_definition", {
+  ...stamps,
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  provisional: boolean("provisional").notNull().default(true),
+  canonicalTaskId: text("canonical_task_id"), // the Task Inventory's id, once the founder's ruling lands
+  createdBy: text("created_by").notNull().references(() => authUser.id),
+  tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }),
+}, (t) => [
+  uniqueIndex("task_definition_name_unique").on(t.name),
+  // Provisional standing is structural: leaving it requires the
+  // canonical id, and a canonical id on a provisional row is the
+  // half-flipped state, refused in both directions.
+  check("task_definition_provisional_xor_canonical",
+    sql`(${t.provisional} = true AND ${t.canonicalTaskId} IS NULL) OR (${t.provisional} = false AND ${t.canonicalTaskId} IS NOT NULL)`),
+]);

@@ -559,3 +559,30 @@ test("contextual entry: the scan URL opens resolved context, capture is one gest
     await pool.query("DELETE FROM registry_entry WHERE id=$1", [entryId]);
   }
 });
+
+test("task definitions: provisional by structure, refused short, and created idempotently by name", async ({ context, page }) => {
+  // WL Gate 1 opener: everything provisional until the Task Inventory
+  // ruling; the page says so and the create path proves the rails.
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  const name = `Journey seasonal filter swap ${randomUUID().slice(0, 8)}`;
+  try {
+    await page.goto("/oversight/tasks");
+    await expect(page.getByRole("heading", { name: /Task definitions/ })).toBeVisible({ timeout: 30_000 });
+
+    // Refusing direction: three characters is not reusable semantics.
+    await page.getByLabel("Task name").fill("ok");
+    await page.getByRole("button", { name: "Add provisional definition" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByLabel("Task name").fill(name);
+    await page.getByLabel("Task description").fill("Swap the return filter at the seasonal changeover.");
+    await page.getByRole("button", { name: "Add provisional definition" }).click();
+    await expect(page.locator("span.fname", { hasText: name })).toBeVisible({ timeout: 15_000 });
+    const { rows: [d] } = await pool.query(
+      "SELECT provisional, canonical_task_id FROM task_definition WHERE name=$1", [name]);
+    expect(d.provisional).toBe(true);
+    expect(d.canonical_task_id).toBeNull();
+  } finally {
+    await pool.query("DELETE FROM task_definition WHERE name=$1", [name]);
+  }
+});
