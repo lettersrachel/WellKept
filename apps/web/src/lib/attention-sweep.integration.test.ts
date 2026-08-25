@@ -51,6 +51,10 @@ test("the sweep raises once per source with its event, stays idempotent, and nev
     assert.equal(r.status, "open");
     assert.equal(r.audience, "hom");
     assert.equal(r.acknowledgedAt, null);
+    // s6: the firewall routed at creation; hom noticing goes to the
+    // previsit brief, and nothing the sweep raises ever interrupts.
+    assert.equal(r.destination, "previsit_brief");
+    assert.equal(r.deliveredVia, null, "undelivered until a brief serves it");
   }
   const events = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
   assert.equal(events.filter((e) => e.kind === "attention_record.opened").length, 2,

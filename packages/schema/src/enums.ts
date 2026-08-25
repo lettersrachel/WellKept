@@ -97,3 +97,12 @@ export const captureStatusSchema = z.enum(["captured", "filed", "dismissed"]);
 export type CaptureStatus = z.infer<typeof captureStatusSchema>;
 export const captureExtractionSchema = z.enum(["none", "pending", "extracted"]);
 export type CaptureExtraction = z.infer<typeof captureExtractionSchema>;
+
+// WK-DEV-009 section 6: the firewall's destination vocabulary (zod
+// parity with the attention_record CHECK). The conservative v1 policy
+// lives in @wellkept/trigger-engine (destinationFor).
+export const attentionDestinationSchema = z.enum([
+  "immediate_interrupt", "next_transition_prompt", "previsit_brief",
+  "end_of_visit_review", "corporate_queue",
+]);
+export type AttentionDestinationName = z.infer<typeof attentionDestinationSchema>;

@@ -337,6 +337,13 @@
       "when": 1787620824630,
       "tag": "0047_tester_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1787646399245,
+      "tag": "0048_attention_destination",
+      "breakpoints": true
     }
   ]
 }

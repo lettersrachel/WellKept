@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { and, eq, isNull } from "drizzle-orm";
+import { attentionRecord } from "@wellkept/schema";
+import { db } from "@/lib/db";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions } from "@wellkept/schema";
 import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getOpenConditionFlags, getDeferrals, getPausedDecisions } from "@/lib/data";
@@ -106,8 +109,23 @@ export async function GET(req: NextRequest) {
     promotionCandidate: f.promotionCandidate,
   }));
 
+  // WK-DEV-009 s6: the firewall's previsit_brief destination delivers
+  // HERE, and nowhere interrupts. Open hom-audience records routed to
+  // the brief ride the payload (and therefore the s2.1 snapshot, so
+  // delivery is evidenced); serving them stamps deliveredVia once.
+  const noticing = await db.select().from(attentionRecord).where(and(
+    eq(attentionRecord.householdId, hh.id), eq(attentionRecord.status, "open"),
+    eq(attentionRecord.audience, "hom"), eq(attentionRecord.destination, "previsit_brief"),
+  ));
+  const needsNoticing = noticing.map((a) => ({
+    id: a.id, reason: a.reason, sourceKind: a.sourceKind, deadline: a.deadline,
+    seen: a.acknowledgedAt !== null,
+  }));
+  const undelivered = noticing.filter((a) => a.deliveredVia === null).map((a) => a.id);
+
   const payload = {
     household: { name: hh.name, tier: hh.tier, lifeEvent, stranger: strangerMode },
+    needsNoticing,
     flags,
     conditionFlags,
     overdueDeferrals,
@@ -124,5 +142,10 @@ export async function GET(req: NextRequest) {
     householdId: hh.id, briefedUser: principal.userId, role: principal.role,
     strangerMode, payload,
   });
+  if (undelivered.length > 0) {
+    const { inArray } = await import("drizzle-orm");
+    await db.update(attentionRecord).set({ deliveredVia: "briefing", updatedAt: new Date() })
+      .where(and(inArray(attentionRecord.id, undelivered), isNull(attentionRecord.deliveredVia)));
+  }
   return NextResponse.json(payload);
 }

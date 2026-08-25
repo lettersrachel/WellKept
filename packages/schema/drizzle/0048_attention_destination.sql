@@ -1,0 +1,2 @@
+ALTER TABLE "attention_record" ADD COLUMN "destination" text DEFAULT 'previsit_brief' NOT NULL;--> statement-breakpoint
+ALTER TABLE "attention_record" ADD CONSTRAINT "attention_record_destination_known" CHECK ("attention_record"."destination" IN ('immediate_interrupt','next_transition_prompt','previsit_brief','end_of_visit_review','corporate_queue'));
