@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import {
   visitCommand, timeEntry, deferral, conditionFlag, objectObservation,
   registryEntry, pausedDecision, promptPackItem, promptOutcome,
-  emitOutboxEvent,
+  captureArtifact, emitOutboxEvent,
 } from "@wellkept/schema";
 import { db } from "./db";
 import {
@@ -238,6 +238,28 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
           payload: { visitCommandId: idempotencyKey, occurredAt: end.toISOString() },
           occurredAt: end, provenance: "sink:visit-commands",
           objectId: idempotencyKey, correlationId: idempotencyKey,
+        });
+      }
+      // WK-DEV-009 s2.3 into s8: the closing question's real answer IS a
+      // Tell Well Kept capture, landed in the same transaction as the
+      // visit that asked it, so saying it once at close is saying it
+      // once. "none" is the quiet path and writes nothing; the human
+      // router files whatever else arrives, exactly like the visit-page
+      // box.
+      const anythingMissing = (payload as { anythingMissing?: unknown }).anythingMissing;
+      const missingText = typeof anythingMissing === "string" ? anythingMissing.trim() : "";
+      if (missingText && missingText.toLowerCase() !== "none" && submittedBy) {
+        const captureId = randomUUID();
+        await tx.insert(captureArtifact).values({
+          id: captureId, householdId: payload.householdId, kind: "text",
+          content: missingText.slice(0, 2000), capturedBy: submittedBy,
+          visitCommandId: idempotencyKey,
+        });
+        await emitOutboxEvent(tx, {
+          householdId: payload.householdId, kind: "capture_artifact.created",
+          payload: { captureArtifactId: captureId, kind: "text" },
+          provenance: "sink:visit-commands:anything-missing",
+          objectId: captureId, actor: submittedBy, correlationId: idempotencyKey,
         });
       }
       // AC (W-6 follow-on): deferrals captured in the close flow land in

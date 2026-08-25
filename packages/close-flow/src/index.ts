@@ -47,6 +47,11 @@ export interface CloseFlowState {
   zoneDrift: ZoneDrift | null;
   deferrals: DeferralDraft[];
   report: [string, string, string];
+  /** WK-DEV-009 s2.3: the close always ends with "Anything missing?"
+   * before Confirm close; "none" is the valid nothing-answer, exactly
+   * like changesNoticed. A real answer becomes a Tell Well Kept capture
+   * server-side, so saying it here IS saying it once. */
+  anythingMissing: string | null;
   submittedAt: string | null;
 }
 
@@ -59,7 +64,8 @@ export interface VisitCommand {
 
 export type MissingStep =
   | "tasks" | "hours" | "photos" | "changes_noticed"
-  | "life_change_signal" | "zone_drift" | "three_sentence_report";
+  | "life_change_signal" | "zone_drift" | "three_sentence_report"
+  | "anything_missing";
 
 export interface CloseFlow {
   readonly state: CloseFlowState;
@@ -72,6 +78,31 @@ export interface CloseFlow {
   setZoneDrift(input: { answer: string; photoId?: string | null }): void;
   addDeferral(input: { noticed: string; reason: string; revisitDate?: string | null; revisitCondition?: string | null; methodRef?: string | null }): void;
   setReportSentence(index: number, value: string): void;
+  /** WK-DEV-009 s2.3, the ONE batch gesture: confirm every remaining
+   * planned task as completed as planned. This covers ONLY the HOM's own
+   * routine completions by construction (requiredTaskIds ARE the planned
+   * routine work; exceptions, deferrals, flags, and captures each have
+   * their own individual path and are never inside this gesture). When
+   * task classes exist (WL Gate 1), mandatory-individual classes are
+   * excluded structurally; today's task list carries none. Returns how
+   * many the gesture confirmed; refuses when nothing remains, so the
+   * gesture is always a statement, never a no-op ritual. */
+  confirmRemainingAsExpected(): number;
+  setAnythingMissing(value: string): void;
+  /** The s2.3 rendering contract for the drafted close: the batchable
+   * as-planned line, the itemized exceptions, and the closing answer.
+   * Pure selector; assembles only what the flow deterministically holds. */
+  closeDraft(): {
+    plannedCount: number;
+    completedAsPlanned: number;
+    exceptions: {
+      deferrals: DeferralDraft[];
+      zoneDrift: ZoneDrift | null;
+      dotsCount: number;
+      changesNoticed: string | null;
+    };
+    anythingMissing: string | null;
+  };
   missingRequiredSteps(): MissingStep[];
   submit(): VisitCommand[];
 }
@@ -131,8 +162,12 @@ export function createCloseFlow({
     zoneDrift: null,
     deferrals: [],
     report: ["", "", ""],
+    anythingMissing: null,
     submittedAt: null,
   };
+  // A draft persisted before the s2.3 step existed restores with the
+  // step unanswered (required, so the wizard asks it), never undefined.
+  if (restore) state.anythingMissing = restore.anythingMissing ?? null;
   const flow: CloseFlow = {
     get state() {
       return structuredClone(state);
@@ -198,6 +233,33 @@ export function createCloseFlow({
         methodRef: nonBlank(methodRef ?? "") ? methodRef : null,
       });
     },
+    confirmRemainingAsExpected() {
+      const remaining = state.requiredTaskIds.filter((t) => !state.completedTaskIds.includes(t));
+      if (remaining.length === 0) throw new CloseFlowError("nothing remains to confirm as expected");
+      state.completedTaskIds.push(...remaining);
+      return remaining.length;
+    },
+    setAnythingMissing(value) {
+      if (!nonBlank(value)) {
+        throw new CloseFlowError("anything missing requires an answer; use none when nothing is");
+      }
+      state.anythingMissing = value.trim();
+    },
+    closeDraft() {
+      const nonNone = (v: string | null) =>
+        v !== null && v.trim().toLowerCase() !== "none" ? v : null;
+      return {
+        plannedCount: state.requiredTaskIds.length,
+        completedAsPlanned: state.completedTaskIds.length,
+        exceptions: {
+          deferrals: structuredClone(state.deferrals),
+          zoneDrift: nonNone(state.zoneDrift?.answer ?? null) ? structuredClone(state.zoneDrift) : null,
+          dotsCount: state.dots.length,
+          changesNoticed: nonNone(state.changesNoticed),
+        },
+        anythingMissing: state.anythingMissing,
+      };
+    },
     setReportSentence(index, value) {
       if (!Number.isInteger(index) || index < 0 || index > 2 || !nonBlank(value)) {
         throw new CloseFlowError("report requires exactly three non-empty sentences");
@@ -213,6 +275,7 @@ export function createCloseFlow({
       if (state.lifeChangeSignal === null) missing.push("life_change_signal");
       if (!state.zoneDrift) missing.push("zone_drift");
       if (state.report.some((sentence) => !nonBlank(sentence))) missing.push("three_sentence_report");
+      if (!state.anythingMissing) missing.push("anything_missing");
       return missing;
     },
     submit() {

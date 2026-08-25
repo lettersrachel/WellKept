@@ -14,12 +14,14 @@ function complete(flow: CloseFlow, { lifeChange = false } = {}) {
   flow.setReportSentence(0, "Kitchen reset complete.");
   flow.setReportSentence(1, "Linens are refreshed.");
   flow.setReportSentence(2, "No heads-up today.");
+  flow.setAnythingMissing("none");
 }
 
 test("close flow rejects submit until every P0 capture requirement is complete", () => {
   const flow = createCloseFlow({ householdId: "h", requiredTaskIds: ["kitchen", "linen"] });
   assert.deepEqual(flow.missingRequiredSteps(), [
     "tasks", "hours", "photos", "changes_noticed", "life_change_signal", "zone_drift", "three_sentence_report",
+    "anything_missing",
   ]);
   assert.throws(() => flow.submit(), CloseFlowError);
 });
@@ -110,6 +112,60 @@ test("restoreCloseFlow resumes a draft exactly, and a submitted flow refuses to 
   done.setReportSentence(0, "One.");
   done.setReportSentence(1, "Two.");
   done.setReportSentence(2, "Three.");
+  done.setAnythingMissing("none");
   done.submit();
   assert.throws(() => restoreCloseFlow(done.state), /submitted flow does not restore/);
+});
+
+test("s2.3: the batch gesture confirms only what remains, exactly once, and the closing question is required both directions", () => {
+  const flow = createCloseFlow({ householdId: "h", requiredTaskIds: ["kitchen", "linen", "pantry"] });
+  flow.confirmTask("kitchen");
+  // One gesture covers the REST of the HOM's own planned work.
+  assert.equal(flow.confirmRemainingAsExpected(), 2);
+  assert.deepEqual([...flow.state.completedTaskIds].sort(), ["kitchen", "linen", "pantry"]);
+  // A second batch is a no-op ritual, refused rather than silently absorbed.
+  assert.throws(() => flow.confirmRemainingAsExpected(), CloseFlowError);
+
+  // The closing question: blank refuses; none is a valid answer; the
+  // step gates submit exactly like the other required steps.
+  assert.throws(() => flow.setAnythingMissing("   "), CloseFlowError);
+  assert.ok(flow.missingRequiredSteps().includes("anything_missing"));
+  flow.captureHours({ startedAt: "2026-08-25T13:00:00Z", endedAt: "2026-08-25T15:00:00Z" });
+  flow.addPhoto("p1");
+  flow.setChangesNoticed("none");
+  flow.setLifeChangeSignal(false);
+  flow.setZoneDrift({ answer: "none" });
+  flow.setReportSentence(0, "a."); flow.setReportSentence(1, "b."); flow.setReportSentence(2, "c.");
+  assert.deepEqual(flow.missingRequiredSteps(), ["anything_missing"]);
+  flow.setAnythingMissing("the pantry shelf is pulling from the wall");
+  const commands = flow.submit();
+  assert.equal(commands[0]!.payload.anythingMissing, "the pantry shelf is pulling from the wall");
+});
+
+test("s2.3: the close draft renders the as-planned line and itemizes only genuine exceptions", () => {
+  const flow = createCloseFlow({ householdId: "h", requiredTaskIds: ["kitchen", "linen"] });
+  flow.confirmRemainingAsExpected();
+  flow.setChangesNoticed("none");
+  flow.setZoneDrift({ answer: "none" });
+  flow.addDot("Sam asked about gutter timing.");
+  flow.addDeferral({ noticed: "sun-faded hallway paint", reason: "waiting for the fall repaint window", revisitCondition: "at the fall repaint" });
+  flow.setAnythingMissing("none");
+  const draft = flow.closeDraft();
+  assert.equal(draft.plannedCount, 2);
+  assert.equal(draft.completedAsPlanned, 2);
+  // "none" answers are the quiet path, never listed as exceptions.
+  assert.equal(draft.exceptions.changesNoticed, null);
+  assert.equal(draft.exceptions.zoneDrift, null);
+  assert.equal(draft.exceptions.dotsCount, 1);
+  assert.equal(draft.exceptions.deferrals.length, 1);
+  assert.equal(draft.anythingMissing, "none");
+});
+
+test("s2.3: a draft persisted before the closing question existed restores with the step unanswered", () => {
+  const flow = createCloseFlow({ householdId: "h", requiredTaskIds: ["a"] });
+  const legacy = flow.state as unknown as Record<string, unknown>;
+  delete legacy.anythingMissing;
+  const resumed = restoreCloseFlow(legacy as never);
+  assert.equal(resumed.state.anythingMissing, null);
+  assert.ok(resumed.missingRequiredSteps().includes("anything_missing"));
 });
