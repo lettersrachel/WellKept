@@ -5,7 +5,10 @@ status: living
 # Task Inventory v1.4 DRAFT rev2 (operational inventory, with the proposed MAPS_TO)
 
 Rev2 drafted 25 August 2026 under the founder's Task Inventory
-adoption-path instructions (register A582), superseding rev1 in place.
+adoption-path instructions (register A582), superseding rev1 in
+place; amended the same day per register A584 (the v1.3.1 supersession
+and the four converted mappings), so the review block sees the
+finished join.
 DRAFT until the founder's row verdicts return from the combined review
 afternoon; the freeze, the provisional-flag flip, and the Inventory
 loader all wait on that review (A582 section 4).
@@ -13,12 +16,22 @@ loader all wait on that review (A582 section 4).
 ## Lineage note (read first)
 
 **Task Inventory v1.3 is FOUND** (A582): the master library holds the
-complete catalog, exactly 344 rows T-001..T-344 under the Level 1-5 x
-17-pack taxonomy. The figure-free repo extract is committed beside
-this document as `TASK_INVENTORY_V1_3_REPO_EDITION.csv`
-(sha256 8dc633280aa669cbb68874425c22344b14a29d8fd7884acb17549b380afb1860;
+complete catalog under the Level 1-5 x 17-pack taxonomy.
+**AMENDED to v1.3.1 per register A584** (25 Aug 2026, the
+commercial-gap decision resolved as option (a), amendment by register
+entry): T-345..T-348 appended (Bedroom reset to standard; Living and
+family room reset; Bathroom clean and reset; Home office weekly reset
+and service; all Level 1, Universal, Rooms & resets, the catalog's own
+idiom), and T-206 retired as a data artifact, its id never reused and
+its row excluded from the repo edition. Row count 344 to 347. The
+figure-free repo extract is committed beside this document as
+`TASK_INVENTORY_V1_3_1_REPO_EDITION.csv`
+(sha256 d71e27e0d17bd9480da9540b6ebc0e3d5cbbda3a30c5bcd48dfa8a258e74bfb5;
+the superseded v1.3 pin, sha256 8dc63328..., survives in git history;
 the full workbook stays library-side and is never requested or
-committed). The confirmed architecture:
+committed). The freeze rules are unchanged: T-ids never altered or
+renumbered by the product; this amendment happened where amendments
+happen, in the register. The confirmed architecture:
 
 - **v1.3 is the canonical COMMERCIAL inventory.** T-ids are FROZEN:
   never altered, renumbered, or extended by the product; Level and
@@ -59,16 +72,21 @@ in A582; the found catalog and the WKT namespace coexist by design.
 
 ## Reported on intake of the CSV (observations, not edits)
 
-- Some rows read as flattened section headers rather than tasks
-  (T-019, T-049, T-060, T-066, T-095, T-102, T-159, T-169, T-185,
-  T-192, T-193), T-206 reads "Total tasks: 192" (an artifact row),
-  and T-194..T-205 are the never-at-any-level boundary list. All are
-  retained frozen exactly as instructed; none receives a mapping,
-  since none is executable work.
-- Several v1.3 families have NO WKT counterpart yet; see the
-  unclaimed-families section at the end. That asymmetry is expected
-  (commercial breadth vs the store-governed operational core) and is
-  reported for the review rather than force-mapped.
+- The intake findings are DISPOSITIONED by A584: T-206 ("Total
+  tasks: 192", a data artifact) is RETIRED, its id never reused and
+  its row excluded from the repo edition. The eleven
+  flattened-header rows (T-019, T-049, T-060, T-066, T-095, T-102,
+  T-159, T-169, T-185, T-192, T-193) are UNCHANGED, awaiting
+  individual founder rulings in the review block, and stay in the
+  reference meanwhile; none receives a mapping, since none is
+  executable work. The T-194..T-205 never-list is CONFIRMED
+  standing, with the commercial and operational conduct sets now
+  agreeing from both sides.
+- The unclaimed v1.3 families (end of this document) are CONFIRMED
+  as future-WKT candidates, no action; the asymmetry is expected
+  (commercial breadth vs the store-governed operational core). The
+  four room-reset gaps rev2 surfaced are CLOSED by the A584
+  amendment (T-345..T-348), mapped above.
 
 ## MAPS_TO vocabulary
 
@@ -105,7 +123,7 @@ in A582; the found catalog and the WKT namespace coexist by design.
 
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
-| WKT-014 | Bathroom reset to done state | STD-004.1, STD-004.2; cloth floor STD-004.4 | T-033 | v1.3 names the consumables restock; the cleaning itself has no distinct row and rides this mapping |
+| WKT-014 | Bathroom reset to done state | STD-004.1, STD-004.2; cloth floor STD-004.4 | T-033, T-347 | T-347 added by the A584 amendment; the earlier no-distinct-row note is resolved |
 | WKT-015 | Bathroom moisture sentinel check | STD-004.6, STD-004.10 | T-003 | |
 | WKT-016 | Towel rotation | STD-004.5 | T-021, T-276 | |
 | WKT-017 | Bathroom hazard-storage check | STD-004.8 | UNCERTAIN (T-052) | child-safeguarding compliance is the nearest row; whether it covers hazard storage is the founder's call |
@@ -114,7 +132,7 @@ in A582; the found catalog and the WKT namespace coexist by design.
 
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
-| WKT-018 | Bedroom reset | STD-005.1, STD-005.3; privacy floor STD-005.6 | NO-MAP: v1.3's reset rows name specific rooms (playroom, mudroom, guest); a general bedroom reset is not among them | |
+| WKT-018 | Bedroom reset | STD-005.1, STD-005.3; privacy floor STD-005.6 | T-345 | commercial counterpart added by the A584 amendment |
 | WKT-019 | Bed making and linen change | STD-005.2, STD-000.4, STD-015.2 | T-021, T-034, T-276 | |
 | WKT-020 | Closet maintenance | STD-005.4 | NO-MAP: v1.3 carries seasonal closet turns (T-134, T-142), a different grain; weekly closet upkeep has no row | maintains, never reorganizes |
 | WKT-021 | Child-room safety check | STD-005.5, STD-008.4 | T-052 | |
@@ -133,7 +151,7 @@ in A582; the found catalog and the WKT namespace coexist by design.
 
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
-| WKT-027 | Living-room reset to ready | STD-008.1, STD-008.2, STD-008.7 | NO-MAP: v1.3's reset rows name other rooms; the living room is not among them | ready, not styled |
+| WKT-027 | Living-room reset to ready | STD-008.1, STD-008.2, STD-008.7 | T-346 | ready, not styled; commercial counterpart added by the A584 amendment |
 | WKT-028 | Screens and electronics cleaning | STD-008.3, STD-010.3 | NO-MAP: no electronics-care row exists | |
 | WKT-029 | Toy reset and small-parts check | STD-008.4 | T-030 | T-144 (toy rotation service) is the deeper build, a different grain |
 | WKT-030 | Hearth care | STD-008.5 | T-009 | |
@@ -154,7 +172,7 @@ in A582; the found catalog and the WKT namespace coexist by design.
 
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
-| WKT-038 | Office cleaning around paper and devices | STD-010.2, STD-010.3, STD-010.4, STD-010.5 | NO-MAP: T-139 is the office standing-up build; weekly office service has no row | |
+| WKT-038 | Office cleaning around paper and devices | STD-010.2, STD-010.3, STD-010.4, STD-010.5 | T-348 | commercial counterpart added by the A584 amendment; T-139 remains the standing-up build, a different grain |
 
 ### Storage, garage, and mechanicals (STD-012)
 
