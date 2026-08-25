@@ -96,6 +96,28 @@ The offline visit, the disputed outcome and ServiceEvent lifecycle
 (Phase 4), the AI misclassification (Tier M), and TrainingState itself
 (Phase 7) are stubbed BY NAME in the seed's header.
 
+**Same night, the input spine's front door:** "Tell Well Kept" v1
+(WK-DEV-009 section 8, the Tier D half) is BUILT: migration 0044
+`capture_artifact` (kind/status/extraction vocabularies, the filing
+triple whole-or-absent, work-item-only-when-filed, seven violations
+proven refused in SQL), the one-box capture on /visit (text only;
+voice waits on the voice ruling, photo and scan on their surfaces),
+and the corporate router queue on the oversight drill-in (file as an
+hm_capture work item, or dismiss with the reason; NO automatic
+keyword or severity routing by decision, since a severity vocabulary
+is a safety taxonomy and the rule set is a founder knob). Events on
+the outbox carry ids only; the capture journey joined SYN-01 (nine
+journeys green). Erasure is DELETE, the ninth documented exception
+(the condition_flag class), guard proven red first. **The same
+session's legal pass caught G-62:** shadow_log and the three
+primitives shipped without their same-PR legal/README, privacy-notice,
+and CHILD_DATA updates (the rule is memory-held; every CI-guarded
+obligation was met, the remembered one slipped). Corrected the same
+day with dated catch-up entries in all four documents, the
+child-data surface list extended and proven red then green, and the
+register entry names the candidate guard (a computed free-text-table
+census, the staff-disclosure pattern) as its own future session.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

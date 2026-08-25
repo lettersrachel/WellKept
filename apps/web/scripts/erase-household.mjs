@@ -96,6 +96,12 @@
  *  - paused_decision (W-7/AD, 2026-07-28): rows DELETED - internal
  *    staff research about the household (never client-visible, no
  *    business-record claim), the condition_flag class.
+ *  - capture_artifact (WK-DEV-009 s8, 2026-08-25): rows DELETED - the
+ *    HOM's own pre-filing words about the household (never
+ *    client-visible, no business-record claim), the condition_flag
+ *    class; anything that mattered was FILED onward (the work item the
+ *    filing raised is blanked-and-kept above under work_item). The
+ *    ninth documented DELETE exception.
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -161,6 +167,7 @@ const counts = {
   stranger: await count("SELECT count(*) n FROM stranger_test WHERE household_id=$1"),
   edits: await count("SELECT count(*) n FROM client_edit WHERE household_id=$1"),
   season: await count("SELECT count(*) n FROM season_observation WHERE household_id=$1"),
+  captures: await count("SELECT count(*) n FROM capture_artifact WHERE household_id=$1"),
   prompts: await count("SELECT count(*) n FROM prompt_pack_item WHERE household_id=$1"),
   outcomes: await count("SELECT count(*) n FROM prompt_outcome WHERE household_id=$1 AND note IS NOT NULL"),
   incidents: await count("SELECT count(*) n FROM incident_report WHERE household_id=$1"),
@@ -191,6 +198,7 @@ console.log(`  object observations to DELETE (condition/fill series):     ${coun
 console.log(`  condition flags to DELETE (W-5 staff observations):        ${counts.conditionFlags}`);
 console.log(`  deferrals to BLANK (W-6 client-visible service records):   ${counts.deferrals}`);
 console.log(`  paused decisions to DELETE (W-7 internal staff research):  ${counts.pausedDecisions}`);
+console.log(`  capture artifacts to DELETE (WK-DEV-009 s8 pre-filing):    ${counts.captures}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
 console.log(`  gestures / stranger tests / client edits to blank:         ${counts.gestures} / ${counts.stranger} / ${counts.edits}`);
 console.log(`  season observations / prompts / outcome notes to blank:    ${counts.season} / ${counts.prompts} / ${counts.outcomes}`);
@@ -276,6 +284,11 @@ try {
   // deferral (W-6, 2026-07-28): BLANKED, kept - client-visible service
   // record, the visit-report posture.
   await c.query("UPDATE deferral SET noticed='', reason='', revisit_condition=CASE WHEN revisit_condition IS NULL THEN NULL ELSE '[erased]' END, updated_at=now() WHERE household_id=$1", [householdId]);
+  // capture_artifact (WK-DEV-009 s8, 2026-08-25): DELETED - the HOM's
+  // pre-filing words about the household, the condition_flag class; a
+  // filed capture's surviving trace is its blanked work_item skeleton.
+  // The ninth documented DELETE exception.
+  await c.query("DELETE FROM capture_artifact WHERE household_id=$1", [householdId]);
   // paused_decision (W-7/AD, 2026-07-28): DELETED - internal staff
   // research about the household, the condition_flag class.
   await c.query("DELETE FROM paused_decision WHERE household_id=$1", [householdId]);

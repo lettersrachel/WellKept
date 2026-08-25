@@ -29,8 +29,12 @@ export default function PrivacyPage() {
         decisions, paused with a plan to return to it) to anticipate needs; service time and costs (time spent
         serving your household by activity, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);
-        your membership record (how you found us, and your membership history); and
-        account activity (name, email,
+        your membership record (how you found us, and your membership history);
+        operational records (follow-up work we track on your household&apos;s behalf, items
+        our system surfaces to our staff for attention, choices we route internally for a
+        decision, notes a staff member captures in their own words for filing, and what
+        our reminder engine would have suggested while we tune it) to run the service
+        reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product
         is not designed to hold them.

@@ -122,6 +122,30 @@ Four documents, one per audience and direction:
   with the household on erasure. Recorded by a named staff member, also
   STAFF data (paused_by, resolved_by); joins the G-13 founder line
   candidates.
+- **Internal work, attention, and decision records** (tables added
+  2026-08-25, RFC-PRIM-01; these entries added in the same day's
+  catch-up, one PR late, recorded as G-62): the follow-up work we track
+  on a household's behalf (title, detail, due timing, how it ended),
+  the items the system surfaces to staff for attention (the reason, who
+  saw it, how it was answered), and the choices routed internally for a
+  decision (question, recommendation, evidence, outcome). Internal
+  (s2); never shown to the client; on erasure the free text is blanked
+  and the record skeletons kept (operational history without the
+  household's words). Recorded by named staff members, also STAFF data;
+  joins the G-13 founder line candidates.
+- **Anticipation shadow log** (table added 2026-08-24, WK-DEV-007;
+  entry added in the 2026-08-25 catch-up, G-62): what the anticipation
+  engine WOULD have suggested while it is tuned, derived from condition
+  flags and household records. Engine-internal; visible only to
+  founder, CFO, and developer roles; deleted with the household on
+  erasure.
+- **Tell Well Kept captures** (added 2026-08-25, WK-DEV-009 §8): what a
+  staff member says once, in their own words, about something
+  unexpected, held until a person files it (as tracked work, or
+  dismissed with the reason). Internal (s2); never shown to the client;
+  deleted with the household on erasure once filed onward. Recorded by
+  a named staff member, also STAFF data (captured_by, filed_by); joins
+  the G-13 founder line candidates.
 - **Account & activity**, email, role, and an append-only audit log of who
   accessed or changed what.
 

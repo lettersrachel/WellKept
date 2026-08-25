@@ -87,3 +87,13 @@ export const decisionAudienceSchema = z.enum(["hom", "corporate", "founder"]);
 export type DecisionAudience = z.infer<typeof decisionAudienceSchema>;
 export const authorityClassSchema = z.enum(["A0", "A1", "A2", "A3", "A4", "A5"]);
 export type AuthorityClassName = z.infer<typeof authorityClassSchema>;
+
+// WK-DEV-009 section 8: the CaptureArtifact vocabulary (zod parity with
+// the capture_artifact CHECKs). Only 'text' is writable today; the
+// action enforces that, the schema carries the spec's shape.
+export const captureKindSchema = z.enum(["text", "voice", "photo", "scan"]);
+export type CaptureKind = z.infer<typeof captureKindSchema>;
+export const captureStatusSchema = z.enum(["captured", "filed", "dismissed"]);
+export type CaptureStatus = z.infer<typeof captureStatusSchema>;
+export const captureExtractionSchema = z.enum(["none", "pending", "extracted"]);
+export type CaptureExtraction = z.infer<typeof captureExtractionSchema>;
