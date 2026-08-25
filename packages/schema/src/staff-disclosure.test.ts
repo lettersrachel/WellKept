@@ -95,6 +95,10 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  task_definition:
+    "WL Gate 1, 2026-08-25: created_by records which corporate user authored a global " +
+    "task definition (reusable semantics, no member data), the provision_versions " +
+    "posture: generic action-log coverage; a named line is a founder decision, not a drift",
   event_outbox:
     "WK-DEV-010 s4, 2026-08-25: the event-law envelope's actor column mirrors the actor " +
     "the same transaction's audit row already records (every emitting site writes both), " +

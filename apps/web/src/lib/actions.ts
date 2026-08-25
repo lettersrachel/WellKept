@@ -1702,3 +1702,37 @@ export async function fileCaptureArtifact(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, decision === "work_item" ? "capture filed as a work item" : "capture dismissed");
 }
+
+/**
+ * WL Gate 1 opener: task definitions are GLOBAL reusable semantics
+ * (never member data), authored by corporate only, and PROVISIONAL BY
+ * STRUCTURE until the founder's Task Inventory ruling: this action can
+ * only create provisional rows, and nothing in the app can flip one;
+ * the future Inventory loader flips provisional off by writing the
+ * canonical id in the same statement, which the database CHECK demands.
+ * Global rows have no household, so no outbox event (the outbox routes
+ * on household_id) and no household audit row; the provision posture.
+ */
+export async function createTaskDefinition(formData: FormData) {
+  const returnTo = "/oversight/tasks";
+  // Global object, so no per-household principal: the author is the
+  // signed-in user's corporate_admin assignment, whichever household
+  // carries it (REQ-001: roles are always assignment rows, never a
+  // wildcard; holding admin anywhere is the authoring credential for
+  // global semantics, the standards-store posture).
+  const { getSessionUser } = await import("./session");
+  const { getAssignedHouseholds } = await import("./data");
+  const user = await getSessionUser();
+  const assigned = await getAssignedHouseholds();
+  if (!user || !assigned.some((a) => a.role === "corporate_admin")) refuseTo(returnTo, "forbidden");
+  const principal = { userId: user.id, role: "corporate_admin" };
+  const name = String(formData.get("name") ?? "").trim().slice(0, 160);
+  const description = String(formData.get("description") ?? "").trim().slice(0, 600);
+  if (name.length < 4) refuseTo(returnTo, "bad-input");
+  const { taskDefinition } = await import("@wellkept/schema");
+  await db.insert(taskDefinition).values({
+    id: randomUUID(), name, description, createdBy: principal.userId,
+  }).onConflictDoNothing({ target: taskDefinition.name });
+  revalidatePath(returnTo);
+  recordedTo(returnTo, `task definition ${name}`);
+}

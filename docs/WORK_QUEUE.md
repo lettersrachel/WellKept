@@ -229,6 +229,24 @@ link when assets gain a work reference (WL Gate 1). The journey
 proves the resolved context, the computed clock, the one-gesture
 capture, and the tenant wall. Sixteen e2e green.
 
+**And WL Gate 1 opens (0049):** `task_definition` exists, global
+reusable work semantics with NO member data and NO invented taxonomy
+(categories wait for the Inventory, which owns them). Provisional is
+STRUCTURAL: the CHECK refuses a non-provisional row without its
+canonical Task Inventory id and refuses the half-flipped state, both
+proven in SQL; the app can only create provisional rows, and the flip
+arrives solely through the future Inventory loader (WK-DEV-008
+section 4's sanctioned interim; the reconstruction finding stands
+untouched, since provisional ids never claim the catalog's
+identities). `pnpm db:tasks --author <email>` seeds the active
+close-flow list (the only task list live in the product), refused
+without an author and idempotent by the name index. The
+/oversight/tasks library lists and (admin-only) adds provisional
+definitions; the journey proves the refusal, the creation, and the
+provisional standing. Seventeen e2e green. Next Gate 1 objects, in
+order: Household Task Profile, Work Requirement, Estimate Snapshot,
+Task Occurrence, Time Segment, each its own migration session.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
