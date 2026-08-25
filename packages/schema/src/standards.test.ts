@@ -276,4 +276,14 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
   );
   // Innocent: a registry entry's cadence alone is not a profile row.
   assert.ok(assertNoAnticipationRows([{ cadence: "annual" }]));
+
+  // WL Gate 1: a work_requirement never reaches a client.
+  assert.throws(
+    () => assertNoAnticipationRows([{ taskProfileId: "p1", dueOn: "2026-09-01" }]),
+    /work_requirement/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { task_profile_id: "p1", context_window: "first dry week" } }),
+    /work_requirement/,
+  );
 });

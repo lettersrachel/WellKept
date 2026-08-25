@@ -264,6 +264,28 @@ operating-details category extended in both privacy copies naming
 task profiles as its instance). The journey proves configure,
 in-place re-configure, and the event. Eighteen e2e green.
 
+**And Gate 1 object 3 (0051):** `work_requirement` exists, the
+date/context-specific INSTANCE of a task profile, with the work_item
+boundary honored rather than duplicated (ad-hoc captured work stays
+work_item; planned recurring instances are requirements, the
+forecasting unit). The timing is the W-5 structural sentence (a date
+or a stated context, never neither); the status vocabulary admits the
+full WK-DEV-009 section 10 requirement lifecycle so Gate 3's
+generator arrives without a migration, while the v1 service exercises
+the manual subset (schedule, start, complete, verify, defer, reopen);
+completion and verification are whole-or-absent pairs and VERIFY ONLY
+EVER CHECKS COMPLETED WORK, all five refusals plus five accepting
+shapes proven in SQL. Estimates never enter (the Estimate Snapshot
+references a requirement, not the reverse; the D7 wall stays wide).
+Events through the s4 envelope (generated, completed, verified,
+deferred, reopened); erasure blanks the stated context to a marker
+and keeps the skeleton (the work_item posture with the W-6
+CHECK-survival precedent); the full guard-and-legal set same-PR. The
+journey proves the no-timing refusal, generate, the
+verify-before-complete refusal, complete, and verify. Nineteen e2e
+green. Remaining Gate 1: Estimate Snapshot, Task Occurrence, Time
+Segment.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
