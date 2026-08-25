@@ -575,6 +575,40 @@ Lauren's first sign-in, the run-rate amounts, the Apple Developer
 enrollment, the Task Inventory ruling, the section 5 / Ruling 1
 one-line ruling, the eight CAND blanks, and the staging clicks.
 
+**25 August 2026, evening: the founder's proceed instructions landed
+(register drafts A553-A581; A581 records the confirmations).**
+Confirmed and now in force: Field Test Home GRANT-AND-INSPECT (the
+audited `pnpm db:grant` tool is built and proven five-refusals-red
+plus accepting-green, docs/FIELD_TEST_HOME_INSPECTION.md is the
+walkthrough, the check-15 excusal notes the decided disposition and
+comes out once the founder's production run is confirmed); Ruling 1
+AMENDED to option (b), the corporate board's founder/CFO capacity
+section recognized as the display surface of the capacity-gate
+evaluation with the added bars (no ordering-by-rate, no
+fastest/slowest highlighting; sorts limited to route, household
+count, gate proximity), CLAUDE.md amended citing A581 in the same PR
+as the board build; the eight CAND assignments confirmed as drafted
+in the founder response sheet (transcription into the ledger WAITS on
+that sheet's section 6 reaching this repo side; the two holds are
+honored meanwhile: RelationshipMomentRecord schema-free until the
+founder's written definition, AIHumanHandoff only in the Tier M
+gate's PR); Task Inventory v1.4 RECONSTRUCTION AUTHORIZED (draft from
+playbooks, Standards Store, and citation trail with a lineage note;
+founder review adopts; estimator scaffolding that binds no task ids
+may begin). The section 2 verification ran complete the same
+afternoon (see the frozen sitting record; the dry-run plan enumerated
+fixture-household rows ONLY, the cross-tenant reach the instructions
+flag as the priority finding expressly absent). The floor-review
+export exists: `pnpm db:export-floors` writes the merge-script-shaped
+TSV (provision_id / seen_tier / DECISION / NOTE plus context columns)
+from the STORE, refuses an empty store per the inputs doctrine, and
+produced exactly 300 rows (189 floor_1, 111 floor_2) against the
+seeded local store; the founder runs it against production for the
+review afternoon. Standing from the same instructions: Lauren's
+invite fires on her signed agreement; the staging repo-side half
+builds when the six dashboard URLs arrive; Gate 1 items named were
+already complete (0053, 0054).
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the
