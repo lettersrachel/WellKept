@@ -43,6 +43,7 @@ test.afterAll(async () => {
   // visit now emits its covenant events (REQ-083); sweep those too.
   await pool.query("DELETE FROM event_outbox WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM capture_artifact WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
+  await pool.query("DELETE FROM time_segment WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM visit_command WHERE household_id=$1 AND received_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM auth_session WHERE session_token=$1", [token]);
   await pool.end();
@@ -141,6 +142,14 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
     "SELECT count(*)::int n FROM capture_artifact WHERE household_id=$1 AND content='The utility closet bulb is out' AND visit_command_id IS NOT NULL",
     [householdId]);
   expect(cap.n).toBe(1);
+
+  // WL Gate 1 (0054): the offline visit's taps derived its active time
+  // segment in the same transaction, personless, evidence-pointed at
+  // the command. The HOM entered no analytics event on the plane.
+  const { rows: [seg] } = await pool.query(
+    "SELECT count(*)::int n FROM time_segment WHERE household_id=$1 AND kind='active' AND source='derived_taps' AND recorded_by IS NULL AND created_at >= $2",
+    [householdId, marker]);
+  expect(seg.n).toBe(1);
 });
 
 /**

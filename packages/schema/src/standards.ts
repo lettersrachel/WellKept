@@ -198,6 +198,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("actualMinutes", "varianceNote") || has("actual_minutes", "variance_note")) {
       throw new Error(`SEVERE: a task_occurrence row reached a client payload at ${path}`);
     }
+    // WL Gate 1: a time segment is derived service-time structure (the
+    // D7 wall covers the window a duration computes from); no client
+    // projection exists.
+    if (has("derivedFrom", "startedAt") || has("derived_from", "started_at")
+      || has("derivedFrom", "kind") || has("derived_from", "kind")) {
+      throw new Error(`SEVERE: a time_segment row reached a client payload at ${path}`);
+    }
     // WK-DEV-009 s2.1: a brief snapshot is the staff projection verbatim
     // (s2 by construction); no client projection exists, so any
     // recognizable row is the violation.

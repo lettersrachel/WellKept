@@ -27,7 +27,8 @@ export default function PrivacyPage() {
         appliances, subscriptions, and the condition of items we care for, observed over
         time, including conditions we flag to revisit and research we do toward household
         decisions, paused with a plan to return to it) to anticipate needs; service time and costs (time spent
-        serving your household by activity, and costs incurred in serving it; a receipt
+        serving your household by activity, including the phases of a visit derived
+        automatically from visit events, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);
         your membership record (how you found us, and your membership history);
         operational records (follow-up work we track on your household&apos;s behalf and the planned instances of your standing tasks with our internal working estimates for planning them and a record of how each actually went, items

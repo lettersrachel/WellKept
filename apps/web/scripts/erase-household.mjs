@@ -107,6 +107,12 @@
  *    record's; the variance words are the household's. The marker,
  *    never NULL, keeps the whole-or-absent CHECK satisfied on
  *    exception rows (the W-6 revisit_condition precedent).
+ *  - time_segment (WL Gate 1, 2026-08-25): the time_entry class
+ *    exactly - derived service-time records with NO free text at all
+ *    (kind and source are vocabularies, derived_from is an id
+ *    pointer, the rest is timestamps), so the default keep blanks
+ *    nothing, and the counsel-directed ERASE_TIME_COSTS flag deletes
+ *    them alongside the time entries they derive from.
  *  - work_requirement (WL Gate 1, 2026-08-25): context window BLANKED,
  *    skeleton kept - the work_item posture: THAT planned work was
  *    instantiated and how it ended is business history; the stated
@@ -202,6 +208,7 @@ const counts = {
   workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
   estimateSnapshots: await count("SELECT count(*) n FROM estimate_snapshot WHERE household_id=$1"),
   taskOccurrences: await count("SELECT count(*) n FROM task_occurrence WHERE household_id=$1"),
+  timeSegments: await count("SELECT count(*) n FROM time_segment WHERE household_id=$1"),
   prompts: await count("SELECT count(*) n FROM prompt_pack_item WHERE household_id=$1"),
   outcomes: await count("SELECT count(*) n FROM prompt_outcome WHERE household_id=$1 AND note IS NOT NULL"),
   incidents: await count("SELECT count(*) n FROM incident_report WHERE household_id=$1"),
@@ -289,9 +296,14 @@ try {
   if (ERASE_TIME_COSTS) {
     await c.query("DELETE FROM time_entry WHERE household_id=$1", [householdId]);
     await c.query("DELETE FROM cost_entry WHERE household_id=$1", [householdId]);
+    // time_segment (WL Gate 1, 2026-08-25): the time_entry class; the
+    // derived segments go with the entries they derive from.
+    await c.query("DELETE FROM time_segment WHERE household_id=$1", [householdId]);
   } else {
     await c.query("UPDATE time_entry SET note=NULL, updated_at=now() WHERE household_id=$1 AND note IS NOT NULL", [householdId]);
     await c.query("UPDATE cost_entry SET note=NULL, updated_at=now() WHERE household_id=$1 AND note IS NOT NULL", [householdId]);
+    // time_segment: kept by default with the entries; it carries no
+    // free text, so the default keep has nothing to blank (see header).
   }
   if (ERASE_MEMBERSHIP) {
     await c.query("DELETE FROM membership_event WHERE household_id=$1", [householdId]);

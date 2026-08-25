@@ -1401,3 +1401,60 @@ export const taskOccurrence = pgTable("task_occurrence", {
   check("task_occurrence_variance_is_whole",
     sql`(${t.outcome} = 'exception' AND ${t.varianceNote} IS NOT NULL) OR (${t.outcome} <> 'exception' AND ${t.varianceNote} IS NULL)`),
 ]);
+
+// WL Gate 1 object 6 (WK-DEV-008 section 3, the ruling adopted
+// whole): time segments are the STORAGE model for how visit time
+// divides, never a field-capture obligation. The nine kinds are the
+// brief's own taxonomy, adopted verbatim, not invented here.
+//
+// MANUAL PER-SEGMENT TIMING IS UNREPRESENTABLE, the 0052 pattern
+// (make the bad state impossible, not discouraged):
+//  - the source vocabulary carries only the three derivations the
+//    spine already captures (arrival/departure taps, close-flow step
+//    timestamps, travel inferred between visits) plus the ruling's
+//    one sanctioned exception, the HOM's OPTIONAL after-the-fact
+//    refinement; no in-the-field manual value exists to claim;
+//  - every row names its evidence: derived_from is the visit command
+//    (or evidence pointer) the segment derives from, never NULL;
+//  - a derived row is a system row and carries NO person; a
+//    refinement row is a person's act and requires its author. Whole
+//    or absent, both directions by CHECK. The visit's HOM is joined
+//    through the command and time_entry when attribution is needed,
+//    the covenant events' no-person posture.
+//  - the window is ordered (a zero-length segment is refused; it is
+//    not a measurement), and the DURATION IS COMPUTED FROM THE
+//    WINDOW, never stored: no minutes column exists, so segment
+//    minutes can never drift from segment bounds and nothing new
+//    enters the client-duration census.
+// v1 writes only derived_taps (one active segment per applied visit,
+// in the visit's own transaction); derived_close_flow and
+// derived_travel are named in the vocabulary so their sweeps arrive
+// without a migration, and hom_refinement waits for the optional
+// refinement surface, likewise migration-free.
+export const timeSegment = pgTable("time_segment", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  kind: text("kind").notNull(),
+  source: text("source").notNull(),
+  derivedFrom: text("derived_from").notNull(), // the evidence pointer (visit command id)
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+  recordedBy: text("recorded_by").references(() => authUser.id), // refinement author only
+}, (t) => [
+  index("time_segment_household_idx").on(t.householdId, t.startedAt),
+  // One derived segment per (evidence, kind, source): a re-derivation
+  // is a no-op, never a duplicate. Refinement rows are excluded, since
+  // a HOM may legitimately subdivide one visit into several segments
+  // of the same kind.
+  uniqueIndex("time_segment_derived_once")
+    .on(t.derivedFrom, t.kind, t.source)
+    .where(sql`source <> 'hom_refinement'`),
+  check("time_segment_kind_known",
+    sql`${t.kind} IN ('access','setup','active','movement','dwell','waiting','remote','documentation','travel')`),
+  check("time_segment_source_known",
+    sql`${t.source} IN ('derived_taps','derived_close_flow','derived_travel','hom_refinement')`),
+  check("time_segment_window_ordered",
+    sql`${t.endedAt} > ${t.startedAt}`),
+  check("time_segment_person_is_whole",
+    sql`(${t.source} = 'hom_refinement' AND ${t.recordedBy} IS NOT NULL) OR (${t.source} <> 'hom_refinement' AND ${t.recordedBy} IS NULL)`),
+]);

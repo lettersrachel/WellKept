@@ -165,6 +165,17 @@ Four documents, one per audience and direction:
   no-per-person-analytics boundary, held at the schema level); the
   staff member who wrote the record is stamped as provenance
   (recorded_by), so it is also STAFF data in that narrow sense.
+- **Time segments** (added 2026-08-25, WL Gate 1): how visit time
+  divides into phases (setup, active work, travel, and the like),
+  derived automatically from visit events rather than entered by
+  anyone; the storage extends the service-time category above at a
+  finer grain. No free text exists on the record at all. Internal
+  (s2); durations never reach any client surface (the D7 wall,
+  guard-enforced); retained and erased exactly with the time entries
+  they derive from. Derived segments name no person by database
+  constraint; only a staff member's own optional after-the-fact
+  refinement carries its author, so it is STAFF data in that narrow
+  sense (the time-entry G-13 item covers the category).
 - **Work requirements** (added 2026-08-25, WL Gate 1): planned
   instances of the household's standing tasks (when or under what
   stated context each is due, and how each ended: completed, verified,

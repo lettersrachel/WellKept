@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import {
   visitCommand, timeEntry, deferral, conditionFlag, objectObservation,
   registryEntry, pausedDecision, promptPackItem, promptOutcome,
-  captureArtifact, emitOutboxEvent,
+  captureArtifact, timeSegment, emitOutboxEvent,
 } from "@wellkept/schema";
 import { db } from "./db";
 import {
@@ -239,6 +239,28 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
           occurredAt: end, provenance: "sink:visit-commands",
           objectId: idempotencyKey, correlationId: idempotencyKey,
         });
+        // WL Gate 1 object 6 (WK-DEV-008 section 3): the visit's taps
+        // BECOME its active time segment, derived in the same
+        // transaction; the HOM never enters an analytics event. A
+        // system row: no person by CHECK (attribution joins through
+        // time_entry). Re-derivation is a no-op on the derived-once
+        // index. Close-flow step segmentation and travel inference are
+        // the derived_close_flow and derived_travel sources, stubbed
+        // BY NAME until their evidence is persisted server-side.
+        const segmentId = randomUUID();
+        const seg = await tx.insert(timeSegment).values({
+          id: segmentId, householdId: payload.householdId,
+          kind: "active", source: "derived_taps", derivedFrom: idempotencyKey,
+          startedAt: start, endedAt: end,
+        }).onConflictDoNothing().returning({ id: timeSegment.id });
+        if (seg.length > 0) {
+          await emitOutboxEvent(tx, {
+            householdId: payload.householdId, kind: "time_segment.derived",
+            payload: { timeSegmentId: segmentId, visitCommandId: idempotencyKey },
+            provenance: "sink:visit-commands:segments",
+            objectId: segmentId, correlationId: idempotencyKey,
+          });
+        }
       }
       // WK-DEV-009 s2.3 into s8: the closing question's real answer IS a
       // Tell Well Kept capture, landed in the same transaction as the
