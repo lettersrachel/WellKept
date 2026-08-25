@@ -171,6 +171,12 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("windowCondition", "blockedReason") || has("window_condition", "blocked_reason")) {
       throw new Error(`SEVERE: a work_item row reached a client payload at ${path}`);
     }
+    // WL Gate 1: a household task profile's notes are how THIS household
+    // wants a task done (s2); no client projection exists.
+    if (has("taskDefinitionId", "cadence") || has("task_definition_id", "cadence")
+      || has("taskDefinitionId", "notes") || has("task_definition_id", "notes")) {
+      throw new Error(`SEVERE: a household_task_profile row reached a client payload at ${path}`);
+    }
     // WK-DEV-009 s2.1: a brief snapshot is the staff projection verbatim
     // (s2 by construction); no client projection exists, so any
     // recognizable row is the violation.

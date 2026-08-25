@@ -146,6 +146,13 @@ Four documents, one per audience and direction:
   deleted with the household on erasure once filed onward. Recorded by
   a named staff member, also STAFF data (captured_by, filed_by); joins
   the G-13 founder line candidates.
+- **Household task profiles** (added 2026-08-25, WL Gate 1): an
+  instance of the operating-details category above, named for
+  precision: which standing tasks apply in the household, their rhythm,
+  and how the household wants each done. Internal (s2); never shown to
+  the client; on erasure the words blank and the skeleton tombstones
+  (the registry posture). Configured by a named corporate user, also
+  STAFF data (configured_by).
 - **Visit brief snapshots** (added 2026-08-25, WK-DEV-009 §2.1): every
   pre-visit brief composed for a staff member, kept exactly as shown
   (deduped by content), so what a staff member was told about the

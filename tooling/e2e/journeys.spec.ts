@@ -586,3 +586,39 @@ test("task definitions: provisional by structure, refused short, and created ide
     await pool.query("DELETE FROM task_definition WHERE name=$1", [name]);
   }
 });
+
+test("task profile: configured from the library onto a household, updated in place, and the event lands", async ({ context, page }) => {
+  // WL Gate 1 object 2: manifestation is per household, one per task.
+  const defId = randomUUID();
+  await pool.query(
+    "INSERT INTO task_definition (id, name, created_by) VALUES ($1,$2,$3)",
+    [defId, `Journey pantry audit ${defId.slice(0, 8)}`, rachelId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await expect(page.getByRole("heading", { name: /Task profiles/ })).toBeVisible({ timeout: 30_000 });
+
+    await page.getByLabel("Task to configure").selectOption(defId);
+    await page.getByLabel("Rhythm here").fill("every visit");
+    await page.getByLabel("How this household wants it done").fill("top shelf first, labels out");
+    await page.getByRole("button", { name: "Configure" }).click();
+    const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+    await expect.poll(() => count("SELECT count(*)::int n FROM household_task_profile WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='task_profile.configured'")).toBe(1);
+
+    // Re-configuring updates in place: still one profile per task.
+    await expect(page.getByText("top shelf first, labels out")).toBeVisible({ timeout: 15_000 });
+    await page.getByLabel("Task to configure").selectOption(defId);
+    await page.getByLabel("Rhythm here").fill("weekly");
+    await page.getByLabel("How this household wants it done").fill("labels out, rotate stock");
+    await page.getByRole("button", { name: "Configure" }).click();
+    await expect(page.getByText("labels out, rotate stock")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM household_task_profile WHERE household_id=$1")).toBe(1);
+    const { rows: [p] } = await pool.query(
+      "SELECT cadence FROM household_task_profile WHERE household_id=$1", [synId]);
+    expect(p.cadence).toBe("weekly");
+  } finally {
+    await pool.query("DELETE FROM household_task_profile WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
+  }
+});

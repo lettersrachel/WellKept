@@ -264,4 +264,16 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
   );
   // Innocent: a generic payload key alone is not a snapshot row.
   assert.ok(assertNoAnticipationRows([{ payload: { ok: true } }]));
+
+  // WL Gate 1: a household_task_profile never reaches a client.
+  assert.throws(
+    () => assertNoAnticipationRows([{ taskDefinitionId: "t1", cadence: "weekly" }]),
+    /household_task_profile/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { task_definition_id: "t1", notes: "left cabinet first" } }),
+    /household_task_profile/,
+  );
+  // Innocent: a registry entry's cadence alone is not a profile row.
+  assert.ok(assertNoAnticipationRows([{ cadence: "annual" }]));
 });

@@ -45,7 +45,7 @@ test("the child-data policy document exists and classifies every capture surface
   // The surfaces where a child can appear in the record. A new surface
   // that can hold child content gets a row in the doc's table before it
   // ships (rule 1 of the doc); this list grows with the schema.
-  for (const surface of ["registry_entry", "playbook_field", "dot", "visit", "visit_photo", "incident_report", "condition_flag", "deferral", "paused_decision", "work_item", "attention_record", "decision_record", "shadow_log", "capture_artifact", "visit_brief_snapshot"]) {
+  for (const surface of ["registry_entry", "playbook_field", "dot", "visit", "visit_photo", "incident_report", "condition_flag", "deferral", "paused_decision", "work_item", "attention_record", "decision_record", "shadow_log", "capture_artifact", "visit_brief_snapshot", "household_task_profile"]) {
     assert.ok(doc.includes(surface), `CHILD_DATA.md missing a treatment row for ${surface}`);
   }
   // The doc and this test's kind sets must agree.

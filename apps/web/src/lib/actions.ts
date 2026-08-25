@@ -1736,3 +1736,46 @@ export async function createTaskDefinition(formData: FormData) {
   revalidatePath(returnTo);
   recordedTo(returnTo, `task definition ${name}`);
 }
+
+/**
+ * WL Gate 1 object 2: configuring how a task manifests in one household
+ * is a corporate act (standards-adjacent). One profile per task per
+ * household by the unique index; re-configuring updates rhythm and
+ * notes in place and reactivates a tombstoned profile. Durations never
+ * enter here: estimates are the Estimate Snapshot object's.
+ */
+export async function configureTaskProfile(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const taskDefinitionId = String(formData.get("taskDefinitionId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(taskDefinitionId)) refuseTo(returnTo, "bad-input");
+  const cadence = String(formData.get("cadence") ?? "").trim().slice(0, 200) || null;
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 1000);
+  const { householdTaskProfile, taskDefinition } = await import("@wellkept/schema");
+  const [def] = await db.select().from(taskDefinition).where(eq(taskDefinition.id, taskDefinitionId));
+  if (!def || def.tombstonedAt) refuseTo(returnTo, "missing");
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    const inserted = await tx.insert(householdTaskProfile).values({
+      id, householdId, taskDefinitionId, cadence, notes, configuredBy: principal.userId,
+    }).onConflictDoUpdate({
+      target: [householdTaskProfile.householdId, householdTaskProfile.taskDefinitionId],
+      set: { cadence, notes, active: true, tombstonedAt: null, configuredBy: principal.userId, updatedAt: new Date() },
+    }).returning({ id: householdTaskProfile.id });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "task_profile.configured",
+      payload: { taskProfileId: inserted[0]!.id, taskDefinitionId },
+      provenance: "action:configureTaskProfile", objectId: inserted[0]!.id,
+      actor: principal.userId, correlationId: taskDefinitionId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "task_profile", detail: { taskProfileId: inserted[0]!.id, taskDefinitionId, action: "configured" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `task profile ${def.name}`);
+}

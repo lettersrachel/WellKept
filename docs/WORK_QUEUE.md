@@ -247,6 +247,23 @@ provisional standing. Seventeen e2e green. Next Gate 1 objects, in
 order: Household Task Profile, Work Requirement, Estimate Snapshot,
 Task Occurrence, Time Segment, each its own migration session.
 
+**And Gate 1 object 2 (0050):** `household_task_profile` exists, how
+a reusable task manifests in ONE household: active, the rhythm in
+words (the registry cadence posture; a structured cadence vocabulary
+is the founder's taxonomy), and how-they-want-it-done notes (s2).
+DURATIONS ARE ABSENT BY CONSTRUCTION: estimates belong to the
+Estimate Snapshot object, so the D7 wall stays wide. One profile per
+task per household (unique index proven refusing the duplicate; the
+FK refusing an unknown definition); configuring is a corporate act
+(admin/ops) that upserts in place with its event through the s4
+envelope; erasure blanks the words and tombstones the skeleton (the
+registry posture, guard proven red first); the full guard-and-legal
+set shipped same-PR (payload signature both directions, disclosure
+allowlist red first, CHILD_DATA row red then green, the
+operating-details category extended in both privacy copies naming
+task profiles as its instance). The journey proves configure,
+in-place re-configure, and the event. Eighteen e2e green.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
