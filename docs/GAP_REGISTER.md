@@ -2270,7 +2270,14 @@ keeps one gesture but invents a rule about what "my household" means.
 Adjacent, not the same: AJ's one-role constraint (2026-07-28) is about
 two roles on ONE household; this is one role across SEVERAL.
 
-**Interim, no code:** the founder's field role on Field Test Home can
-be revoked through the audited path once the inspection is done, which
-resolves her /visit to the next field household by the same rule. The
-grant run's own finding stands as the evidence.
+**Interim TAKEN, no code (25 Aug 2026, evening):** the founder
+dismissed the stray capture and revoked her own field role on Field
+Test Home through the audited path, both as the ftc-admin corporate
+identity (her primary could not: filing is corporate-gated and
+revokeRole refuses a self-target, which is the alter identity earning
+its keep a second time). Her /visit now resolves to the next field
+household by the same rule, so the pointer MOVED rather than settled:
+G-65 stays open as a decision, and the three shapes above are
+unchanged. Field Test Home still passes check 15 on the ftc-admin
+corporate assignment. The grant run's own finding stands as the
+evidence that produced all of this.

@@ -41,8 +41,11 @@ order, and note anything surprising:
    if a drain ever completed; confirm what actually stands).
 4. **Incidents, photos, vault items**: expected none or test-only;
    a vault_item row would raise the stakes of the disposition.
-5. **Role assignments**: after the grant, expect exactly one (the
-   founder). Any other identity is a finding.
+5. **Role assignments**: as it ran, TWO were correct and expected:
+   the granted corporate identity plus the founder's own pre-existing
+   `house_manager` (the reason an alter identity was needed at all,
+   step 4). After the step 5 revoke, one remains. A third identity, or
+   any identity that is not the founder's, is a finding.
 6. **The audit trail**: what the household's history says about who
    touched it and when it went quiet.
 
@@ -102,4 +105,21 @@ so the disposition decision has them:
   which is the founder's own Tell Well Kept test from the section 4
   sitting: /visit resolved to this household (see G-65), so the
   sitting's "test capture awaiting dismissal" was sitting here, in a
-  queue nobody could open. It can be dismissed now.
+  queue nobody could open. **DISMISSED the same evening** with its
+  reason recorded, as the ftc-admin identity (filing is corporate
+  only, so the primary account saw the capture and no control).
+
+## Step 5: the field role, revoked (25 August, evening)
+
+The founder revoked her primary account's `house_manager` assignment
+on Field Test Home through the audited path, again as the ftc-admin
+identity: `revokeRole` refuses a self-target, so a single dual-role
+account could not have done it, which is the alter identity earning
+its keep a second time. `role_revoked` is on the trail.
+
+What this does and does not do: Field Test Home leaves her field
+surface, and Field Test Home still passes check 15 on the ftc-admin
+corporate assignment. It does NOT answer G-65: /visit re-resolves to
+the next field-role household by the same first-by-age rule, so the
+arbitrary pointer moved rather than settled. The resolution rule
+remains her decision between the three shapes in the register.
