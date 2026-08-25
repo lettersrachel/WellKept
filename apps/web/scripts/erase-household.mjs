@@ -101,6 +101,12 @@
  *    operational quantities with no client face); the basis words are
  *    the household's, the numbers and lineage are the planning
  *    record's.
+ *  - task_occurrence (WL Gate 1, 2026-08-25): variance note BLANKED to
+ *    a marker, rows kept - the estimate_snapshot class: the actuals
+ *    (that a task happened, when, and how long) are the planning
+ *    record's; the variance words are the household's. The marker,
+ *    never NULL, keeps the whole-or-absent CHECK satisfied on
+ *    exception rows (the W-6 revisit_condition precedent).
  *  - work_requirement (WL Gate 1, 2026-08-25): context window BLANKED,
  *    skeleton kept - the work_item posture: THAT planned work was
  *    instantiated and how it ended is business history; the stated
@@ -195,6 +201,7 @@ const counts = {
   taskProfiles: await count("SELECT count(*) n FROM household_task_profile WHERE household_id=$1"),
   workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
   estimateSnapshots: await count("SELECT count(*) n FROM estimate_snapshot WHERE household_id=$1"),
+  taskOccurrences: await count("SELECT count(*) n FROM task_occurrence WHERE household_id=$1"),
   prompts: await count("SELECT count(*) n FROM prompt_pack_item WHERE household_id=$1"),
   outcomes: await count("SELECT count(*) n FROM prompt_outcome WHERE household_id=$1 AND note IS NOT NULL"),
   incidents: await count("SELECT count(*) n FROM incident_report WHERE household_id=$1"),
@@ -318,6 +325,9 @@ try {
   // estimate_snapshot (WL Gate 1, 2026-08-25): basis BLANKED, rows kept
   // (see header).
   await c.query("UPDATE estimate_snapshot SET basis='', updated_at=now() WHERE household_id=$1", [householdId]);
+  // task_occurrence (WL Gate 1, 2026-08-25): variance note BLANKED to a
+  // marker so the whole-or-absent CHECK survives, rows kept (see header).
+  await c.query("UPDATE task_occurrence SET variance_note=CASE WHEN variance_note IS NULL THEN NULL ELSE '[erased]' END, updated_at=now() WHERE household_id=$1", [householdId]);
   // work_requirement (WL Gate 1, 2026-08-25): context BLANKED, skeleton
   // kept; a words-only timing blanks to a marker so the CHECK survives
   // (see header).

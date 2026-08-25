@@ -100,6 +100,12 @@ const ALLOWLIST: Record<string, string> = {
     "estimate; corporate planning data behind the D7 staffing wall, never evaluative of " +
     "the estimator (Ruling 1 untouched); generic action-log coverage; a named line is a " +
     "founder decision, not a drift",
+  task_occurrence:
+    "WL Gate 1, 2026-08-25: recorded_by is write provenance only; performed_by is " +
+    "deliberately absent from this table (WK-DEV-008 section 1's schema-level " +
+    "no-HOM-speed-coefficient guardrail), so the record attributes the writing of the " +
+    "actuals, never the performing of the work; generic action-log coverage; a named " +
+    "line is a founder decision, not a drift",
   work_requirement:
     "WL Gate 1, 2026-08-25: created_by, completed_by, and verified_by attribute planned " +
     "work instances (the written-work item's territory); shipped after the disclosure " +

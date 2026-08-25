@@ -1930,3 +1930,63 @@ export async function recordEstimate(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, estimatedMinutes === null ? "estimate recorded as unknown" : "estimate recorded");
 }
+
+/**
+ * WL Gate 1 object 5: recording what actually happened is an APPEND
+ * (a reopened requirement done again is a new occurrence), and the
+ * record never touches the estimate history by construction. The
+ * outcome is the directive's own two modes: as expected (one gesture,
+ * no text), or exception with the variance reason in words, whole or
+ * refused; a note on an as-expected row is refused rather than
+ * silently dropped. Zero actual minutes is refused (zero is not
+ * unknown); blank is NULL. v1 entry is corporate-side: this is never
+ * a field capture obligation (WK-DEV-008 section 3). The table stores
+ * no performer, only write provenance (section 1's schema-level
+ * no-HOM-speed-coefficient guardrail).
+ */
+export async function recordTaskOccurrence(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const workRequirementId = String(formData.get("workRequirementId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(workRequirementId)) refuseTo(returnTo, "bad-input");
+  const occurredOn = String(formData.get("occurredOn") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(occurredOn)) refuseTo(returnTo, "bad-input");
+  const outcome = String(formData.get("outcome") ?? "");
+  if (!["as_expected", "exception"].includes(outcome)) refuseTo(returnTo, "bad-input");
+  const minutesRaw = String(formData.get("actualMinutes") ?? "").trim();
+  let actualMinutes: number | null = null;
+  if (minutesRaw !== "") {
+    const parsed = Number(minutesRaw);
+    if (!Number.isInteger(parsed) || parsed <= 0) refuseTo(returnTo, "bad-input"); // zero is not unknown
+    actualMinutes = parsed;
+  }
+  const noteRaw = String(formData.get("varianceNote") ?? "").trim().slice(0, 500);
+  if (outcome === "exception" && noteRaw.length < 4) refuseTo(returnTo, "gate-unmet");
+  if (outcome === "as_expected" && noteRaw.length > 0) refuseTo(returnTo, "bad-input");
+  const varianceNote = outcome === "exception" ? noteRaw : null;
+  const { workRequirement, taskOccurrence } = await import("@wellkept/schema");
+  const [req] = await db.select().from(workRequirement).where(eq(workRequirement.id, workRequirementId));
+  if (!req || req.householdId !== householdId) refuseTo(returnTo, "missing");
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(taskOccurrence).values({
+      id, householdId, workRequirementId, occurredOn, outcome, actualMinutes, varianceNote,
+      recordedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "task_occurrence.recorded",
+      payload: { taskOccurrenceId: id, workRequirementId, outcome },
+      provenance: "action:recordTaskOccurrence", objectId: id,
+      actor: principal.userId, correlationId: workRequirementId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "task_occurrence", detail: { taskOccurrenceId: id, workRequirementId, action: "recorded", outcome },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, outcome === "exception" ? "occurrence recorded with its exception" : "occurrence recorded as expected");
+}

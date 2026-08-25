@@ -1350,3 +1350,54 @@ export const estimateSnapshot = pgTable("estimate_snapshot", {
   check("estimate_snapshot_zero_is_not_unknown",
     sql`${t.estimatedMinutes} IS NULL OR ${t.estimatedMinutes} > 0`),
 ]);
+
+// WL Gate 1 object 5 (WK-DEV-010 section 2's boundary sentence): the
+// Task Occurrence records WHAT ACTUALLY HAPPENED for a requirement and
+// never overwrites an estimate snapshot; this table references the
+// requirement and writes nothing anywhere else, so the never-overwrite
+// rule is held by construction, not by discipline. Append-only by
+// code: a reopened requirement done again is a new occurrence row.
+//
+// PERFORMED_BY IS DELIBERATELY ABSENT. WK-DEV-008 section 1 binds the
+// no-HOM-speed-coefficient guardrail "at the schema level": the
+// forecasting layer learns from household, task, and configuration
+// history, never from individual HOM speed, and the way a schema holds
+// that is by not storing who performed the work on the learning
+// record at all. recorded_by is write provenance (every write stamps
+// provenance), not performance data; staff time attribution lives in
+// time_entry, which is audit and payroll-adjacent record keeping, not
+// estimator input.
+//
+// The outcome vocabulary is the directive's own two modes (WK-DEV-009
+// section 6 [D]): the known-normal rule's one-gesture "as expected",
+// and exception mode, which asks only for the variance reason in
+// words. The richer variance-CODE taxonomy the Gate 1 list names is
+// deliberately deferred to verbatim adoption from the forecasting
+// brief (the estimate-hierarchy precedent); inventing codes here would
+// be choosing a taxonomy. An exception carries its reason whole or is
+// refused; an as-expected occurrence carries none, so "done as
+// expected" stays one gesture.
+// actual_minutes: NULL is the honest unknown, zero refused (the
+// estimate_snapshot posture); v1 entry is corporate-side or derived,
+// never a field capture obligation (WK-DEV-008 section 3's ruling).
+export const taskOccurrence = pgTable("task_occurrence", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  workRequirementId: uuid("work_requirement_id").notNull().references(() => workRequirement.id),
+  occurredOn: date("occurred_on").notNull(),
+  outcome: text("outcome").notNull(), // as_expected | exception
+  actualMinutes: integer("actual_minutes"), // NULL = unknown, never zero
+  varianceNote: text("variance_note"), // the variance reason, in words; s2
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("task_occurrence_requirement_idx").on(t.workRequirementId, t.occurredOn),
+  check("task_occurrence_outcome_known",
+    sql`${t.outcome} IN ('as_expected','exception')`),
+  check("task_occurrence_zero_is_not_unknown",
+    sql`${t.actualMinutes} IS NULL OR ${t.actualMinutes} > 0`),
+  // Whole or absent, both directions: an exception without its reason
+  // is refused, and an as-expected row carries no reason, so the
+  // one-gesture confirmation never grows a text field.
+  check("task_occurrence_variance_is_whole",
+    sql`(${t.outcome} = 'exception' AND ${t.varianceNote} IS NOT NULL) OR (${t.outcome} <> 'exception' AND ${t.varianceNote} IS NULL)`),
+]);
