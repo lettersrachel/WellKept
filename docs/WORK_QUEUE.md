@@ -678,6 +678,26 @@ Gate 2's estimator all wait on the founder's row verdicts from the
 combined review afternoon, applied through the floor-importer
 discipline.
 
+**And the v1.3.1 amendment lands (register A584, the same evening):**
+the commercial-gap decision resolved as option (a), amendment by
+register entry, exactly where amendments happen. The pinned reference
+is superseded: TASK_INVENTORY_V1_3_1_REPO_EDITION.csv (347 rows,
+sha256 d71e27e0..., re-pinned in the draft's lineage; the v1.3 pin
+survives in git history) appends T-345..T-348 (bedroom, living and
+family room, bathroom clean-and-reset, home office weekly service,
+all Level 1 Universal Rooms & resets in the catalog's own idiom) and
+retires T-206 as a data artifact, id never reused. The four affected
+rev2 rows convert from NO-MAP to their new commercial counterparts
+(WKT-018 to T-345, WKT-027 to T-346, WKT-014 gains T-347, WKT-038 to
+T-348), so the review block sees the finished join; every other
+NO-MAP and UNCERTAIN row is untouched. Intake findings dispositioned:
+the eleven flattened-header rows stay in the reference awaiting
+individual rulings; the never-list is confirmed standing with the
+commercial and operational conduct sets agreeing from both sides; the
+unclaimed families are confirmed future-WKT candidates. Everything
+else in the adoption path stands: verdicts, importer discipline,
+freeze, flip, loader, Gate 2.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the

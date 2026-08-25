@@ -204,7 +204,6 @@ T-202,5,Universal,Events & travel,No entry to declared-private zones
 T-203,5,Universal,Events & travel,No purchases without consent
 T-204,5,Universal,Events & travel,No AI-only decisions
 T-205,5,Universal,Events & travel,"No commissions accepted, ever"
-T-206,5,Universal,Events & travel,Total tasks: 192
 T-207,1,Universal,Appointment preparation,Stage appointment case: objects the visit requires
 T-208,1,Universal,Appointment preparation,Assemble bring-list from the household record
 T-209,2,Universal,Appointment preparation,Confirm provider requirements before the visit
@@ -343,3 +342,7 @@ T-341,3,Universal,Reconciliation,Sequence a cascade from a single announced even
 T-342,3,Universal,Reconciliation,Maintain the forward load view for the household
 T-343,3,Universal,Reconciliation,Assign an owner to every merged item
 T-344,3,Universal,Reconciliation,Apply the attention budget to the week's asks
+T-345,1,Universal,Rooms & resets,Bedroom reset to standard
+T-346,1,Universal,Rooms & resets,Living and family room reset
+T-347,1,Universal,Rooms & resets,Bathroom clean and reset
+T-348,1,Universal,Rooms & resets,Home office weekly reset and service
