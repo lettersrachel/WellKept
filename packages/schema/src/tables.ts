@@ -1025,3 +1025,46 @@ export const workItem = pgTable("work_item", {
   check("work_item_resolution_is_whole",
     sql`(${t.status} IN ('done','abandoned') AND ${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL) OR (${t.status} NOT IN ('done','abandoned') AND ${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL)`),
 ]);
+
+// RFC-PRIM-01 build 2: the AttentionRecord primitive. A REASON a person
+// needs to notice or act: it informs, never executes (the single-consent
+// rule and the A0 cap stand above it; nothing here fires an action).
+// Sources are the computed surfaces that used to recompute per request;
+// the sweep writes them once and notification becomes delivery. One
+// record per source EVER (the full unique index): a source whose
+// attention was resolved does not nag daily; re-raising is a policy
+// decision for later, deliberately not a default.
+export const attentionUrgencyEnum = pgEnum("attention_urgency", ["fyi", "soon", "now"]);
+export const attentionStatusEnum = pgEnum("attention_status", ["open", "resolved"]);
+
+export const attentionRecord = pgTable("attention_record", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  reason: text("reason").notNull(), // why noticing is needed, in words; s2
+  sourceKind: text("source_kind").notNull(),
+  sourceId: uuid("source_id"), // the row it points at; null for system notices
+  audience: text("audience").notNull(),
+  urgency: attentionUrgencyEnum("urgency").notNull().default("soon"),
+  deadline: date("deadline"),
+  sensitivity: sensitivityEnum("sensitivity").notNull().default("s2"),
+  deliveredVia: text("delivered_via"), // null until delivered: briefing | digest | push
+  acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+  acknowledgedBy: text("acknowledged_by").references(() => authUser.id),
+  status: attentionStatusEnum("status").notNull().default("open"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedBy: text("resolved_by").references(() => authUser.id),
+}, (t) => [
+  index("attention_record_household_idx").on(t.householdId, t.status),
+  uniqueIndex("attention_record_one_per_source").on(t.sourceKind, t.sourceId),
+  check("attention_record_source_known",
+    sql`${t.sourceKind} IN ('work_item','deferral','paused_decision','condition_flag','reconciliation','system')`),
+  check("attention_record_audience_known",
+    sql`${t.audience} IN ('hom','corporate','founder')`),
+  // Acknowledgment is a whole pair; resolution is the house triple, whole
+  // or absent in both directions.
+  check("attention_record_ack_is_whole",
+    sql`(${t.acknowledgedAt} IS NULL AND ${t.acknowledgedBy} IS NULL) OR (${t.acknowledgedAt} IS NOT NULL AND ${t.acknowledgedBy} IS NOT NULL)`),
+  check("attention_record_resolution_is_whole",
+    sql`(${t.status} = 'resolved' AND ${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL) OR (${t.status} <> 'resolved' AND ${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL)`),
+]);

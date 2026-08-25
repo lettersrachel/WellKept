@@ -95,6 +95,10 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  attention_record:
+    "RFC-PRIM-01 build 2, 2026-08-25: acknowledged_by and resolved_by attribute who " +
+    "noticed and who answered; shipped after the disclosure was approved (the action-log " +
+    "clause's territory); founder line candidate for the next revision",
   work_item:
     "RFC-PRIM-01, 2026-08-25: owner_id and resolved_by attribute tracked work; the " +
     "surface shipped after the disclosure was approved (the written-work item is the " +

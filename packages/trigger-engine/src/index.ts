@@ -7,3 +7,4 @@ export * from "./season.ts";
 export * from "./authority.ts";
 export * from "./shadow.ts";
 export * from "./shadow-run.ts";
+export * from "./attention-sweep.ts";

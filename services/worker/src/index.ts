@@ -168,7 +168,12 @@ export function createWorker() {
         // extension of the sweep, not a second sweep). Idempotent.
         const season = await materializeSeasonObservations(db);
         const purged = await runPhotoRetention();
-        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged };
+        // RFC-PRIM-01 build 2: the overdue surfaces write attention
+        // records on the same daily pass. Idempotent by the
+        // one-per-source index; only genuine inserts emit events.
+        const { sweepAttentionRecords } = await import("@wellkept/trigger-engine");
+        const attention = await sweepAttentionRecords(db);
+        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged, attentionRaised: attention.raised };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "client-digest") { const { runClientWeeklyDigest } = await import("./client-digest.ts"); return runClientWeeklyDigest(pool); }

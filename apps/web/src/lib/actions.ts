@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, eventOutbox } from "@wellkept/schema";
+import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, eventOutbox } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
 import { getPrincipal } from "./session";
@@ -1445,4 +1445,65 @@ export async function progressWorkItem(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `work item ${decision}`);
+}
+
+/**
+ * RFC-PRIM-01 build 2: attention is acknowledged (I saw this) or
+ * resolved (it is answered, in words), whole or absent both ways, both
+ * audited. The record informs; resolving it changes NOTHING about the
+ * source (the deferral or work item it points at resolves through its
+ * own lifecycle) - this closes the noticing, not the work.
+ */
+export async function acknowledgeAttention(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("attentionId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  const [row] = await db.select().from(attentionRecord).where(eq(attentionRecord.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.acknowledgedAt) refuseTo(returnTo, "bad-input"); // already seen; nothing to re-say
+  await db.transaction(async (tx) => {
+    await tx.update(attentionRecord)
+      .set({ acknowledgedAt: new Date(), acknowledgedBy: principal.userId, updatedAt: new Date() })
+      .where(eq(attentionRecord.id, id));
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "attention_record", detail: { attentionRecordId: id, action: "acknowledged" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "attention acknowledged");
+}
+
+export async function resolveAttention(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("attentionId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 400);
+  if (note.length < 4) refuseTo(returnTo, "gate-unmet"); // answered, in words
+  const [row] = await db.select().from(attentionRecord).where(eq(attentionRecord.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (row.status === "resolved") refuseTo(returnTo, "bad-input");
+  await db.transaction(async (tx) => {
+    await tx.update(attentionRecord).set({
+      status: "resolved", resolution: note, resolvedAt: new Date(), resolvedBy: principal.userId, updatedAt: new Date(),
+    }).where(eq(attentionRecord.id, id));
+    await tx.insert(eventOutbox).values({
+      id: randomUUID(), householdId, kind: "attention_record.resolved",
+      payload: { attentionRecordId: id, sourceKind: row.sourceKind }, occurredAt: new Date(),
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "attention_record", detail: { attentionRecordId: id, action: "resolved" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "attention resolved");
 }

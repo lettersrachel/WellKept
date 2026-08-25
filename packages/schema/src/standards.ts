@@ -154,6 +154,11 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("decision", "research")) {
       throw new Error(`SEVERE: a paused_decision row reached a client payload at ${path}`);
     }
+    // RFC-PRIM-01 build 2: an attention_record's reason derives from
+    // household content (s2); no client projection exists.
+    if (has("audience", "urgency") || has("audience", "sourceKind") || has("audience", "source_kind")) {
+      throw new Error(`SEVERE: an attention_record row reached a client payload at ${path}`);
+    }
     // RFC-PRIM-01: a work_item is staff work about the household (s2 by
     // default, no client projection); any recognizable row is the
     // violation. The key pair is the primitive's own shape.

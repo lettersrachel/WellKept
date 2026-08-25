@@ -219,4 +219,15 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /work_item/,
   );
   assert.ok(assertNoAnticipationRows([{ title: "a book the client mentioned" }]));
+  // RFC-PRIM-01 build 2: an attention_record never reaches a client;
+  // "audience" alone in prose stays innocent.
+  assert.throws(
+    () => assertNoAnticipationRows([{ audience: "hom", urgency: "now" }]),
+    /attention_record/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { audience: "corporate", source_kind: "deferral" } }),
+    /attention_record/,
+  );
+  assert.ok(assertNoAnticipationRows([{ audience: "the dinner party guest list" }]));
 });

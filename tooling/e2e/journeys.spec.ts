@@ -67,6 +67,7 @@ test.afterAll(async () => {
   // way airplane.spec tears down its visit commands).
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
@@ -184,6 +185,36 @@ test("work-item journey: refused short, opened with its event, blocked with reas
   expect(w.resolved_by).toBe(rachelId);
   expect(w.resolved_at).toBeTruthy();
   expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_item.resolved'")).toBe(1);
+});
+
+test("attention journey: seen is a whole pair, resolving demands words, and the resolved event lands", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  const attnId = randomUUID();
+  await pool.query(
+    "INSERT INTO attention_record (id, household_id, reason, source_kind, audience, urgency) VALUES ($1,$2,'Journey notice: the gate latch report','system','corporate','now')",
+    [attnId, synId]);
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByText("Journey notice: the gate latch report")).toBeVisible({ timeout: 30_000 });
+
+  // Seen: the whole pair lands.
+  await page.getByRole("button", { name: "Seen" }).click();
+  await expect.poll(async () =>
+    (await pool.query("SELECT count(*)::int n FROM attention_record WHERE id=$1 AND acknowledged_at IS NOT NULL AND acknowledged_by IS NOT NULL", [attnId])).rows[0].n,
+  { timeout: 20_000 }).toBe(1);
+
+  // Resolving without words refuses visibly.
+  await page.getByRole("button", { name: "Resolve" }).click();
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+  // With words: the whole triple, and the outbox hears it.
+  await page.getByLabel("How it was answered").fill("walked the founder through it on the call");
+  await page.getByRole("button", { name: "Resolve" }).click();
+  await expect.poll(async () =>
+    (await pool.query("SELECT count(*)::int n FROM attention_record WHERE id=$1 AND status='resolved' AND resolution IS NOT NULL AND resolved_by=$2", [attnId, rachelId])).rows[0].n,
+  { timeout: 20_000 }).toBe(1);
+  const { rows: [ev] } = await pool.query(
+    "SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='attention_record.resolved'", [synId]);
+  expect(ev.n).toBe(1);
 });
 
 test("permissions journey: a client is walled out of staff surfaces and still sees their own", async ({ context, page }) => {
