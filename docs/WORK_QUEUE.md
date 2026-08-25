@@ -152,6 +152,23 @@ too, by the same design. Proven: envelope integration tests, the
 work-item journey asserting the envelope on a real action's event, all
 thirteen e2e green.
 
+**And the drafted close (section 2.3, the Tier D contract, no
+migration):** the close flow now ends with "Anything missing?" before
+Confirm close (a required step in the state machine, "none" the valid
+quiet answer; drafts persisted before the step existed restore with
+it unanswered); routine completions are batchable in ONE gesture
+(confirmRemainingAsExpected covers only the HOM's own planned work,
+refuses as a no-op ritual, and excludes nothing yet because today's
+task list carries no mandatory-individual classes; when WL Gate 1
+brings task classes the exclusion is structural); the submit screen
+renders the drafted close ("N of N expected outcomes completed as
+planned" plus itemized exceptions only). A real closing answer
+becomes a Tell Well Kept capture IN THE VISIT'S OWN TRANSACTION
+server-side (the s8 wiring: say it once at close and the router files
+it), proven end to end in the airplane drill: batch gesture offline,
+answer offline, reconnect, the capture artifact tied to the visit by
+command id. Fourteen e2e green.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

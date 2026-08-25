@@ -43,6 +43,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
   const [deferralReason, setDeferralReason] = useState("");
   const [deferralDate, setDeferralDate] = useState("");
   const [deferralCondition, setDeferralCondition] = useState("");
+  const [anythingMissing, setAnythingMissing] = useState("");
   const [zonePhoto, setZonePhoto] = useState("");
   const [reportSentences, setReportSentences] = useState(["", "", ""]);
   const [lifeChange, setLifeChange] = useState<boolean | null>(null);
@@ -312,6 +313,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
     { id: "life_change_signal", label: "Signal" },
     { id: "zone_drift", label: "Zones" },
     { id: "three_sentence_report", label: "Report" },
+    { id: "anything_missing", label: "Missing?" },
   ];
 
   return (
@@ -367,6 +369,16 @@ export function VisitWizard({ householdId }: { householdId: string }) {
         <>
           <div className="card">
             <h2>Confirm today&apos;s tasks</h2>
+            {/* WK-DEV-009 s2.3: routine completions are batchable in ONE
+                gesture; it covers only your own planned work, and every
+                exception has its own capture below. */}
+            {state.completedTaskIds.length < state.requiredTaskIds.length && (
+              <p>
+                <button className="act subtle" type="button" onClick={() => run((f) => { f.confirmRemainingAsExpected(); })}>
+                  All remaining done as expected
+                </button>
+              </p>
+            )}
             {REQUIRED_TASKS.map((t) => (
               <label key={t.id} className="sans" style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, fontWeight: "normal", padding: "5px 0", cursor: "pointer" }}>
                 <input
@@ -498,7 +510,36 @@ export function VisitWizard({ householdId }: { householdId: string }) {
           </div>
 
           <div className="card">
+            <h2>Anything missing?</h2>
+            <div className="note">
+              The last question, always. Say none when nothing is; anything
+              else is captured once and we handle the filing.
+            </div>
+            <div className="row" style={{ gap: 6 }}>
+              <input aria-label="Anything missing?" value={anythingMissing} onChange={(e) => setAnythingMissing(e.target.value)} placeholder="none" style={{ flex: 1, marginTop: 0 }} />
+              <button className="act subtle" type="button" onClick={() => run((f) => f.setAnythingMissing(anythingMissing))}>Answer</button>
+            </div>
+            {state.anythingMissing && <div className="prov">answered: {state.anythingMissing}</div>}
+          </div>
+
+          <div className="card">
             <h2>Ready to submit?</h2>
+            {(() => {
+              const draft = flowRef.current!.closeDraft();
+              const ex = draft.exceptions;
+              return (
+                <div className="fval" style={{ fontSize: 13 }}>
+                  <div>{draft.completedAsPlanned} of {draft.plannedCount} expected outcomes completed as planned.</div>
+                  {ex.deferrals.map((d) => <div key={d.id}>Deferred: {d.noticed}</div>)}
+                  {ex.zoneDrift && <div>Zone drift: {ex.zoneDrift.answer}</div>}
+                  {ex.changesNoticed && <div>Changed: {ex.changesNoticed}</div>}
+                  {ex.dotsCount > 0 && <div>{ex.dotsCount} dot{ex.dotsCount === 1 ? "" : "s"} captured.</div>}
+                  {state.anythingMissing && state.anythingMissing.toLowerCase() !== "none" && (
+                    <div>Missing, captured for filing: {state.anythingMissing}</div>
+                  )}
+                </div>
+              );
+            })()}
             {missing.length > 0 ? (
               <div className="note">Still missing: {missing.join(", ")}</div>
             ) : (

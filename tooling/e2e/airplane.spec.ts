@@ -42,6 +42,7 @@ test.afterAll(async () => {
   // Remove only what this test created, then the session. The applied
   // visit now emits its covenant events (REQ-083); sweep those too.
   await pool.query("DELETE FROM event_outbox WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
+  await pool.query("DELETE FROM capture_artifact WHERE household_id=$1 AND created_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM visit_command WHERE household_id=$1 AND received_at >= $2", [householdId, marker]);
   await pool.query("DELETE FROM auth_session WHERE session_token=$1", [token]);
   await pool.end();
@@ -67,8 +68,11 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   await context.setOffline(true);
   await expect(page.getByText(/Offline; your work is saved/)).toBeVisible();
 
-  // Tasks: check all four.
-  for (const cb of await page.locator('input[type=checkbox]').all()) await cb.check();
+  // Tasks: the s2.3 batch gesture, exercised OFFLINE (routine
+  // completions are batchable in one gesture; it only ever covers the
+  // HOM's own planned work).
+  await page.getByRole("button", { name: "All remaining done as expected" }).click();
+  for (const cb of await page.locator('input[type=checkbox]').all()) await expect(cb).toBeChecked();
 
   // Hours — the two datetime inputs in the Hours card.
   const hours = page.locator('div.card', { hasText: "Hours" }).filter({ has: page.locator('input[type="datetime-local"]') });
@@ -102,6 +106,16 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   await inputs.nth(2).fill("Coffee stocked and set for the week.");
   await report.getByRole("button", { name: "Save report" }).click();
 
+  // The closing question, always last: a REAL answer here, so the
+  // reconnect proves the s2.3-to-s8 wiring (the answer becomes a Tell
+  // Well Kept capture in the visit's own transaction, never re-typed).
+  const missingCard = page.locator('div.card', { hasText: "Anything missing?" });
+  await missingCard.getByLabel("Anything missing?").fill("The utility closet bulb is out");
+  await missingCard.getByRole("button", { name: "Answer" }).click();
+
+  // The drafted close renders the as-planned line before submit.
+  await expect(page.getByText(/4 of 4 expected outcomes completed as planned/)).toBeVisible();
+
   // Submit — required steps complete. AG: the offline card claims what
   // actually happened (saved on this device), never "submitted".
   await page.getByRole("button", { name: "Submit visit report" }).click();
@@ -120,6 +134,13 @@ test("a visit filled offline queues on-device, then syncs and applies on reconne
   // AG, the other direction: once nothing is waiting, the card upgrades
   // its claim to submitted.
   await expect(page.getByText("Visit submitted")).toBeVisible();
+
+  // s2.3 into s8: the closing answer became a capture artifact in the
+  // same transaction as the applied visit, tied to it by command id.
+  const { rows: [cap] } = await pool.query(
+    "SELECT count(*)::int n FROM capture_artifact WHERE household_id=$1 AND content='The utility closet bulb is out' AND visit_command_id IS NOT NULL",
+    [householdId]);
+  expect(cap.n).toBe(1);
 });
 
 /**
