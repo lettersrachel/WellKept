@@ -480,7 +480,12 @@ only, no deploy", and the checks include db:migrate); a Neon branch
 snapshot created BEFORE the run is the standing rollback hatch, the
 one non-additive migration (0037's reviewed copy-then-drop) made the
 interim schema-ahead-of-code state briefly real, and the web deploy
-closed the skew the same sitting. The fresh section 4 sitting against
+closed the skew the same sitting. THE G-63 FIX LANDED THE SAME DAY:
+--preflight is structurally read-only (pending migrations reported,
+never applied; a database ahead of the tree refused as a stale
+checkout), proven by selftest sentinel in both directions (cases
+10-12 of the now-twelve; the write path never fires under preflight
+and still fires in full mode). The fresh section 4 sitting against
 this build is THE remaining verification work: the 6 August sitting
 is SUPERSEDED with checks 8, 10, 11, 13b, 14 never run against any
 live build (its passes describe 12b9661), fixture incident 51a380e1

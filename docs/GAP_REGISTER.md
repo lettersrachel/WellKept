@@ -2117,3 +2117,19 @@ August sitting logged two defects that were never filed in this
 register (reported by the founder's local session, 25 Aug). They
 should be filed by whoever holds the sitting notes; this line exists
 so the fact of them is not lost with the superseded sitting.
+
+**FIXED same day (2026-08-25, the entry's own session):** --preflight
+is now structurally read-only. The preflight branch comes FIRST in the
+migrate step, so no override can reach the write; pending migrations
+are REPORTED ("N PENDING ... NOTHING was applied") with a database
+BEHIND the tree accepted as the expected pre-deploy state and a
+database AHEAD of the tree refused as a stale checkout. Proven in the
+selftest with a live sentinel rather than by reading the code: case 10
+runs a preflight against a behind database and asserts the migrate
+path never fired and the pending count was said aloud; case 11 runs
+the FULL mode the same way and asserts the migrate path DID fire
+(then refuses downstream on the mismatched count, as it should); case
+12 proves the stale-tree refusal. Twelve selftest cases total, eight
+refusals and four green paths. DEPLOY.md states the read-only
+guarantee in the same change. The two unfiled 6 August defects remain
+the entry's open remainder.

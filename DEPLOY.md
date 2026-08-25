@@ -57,7 +57,13 @@ required-env-presence check (names only, never values; added 2026-07-29
 after a rm-then-failed-add left the project with no WK_KMS_KEY),
 deploy, expected-project verification, triple build-id read, mechanical
 smoke checks - refusing non-zero at the first mismatch. `--selftest`
-proves the refusals fire. Two invocation rules, both learned 2026-07-28:
+proves the refusals fire. `--preflight <sha>` is READ-ONLY as of
+2026-08-25 (G-63): it verifies the sha, tree, env, and project link,
+and REPORTS pending migrations without applying them; before that
+date the preflight ran the migration, which is how the 0037-0055
+batch reached production ahead of its build. The selftest proves the
+write path never fires under preflight. Two invocation rules, both
+learned 2026-07-28:
 
 - **Name the sha from the merged PR** (copy the merge commit GitHub
   shows). Never pass `$(git rev-parse HEAD)`: that compares HEAD to

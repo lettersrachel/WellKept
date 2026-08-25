@@ -7,8 +7,16 @@
 #
 # Usage:
 #   DATABASE_URL=... bash tooling/deploy.sh <expected-main-sha>
-#   DATABASE_URL=... bash tooling/deploy.sh --preflight <sha>   # checks only, no deploy
+#   DATABASE_URL=... bash tooling/deploy.sh --preflight <sha>   # READ-ONLY: no migrate, no deploy
 #   bash tooling/deploy.sh --selftest      # prove the refusals fire AND the green paths pass
+#
+# G-63 (2026-08-25): --preflight once RAN the migration, because the
+# three-way count check needed migrations applied to count them; a flag
+# that reads as a dry run performed the batch's least reversible step.
+# Preflight is now structurally read-only: it REPORTS pending
+# migrations instead of applying them, and the selftest proves the
+# write path never fires under it (a pending migration stays pending
+# through a preflight).
 #
 # Fail closed at every step: refuse and exit non-zero on any mismatch,
 # never proceed-and-report. Same posture as the audit invariant, for the
@@ -51,13 +59,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # NOT about the origin/main gate pin it to HEAD via the selftest-only
   # override, so a dev tree with unpushed commits can still prove them.
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/9: wrong sha refused"
+  echo "selftest 1/12: wrong sha refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/9: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  echo "selftest 2/12: migration-count mismatch refused (the assertion itself, migrate skipped)"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/9: unexpected project refused"
+  echo "selftest 3/12: unexpected project refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/9: absent/wrong project link refused BEFORE deploy"
+  echo "selftest 4/12: absent/wrong project link refused BEFORE deploy"
 
   # Round seven, session T: the class case. A commit that EXISTS locally but
   # is not on origin/main must be refused, however the argument was produced.
@@ -66,7 +74,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   LOCAL_ONLY=$(git commit-tree "HEAD^{tree}" -p HEAD -m "deploy.sh selftest: local-only commit, never pushed")
   WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$LOCAL_ONLY" 2>/dev/null \
     && { echo "SELFTEST FAIL: a local-only sha (not on origin/main) was accepted"; exit 1; }
-  echo "selftest 5/9: a sha that exists locally but is not on origin/main refused"
+  echo "selftest 5/12: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
   # guard suite that only tests red passes while refusing everything — which
@@ -74,12 +82,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # the checks ACCEPT what they are supposed to accept.
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: correct sha + real project link REFUSED (green path broken)"; exit 1; }
-  echo "selftest 6/9: correct sha and real project link accepted"
+  echo "selftest 6/12: correct sha and real project link accepted"
 
   GREEN=$(printf '{"id":"%s"}' "$(git rev-parse HEAD)" | extract_build_id)
   [[ "$GREEN" == "$(git rev-parse HEAD)" ]] \
     || { echo "SELFTEST FAIL: build-id extraction returned '$GREEN'"; exit 1; }
-  echo "selftest 7/9: build-id extracted from its JSON body"
+  echo "selftest 7/12: build-id extracted from its JSON body"
 
   # Env presence (2026-07-29): a rm-then-failed-add on WK_KMS_KEY left the
   # project with no key, and a routine deploy would have shipped a build
@@ -88,15 +96,39 @@ if [[ "${1:-}" == "--selftest" ]]; then
     WK_DEPLOY_TEST_ENV_LS=$' AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: a project missing WK_KMS_KEY was accepted"; exit 1; }
-  echo "selftest 8/9: missing required env var refused"
+  echo "selftest 8/12: missing required env var refused"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
     WK_DEPLOY_TEST_ENV_LS=$' WK_KMS_KEY Encrypted Production\n AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: a complete env set was refused (green path broken)"; exit 1; }
-  echo "selftest 9/9: complete env set accepted"
+  echo "selftest 9/12: complete env set accepted"
 
-  echo "selftest PASSED: six refusals fire, three green paths accepted"
+  # G-63, proven in both directions with a live sentinel rather than by
+  # reading the code: the migrate path must fire in FULL mode and must
+  # NEVER fire in preflight, whatever overrides are present.
+  SENTINEL=$(mktemp -u)
+  PF_OUT=$(WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_MIGRATE_CMD="touch $SENTINEL" WK_DEPLOY_TEST_DB_COUNT=1 \
+    bash "$0" --preflight "$(git rev-parse HEAD)" 2>&1) \
+    || { echo "SELFTEST FAIL: preflight refused a merely-behind database (pending is a report, not a refusal)"; exit 1; }
+  [[ -e "$SENTINEL" ]] && { echo "SELFTEST FAIL: preflight FIRED the migrate path (G-63 regressed)"; exit 1; }
+  printf '%s' "$PF_OUT" | grep -q "PENDING" \
+    || { echo "SELFTEST FAIL: preflight did not report the pending migrations"; exit 1; }
+  echo "selftest 10/12: preflight left a pending migration pending, and said so"
+
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_MIGRATE_CMD="touch $SENTINEL" WK_DEPLOY_TEST_DB_COUNT=1 \
+    bash "$0" "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: full mode accepted a count mismatch"; exit 1; }
+  [[ -e "$SENTINEL" ]] || { echo "SELFTEST FAIL: full mode never fired the migrate path (the write half is broken)"; exit 1; }
+  rm -f "$SENTINEL"
+  echo "selftest 11/12: full mode fires the migrate path (then refuses the mismatched count downstream)"
+
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=999 \
+    bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: preflight accepted a database AHEAD of the tree"; exit 1; }
+  echo "selftest 12/12: preflight refuses a stale tree (database ahead of disk)"
+
+  echo "selftest PASSED: eight refusals fire, four green paths accepted"
   exit 0
 fi
 
@@ -123,7 +155,7 @@ SHA="${1:-}"
 # whose HEAD is not yet pushed; a real invocation always compares against
 # the real origin/main.
 SELFTEST_MODE=""
-[[ -n "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" && -n "${WK_DEPLOY_TEST_DB_COUNT:-}" ]] && SELFTEST_MODE=1
+{ [[ -n "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" || -n "${WK_DEPLOY_TEST_MIGRATE_CMD:-}" ]] && [[ -n "${WK_DEPLOY_TEST_DB_COUNT:-}" ]]; } && SELFTEST_MODE=1
 MAIN_REF="origin/main"
 [[ -n "$SELFTEST_MODE" && -n "${WK_DEPLOY_TEST_ORIGIN_MAIN:-}" ]] && MAIN_REF="$WK_DEPLOY_TEST_ORIGIN_MAIN"
 
@@ -154,14 +186,20 @@ if [[ -z "${DATABASE_URL:-}" && -f .neon-connection ]]; then
 fi
 
 # Required for the real path (migrate, and the database side of the count).
-# Only the selftest hooks — which skip BOTH — may waive it; any real
-# invocation, --preflight included, still refuses without it.
-if [[ -z "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" || -z "${WK_DEPLOY_TEST_DB_COUNT:-}" ]]; then
+# Only the selftest hooks may waive it; any real invocation, --preflight
+# included, still refuses without it (preflight READS the count).
+if [[ -z "$SELFTEST_MODE" ]]; then
   [[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is not set and .neon-connection is absent (never echo it)"
 fi
 
-# 3. Migrate (before the web deploy, always).
-if [[ -z "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" ]]; then
+# 3. Migrate (before the web deploy, always) - NEVER in preflight (G-63:
+# preflight is read-only; pending migrations are REPORTED at step 4).
+# The preflight branch comes FIRST so no override can reach the write.
+if [[ -n "$PREFLIGHT" ]]; then
+  : # read-only mode: nothing is applied here
+elif [[ -n "$SELFTEST_MODE" && -n "${WK_DEPLOY_TEST_MIGRATE_CMD:-}" ]]; then
+  eval "$WK_DEPLOY_TEST_MIGRATE_CMD" # selftest sentinel: proves whether this path fired
+elif [[ -z "${WK_DEPLOY_TEST_SKIP_MIGRATE:-}" ]]; then
   pnpm --filter @wellkept/schema db:migrate
 fi
 
@@ -175,8 +213,22 @@ const c=new pg.Client({connectionString:process.env.DATABASE_URL});
 c.connect().then(async()=>{const r=await c.query("SELECT count(*)::int n FROM drizzle.__drizzle_migrations");console.log(r.rows[0].n);await c.end();}).catch(e=>{console.error(e.message);process.exit(1);});
 ')}
 fi
-[[ "$DISK" == "$JOURNAL" && "$JOURNAL" == "$DB" ]] || fail "migration counts disagree: disk=$DISK journal=$JOURNAL database=$DB"
-echo "migrations agree three ways: $DISK"
+if [[ -n "$PREFLIGHT" ]]; then
+  # Read-only mode: the tree must agree with itself, and a database
+  # BEHIND the tree is the expected pre-deploy state, reported never
+  # applied. A database AHEAD of the tree means this tree is stale.
+  [[ "$DISK" == "$JOURNAL" ]] || fail "migration counts disagree in the tree itself: disk=$DISK journal=$JOURNAL"
+  if (( DB < DISK )); then
+    echo "preflight: $((DISK-DB)) migration(s) PENDING (database $DB, disk $DISK). NOTHING was applied; the full run applies them."
+  elif (( DB > DISK )); then
+    fail "database has MORE migrations ($DB) than this tree ($DISK); this tree is behind the deployed schema. Pull before deploying."
+  else
+    echo "migrations agree three ways: $DISK (nothing pending)"
+  fi
+else
+  [[ "$DISK" == "$JOURNAL" && "$JOURNAL" == "$DB" ]] || fail "migration counts disagree: disk=$DISK journal=$JOURNAL database=$DB"
+  echo "migrations agree three ways: $DISK"
+fi
 
 # 4b. Required env vars EXIST on the production environment, by NAME only
 # (values are never read; sensitive vars cannot be read anyway). Added
@@ -216,7 +268,7 @@ else
   [[ "$LINKED" == "$EXPECTED_PROJECT_ID" ]] || fail "repo root is linked to '${LINKED:-nothing}', expected $EXPECTED_PROJECT ($EXPECTED_PROJECT_ID). Refusing before a deploy can create a stray project. Run npx vercel link."
   # The green path stops here: everything a deploy depends on is proven, and
   # nothing has shipped.
-  [[ -z "$PREFLIGHT" ]] || { echo "preflight OK: sha, migrations, and project link all verified (nothing deployed)"; exit 0; }
+  [[ -z "$PREFLIGHT" ]] || { echo "preflight OK: sha, tree, migration state, env, and project link verified READ-ONLY (nothing deployed, nothing migrated)"; exit 0; }
   npx vercel --prod --yes
   # 6. The deployment must have landed on the expected project, by id, not
   # merely succeeded (the stray-project failure a script would otherwise
