@@ -33,3 +33,4 @@ tooling/import/floor_review_merged_seed.json
 # Founder-local KEK file (the .neon-connection pattern): referenced by
 # path in commands, never pasted into a transcript.
 .wk-kms-key
+test-results/

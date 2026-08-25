@@ -80,6 +80,10 @@ export default async function VisitPage({ searchParams }: {
   const composedBrief = await composeFieldBrief(hh, principal);
   await recordAndDeliverBrief(hh, principal, composedBrief);
   const needsNoticing = composedBrief.payload.needsNoticing;
+  // 0056: bundled records arrive as ONE situation card each ("one
+  // winter-storm situation, not five notifications"); unbundled records
+  // keep their individual lines below.
+  const situations = composedBrief.payload.situations;
 
   const [allFields, dots, packItems, lastVisit, seedReviewed, recall, openFlags, registries] = await Promise.all([
     getFields(hh.id),
@@ -170,10 +174,24 @@ export default async function VisitPage({ searchParams }: {
         </div>
       </div>
 
-      {needsNoticing.length > 0 && (
+      {(needsNoticing.length > 0 || situations.length > 0) && (
         <>
           <div className="eyebrow">Needs noticing</div>
           <div className="card">
+            {situations.map((s) => (
+              <div key={s.id} className="field">
+                <span className="fname">{s.label}
+                  <span className="prov" style={{ marginLeft: 8 }}>
+                    one situation · {s.records.length} item{s.records.length === 1 ? "" : "s"}
+                  </span>
+                </span>
+                {s.records.map((n) => (
+                  <div key={n.id} className="prov" style={{ marginLeft: 12 }}>
+                    {n.reason} · {n.sourceKind}{n.deadline ? ` · by ${n.deadline}` : ""}{n.seen ? " · seen" : ""}
+                  </div>
+                ))}
+              </div>
+            ))}
             {needsNoticing.map((n) => (
               <div key={n.id} className="field">
                 <span className="fname">{n.reason}

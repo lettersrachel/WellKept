@@ -83,6 +83,7 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM capture_artifact WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM situation WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
@@ -877,5 +878,65 @@ test("web brief: previsit_brief attention delivers on /visit, stamped once, and 
   } finally {
     await pool.query("DELETE FROM attention_record WHERE id=$1", [attnId]);
     await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id=$1 AND briefed_user=$2", [synId, synHomId]);
+  }
+});
+
+test("situations: a short label refuses, bundled noticing arrives as ONE thing on the brief, and resolving closes the grouping, never the noticing", async ({ context, page }) => {
+  // WK-DEV-009 s10 (0056): a person bundles related noticing; the brief
+  // delivers the bundle as one situation card. Member records keep their
+  // own life: resolving the situation leaves them open.
+  const inStorm = randomUUID();
+  const solo = randomUUID();
+  await pool.query(
+    "INSERT INTO attention_record (id, household_id, reason, source_kind, audience, urgency, destination) VALUES ($1,$3,'Journey storm: ice on the front walk','system','hom','soon','previsit_brief'), ($2,$3,'Journey solo: porch bulb out','system','hom','fyi','previsit_brief')",
+    [inStorm, solo, synId]);
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    // Corporate half. Refusing direction first: two characters is not a situation.
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await page.getByLabel("The situation, in words").fill("ok");
+    await page.getByRole("button", { name: "Open situation" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByLabel("The situation, in words").fill("Winter storm prep");
+    await page.getByRole("button", { name: "Open situation" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM situation WHERE household_id=$1 AND status='open'"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='situation.opened'")).toBe(1);
+
+    // Bundle exactly one of the two records into it, from its own row.
+    const stormRow = page.locator("div.field", { hasText: "Journey storm: ice on the front walk" });
+    await stormRow.getByLabel("Bundle into a situation").selectOption({ label: "Winter storm prep" });
+    await stormRow.getByRole("button", { name: "Bundle" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM attention_record WHERE household_id=$1 AND situation_id IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='attention_record.bundled'")).toBe(1);
+
+    // The HOM half: the brief renders ONE situation carrying its member,
+    // the solo record individually, and delivery stamps both.
+    await context.clearCookies();
+    await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+    await page.goto("/visit");
+    await expect(page.getByText("Winter storm prep")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("one situation · 1 item")).toBeVisible();
+    await expect(page.getByText("Journey storm: ice on the front walk")).toBeVisible();
+    await expect(page.getByText("Journey solo: porch bulb out")).toBeVisible();
+    await expect.poll(() => count("SELECT count(*)::int n FROM attention_record WHERE household_id=$1 AND delivered_via='briefing'"), { timeout: 20_000 }).toBe(2);
+
+    // Corporate resolves the situation: the grouping closes, the noticing
+    // inside it stays open (informing, never executing).
+    await context.clearCookies();
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await page.getByLabel("How the situation closed").fill("storm passed; walk salted");
+    await page.getByRole("button", { name: "Resolve situation" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM situation WHERE household_id=$1 AND status='resolved' AND resolution IS NOT NULL AND resolved_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='situation.resolved'")).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM attention_record WHERE household_id=$1 AND status='open'")).toBe(2);
+  } finally {
+    await pool.query("DELETE FROM attention_record WHERE id = ANY($1)", [[inStorm, solo]]);
+    await pool.query("DELETE FROM situation WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
   }
 });

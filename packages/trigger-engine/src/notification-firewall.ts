@@ -21,7 +21,11 @@
  * Off-shift boundaries (absolute for routine notifications) require
  * shift data the system does not hold; recorded here as unbuilt, not
  * approximated. SITUATIONS (grouping related signals into one bundle)
- * are section 10 substrate, stubbed by name, their own session.
+ * exist as of 0056: a person bundles related records into a situation
+ * and the brief delivers the bundle as one thing. AUTOMATIC grouping
+ * (a rule set deciding which signals relate) stays unbuilt by decision,
+ * stubbed here by name: relatedness rules are the founder's, the same
+ * posture as the interrupt list above.
  */
 export const ATTENTION_DESTINATIONS = [
   "immediate_interrupt", "next_transition_prompt", "previsit_brief",
