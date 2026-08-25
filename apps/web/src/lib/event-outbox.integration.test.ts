@@ -76,4 +76,33 @@ test("outboxFieldEvent appends a field.changed row inside the caller's transacti
   assert.equal(p.section, 9);
   assert.equal(p.changedAt, "2026-08-24T10:00:00.000Z");
   assert.equal(mine.processedAt, null, "unprocessed until a drain consumes it");
+  // WK-DEV-010 s4 (0046): the envelope rides every field event. The
+  // caller passed no envelope, so the honest defaults land: s2 (the one
+  // payload kind carrying plaintext values), no actor, version 1.
+  assert.equal(mine.provenance, "web:field-events");
+  assert.equal(mine.objectId, fieldId);
+  assert.equal(mine.sensitivity, "s2");
+  assert.equal(mine.actor, null);
+  assert.equal(mine.eventVersion, 1);
+});
+
+test("emitOutboxEvent stamps the s4 envelope; id-only payloads default to s1", async () => {
+  const { emitOutboxEvent } = await import("@wellkept/schema");
+  const objectId = randomUUID();
+  let eventId = "";
+  await db.transaction(async (tx) => {
+    eventId = await emitOutboxEvent(tx as never, {
+      householdId: H, kind: "test.envelope", payload: { someId: objectId },
+      provenance: "test:event-law", objectId, correlationId: objectId,
+    });
+  });
+  created.push(eventId);
+  const [row] = await db.select().from(eventOutbox).where(eq(eventOutbox.id, eventId));
+  assert.ok(row, "the event landed under its returned id");
+  assert.equal(row.provenance, "test:event-law");
+  assert.equal(row.objectId, objectId);
+  assert.equal(row.correlationId, objectId);
+  assert.equal(row.sensitivity, "s1", "ids and vocabulary only is the s1 default");
+  assert.equal(row.actor, null);
+  assert.equal(row.eventVersion, 1);
 });

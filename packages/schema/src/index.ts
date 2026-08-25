@@ -4,3 +4,4 @@ export * from "./standards.ts";
 export * from "./flags.ts";
 export * from "./feature-flags.ts";
 export * from "./telemetry.ts";
+export * from "./events.ts";

@@ -132,6 +132,18 @@ shipped in the same PR per the G-62 correction. The web /visit brief
 joins when the Cockpit perfection pass unifies composition; per-open
 noise never enters the table by construction.
 
+**And the outbox now speaks the event law:** migration 0046 adds the
+WK-DEV-010 section 4 envelope to `event_outbox` (event_version,
+correlation_id, object_id, actor, sensitivity, provenance; legacy rows
+read `pre_event_law`), and `emitOutboxEvent` is the ONE way an event
+enters the outbox: all thirteen emitting sites swept (nine actions,
+the covenant pair, the two sweeps, and field.changed, which as the one
+payload carrying plaintext values now labels itself s2 and carries its
+writer). The covenant events keep their no-person rule on the envelope
+too, by the same design. Proven: envelope integration tests, the
+work-item journey asserting the envelope on a real action's event, all
+thirteen e2e green.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

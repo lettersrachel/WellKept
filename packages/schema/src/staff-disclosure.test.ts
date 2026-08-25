@@ -95,6 +95,11 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  event_outbox:
+    "WK-DEV-010 s4, 2026-08-25: the event-law envelope's actor column mirrors the actor " +
+    "the same transaction's audit row already records (every emitting site writes both), " +
+    "so this is the action log's own attribution restated on the transient delivery row; " +
+    "generic action-log coverage, the exclusion-approval posture",
   visit_brief_snapshot:
     "WK-DEV-009 s2.1, 2026-08-25: briefed_user records which staff member each brief was " +
     "composed for, evidence of what was shown rather than judgment about the person; " +
