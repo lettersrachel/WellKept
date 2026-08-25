@@ -83,6 +83,7 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM capture_artifact WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM attention_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
@@ -492,6 +493,9 @@ test("tester journey: a tester-flagged HOM reads only their one household; corpo
     const { rows: [u] } = await pool.query("SELECT is_tester FROM auth_user WHERE id=$1", [testerId]);
     expect(u.is_tester).toBe(true);
   } finally {
+    // The tester's /visit open records a brief snapshot now (Cockpit
+    // unification); its briefed_user FK must clear before the user.
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE briefed_user=$1", [testerId]);
     await pool.query("DELETE FROM auth_user WHERE id=$1", [testerId]); // session + assignment cascade
   }
 });
@@ -837,5 +841,41 @@ test("task occurrence: appended actuals, exception whole or refused, zero refuse
     await pool.query("DELETE FROM work_requirement WHERE household_id=$1", [synId]);
     await pool.query("DELETE FROM household_task_profile WHERE id=$1", [profId]);
     await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
+  }
+});
+
+test("web brief: previsit_brief attention delivers on /visit, stamped once, and the snapshot dedupes a reload", async ({ context, page }) => {
+  // Cockpit unification step 1: the web field surface composes through
+  // the same composer as the mobile briefing, so the firewall's
+  // previsit_brief destination reaches a web-only HOM and the s2.1
+  // snapshot evidences what the web brief showed. A reload with an
+  // unchanged record writes NOTHING (per-open noise never enters the
+  // table by construction).
+  const attnId = randomUUID();
+  await pool.query(
+    "INSERT INTO attention_record (id, household_id, reason, source_kind, audience, urgency, destination) VALUES ($1,$2,'Journey notice: pantry moths sighted','system','hom','soon','previsit_brief')",
+    [attnId, synId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+    await page.goto("/visit");
+    await expect(page.getByText("Journey notice: pantry moths sighted")).toBeVisible({ timeout: 30_000 });
+
+    // Delivery is stamped once, and evidenced by the snapshot.
+    const { rows: [a] } = await pool.query(
+      "SELECT delivered_via FROM attention_record WHERE id=$1", [attnId]);
+    expect(a.delivered_via).toBe("briefing");
+    const snapCount = async () => (await pool.query(
+      "SELECT count(*)::int n FROM visit_brief_snapshot WHERE household_id=$1 AND briefed_user=$2",
+      [synId, synHomId])).rows[0].n as number;
+    const n1 = await snapCount();
+    expect(n1).toBeGreaterThan(0);
+
+    // The reload shows the same brief and writes no new snapshot.
+    await page.reload();
+    await expect(page.getByText("Journey notice: pantry moths sighted")).toBeVisible({ timeout: 30_000 });
+    expect(await snapCount()).toBe(n1);
+  } finally {
+    await pool.query("DELETE FROM attention_record WHERE id=$1", [attnId]);
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id=$1 AND briefed_user=$2", [synId, synHomId]);
   }
 });

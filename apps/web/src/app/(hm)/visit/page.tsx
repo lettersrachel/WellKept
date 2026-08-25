@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
+import { composeFieldBrief, recordAndDeliverBrief } from "@/lib/field-brief";
 import { logStrangerTest, createTimeEntry, createCostEntry, createPausedDecision, tellWellKept } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { FlagCaptureForm, FlagLookForm, FlagCloseForm, ResolveButtons, OutcomeButton } from "./OfflineCapture";
@@ -68,6 +69,17 @@ export default async function VisitPage({ searchParams }: {
   if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
   if (!principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
+
+  // Cockpit unification, step 1: the web brief now composes through the
+  // SAME composer as the mobile briefing, records the section 2.1
+  // snapshot (deduped by content, so a reload writes nothing), and
+  // delivers the firewall's previsit_brief attention records here too;
+  // a web-only HOM no longer misses what needs noticing. The page's
+  // richer surfaces below keep their own queries; the snapshot claims
+  // the canonical brief core both surfaces share.
+  const composedBrief = await composeFieldBrief(hh, principal);
+  await recordAndDeliverBrief(hh, principal, composedBrief);
+  const needsNoticing = composedBrief.payload.needsNoticing;
 
   const [allFields, dots, packItems, lastVisit, seedReviewed, recall, openFlags, registries] = await Promise.all([
     getFields(hh.id),
@@ -157,6 +169,23 @@ export default async function VisitPage({ searchParams }: {
           <Link className="pill" href="/intake" style={{ background: "var(--sage)", color: "var(--green)" }}>Intake mode</Link>
         </div>
       </div>
+
+      {needsNoticing.length > 0 && (
+        <>
+          <div className="eyebrow">Needs noticing</div>
+          <div className="card">
+            {needsNoticing.map((n) => (
+              <div key={n.id} className="field">
+                <span className="fname">{n.reason}
+                  <span className="prov" style={{ marginLeft: 8 }}>
+                    {n.sourceKind}{n.deadline ? ` · by ${n.deadline}` : ""}{n.seen ? " · seen" : ""}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {stranger && (
         <>

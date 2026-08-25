@@ -448,6 +448,22 @@ rest standing at their assigned gates, none stale. FOUNDER ITEM
 CREATED: the eight assignment blanks, the Phase 0 inputs-document
 pattern.
 
+**And the Cockpit unification pass opens (migration-free): the web
+/visit brief joins the snapshot rail.** ONE composer now builds the
+pre-visit brief for both surfaces (`lib/field-brief.ts`, moved verbatim
+from the mobile briefing route, which now calls it): the web /visit
+page records the section 2.1 snapshot (deduped by content, so a reload
+writes nothing, proven in the journey), and the firewall's
+previsit_brief attention records now DELIVER on the web field surface
+too (the Needs noticing card), stamped once, closing the gap where a
+web-only HOM never received them. Both surfaces stamp `briefing`,
+since deliveredVia names the channel and the channel is the same
+brief. The page's richer page-only surfaces (fields, provisions,
+prompts, deltas, signals) keep their own queries; the snapshot claims
+the canonical brief core both surfaces share, and rendering the whole
+page FROM the composed payload is the follow-on unification step,
+named not assumed. Twenty-two e2e green.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
