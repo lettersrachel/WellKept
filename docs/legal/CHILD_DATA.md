@@ -40,6 +40,7 @@ constraints where expressible.
 | `work_requirement` (WL Gate 1, 2026-08-25) | a stated context window may mention a child's schedule or belongings | internal (s2); never shown to any client; free-text policy applies as everywhere | code (no client render path) + payload guard (work_requirement signature) |
 | `estimate_snapshot` (WL Gate 1, 2026-08-25) | a basis line may reference a child-related task's circumstances | internal (s2); never shown to any client (D7: no duration ever reaches a client route, guard-enforced); free-text policy applies | code (no client render path) + payload guard (estimate_snapshot signature) + client-duration guard |
 | `visit_brief_snapshot` (WK-DEV-009 s2.1, 2026-08-25) | the persisted brief carries whatever the staff projection carried, including child-related fields | internal (s2); never shown to any client; a snapshot is the staff view verbatim, so the projection rules that governed the brief govern the snapshot | code (no client render path) + payload guard (visit_brief_snapshot signature) |
+| `task_occurrence` (WL Gate 1, 2026-08-25) | a variance reason may mention a child's room, schedule, or belongings | internal (s2); never shown to any client (D7: the actual duration never reaches a client route, guard-enforced); free-text policy applies | code (no client render path) + payload guard (task_occurrence signature) + client-duration guard |
 
 ## The rules this document adds
 

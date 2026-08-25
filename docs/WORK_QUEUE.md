@@ -313,6 +313,61 @@ proves record-with-minutes, the envelope, the blank-is-unknown append
 (count 2, first row untouched), and the zero refusal. Twenty e2e
 green. Remaining Gate 1: Task Occurrence, Time Segment.
 
+**25 August 2026, mid-morning: WK-DEV-011 and the v5 intake are
+ADOPTED** (the consolidated build brief, register draft A578, and the
+Handoff v5 Intake Ruling, register draft A577; both frozen in docs/
+with manifest hashes, guard proven red on the unmanifested files
+first). The reading order is the brief's section 1; Handoff v5 is the
+Tier C reference and SILENCE IN V5 IS NOT SUPERSESSION; nothing
+running pauses. The transfer set's directive copies hash-match the
+repo's frozen copies after frontmatter strip (007, 008, 009 v1.1,
+010 v1.1, sprint HG, tester provisioning); the founder-inputs pair
+differs only by the standing figures-never-enter-source adaptation,
+known and deliberate. The three Tier C .docx references (Handoff v5,
+Consistency Audit v2, the forecasting brief) stay founder-side per
+the bundle pattern. NEW code-side items the intake creates, each its
+own session: the capacity configuration (cap=5, band=3..5 as
+VERSIONED CONFIG, founder-stated in the ruling itself; a cap change
+is a two-key model change before a config change; the board's
+capacity_gate knob is the natural home and stays null until this
+lands deliberately) and the CAND housekeeping pass (the nine
+recovered concepts under 24.7; SituationEvent merges with the
+existing bundle; WorkCognitiveLoadProfile carries Ruling 1's bar).
+The brief's requested confirmation ran by query the same morning:
+task_definition holds 4 rows, 4 provisional, 0 canonical, so the
+provisional-source flag is confirmed present on every 0049 row for
+the next note.
+
+**And Gate 1 object 5 (0053):** `task_occurrence` exists, what
+ACTUALLY happened for a requirement, never touching the estimate
+history (the record references the requirement and writes nowhere
+else, so never-overwrite is construction, not discipline; a reopened
+requirement done again is a new row). PERFORMED_BY IS DELIBERATELY
+ABSENT: WK-DEV-008 section 1 binds the no-HOM-speed-coefficient
+guardrail at the schema level, and the schema holds it by storing no
+performer at all (recorded_by is write provenance; staff time lives
+in time_entry); the journey asserts the column absence against
+information_schema. The outcome is the directive's own two modes
+(WK-DEV-009 section 6 [D]): as_expected, the one-gesture confirm
+carrying no text, or exception with the variance reason in words,
+WHOLE OR REFUSED both directions by CHECK (five refusals, three
+accepting shapes proven in SQL, including the sneaky note on an
+as-expected row); the variance-CODE taxonomy the Gate 1 list names is
+DELIBERATELY DEFERRED to verbatim adoption from the forecasting brief
+(the estimate-hierarchy precedent). Zero actual minutes refused three
+deep (CHECK, action, journey at the server wall); blank is NULL, the
+honest unknown; v1 recording is corporate-side (admin/ops), never a
+field capture obligation (section 3's ruling). Event through the s4
+envelope (task_occurrence.recorded, correlation on the requirement);
+the drill-in renders the latest occurrence with the on-record count
+and never a person. Erasure blanks the variance words to a marker so
+the whole-or-absent CHECK survives on exception rows, rows kept (the
+estimate_snapshot class); full guard-and-legal set same-PR. The
+journey proves the reason-less exception refusal, record-as-expected
+with the envelope, the exception append (count 2, first row
+untouched, no performer column), and the zero refusal. Twenty-one
+e2e green. Remaining Gate 1: Time Segment.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

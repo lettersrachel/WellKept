@@ -154,6 +154,17 @@ Four documents, one per audience and direction:
   erasure the basis words blank and the planning numbers stay (the
   time-entry class). Also STAFF data (estimated_by); Ruling 1
   untouched: estimates describe tasks, never the estimator.
+- **Task occurrences** (added 2026-08-25, WL Gate 1): what actually
+  happened for each planned task instance: when, whether it went as
+  expected, the actual time where known, and, when something varied,
+  the reason in words. An instance of the internal-work category;
+  internal (s2); durations never reach any client surface (the D7
+  wall, guard-enforced); on erasure the variance words blank and the
+  operational record stays (the time-entry class). The record
+  deliberately does NOT store who performed the work (the
+  no-per-person-analytics boundary, held at the schema level); the
+  staff member who wrote the record is stamped as provenance
+  (recorded_by), so it is also STAFF data in that narrow sense.
 - **Work requirements** (added 2026-08-25, WL Gate 1): planned
   instances of the household's standing tasks (when or under what
   stated context each is due, and how each ended: completed, verified,

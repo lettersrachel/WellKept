@@ -296,4 +296,15 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     () => assertNoAnticipationRows({ deep: { estimated_minutes: null, basis: "manual judgment" } }),
     /estimate_snapshot/,
   );
+
+  // WL Gate 1: a task occurrence (the actuals record) never reaches a
+  // client; the variance-plus-duration pair is D7 twice over.
+  assert.throws(
+    () => assertNoAnticipationRows([{ workRequirementId: "r1", occurredOn: "2026-08-25" }]),
+    /task_occurrence/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { actual_minutes: 40, variance_note: "shutoff stuck" } }),
+    /task_occurrence/,
+  );
 });

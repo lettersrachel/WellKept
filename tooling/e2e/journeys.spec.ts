@@ -737,3 +737,81 @@ test("estimate snapshot: appended never updated, blank is an honest unknown, zer
     await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
   }
 });
+
+test("task occurrence: appended actuals, exception whole or refused, zero refused, no performer stored", async ({ context, page }) => {
+  // WL Gate 1 object 5: what actually happened, never touching the
+  // estimate history, and never storing who performed the work.
+  const defId = randomUUID();
+  const profId = randomUUID();
+  const reqId = randomUUID();
+  await pool.query("INSERT INTO task_definition (id, name, created_by) VALUES ($1,$2,$3)",
+    [defId, `Journey window wash ${defId.slice(0, 8)}`, rachelId]);
+  await pool.query(
+    "INSERT INTO household_task_profile (id, household_id, task_definition_id, configured_by) VALUES ($1,$2,$3,$4)",
+    [profId, synId, defId, rachelId]);
+  await pool.query(
+    "INSERT INTO work_requirement (id, household_id, task_profile_id, context_window, created_by) VALUES ($1,$2,$3,$4,$5)",
+    [reqId, synId, profId, "first mild afternoon", rachelId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await expect(page.getByRole("heading", { name: /Work requirements/ })).toBeVisible({ timeout: 30_000 });
+
+    // Refusing direction first: an exception without its reason.
+    await page.getByLabel("Occurred on").fill("2026-08-25");
+    await page.getByLabel("Occurrence outcome").selectOption("exception");
+    await page.getByRole("button", { name: "Record occurrence" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    // As expected, with the actual time known.
+    await page.getByLabel("Occurred on").fill("2026-08-25");
+    await page.getByLabel("Occurrence outcome").selectOption("as_expected");
+    await page.getByLabel("Actual minutes").fill("40");
+    await page.getByRole("button", { name: "Record occurrence" }).click();
+    const count = async () => (await pool.query(
+      "SELECT count(*)::int n FROM task_occurrence WHERE household_id=$1", [synId])).rows[0].n as number;
+    await expect.poll(count, { timeout: 20_000 }).toBe(1);
+    const { rows: [ev] } = await pool.query(
+      "SELECT provenance, actor, correlation_id, event_version FROM event_outbox WHERE household_id=$1 AND kind='task_occurrence.recorded'",
+      [synId]);
+    expect(ev.provenance).toBe("action:recordTaskOccurrence");
+    expect(ev.actor).toBe(rachelId);
+    expect(ev.correlation_id).toBe(reqId);
+    expect(ev.event_version).toBe(1);
+    await expect(page.getByText(/Last occurrence: 2026-08-25 · as expected · 40 min/)).toBeVisible({ timeout: 15_000 });
+
+    // Exception whole appends; the first row is untouched, and the
+    // table holds no performer column at all.
+    await page.getByLabel("Occurred on").fill("2026-08-26");
+    await page.getByLabel("Occurrence outcome").selectOption("exception");
+    await page.getByLabel("Actual minutes").fill("90");
+    await page.getByLabel("Variance reason").fill("screens stuck, second ladder needed");
+    await page.getByRole("button", { name: "Record occurrence" }).click();
+    await expect.poll(count, { timeout: 20_000 }).toBe(2);
+    const { rows: history } = await pool.query(
+      "SELECT outcome, actual_minutes, variance_note FROM task_occurrence WHERE household_id=$1 ORDER BY occurred_on",
+      [synId]);
+    expect(history[0].outcome).toBe("as_expected");
+    expect(history[0].actual_minutes).toBe(40);
+    expect(history[0].variance_note).toBeNull();
+    expect(history[1].variance_note).toBe("screens stuck, second ladder needed");
+    const { rows: cols } = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name='task_occurrence' AND column_name IN ('performed_by','completed_by','hom_id')");
+    expect(cols.length).toBe(0); // WK-DEV-008 s1: no performer, schema-level
+    await expect(page.getByText(/Last occurrence: 2026-08-26 · exception · 90 min/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("2 occurrences on record")).toBeVisible();
+
+    // Zero refused SERVER-SIDE (no HTML min; the action is the wall).
+    await page.getByLabel("Occurred on").fill("2026-08-27");
+    await page.getByLabel("Occurrence outcome").selectOption("as_expected");
+    await page.getByLabel("Actual minutes").fill("0");
+    await page.getByRole("button", { name: "Record occurrence" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count()).toBe(2); // nothing landed
+  } finally {
+    await pool.query("DELETE FROM task_occurrence WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM work_requirement WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM household_task_profile WHERE id=$1", [profId]);
+    await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
+  }
+});

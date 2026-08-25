@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -127,6 +127,22 @@ export default async function Oversight({ params, searchParams }: {
     const existing = latestEstimate.get(e.workRequirementId);
     if (existing) existing.count += 1;
     else latestEstimate.set(e.workRequirementId, { estimatedMinutes: e.estimatedMinutes, basis: e.basis, count: 1 });
+  }
+  // WL Gate 1 object 5: the actuals record, latest per requirement.
+  // The card shows what happened and when, never who (the table stores
+  // no performer at all; recorded_by is provenance, not a display
+  // field).
+  const occurrenceRows = await db.select({
+    workRequirementId: taskOccurrence.workRequirementId,
+    occurredOn: taskOccurrence.occurredOn, outcome: taskOccurrence.outcome,
+    actualMinutes: taskOccurrence.actualMinutes, varianceNote: taskOccurrence.varianceNote,
+  }).from(taskOccurrence).where(eq(taskOccurrence.householdId, hh.id))
+    .orderBy(desc(taskOccurrence.occurredOn), desc(taskOccurrence.createdAt));
+  const latestOccurrence = new Map<string, { occurredOn: string; outcome: string; actualMinutes: number | null; varianceNote: string | null; count: number }>();
+  for (const o of occurrenceRows) {
+    const existing = latestOccurrence.get(o.workRequirementId);
+    if (existing) existing.count += 1;
+    else latestOccurrence.set(o.workRequirementId, { ...o, count: 1 });
   }
   // RFC-PRIM-01 build 3: routed choices, pending first.
   const decisions = (await db.select().from(decisionRecord)
@@ -883,6 +899,34 @@ export default async function Oversight({ params, searchParams }: {
                 <input name="estimatedMinutes" type="number" aria-label="Estimated minutes" placeholder="min (blank = unknown)" style={{ width: 140, marginTop: 0 }} />
                 <input name="basis" aria-label="Estimate basis" placeholder="where this estimate comes from" style={{ flex: 1, marginTop: 0, minWidth: 160 }} />
                 <button className="act subtle">Record estimate</button>
+              </form>
+            )}
+            {latestOccurrence.has(r.id) && (
+              <div className="fval sans" style={{ fontSize: 13 }}>
+                Last occurrence: {latestOccurrence.get(r.id)!.occurredOn}
+                {" · "}{latestOccurrence.get(r.id)!.outcome === "exception" ? "exception" : "as expected"}
+                {latestOccurrence.get(r.id)!.actualMinutes !== null && ` · ${latestOccurrence.get(r.id)!.actualMinutes} min`}
+                {latestOccurrence.get(r.id)!.varianceNote && ` · ${latestOccurrence.get(r.id)!.varianceNote}`}
+                {latestOccurrence.get(r.id)!.count > 1 && (
+                  <span className="prov" style={{ marginLeft: 8 }}>
+                    {latestOccurrence.get(r.id)!.count} occurrences on record
+                  </span>
+                )}
+              </div>
+            )}
+            {isAdminOrOps && (
+              <form action={recordTaskOccurrence} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="workRequirementId" value={r.id} />
+                <input name="occurredOn" type="date" aria-label="Occurred on" style={{ marginTop: 0 }} />
+                <select name="outcome" className="inline" aria-label="Occurrence outcome">
+                  <option value="as_expected">as expected</option>
+                  <option value="exception">exception</option>
+                </select>
+                {/* No HTML min: the action and the CHECK refuse zero. */}
+                <input name="actualMinutes" type="number" aria-label="Actual minutes" placeholder="min (blank = unknown)" style={{ width: 140, marginTop: 0 }} />
+                <input name="varianceNote" aria-label="Variance reason" placeholder="variance reason (exception only)" style={{ flex: 1, marginTop: 0, minWidth: 160 }} />
+                <button className="act subtle">Record occurrence</button>
               </form>
             )}
           </div>
