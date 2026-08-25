@@ -622,3 +622,52 @@ test("task profile: configured from the library onto a household, updated in pla
     await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
   }
 });
+
+test("work requirement: instantiated from a profile with timing, verified only from completed, reopened whole", async ({ context, page }) => {
+  // WL Gate 1 object 3: the manual rails Gate 3's generator will use.
+  const defId = randomUUID();
+  const profId = randomUUID();
+  await pool.query("INSERT INTO task_definition (id, name, created_by) VALUES ($1,$2,$3)",
+    [defId, `Journey filter swap ${defId.slice(0, 8)}`, rachelId]);
+  await pool.query(
+    "INSERT INTO household_task_profile (id, household_id, task_definition_id, configured_by) VALUES ($1,$2,$3,$4)",
+    [profId, synId, defId, rachelId]);
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    await expect(page.getByRole("heading", { name: /Work requirements/ })).toBeVisible({ timeout: 30_000 });
+
+    // Refusing direction: no timing is not an instance.
+    await page.getByLabel("Profile to instantiate").selectOption(profId);
+    await page.getByRole("button", { name: "Generate instance" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByLabel("Profile to instantiate").selectOption(profId);
+    await page.getByLabel("Or a stated context").fill("first dry week of fall");
+    await page.getByRole("button", { name: "Generate instance" }).click();
+    const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+    await expect.poll(() => count("SELECT count(*)::int n FROM work_requirement WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_requirement.generated'")).toBe(1);
+
+    // Verify before completion refuses: verify only checks completed work.
+    await expect(page.getByText("generated · first dry week of fall")).toBeVisible({ timeout: 15_000 });
+    const reqForm = () => page.locator("form", { has: page.getByLabel("Requirement decision") });
+    await page.getByLabel("Requirement decision").selectOption("verify");
+    await reqForm().getByRole("button", { name: "Apply" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    // Complete whole, then verify whole.
+    await page.getByLabel("Requirement decision").selectOption("complete");
+    await reqForm().getByRole("button", { name: "Apply" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM work_requirement WHERE household_id=$1 AND status='completed' AND completed_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    await expect(page.getByText(/completed · first dry week of fall/)).toBeVisible({ timeout: 15_000 });
+    await page.getByLabel("Requirement decision").selectOption("verify");
+    await reqForm().getByRole("button", { name: "Apply" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM work_requirement WHERE household_id=$1 AND status='verified' AND verified_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_requirement.verified'")).toBe(1);
+  } finally {
+    await pool.query("DELETE FROM work_requirement WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM household_task_profile WHERE id=$1", [profId]);
+    await pool.query("DELETE FROM task_definition WHERE id=$1", [defId]);
+  }
+});

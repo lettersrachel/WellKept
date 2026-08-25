@@ -1275,3 +1275,48 @@ export const householdTaskProfile = pgTable("household_task_profile", {
   index("household_task_profile_household_idx").on(t.householdId),
   uniqueIndex("household_task_profile_one_per_task").on(t.householdId, t.taskDefinitionId),
 ]);
+
+// WL Gate 1 object 3 (WK-DEV-010 section 3): the Work Requirement, a
+// date/context-specific INSTANCE of a Household Task Profile that can
+// be scheduled, blocked, completed, verified. The boundary with
+// work_item, honored rather than duplicated (the Gate 0 shared-engine
+// rule): work_item is AD-HOC captured work (vendor jobs, follow-ups,
+// chores, the Tell Well Kept filings); a work_requirement is PLANNED
+// recurring work instantiated from a profile, the forecasting layer's
+// unit, carrying the requirement lifecycle of WK-DEV-009 section 10.
+// The status vocabulary admits that full lifecycle so Gate 3's
+// generator arrives without a migration; the v1 service exercises the
+// manual subset (create, schedule, start, complete, verify, defer,
+// reopen) and generation stays Gate 3's. The timing is the W-5
+// structural sentence: a date or a stated context, never neither.
+// Completion and verification are whole-or-absent pairs; verification
+// requires completion (a verified row is a completed row someone
+// checked). Estimates never live here: the Estimate Snapshot object
+// references a requirement, not the reverse, so no duration column
+// enters and the D7 wall stays wide.
+export const workRequirement = pgTable("work_requirement", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  taskProfileId: uuid("task_profile_id").notNull().references(() => householdTaskProfile.id),
+  dueOn: date("due_on"),
+  contextWindow: text("context_window"), // the stated context, in words; s2
+  status: text("status").notNull().default("generated"),
+  createdBy: text("created_by").notNull().references(() => authUser.id),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  completedBy: text("completed_by").references(() => authUser.id),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  verifiedBy: text("verified_by").references(() => authUser.id),
+}, (t) => [
+  index("work_requirement_household_idx").on(t.householdId, t.status),
+  check("work_requirement_has_timing",
+    sql`${t.dueOn} IS NOT NULL OR ${t.contextWindow} IS NOT NULL`),
+  check("work_requirement_status_known",
+    sql`${t.status} IN ('generated','activated','ready','scheduled','started','completed','verified','reopened','deferred')`),
+  // Completion is a whole pair carried exactly by the completed states;
+  // verification is a whole pair carried exactly by verified, which is
+  // therefore always also completed. Both directions structural.
+  check("work_requirement_completion_is_whole",
+    sql`(${t.status} IN ('completed','verified') AND ${t.completedAt} IS NOT NULL AND ${t.completedBy} IS NOT NULL) OR (${t.status} NOT IN ('completed','verified') AND ${t.completedAt} IS NULL AND ${t.completedBy} IS NULL)`),
+  check("work_requirement_verification_is_whole",
+    sql`(${t.status} = 'verified' AND ${t.verifiedAt} IS NOT NULL AND ${t.verifiedBy} IS NOT NULL) OR (${t.status} <> 'verified' AND ${t.verifiedAt} IS NULL AND ${t.verifiedBy} IS NULL)`),
+]);

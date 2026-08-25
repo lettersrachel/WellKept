@@ -96,6 +96,13 @@
  *  - paused_decision (W-7/AD, 2026-07-28): rows DELETED - internal
  *    staff research about the household (never client-visible, no
  *    business-record claim), the condition_flag class.
+ *  - work_requirement (WL Gate 1, 2026-08-25): context window BLANKED,
+ *    skeleton kept - the work_item posture: THAT planned work was
+ *    instantiated and how it ended is business history; the stated
+ *    context is the household's words. Blanking keeps the timing CHECK
+ *    satisfied only where a due date exists, so a words-only timing
+ *    blanks to a marker, never NULL (the W-6 revisit_condition
+ *    precedent).
  *  - household_task_profile (WL Gate 1, 2026-08-25): notes and cadence
  *    BLANKED, row tombstoned - the registry posture for standing
  *    configuration: how this household wanted each task done is the
@@ -181,6 +188,7 @@ const counts = {
   captures: await count("SELECT count(*) n FROM capture_artifact WHERE household_id=$1"),
   briefSnapshots: await count("SELECT count(*) n FROM visit_brief_snapshot WHERE household_id=$1"),
   taskProfiles: await count("SELECT count(*) n FROM household_task_profile WHERE household_id=$1"),
+  workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
   prompts: await count("SELECT count(*) n FROM prompt_pack_item WHERE household_id=$1"),
   outcomes: await count("SELECT count(*) n FROM prompt_outcome WHERE household_id=$1 AND note IS NOT NULL"),
   incidents: await count("SELECT count(*) n FROM incident_report WHERE household_id=$1"),
@@ -214,6 +222,7 @@ console.log(`  paused decisions to DELETE (W-7 internal staff research):  ${coun
 console.log(`  capture artifacts to DELETE (WK-DEV-009 s8 pre-filing):    ${counts.captures}`);
 console.log(`  brief snapshots to BLANK (payload; skeleton+hash kept):     ${counts.briefSnapshots}`);
 console.log(`  task profiles to BLANK + tombstone (registry posture):      ${counts.taskProfiles}`);
+console.log(`  work requirements to BLANK (context; skeleton kept):        ${counts.workRequirements}`);
 console.log(`  dots / visits / commands to blank:                         ${counts.dots} / ${counts.visits} / ${counts.commands}`);
 console.log(`  gestures / stranger tests / client edits to blank:         ${counts.gestures} / ${counts.stranger} / ${counts.edits}`);
 console.log(`  season observations / prompts / outcome notes to blank:    ${counts.season} / ${counts.prompts} / ${counts.outcomes}`);
@@ -299,6 +308,10 @@ try {
   // deferral (W-6, 2026-07-28): BLANKED, kept - client-visible service
   // record, the visit-report posture.
   await c.query("UPDATE deferral SET noticed='', reason='', revisit_condition=CASE WHEN revisit_condition IS NULL THEN NULL ELSE '[erased]' END, updated_at=now() WHERE household_id=$1", [householdId]);
+  // work_requirement (WL Gate 1, 2026-08-25): context BLANKED, skeleton
+  // kept; a words-only timing blanks to a marker so the CHECK survives
+  // (see header).
+  await c.query("UPDATE work_requirement SET context_window=CASE WHEN context_window IS NULL THEN NULL ELSE '[erased]' END, updated_at=now() WHERE household_id=$1", [householdId]);
   // household_task_profile (WL Gate 1, 2026-08-25): BLANKED + tombstoned,
   // the registry posture for standing configuration (see header).
   await c.query("UPDATE household_task_profile SET notes='', cadence=NULL, tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId]);

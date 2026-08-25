@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -104,6 +104,14 @@ export default async function Oversight({ params, searchParams }: {
     .innerJoin(taskDefinition, eq(taskDefinition.id, householdTaskProfile.taskDefinitionId))
     .where(eq(householdTaskProfile.householdId, hh.id));
   const taskDefs = await db.select().from(taskDefinition).orderBy(taskDefinition.name);
+  // WL Gate 1 object 3: planned instances, live first.
+  const requirements = (await db.select({
+    id: workRequirement.id, status: workRequirement.status, dueOn: workRequirement.dueOn,
+    contextWindow: workRequirement.contextWindow, taskProfileId: workRequirement.taskProfileId,
+  }).from(workRequirement).where(eq(workRequirement.householdId, hh.id))
+    .orderBy(desc(workRequirement.createdAt)).limit(30))
+    .sort((a, b) => Number(["completed", "verified"].includes(a.status)) - Number(["completed", "verified"].includes(b.status)));
+  const profileName = new Map(taskProfiles.map((p) => [p.id, p.taskName]));
   // RFC-PRIM-01 build 3: routed choices, pending first.
   const decisions = (await db.select().from(decisionRecord)
     .where(eq(decisionRecord.householdId, hh.id))
@@ -804,6 +812,54 @@ export default async function Oversight({ params, searchParams }: {
             <input name="cadence" aria-label="Rhythm here" placeholder="rhythm here (weekly; every visit)" style={{ flex: 1, marginTop: 0, minWidth: 140 }} />
             <input name="notes" aria-label="How this household wants it done" placeholder="how this household wants it done" style={{ flex: 2, marginTop: 0, minWidth: 180 }} />
             <button className="act subtle">Configure</button>
+          </form>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Work requirements (WL Gate 1)</h2>
+        <div className="note">
+          Planned instances of the standing tasks: when (or under what stated
+          context) each is due, and how each ended. Generation is Gate 3&apos;s;
+          these are the manual rails it will use. Verify only ever checks
+          completed work.
+        </div>
+        {requirements.length === 0 && <div className="prov">No planned instances yet.</div>}
+        {requirements.map((r) => (
+          <div key={r.id} className="field">
+            <span className="fname">{profileName.get(r.taskProfileId) ?? "task"}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {r.status} · {r.dueOn ?? r.contextWindow}
+              </span>
+            </span>
+            <form action={progressWorkRequirement} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+              <input type="hidden" name="householdId" value={hh.id} />
+              <input type="hidden" name="workRequirementId" value={r.id} />
+              <select name="decision" className="inline" aria-label="Requirement decision" defaultValue={r.status === "completed" ? "verify" : "complete"}>
+                <option value="schedule">schedule</option>
+                <option value="start">start</option>
+                <option value="complete">complete</option>
+                <option value="verify">verify</option>
+                <option value="defer">defer</option>
+                <option value="reopen">reopen</option>
+              </select>
+              <button className="act subtle">Apply</button>
+            </form>
+          </div>
+        ))}
+        {isAdminOrOps && taskProfiles.filter((p) => !p.tombstonedAt && p.active).length > 0 && (
+          <form action={createWorkRequirement} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <select name="taskProfileId" className="inline" aria-label="Profile to instantiate">
+              {taskProfiles.filter((p) => !p.tombstonedAt && p.active).map((p) => (
+                <option key={p.id} value={p.id}>{p.taskName}</option>
+              ))}
+            </select>
+            <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+              Due <input type="date" name="dueOn" style={{ marginTop: 0 }} />
+            </label>
+            <input name="contextWindow" aria-label="Or a stated context" placeholder="or a stated context (first dry week)" style={{ flex: 1, marginTop: 0, minWidth: 140 }} />
+            <button className="act">Generate instance</button>
           </form>
         )}
       </div>

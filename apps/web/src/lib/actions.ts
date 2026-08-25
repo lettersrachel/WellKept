@@ -1779,3 +1779,105 @@ export async function configureTaskProfile(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, `task profile ${def.name}`);
 }
+
+/**
+ * WL Gate 1 object 3: the manual half of the requirement lifecycle.
+ * Creation instantiates an ACTIVE profile with the W-5 timing sentence
+ * (a date or a stated context); Gate 3's generator will use the same
+ * rails. Transitions are the v1 subset: schedule, start, complete
+ * (whole pair), verify (whole pair, only from completed), defer, and
+ * reopen (clears both pairs; history is the audit trail's until the
+ * Task Occurrence object lands). Field and corporate roles progress
+ * (the HOM completes their own planned work); creation is corporate.
+ */
+export async function createWorkRequirement(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const taskProfileId = String(formData.get("taskProfileId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(taskProfileId)) refuseTo(returnTo, "bad-input");
+  const dueRaw = String(formData.get("dueOn") ?? "");
+  const dueOn = /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
+  const contextWindow = String(formData.get("contextWindow") ?? "").trim().slice(0, 200) || null;
+  if (!dueOn && !contextWindow) refuseTo(returnTo, "gate-unmet");
+  const { householdTaskProfile, workRequirement } = await import("@wellkept/schema");
+  const [profile] = await db.select().from(householdTaskProfile).where(eq(householdTaskProfile.id, taskProfileId));
+  if (!profile || profile.householdId !== householdId || profile.tombstonedAt) refuseTo(returnTo, "missing");
+  if (!profile.active) refuseTo(returnTo, "gate-unmet");
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(workRequirement).values({
+      id, householdId, taskProfileId, dueOn, contextWindow, createdBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "work_requirement.generated",
+      payload: { workRequirementId: id, taskProfileId },
+      provenance: "action:createWorkRequirement", objectId: id,
+      actor: principal.userId, correlationId: taskProfileId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "work_requirement", detail: { workRequirementId: id, action: "generated" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "work requirement generated");
+}
+
+export async function progressWorkRequirement(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !(WORK_ROLES as readonly string[]).includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const id = String(formData.get("workRequirementId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) refuseTo(returnTo, "bad-input");
+  if (!["schedule", "start", "complete", "verify", "defer", "reopen"].includes(decision)) refuseTo(returnTo, "bad-input");
+  const { workRequirement } = await import("@wellkept/schema");
+  const [row] = await db.select().from(workRequirement).where(eq(workRequirement.id, id));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  // The legal moves, checked BEFORE the transaction opens.
+  const LIVE = ["generated", "activated", "ready", "scheduled", "started", "reopened", "deferred"];
+  const now = new Date();
+  let set: Record<string, unknown>;
+  let eventKind: string | null = null;
+  if (decision === "schedule" || decision === "start" || decision === "defer") {
+    if (!LIVE.includes(row.status)) refuseTo(returnTo, "bad-input");
+    set = { status: decision === "schedule" ? "scheduled" : decision === "start" ? "started" : "deferred", updatedAt: now };
+    if (decision === "defer") eventKind = "work_requirement.deferred";
+  } else if (decision === "complete") {
+    if (!LIVE.includes(row.status)) refuseTo(returnTo, "bad-input");
+    set = { status: "completed", completedAt: now, completedBy: principal.userId, updatedAt: now };
+    eventKind = "work_requirement.completed";
+  } else if (decision === "verify") {
+    if (row.status !== "completed") refuseTo(returnTo, "gate-unmet"); // verify checks completed work, nothing else
+    set = { status: "verified", verifiedAt: now, verifiedBy: principal.userId, updatedAt: now };
+    eventKind = "work_requirement.verified";
+  } else {
+    if (!["completed", "verified"].includes(row.status)) refuseTo(returnTo, "bad-input");
+    set = { status: "reopened", completedAt: null, completedBy: null, verifiedAt: null, verifiedBy: null, updatedAt: now };
+    eventKind = "work_requirement.reopened";
+  }
+  await db.transaction(async (tx) => {
+    await tx.update(workRequirement).set(set).where(eq(workRequirement.id, id));
+    if (eventKind) {
+      await emitOutboxEvent(tx, {
+        householdId, kind: eventKind, payload: { workRequirementId: id },
+        provenance: "action:progressWorkRequirement", objectId: id, actor: principal.userId,
+      });
+    }
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "work_requirement", detail: { workRequirementId: id, action: decision },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  const SAID: Record<string, string> = {
+    schedule: "scheduled", start: "started", complete: "completed",
+    verify: "verified", defer: "deferred", reopen: "reopened",
+  };
+  recordedTo(returnTo, `work requirement ${SAID[decision]}`);
+}

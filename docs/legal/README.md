@@ -146,6 +146,14 @@ Four documents, one per audience and direction:
   deleted with the household on erasure once filed onward. Recorded by
   a named staff member, also STAFF data (captured_by, filed_by); joins
   the G-13 founder line candidates.
+- **Work requirements** (added 2026-08-25, WL Gate 1): planned
+  instances of the household's standing tasks (when or under what
+  stated context each is due, and how each ended: completed, verified,
+  deferred, reopened). An instance of the internal-work category
+  above, named for precision. Internal (s2); never shown to the
+  client; on erasure the stated context blanks and the skeleton keeps
+  (the work_item posture). Also STAFF data (created_by, completed_by,
+  verified_by); joins the G-13 founder line candidates.
 - **Household task profiles** (added 2026-08-25, WL Gate 1): an
   instance of the operating-details category above, named for
   precision: which standing tasks apply in the household, their rhythm,
