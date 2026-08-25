@@ -9,6 +9,7 @@ import {
 import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
+import { perHomUtilization } from "@/lib/capacity-utilization";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,22 +23,24 @@ export const maxDuration = 60;
  * proposals, founder-adjustable) and its threshold, and an unset
  * threshold says so rather than inventing one.
  *
- * DELIBERATELY ABSENT: per-HOM utilization. WK-DEV-007 section 5 places
- * it here for founder/CFO roles, but CLAUDE.md's Ruling 1 (the
- * founder-approved boundary amendment) names exactly two surfaces for
- * capacity measurement (the covenant report and the capacity-gate
- * evaluation) and expressly bars "any appearance on operational
- * dashboards". Two founder-adopted documents disagree; per the standing
- * doctrine the disagreement is REPORTED (work queue, 25 Aug 2026), not
- * reconciled here, and the stricter reading holds until the founder
- * rules. The section 5 role-based retrieval test lands with whichever
- * resolution she picks; today the provable property is that NO route
- * serves per-HOM utilization at all.
+ * Per-HOM utilization: the section 5 / Ruling 1 disagreement was
+ * RESOLVED by the founder 25 Aug 2026, option (b), register A581: the
+ * founder/CFO-only capacity section below is the DISPLAY SURFACE of the
+ * capacity-gate evaluation, not a third purpose. The gate is enforced
+ * in the permission matrix, not this UI (lib/capacity-utilization.ts
+ * refuses every role but corporate_admin and cfo_readonly), the only
+ * permitted sorts are route, household count, and gate proximity, and
+ * no ordering-by-rate or fastest/slowest highlighting exists anywhere,
+ * this section included. Role-based retrieval tests prove the refusal
+ * on the function and the absence on the rendered page.
  */
 export default async function CorporateBoard() {
   const assigned = await getAssignedHouseholds();
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
+  // A581: null for every viewer without a founder/CFO role; the refusal
+  // lives in the lib, so this page cannot widen it by mistake.
+  const utilization = await perHomUtilization(db, corporate.map((a) => a.role));
 
   const homes = await db.select({ id: household.id, name: household.name })
     .from(household)
@@ -146,9 +149,10 @@ export default async function CorporateBoard() {
         <Link className="pill" href="/oversight">Fleet board</Link>
       </div>
       <div className="note">
-        WK-DEV-007 section 5: read-only, aggregate, internal. Per-HOM
-        utilization is deliberately absent pending the founder&apos;s ruling on
-        the section 5 / Ruling 1 disagreement (see the work queue, 25 Aug).
+        WK-DEV-007 section 5: read-only, internal. Aggregate throughout,
+        with one recognized exception: the founder/CFO capacity section is
+        the display surface of the capacity-gate evaluation (Ruling 1 as
+        amended, register A581) and renders for no other role.
       </div>
 
       <div className="card">
@@ -226,10 +230,29 @@ export default async function CorporateBoard() {
             model change before it is a config change).
           </div>
         )}
-        <div className="prov">
-          Aggregate by construction: per-HOM figures live in the covenant
-          report and the capacity-gate evaluation only (Ruling 1).
-        </div>
+        {utilization === null ? (
+          <div className="prov">
+            Per-HOM figures live in the covenant report and the capacity-gate
+            evaluation only (Ruling 1); this seat does not carry them.
+          </div>
+        ) : (
+          <div style={{ marginTop: 8 }}>
+            <div className="prov" style={{ fontWeight: 600 }}>
+              Per-HOM utilization (founder/CFO seat: the capacity-gate evaluation&apos;s
+              display surface, Ruling 1 as amended, A581). Sorted by household count;
+              never by rate, and nothing here ranks or highlights a person.
+            </div>
+            {utilization.length === 0 && (
+              <div className="prov">No HOM assignments to evaluate yet.</div>
+            )}
+            {utilization.map((u) => (
+              <div key={u.name} className="fval" style={{ fontSize: 13 }}>
+                {u.name} · {u.households} household{u.households === 1 ? "" : "s"} ·{" "}
+                {u.deliveryHours30d} delivery hours in 30 days · {u.hoursPerHousehold} hours per household
+              </div>
+            ))}
+          </div>
+        )}
         <Discipline owner="the founder" threshold={!gateSet ? "founder-unset (capacity_gate knob)" : `cap ${gate!.cap}, band ${gate!.bandMin}..${gate!.bandMax}`} />
       </div>
 

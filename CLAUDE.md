@@ -23,16 +23,24 @@ premise found here.
   by provision or by rule, never by person. Founder-set boundary; if a task
   seems to need it, stop and ask. **One scoped exception, amended by name
   (Ruling 1 of the 24 August 2026 dev-session rulings, founder-approved,
-  citing register A561): capacity measurement is not performance scoring.**
-  Per-HOM utilization (service hours per household per month, households per
-  HOM) exists in exactly two surfaces: the monthly lender covenant report
-  (REQ-083) and the capacity-gate evaluation that triggers hiring. Visibility:
-  founder, CFO, and the lender via the covenant report. Expressly barred,
-  unchanged from the boundary: performance scoring, productivity ranking,
-  leaderboards, comparative display to HOMs, use in evaluation or
-  compensation, and any appearance on operational dashboards.
-  Churn-with-cause is household-level and unaffected. Sunset review at the
-  launch-year close.
+  citing register A561; amended for precision 25 August 2026 by the
+  founder's option (b) confirmation, citing register A581): capacity
+  measurement is not performance scoring.** Per-HOM utilization (service
+  hours per household per month, households per HOM) serves exactly two
+  purposes, exhaustively: the monthly lender covenant report (REQ-083)
+  and the capacity-gate evaluation that triggers hiring. The corporate
+  board's founder/CFO-only capacity section is recognized as the DISPLAY
+  SURFACE of the capacity-gate evaluation, not a third purpose.
+  Visibility: founder, CFO, and the lender via the covenant report.
+  Expressly barred, unchanged from the boundary and with A581's added
+  teeth: performance scoring, productivity ranking, leaderboards,
+  comparative display to HOMs, use in evaluation or compensation, any
+  appearance on operational dashboards beyond the recognized section,
+  and, ANYWHERE including the founder/CFO section itself, ordering by
+  rate or fastest/slowest highlighting; that section's only sort orders
+  are route, household count, and gate proximity. Churn-with-cause is
+  household-level and unaffected. Sunset review at the launch-year
+  close.
 - **Never load real household data into fixtures or tests.** Fernbrook DEMO and
   the Smoke Test Fixture only.
 

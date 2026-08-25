@@ -29,21 +29,22 @@ The audit's nine recovered concepts enter here under the 24.7 forcing
 function: owner, forum, and date assigned at this housekeeping pass or
 they close (blanks close, not carry; any close reopens by register
 entry). SituationEvent is already dispositioned by the intake itself
-(merged, above). The remaining eight are entered with the assignment
-columns BLANK, which are the founder's to fill, exactly as the original
-sixteen were closed by her Phase 0 inputs document; the repo context
-column records adjacency only, never a disposition.
+(merged, above; the SITUATIONS bundle shipped 25 Aug as migration
+0056). The eight blanks were the founder's columns, and she filled
+them: ASSIGNED 25 August 2026 per register A581 (the founder response
+sheet section 6, confirmed in the proceed instructions), transcribed
+verbatim below. The repo context column stays adjacency only.
 
 | Concept | Owner | Forum | Date / gate | Repo context (adjacency, not disposition) |
 |---|---|---|---|---|
-| CaseHierarchy | | | | work_item (0041) and the SITUATIONS bundle are the nearest existing structures |
-| ZoneState | | | | the close flow's zoneDrift capture is a partial instance |
-| FunctionalStateTarget | | | | condition_flag and the registry's condition series are adjacent |
-| OrganizationPreferenceProfile | | | | household_task_profile notes (0050) carry how-they-want-it-done today |
-| WorkCognitiveLoadProfile | | | | CARRIES RULING 1'S BAR EXPLICITLY per the intake: planning input, never ranking, never per-HOM comparison; its own disposition already states this |
-| RelationshipMomentRecord | | | | the Member Circle register (G-56, REQ-077) gates any non-client person record |
-| VendorProviderProfile | | | | VND-01 above and the WK-DEV-010 vendor slice are the authorized adjacent work |
-| AIHumanHandoff | | | | AI-01 above and the Tier M gate are the authorized adjacent machinery |
+| CaseHierarchy | Dev | Founder | With the vendor-repair slice: its verified-closure rule (a parent case closes only on verified overall outcome) is already adopted design law, so the object lands when the slice needs case structure | work_item (0041) and the SITUATIONS bundle (0056) are the nearest existing structures |
+| ZoneState | Dev | Founder | With the Purpose Pack build after the slice proves reuse; its reason-privacy shape (project do_not_disturb without the private reason) is already adopted | the close flow's zoneDrift capture is a partial instance |
+| FunctionalStateTarget | Dev | Founder | With the standards-library work, after the 300-row floor review lands: targets attach to reviewed standards, not unreviewed seeds | condition_flag and the registry's condition series are adjacent |
+| OrganizationPreferenceProfile | Dev | Founder | Substrate window, low priority; consolidates preferences already scattered as rules | household_task_profile notes (0050) and preference_rule (0057) carry the scattered pieces today |
+| WorkCognitiveLoadProfile | Dev | Founder | With the workload layer's WL Gate 3; carries Ruling 1's never-ranking bar in its schema comment, planning input only | CARRIES RULING 1'S BAR EXPLICITLY per the intake: planning input, never ranking, never per-HOM comparison; its own disposition already states this |
+| RelationshipMomentRecord | Founder | Founder | HOLD for founder definition: encodes service philosophy and is not shaped by engineering default; founder writes the two-paragraph definition before any schema, target with the anticipation engine's first promotions | the Member Circle register (G-56, REQ-077) gates any non-client person record |
+| VendorProviderProfile | Dev | Founder | With the vendor-repair slice, where provider history first accumulates | VND-01 above and the WK-DEV-010 vendor slice are the authorized adjacent work |
+| AIHumanHandoff | Dev | Two-key | Gated with the Tier M entry: the handoff object is meaningless until inference exists, and it lands in the same PR as AI-01 | AI-01 above and the Tier M gate are the authorized adjacent machinery |
 
 ## Assigned (founder inputs section 3, 24 August 2026)
 

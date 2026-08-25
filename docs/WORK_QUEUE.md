@@ -194,6 +194,11 @@ board never carries it, the section 5 sentence corrected in her copy;
 (b) Ruling 1 is amended by name to admit the board's founder/CFO
 section as a third surface, and the section 5 retrieval test then
 lands exactly as specified. A one-line ruling either way.
+**RESOLVED 25 August 2026: option (b), register A581** (with the
+precision that the section is the DISPLAY SURFACE of the
+capacity-gate evaluation, not a third purpose); the CLAUDE.md
+amendment and the board section landed in the same PR with the
+role-based retrieval tests, per the entry below.
 
 **And the firewall's first decision (section 6, 0048):** every
 attention record now carries a DESTINATION from the five-value
@@ -608,6 +613,31 @@ review afternoon. Standing from the same instructions: Lauren's
 invite fires on her signed agreement; the staging repo-side half
 builds when the six dashboard URLs arrive; Gate 1 items named were
 already complete (0053, 0054).
+
+**And Ruling 1's amendment lands as built law (A581 item 3, the same
+evening):** CLAUDE.md's boundary bullet now carries the founder's
+option (b) verbatim posture (two purposes exhaustive; the board's
+founder/CFO capacity section recognized as the capacity-gate
+evaluation's display surface; the added bars: no ordering-by-rate or
+fastest/slowest highlighting anywhere including that section, whose
+only sorts are route, household count, and gate proximity), citing
+register A581. The board section is BUILT with the gate in the
+permission matrix, not the UI: lib/capacity-utilization.ts refuses
+every role but corporate_admin and cfo_readonly (returns null,
+computes nothing), rows sort by household count then name (never a
+rate), testers are excluded by the single is_tester filter and
+fixtures as everywhere, and no field of a row is a rank. Proven in
+both retrieval directions: the integration tests refuse
+corporate_ops, field roles, client, empty, and a made-up founder
+flag, and accept corporate_admin and cfo_readonly with the tester
+absent and the fixture assignment uncounted; the board journey now
+proves the rendered page both ways (the founder seat carries the
+section with its own no-ranking sentence; a corporate_ops seat on the
+same page state gets the refusal line and no section). The same PR
+transcribes the founder's eight CAND assignments verbatim into the
+ledger (response sheet section 6, delivered 25 Aug), with the two
+holds standing: RelationshipMomentRecord schema-free until her
+written definition, AIHumanHandoff only in the Tier M gate's PR.
 
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
