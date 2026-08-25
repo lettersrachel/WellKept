@@ -431,6 +431,23 @@ restored after. Production loading is founder-side: run `pnpm
 db:capacity --set-by <founder email>` against production after the
 0055 migration applies.
 
+**And the CAND housekeeping pass ran (docs-only, WK-DEV-011 item 7):**
+the nine recovered concepts are IN THE LEDGER. SituationEvent is
+merged by the intake's own ruling (one concept with the WK-DEV-009
+Situation/Event Bundle; the SITUATIONS session stub carries it), and
+the other eight enter with owner/forum/date BLANK, which are the
+founder's columns exactly as the original sixteen were hers;
+WorkCognitiveLoadProfile's row carries Ruling 1's bar explicitly
+(planning input, never ranking). Under 24.7 the eight blanks close
+rather than carry if no founder inputs document lands, each
+reopenable by register entry; the repo-context column records
+adjacency only. The same pass recorded status against the assigned
+sixteen, facts only: OUTBOX-01, WORK-01, and DEC-01 LANDED (0046,
+0041, 0043); ATTN-01 and AUTHZ-01 PARTIAL (0048 and the A0 cap); the
+rest standing at their assigned gates, none stale. FOUNDER ITEM
+CREATED: the eight assignment blanks, the Phase 0 inputs-document
+pattern.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming
