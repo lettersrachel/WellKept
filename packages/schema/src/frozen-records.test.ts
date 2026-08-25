@@ -60,6 +60,8 @@ const FROZEN: Record<string, string> = {
   "docs/WK-DEV-010_v1_1_Unified_Implementation_Directive_2026-08-24.md": "5443b75aa0e67b9be04882c021b774da4ad57ba89cba23e9e6f66d32786b3cfa",
   "docs/WK_Tester_Provisioning_Household_Green_2026-08-24.md": "683bf7be086ca51f0dbda67d070e5670cf3f5501af89843bf7521e119b6f0ad1",
   "docs/WK_Sprint_Household_Green_HG_2026-08-24.md": "f4a94341ca8baed38e5c7ad42eadee358a8c4eebe6da1596aab12072eb271f53",
+  "docs/WK-DEV-011_Consolidated_Build_Brief_2026-08-25.md": "90d64c057198ae2c7d2737c0d2f03f44d587ad5d37ca1920b02d06ce584ca5b3",
+  "docs/WK_Handoff_v5_Intake_Ruling_2026-08-25.md": "740877ed487fb962d83d755268acfa86361f7e3c1c2bb9fabd94f21f7b825c0c",
 };
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");
