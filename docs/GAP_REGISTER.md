@@ -2165,7 +2165,10 @@ IS its attributed, versioned record (who, when, what changed, what it
 replaced); `db:tasks` writes global reusable semantics with an
 --author requirement and no member data; `db:training` resets a
 fixture board (is_fixture=true, excluded from every real-record
-claim). The gap is specific to db:hg because HG is real.
+claim); `ensure-smoke-fixture.mjs` (added to this list at the 25 Aug
+sitting) seeds and re-seeds the Smoke Test Fixture, the same fixture
+class as db:training, so its writes claim nothing about a real
+person or tenant. The gap is specific to db:hg because HG is real.
 
 **FIXED the same day (this entry's PR):** db:hg now requires
 `--by <corporate email>` and refuses unless the identity exists and
