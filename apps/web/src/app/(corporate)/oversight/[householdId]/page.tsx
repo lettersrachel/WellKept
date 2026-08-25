@@ -73,6 +73,17 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(workItem.householdId, hh.id))
     .orderBy(desc(workItem.createdAt)).limit(30))
     .sort((a, b) => Number(a.status === "done" || a.status === "abandoned") - Number(b.status === "done" || b.status === "abandoned"));
+  // WK-DEV-007 s5: the ninety-second brief, computed from what the page
+  // already holds. The continuity promise as a header: completeness,
+  // open loops with the oldest age, the next rhythm item, the last
+  // applied visit.
+  const filled = all.filter((f) => String(f.value ?? "").trim() !== "").length;
+  const nextRhythm = (await getRegistries(hh.id, role))
+    .filter((r) => r.keyDate && +new Date(r.keyDate) > Date.now())
+    .sort((a, b) => +new Date(a.keyDate as unknown as string) - +new Date(b.keyDate as unknown as string))[0];
+  const lastApplied = commands
+    .filter((c) => c.type === "visit.submit" && c.status === "applied")
+    .sort((a, b) => +b.receivedAt - +a.receivedAt)[0];
   // WK-DEV-009 s8: the human router's queue, unfiled first.
   const captures = (await db.select().from(captureArtifact)
     .where(eq(captureArtifact.householdId, hh.id))
@@ -145,6 +156,24 @@ export default async function Oversight({ params, searchParams }: {
           <strong>Recorded:</strong> {recorded}; it is in the table below and in the audit trail.
         </div>
       )}
+      <div className="card">
+        <h2>The ninety-second brief (WK-DEV-007 §5)</h2>
+        <div className="fval" style={{ fontSize: 13 }}>
+          <div>Record: {filled} of {all.length} fields carry a value.</div>
+          <div>
+            Open loops: {workItems.filter((w) => w.status === "open" || w.status === "blocked").length} work item(s),{" "}
+            {attention.filter((a) => a.status === "open").length} needing noticing,{" "}
+            {captures.filter((c) => c.status === "captured").length} capture(s) awaiting the router.
+          </div>
+          <div>Next rhythm item: {nextRhythm ? `${nextRhythm.label} (${new Date(nextRhythm.keyDate as unknown as string).toISOString().slice(0, 10)})` : "none on the registry calendar"}.</div>
+          <div>Last applied visit: {lastApplied ? lastApplied.receivedAt.toISOString().slice(0, 10) : "never"}.</div>
+        </div>
+        <div className="prov">
+          Active signals render in the SIGNALS panel only after a per-trigger
+          promotion (section 3); nothing is promoted, so nothing shows.
+        </div>
+      </div>
+
       <div className="card">
         <div className="row" style={{ alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <h2 style={{ flex: 1 }}>
