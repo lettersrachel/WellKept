@@ -195,6 +195,23 @@ board never carries it, the section 5 sentence corrected in her copy;
 section as a third surface, and the section 5 retrieval test then
 lands exactly as specified. A one-line ruling either way.
 
+**And the firewall's first decision (section 6, 0048):** every
+attention record now carries a DESTINATION from the five-value
+vocabulary (CHECK proven both directions), routed at creation by the
+deterministic v1 policy in the trigger engine: hom noticing to the
+previsit brief, corporate and founder noticing to the corporate
+queue, and NOTHING to immediate_interrupt or next_transition_prompt,
+exhaustively proven, because which sources justify an interrupt is
+the founder's safety rule set, not an engineering default (the
+capture-router posture; the vocabulary carries all five so her rules
+need no migration). The mobile briefing delivers the previsit_brief
+records as `needsNoticing` and stamps deliveredVia once, proven live
+(one GET delivers and stamps, a second changes nothing), and because
+the payload rides the section 2.1 snapshot, DELIVERY IS EVIDENCED.
+Off-shift boundaries wait on shift data the system does not hold
+(recorded, not approximated); SITUATIONS bundling is its own session,
+stubbed by name in the policy module.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

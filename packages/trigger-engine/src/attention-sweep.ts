@@ -1,5 +1,6 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
 import { deferral, pausedDecision, workItem, attentionRecord, decisionRecord, emitOutboxEvent } from "@wellkept/schema";
+import { destinationFor } from "./notification-firewall.ts";
 
 /**
  * RFC-PRIM-01 build 2: the attention sweep. The computed overdue
@@ -52,6 +53,9 @@ export async function sweepAttentionRecords(db: Db): Promise<{ raised: number }>
       id: crypto.randomUUID(), householdId: c.householdId, reason: c.reason,
       sourceKind: c.sourceKind, sourceId: c.sourceId, audience: "hom",
       urgency: "soon", deadline: c.deadline,
+      // Section 6: the firewall routes at creation; the sweep's records
+      // are hom-audience noticing, so they reach the previsit brief.
+      destination: destinationFor({ audience: "hom" }),
     }).onConflictDoNothing({
       target: [attentionRecord.sourceKind, attentionRecord.sourceId],
     }).returning({ id: attentionRecord.id });

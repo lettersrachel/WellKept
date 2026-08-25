@@ -1066,6 +1066,16 @@ export const attentionRecord = pgTable("attention_record", {
   deadline: date("deadline"),
   sensitivity: sensitivityEnum("sensitivity").notNull().default("s2"),
   deliveredVia: text("delivered_via"), // null until delivered: briefing | digest | push
+  // WK-DEV-009 section 6 (0048): the Notification Firewall's decision.
+  // "Event exists" never maps to "push notification": every record is
+  // ROUTED to one of the five destinations by the deterministic policy
+  // in @wellkept/trigger-engine (destinationFor), and the conservative
+  // v1 rule set never produces immediate_interrupt or
+  // next_transition_prompt: what counts as interrupt-worthy is safety
+  // policy, a founder rule set, not an engineering default (the capture
+  // router's posture). The vocabulary carries all five so the founder's
+  // rules need no migration when they arrive.
+  destination: text("destination").notNull().default("previsit_brief"),
   acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
   acknowledgedBy: text("acknowledged_by").references(() => authUser.id),
   status: attentionStatusEnum("status").notNull().default("open"),
@@ -1079,6 +1089,8 @@ export const attentionRecord = pgTable("attention_record", {
     sql`${t.sourceKind} IN ('work_item','deferral','paused_decision','condition_flag','reconciliation','system')`),
   check("attention_record_audience_known",
     sql`${t.audience} IN ('hom','corporate','founder')`),
+  check("attention_record_destination_known",
+    sql`${t.destination} IN ('immediate_interrupt','next_transition_prompt','previsit_brief','end_of_visit_review','corporate_queue')`),
   // Acknowledgment is a whole pair; resolution is the house triple, whole
   // or absent in both directions.
   check("attention_record_ack_is_whole",
