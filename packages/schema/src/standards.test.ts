@@ -286,4 +286,14 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     () => assertNoAnticipationRows({ deep: { task_profile_id: "p1", context_window: "first dry week" } }),
     /work_requirement/,
   );
+
+  // WL Gate 1: an estimate snapshot never reaches a client (D7 twice over).
+  assert.throws(
+    () => assertNoAnticipationRows([{ workRequirementId: "r1", estimatedMinutes: 45 }]),
+    /estimate_snapshot/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { estimated_minutes: null, basis: "manual judgment" } }),
+    /estimate_snapshot/,
+  );
 });

@@ -95,6 +95,11 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  estimate_snapshot:
+    "WL Gate 1, 2026-08-25: estimated_by records which corporate user recorded a planning " +
+    "estimate; corporate planning data behind the D7 staffing wall, never evaluative of " +
+    "the estimator (Ruling 1 untouched); generic action-log coverage; a named line is a " +
+    "founder decision, not a drift",
   work_requirement:
     "WL Gate 1, 2026-08-25: created_by, completed_by, and verified_by attribute planned " +
     "work instances (the written-work item's territory); shipped after the disclosure " +

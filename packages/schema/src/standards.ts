@@ -171,6 +171,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("windowCondition", "blockedReason") || has("window_condition", "blocked_reason")) {
       throw new Error(`SEVERE: a work_item row reached a client payload at ${path}`);
     }
+    // WL Gate 1: an estimate snapshot is corporate planning data behind
+    // the D7 staffing wall; any recognizable row in a client payload is
+    // the violation twice over (row leak AND a duration leak).
+    if (has("workRequirementId", "estimatedMinutes") || has("work_requirement_id", "estimated_minutes")
+      || has("estimatedMinutes", "basis") || has("estimated_minutes", "basis")) {
+      throw new Error(`SEVERE: an estimate_snapshot row reached a client payload at ${path}`);
+    }
     // WL Gate 1: a work requirement is a planned staff work instance
     // (s2 context); no client projection exists.
     if (has("taskProfileId", "dueOn") || has("task_profile_id", "due_on")

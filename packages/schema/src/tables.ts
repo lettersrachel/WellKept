@@ -1320,3 +1320,33 @@ export const workRequirement = pgTable("work_requirement", {
   check("work_requirement_verification_is_whole",
     sql`(${t.status} = 'verified' AND ${t.verifiedAt} IS NOT NULL AND ${t.verifiedBy} IS NOT NULL) OR (${t.status} <> 'verified' AND ${t.verifiedAt} IS NULL AND ${t.verifiedBy} IS NULL)`),
 ]);
+
+// WL Gate 1 object 4 (WK-DEV-010 section 3): the Estimate Snapshot.
+// APPEND-ONLY BY CODE: a new estimate is a new row and the latest is
+// current; a Task Occurrence records what actually happened and NEVER
+// overwrites a snapshot, which is the whole reason this object exists
+// as history rather than a column on the requirement. Two disciplines,
+// structural where the database can hold them:
+//  - "Unknown duration never silently becomes zero" (WL Gate 2's
+//    conservative fallback, stored honestly from day one): NULL is
+//    unknown, and ZERO IS REFUSED as a stored claim by the CHECK.
+//  - The estimate HIERARCHY's vocabulary (which class of source an
+//    estimate came from) is deliberately absent: Gate 2 adopts it
+//    verbatim from the forecasting brief, and inventing a level list
+//    now is the provisional-taxonomy collision again. basis is free
+//    text naming the source in words until that adoption lands.
+// Estimates are corporate planning data behind the D7 staffing wall:
+// no client route ever carries a duration, and the client-duration
+// guard's census now includes this column.
+export const estimateSnapshot = pgTable("estimate_snapshot", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  workRequirementId: uuid("work_requirement_id").notNull().references(() => workRequirement.id),
+  estimatedMinutes: integer("estimated_minutes"), // NULL = unknown, never zero
+  basis: text("basis").notNull(), // where the estimate came from, in words; s2
+  estimatedBy: text("estimated_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("estimate_snapshot_requirement_idx").on(t.workRequirementId, t.createdAt),
+  check("estimate_snapshot_zero_is_not_unknown",
+    sql`${t.estimatedMinutes} IS NULL OR ${t.estimatedMinutes} > 0`),
+]);

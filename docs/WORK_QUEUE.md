@@ -286,6 +286,33 @@ verify-before-complete refusal, complete, and verify. Nineteen e2e
 green. Remaining Gate 1: Estimate Snapshot, Task Occurrence, Time
 Segment.
 
+**And Gate 1 object 4 (0052):** `estimate_snapshot` exists, the
+append-only estimate history of a work requirement (the requirement
+references nothing back; the D7 wall stays wide, and the new duration
+column is in the client-duration guard's census, verified green). NULL
+is the honest unknown and ZERO IS REFUSED THREE DEEP: the CHECK
+(`estimate_snapshot_zero_is_not_unknown`, proven red on zero and
+negative, green on NULL and positive in SQL), the action (blank
+parses to NULL, zero and non-integers refuse as bad input), and the
+journey (the input carries no HTML min by design, so the test proves
+the server wall, not browser validation). An unknown duration never
+silently becomes zero. The basis is required in words; the estimate
+hierarchy vocabulary is DELIBERATELY DEFERRED to Gate 2's verbatim
+adoption rather than invented here. Recording is a corporate act
+(admin/ops) with its event through the s4 envelope
+(estimate_snapshot.recorded, correlation on the requirement); the
+drill-in's requirement card renders the latest estimate with the
+on-record count and NEVER the estimator (Ruling 1 posture: estimates
+describe tasks, not people; estimated_by stays in the record). Erasure
+blanks the basis and keeps the rows (the time_entry class), guard
+proven red first; the full guard-and-legal set same-PR (payload
+signature both directions, disclosure allowlist red first, CHILD_DATA
+row naming the client-duration guard as third enforcement, the
+Operational records row extended in both privacy copies). The journey
+proves record-with-minutes, the envelope, the blank-is-unknown append
+(count 2, first row untouched), and the zero refusal. Twenty e2e
+green. Remaining Gate 1: Task Occurrence, Time Segment.
+
 Production serves `12b9661` (2026-08-06, eighth clean run through
 tooling/deploy.sh's full gate; migrations 0035 and 0036 applied, counts
 37/37/37, build id verified three times, the env-presence gate naming

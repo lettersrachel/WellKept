@@ -146,6 +146,14 @@ Four documents, one per audience and direction:
   deleted with the household on erasure once filed onward. Recorded by
   a named staff member, also STAFF data (captured_by, filed_by); joins
   the G-13 founder line candidates.
+- **Estimate snapshots** (added 2026-08-25, WL Gate 1): our internal
+  working estimates for planning each task instance, kept as
+  append-only history with the source of each estimate in words. An
+  instance of the internal-work category; internal (s2); durations
+  never reach any client surface (the D7 wall, guard-enforced); on
+  erasure the basis words blank and the planning numbers stay (the
+  time-entry class). Also STAFF data (estimated_by); Ruling 1
+  untouched: estimates describe tasks, never the estimator.
 - **Work requirements** (added 2026-08-25, WL Gate 1): planned
   instances of the household's standing tasks (when or under what
   stated context each is due, and how each ended: completed, verified,

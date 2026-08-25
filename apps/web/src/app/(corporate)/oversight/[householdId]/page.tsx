@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -112,6 +112,22 @@ export default async function Oversight({ params, searchParams }: {
     .orderBy(desc(workRequirement.createdAt)).limit(30))
     .sort((a, b) => Number(["completed", "verified"].includes(a.status)) - Number(["completed", "verified"].includes(b.status)));
   const profileName = new Map(taskProfiles.map((p) => [p.id, p.taskName]));
+  // WL Gate 1 object 4: append-only estimate history; the latest per
+  // requirement renders, the count says how the estimate moved. Staff
+  // dashboards never see WHO estimated (Ruling 1 posture; estimated_by
+  // stays in the record, not on the card).
+  const estimateRows = await db.select({
+    workRequirementId: estimateSnapshot.workRequirementId,
+    estimatedMinutes: estimateSnapshot.estimatedMinutes,
+    basis: estimateSnapshot.basis, createdAt: estimateSnapshot.createdAt,
+  }).from(estimateSnapshot).where(eq(estimateSnapshot.householdId, hh.id))
+    .orderBy(desc(estimateSnapshot.createdAt));
+  const latestEstimate = new Map<string, { estimatedMinutes: number | null; basis: string; count: number }>();
+  for (const e of estimateRows) {
+    const existing = latestEstimate.get(e.workRequirementId);
+    if (existing) existing.count += 1;
+    else latestEstimate.set(e.workRequirementId, { estimatedMinutes: e.estimatedMinutes, basis: e.basis, count: 1 });
+  }
   // RFC-PRIM-01 build 3: routed choices, pending first.
   const decisions = (await db.select().from(decisionRecord)
     .where(eq(decisionRecord.householdId, hh.id))
@@ -832,6 +848,19 @@ export default async function Oversight({ params, searchParams }: {
                 {r.status} · {r.dueOn ?? r.contextWindow}
               </span>
             </span>
+            {latestEstimate.has(r.id) && (
+              <div className="fval sans" style={{ fontSize: 13 }}>
+                Estimate: {latestEstimate.get(r.id)!.estimatedMinutes === null
+                  ? "unknown"
+                  : `${latestEstimate.get(r.id)!.estimatedMinutes} min`}
+                {" · "}{latestEstimate.get(r.id)!.basis}
+                {latestEstimate.get(r.id)!.count > 1 && (
+                  <span className="prov" style={{ marginLeft: 8 }}>
+                    {latestEstimate.get(r.id)!.count} estimates on record
+                  </span>
+                )}
+              </div>
+            )}
             <form action={progressWorkRequirement} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
               <input type="hidden" name="householdId" value={hh.id} />
               <input type="hidden" name="workRequirementId" value={r.id} />
@@ -845,6 +874,17 @@ export default async function Oversight({ params, searchParams }: {
               </select>
               <button className="act subtle">Apply</button>
             </form>
+            {isAdminOrOps && (
+              <form action={recordEstimate} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="workRequirementId" value={r.id} />
+                {/* No HTML min: the action and the CHECK refuse zero, and the
+                    journey proves the server wall, not browser validation. */}
+                <input name="estimatedMinutes" type="number" aria-label="Estimated minutes" placeholder="min (blank = unknown)" style={{ width: 140, marginTop: 0 }} />
+                <input name="basis" aria-label="Estimate basis" placeholder="where this estimate comes from" style={{ flex: 1, marginTop: 0, minWidth: 160 }} />
+                <button className="act subtle">Record estimate</button>
+              </form>
+            )}
           </div>
         ))}
         {isAdminOrOps && taskProfiles.filter((p) => !p.tombstonedAt && p.active).length > 0 && (
