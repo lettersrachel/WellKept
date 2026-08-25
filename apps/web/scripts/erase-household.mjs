@@ -79,6 +79,12 @@
  *    deferral is a client-visible service record (the visit-report
  *    posture), so the business-record skeleton survives while the
  *    household specifics do not.
+ *  - work_item (RFC-PRIM-01, 2026-08-25): free text BLANKED (title,
+ *    detail, window, block reason, resolution), skeleton kept - the
+ *    record THAT work was tracked and how it ended is business history;
+ *    what the work was about is the household's. Blanking preserves the
+ *    lifecycle CHECKs (a resolved row keeps a marker resolution, never
+ *    NULL).
  *  - paused_decision (W-7/AD, 2026-07-28): rows DELETED - internal
  *    staff research about the household (never client-visible, no
  *    business-record claim), the condition_flag class.
@@ -218,6 +224,8 @@ try {
   await c.query("UPDATE season_observation SET summary=$2 WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE prompt_pack_item SET item_text=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE prompt_outcome SET note=NULL WHERE household_id=$1", [householdId]);
+  // work_item: blank the words, keep the lifecycle (see header).
+  await c.query("UPDATE work_item SET title=$2, detail='', window_condition=CASE WHEN window_condition IS NULL THEN NULL ELSE $2 END, blocked_reason=CASE WHEN blocked_reason IS NULL THEN NULL ELSE $2 END, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // Capture-session tables (G-40): business/employer rows survive by
   // default; their free text does not. Deletion is a counsel-directed flag.
   if (ERASE_TIME_COSTS) {

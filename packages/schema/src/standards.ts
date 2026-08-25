@@ -154,6 +154,13 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("decision", "research")) {
       throw new Error(`SEVERE: a paused_decision row reached a client payload at ${path}`);
     }
+    // RFC-PRIM-01: a work_item is staff work about the household (s2 by
+    // default, no client projection); any recognizable row is the
+    // violation. The key pair is the primitive's own shape.
+    if (has("title", "dependsOn") || has("title", "depends_on")
+      || has("windowCondition", "blockedReason") || has("window_condition", "blocked_reason")) {
+      throw new Error(`SEVERE: a work_item row reached a client payload at ${path}`);
+    }
     // WK-DEV-007 s3: shadow-log output is engine-internal (founder, CFO,
     // developer only); no client projection exists, so any recognizable
     // row is the violation.

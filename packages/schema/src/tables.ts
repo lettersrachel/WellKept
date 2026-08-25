@@ -982,3 +982,46 @@ export const shadowLog = pgTable("shadow_log", {
   check("shadow_log_score_is_whole",
     sql`(${t.score} IS NULL AND ${t.scoredBy} IS NULL AND ${t.scoredAt} IS NULL) OR (${t.score} IS NOT NULL AND ${t.scoredBy} IS NOT NULL AND ${t.scoredAt} IS NOT NULL)`),
 ]);
+
+// RFC-PRIM-01 build 1 (WK-DEV-007 section 4 definition of done): the
+// WorkItem primitive. Any meaningful unit of NEW household work: vendor
+// work, follow-ups, Runways, internal chores. The four proven fragments
+// (deferral, paused_decision, condition_flag, prompt_pack_item) stay as
+// they are; the RFC's standing rule is that no fifth fragment is ever
+// added - anything new is a work_item. Kinds are the Handoff's own
+// purpose line, a section 8 proposed default; rhythm work stays with the
+// anticipation engine. Staff-only by default (s2): client-visible work
+// remains the deferral's job.
+export const workItemStatusEnum = pgEnum("work_item_status", ["open", "blocked", "done", "abandoned"]);
+
+export const workItem = pgTable("work_item", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  title: text("title").notNull(), // the work, in words; s2
+  detail: text("detail").notNull().default(""), // s2
+  kind: text("kind").notNull(), // vendor | followup | runway | internal
+  source: text("source").notNull(), // hm_capture | corporate | system
+  ownerId: text("owner_id").references(() => authUser.id), // null = unassigned
+  sensitivity: sensitivityEnum("sensitivity").notNull().default("s2"),
+  dueDate: date("due_date"), // both null = backlog, deliberately legal
+  windowCondition: text("window_condition"),
+  dependsOn: jsonb("depends_on"), // work_item ids; app-checked, never a hard FK web
+  status: workItemStatusEnum("status").notNull().default("open"),
+  blockedReason: text("blocked_reason"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedBy: text("resolved_by").references(() => authUser.id),
+}, (t) => [
+  index("work_item_household_idx").on(t.householdId, t.status),
+  check("work_item_kind_known",
+    sql`${t.kind} IN ('vendor','followup','runway','internal')`),
+  check("work_item_source_known",
+    sql`${t.source} IN ('hm_capture','corporate','system')`),
+  // The house rules, structural: a block carries its reason, and a
+  // resolution is whole or absent in BOTH directions (a terminal status
+  // demands the full triple; a live one forbids any of it).
+  check("work_item_block_is_reasoned",
+    sql`${t.status} <> 'blocked' OR ${t.blockedReason} IS NOT NULL`),
+  check("work_item_resolution_is_whole",
+    sql`(${t.status} IN ('done','abandoned') AND ${t.resolution} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL) OR (${t.status} NOT IN ('done','abandoned') AND ${t.resolution} IS NULL AND ${t.resolvedAt} IS NULL AND ${t.resolvedBy} IS NULL)`),
+]);

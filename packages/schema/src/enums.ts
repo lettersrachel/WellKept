@@ -60,3 +60,12 @@ export const registryDetailSchemas: Record<RegistryKind, z.ZodTypeAny> = {
   commitment: z.object({ what: z.string(), prep: z.string().optional() }).passthrough(),
   horizon: z.object({ transition: z.string(), window: z.string().optional() }).passthrough(),
 };
+
+// RFC-PRIM-01: the WorkItem primitive's vocabulary (zod parity with the
+// work_item table's enums and CHECK-held kind/source lists).
+export const workItemStatusSchema = z.enum(["open", "blocked", "done", "abandoned"]);
+export type WorkItemStatus = z.infer<typeof workItemStatusSchema>;
+export const workItemKindSchema = z.enum(["vendor", "followup", "runway", "internal"]);
+export type WorkItemKind = z.infer<typeof workItemKindSchema>;
+export const workItemSourceSchema = z.enum(["hm_capture", "corporate", "system"]);
+export type WorkItemSource = z.infer<typeof workItemSourceSchema>;

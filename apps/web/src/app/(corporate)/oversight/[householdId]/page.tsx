@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem } from "@/lib/actions";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -68,6 +68,11 @@ export default async function Oversight({ params, searchParams }: {
   // WK-DEV-007 s3: the shadow log, founder/CFO/developer visibility ONLY.
   // corporate_ops never receives these rows; the query is role-gated, not
   // merely the render.
+  // RFC-PRIM-01: the household's tracked work, live rows first.
+  const workItems = (await db.select().from(workItem)
+    .where(eq(workItem.householdId, hh.id))
+    .orderBy(desc(workItem.createdAt)).limit(30))
+    .sort((a, b) => Number(a.status === "done" || a.status === "abandoned") - Number(b.status === "done" || b.status === "abandoned"));
   const canSeeShadow = role === "corporate_admin" || role === "cfo_readonly";
   const shadowRows = canSeeShadow
     ? await db.select().from(shadowLog)
@@ -560,6 +565,58 @@ export default async function Oversight({ params, searchParams }: {
           Append-only: corrections add a superseding event. QuickBooks remains the
           billing system of record (ADR-004); this records that state changed.
         </div>
+      </div>
+
+      <div className="card">
+        <h2>Work items (RFC-PRIM-01)</h2>
+        <div className="note">
+          Any meaningful unit of new work: vendor jobs, follow-ups, Runways, internal
+          chores. Rhythm work stays with the anticipation engine; client-visible
+          noticed-and-left records stay deferrals. Staff-only; the client never sees this.
+        </div>
+        {workItems.length === 0 && <div className="prov">No work items on this household yet.</div>}
+        {workItems.map((w) => (
+          <div key={w.id} className="field">
+            <span className="fname">
+              {w.title}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {w.kind} · {w.status}{w.dueDate ? ` · due ${w.dueDate}` : w.windowCondition ? ` · when ${w.windowCondition}` : ""}
+              </span>
+            </span>
+            {w.status === "blocked" && <div className="prov">blocked: {w.blockedReason}</div>}
+            {(w.status === "done" || w.status === "abandoned") ? (
+              <div className="prov">{w.status}: {w.resolution}</div>
+            ) : (
+              <form action={progressWorkItem} className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <input type="hidden" name="householdId" value={hh.id} />
+                <input type="hidden" name="workItemId" value={w.id} />
+                <select name="decision" defaultValue={w.status === "blocked" ? "reopen" : "done"} className="inline" aria-label="Work item decision">
+                  <option value="done">done</option>
+                  <option value="abandoned">abandoned</option>
+                  <option value="block">block</option>
+                  <option value="reopen">reopen</option>
+                </select>
+                <input name="note" aria-label="Reason or completion note" placeholder="reason or completion note" style={{ flex: 1, marginTop: 0, minWidth: 140 }} />
+                <button className="act subtle">Apply</button>
+              </form>
+            )}
+          </div>
+        ))}
+        <form action={createWorkItem} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+          <input type="hidden" name="householdId" value={hh.id} />
+          <input name="title" aria-label="Work item title" placeholder="the work, in words" required style={{ flex: 2, marginTop: 0, minWidth: 160 }} />
+          <select name="kind" defaultValue="followup" className="inline" aria-label="Work item kind">
+            <option value="vendor">vendor</option>
+            <option value="followup">follow-up</option>
+            <option value="runway">runway</option>
+            <option value="internal">internal</option>
+          </select>
+          <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
+            Due <input type="date" name="dueDate" style={{ marginTop: 0 }} />
+          </label>
+          <input name="windowCondition" aria-label="Or a stated window" placeholder="or a stated window" style={{ flex: 1, marginTop: 0, minWidth: 120 }} />
+          <button className="act">Open work item</button>
+        </form>
       </div>
 
       {canSeeShadow && (

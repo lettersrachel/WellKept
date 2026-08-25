@@ -67,6 +67,7 @@ test.afterAll(async () => {
   // way airplane.spec tears down its visit commands).
   await pool.query("DELETE FROM audit_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM membership_event WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken]]);
@@ -147,6 +148,42 @@ test("departure journey: a cancel refuses without its cause code, then lands wit
   expect((cov.payload as { causeCode: string }).causeCode).toBe("life_event");
   const raw = JSON.stringify(cov.payload);
   expect(raw.includes("relocating")).toBe(false); // the s2 reason never rides the covenant stream
+});
+
+test("work-item journey: refused short, opened with its event, blocked with reason, resolved whole with its event", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto(`/oversight/${synId}`);
+  await expect(page.getByRole("button", { name: "Open work item" })).toBeVisible({ timeout: 30_000 });
+
+  // Refusing direction: a two-character title is not work in words.
+  await page.getByLabel("Work item title").fill("ok");
+  await page.getByRole("button", { name: "Open work item" }).click();
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+  // Accepting direction: opened, with its outbox event.
+  await page.getByLabel("Work item title").fill("Gutter vendor: schedule the fall clean");
+  await page.getByLabel("Work item kind").selectOption("vendor");
+  await page.getByRole("button", { name: "Open work item" }).click();
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  await expect.poll(() => count("SELECT count(*)::int n FROM work_item WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_item.opened'")).toBe(1);
+
+  // Block with its reason, then resolve whole.
+  await page.getByLabel("Work item decision").selectOption("block");
+  await page.getByLabel("Reason or completion note").fill("waiting on the vendor's quote");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect.poll(() => count("SELECT count(*)::int n FROM work_item WHERE household_id=$1 AND status='blocked'"), { timeout: 20_000 }).toBe(1);
+
+  await page.getByLabel("Work item decision").selectOption("done");
+  await page.getByLabel("Reason or completion note").fill("vendor booked for the second week of October");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect.poll(() => count("SELECT count(*)::int n FROM work_item WHERE household_id=$1 AND status='done'"), { timeout: 20_000 }).toBe(1);
+  const { rows: [w] } = await pool.query(
+    "SELECT resolution, resolved_by, resolved_at FROM work_item WHERE household_id=$1", [synId]);
+  expect(w.resolution).toContain("October");
+  expect(w.resolved_by).toBe(rachelId);
+  expect(w.resolved_at).toBeTruthy();
+  expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='work_item.resolved'")).toBe(1);
 });
 
 test("permissions journey: a client is walled out of staff surfaces and still sees their own", async ({ context, page }) => {

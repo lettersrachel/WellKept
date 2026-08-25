@@ -95,6 +95,10 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  work_item:
+    "RFC-PRIM-01, 2026-08-25: owner_id and resolved_by attribute tracked work; the " +
+    "surface shipped after the disclosure was approved (the written-work item is the " +
+    "natural home); founder line candidate for the next revision",
   shadow_log:
     "WK-DEV-007 s3, 2026-08-24: scored_by attributes the founder's weekly scoring of " +
     "engine output, a corporate-role action the action log's generic clause covers (the " +

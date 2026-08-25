@@ -153,4 +153,22 @@ for (const r of REGISTRIES) {
   rset += 1;
 }
 console.log(`registries: ${rset} entries added (idempotent)`);
+
+// RFC-PRIM-01: two demo work items so the primitive's surfaces render
+// with content on the fixture (idempotent by title, like the registries).
+const WORK = [
+  { title: "Gutter vendor: fall clean scheduling", kind: "vendor", due: "2026-10-05", window: null },
+  { title: "Follow up: replacement chandelier bulbs ordered", kind: "followup", due: null, window: "when the set arrives" },
+];
+let wset = 0;
+for (const w of WORK) {
+  const existing = await pool.query(
+    "SELECT id FROM work_item WHERE household_id=$1 AND title=$2", [householdId, w.title]);
+  if (existing.rowCount) continue;
+  await pool.query(
+    "INSERT INTO work_item (id, household_id, title, kind, source, due_date, window_condition) VALUES ($1,$2,$3,$4,'system',$5,$6)",
+    [randomUUID(), householdId, w.title, w.kind, w.due, w.window]);
+  wset += 1;
+}
+console.log(`work items: ${wset} added (idempotent)`);
 await pool.end();
