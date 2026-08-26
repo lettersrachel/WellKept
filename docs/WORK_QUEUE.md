@@ -1835,7 +1835,12 @@ and not lost, not proposing a build order.
    General.** Recorded here rather than as a mechanical glitch because
    it is a fourth control silently not in place, and because it
    compounds with the protection absence above: right now nothing
-   automated stands between a push and production.
+   automated stands between a push and production. **CONFIRMED and
+   CLOSED at 16:25 UTC the same day:** the founder re-enabled Actions
+   and `ci` fired within a minute on the unchanged head, both jobs
+   green, with no commit and no workflow edit between. The setting was
+   the only variable that moved, so the inference is now a cause. When
+   and how it came to be disabled is not established and stays open.
 
    **Deciding the protection question, so it is decided with what is
    known:** `ci.yml` has no `paths` or `paths-ignore`, so requiring `ci`
