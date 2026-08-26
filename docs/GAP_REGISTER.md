@@ -2148,6 +2148,21 @@ of the preflight fix also ran on the deploy machine (twelve cases,
 eight refusals, four green paths), which is the strongest home for
 that proof. Nothing of this entry remains open.
 
+**Confirmation 2026-08-26, the proof this entry could not have on the
+day it was fixed.** The 25 Aug selftest and the local red/green runs
+exercised the no-write path with nothing genuinely pending: the
+database and the disk agreed, so a preflight that applied migrations
+and one that did not were observationally identical. The 26 Aug
+preflight ran against a real two-migration gap (0056 situation, 0057
+preference_rule) and reported `database 56, disk 58` with NOTHING
+applied. That is the exact invocation the old behaviour would have
+turned into a production migration ahead of its build, which is how
+the 0037-0055 batch landed. Recorded because the doctrine calls for
+it: a guard proven locally and then meeting the real condition it
+exists for is the strongest form of the proof, and this one also
+NAMES ITS NUMBERS rather than saying "pending", so the disagreement
+between database and tree is legible instead of a verdict.
+
 ### G-64. The HG provisioning script wrote a real tenant and a staff assignment with no audit history behind them
 
 Filed 2026-08-25, from the founder's production provisioning run the

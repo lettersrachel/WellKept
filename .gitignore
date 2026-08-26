@@ -30,6 +30,19 @@ wk-drift-dump.json
 # Merge-script output artifact (wk_floor_review.py --out default); regenerated per run.
 tooling/import/floor_review_merged_seed.json
 
+# Floor-review EXPORT (db:export-floors --out default). Regenerated in
+# seconds from the STORE, carries no decisions, and lands in whatever
+# directory the command ran in, so the name is bare like the drift dumps
+# above rather than path-pinned. It blocked a deploy on 2026-08-26: the
+# gate reads `git status --porcelain`, which counts untracked files,
+# correctly, since the deploy ships the working tree.
+#
+# The FILLED-IN review is not this file. It is a record of 300 decisions
+# and must be kept: save it under another name (wk_floor_review.py takes
+# input paths positionally, so nothing depends on the default) and let
+# the script's own dated frozen record carry it into the repo.
+floor-review-export.tsv
+
 # Founder-local KEK file (the .neon-connection pattern): referenced by
 # path in commands, never pasted into a transcript.
 .wk-kms-key
