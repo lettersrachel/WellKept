@@ -1819,6 +1819,28 @@ and not lost, not proposing a build order.
    credential exists in the repo or the build container; the answer
    decides G-35, and a yes makes it an incident with a written timeline
    rather than a register line.
+   **The `ci` stop is diagnosed and belongs with this item (G-73's
+   addendum).** No `ci` run has been created for any commit since 13:03
+   UTC on 26 August. The workflow is `state: active` and is the only one
+   in the repo, the owner is a User so there is no org policy, `ci.yml`
+   carries no path filter, and the pushing identity is unchanged from
+   the run that last fired. The decisive reading is the check-suite
+   differential: `577666d` carries five check suites including
+   `github-actions`, and the current head carries four with no
+   `github-actions` suite created at all, while the other four apps act
+   on the same commit normally. The only candidate consistent with that
+   is repository-level Actions disablement, stated as an inference
+   because the confirming endpoint is blocked to this session by its own
+   proxy. **Founder-side confirmation is one page: Settings, Actions,
+   General.** Recorded here rather than as a mechanical glitch because
+   it is a fourth control silently not in place, and because it
+   compounds with the protection absence above: right now nothing
+   automated stands between a push and production.
+
+   **Deciding the protection question, so it is decided with what is
+   known:** `ci.yml` has no `paths` or `paths-ignore`, so requiring `ci`
+   would block nothing that would not otherwise run. The docs-only-PR
+   objection does not apply to today's workflow.
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111
