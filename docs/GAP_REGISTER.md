@@ -2807,3 +2807,73 @@ and "the break never happened", and those are opposite conclusions.
 nothing in the Part B record rests on the failed attempts. This entry
 exists because the failure mode is silent and would have produced a
 confident false claim, which is the class this register was created for.
+
+---
+
+### G-73. `main` has no branch protection, so CI green has never been a platform gate; a standing document says it is
+
+Filed 2026-08-26, from the investigation into why PR #195 produced no
+`ci` run yet reported `mergeable_state: "clean"`.
+
+**The reading, from primary sources.** Two independent endpoints agree
+that nothing gates `main`:
+
+- `GET /repos/lettersrachel/WellKept/branches/main` returns
+  `"protected": false`, with `required_status_checks` reading
+  `enforcement_level: "off"`, `contexts: []`, `checks: []`.
+- `GET /repos/lettersrachel/WellKept/rules/branches/main`, the modern
+  rulesets mechanism that can enforce checks while the legacy field
+  still reads false, returns an EMPTY LIST. Zero rules apply.
+
+The authoritative `/branches/main/protection` endpoint returns 403 to
+this session's token, so the two readings above are what is available
+here. They agree, and one of them (rulesets) is not subject to the
+legacy field's known blind spot.
+
+**What that falsifies.** `docs/WORK_QUEUE.md`, "Not software" item 0,
+reads: "Branch protection: DONE 2026-07-28 (founder; gates and airplane
+both required on main). The #60 hole is closed: a PR that never
+triggers CI can no longer merge." As of this reading that is false in
+both halves. `ci` is not a required check, and a PR that never triggers
+CI merges exactly as easily as one that passes it. This is the class
+CLAUDE.md's own opening paragraph exists for: a factual claim in a
+standing document that loads as premise into every session and that
+nothing re-reads critically.
+
+**What it explains.** `mergeable_state: "clean"` on #195 means nothing
+is blocking the merge, not that checks passed. With `ci` unreported and
+unrequired there is nothing to block, so `clean` is the correct value
+and it carries no information about CI at all. Every merge in this
+repository to date has been gated by a person reading run results, not
+by the platform. Nine PRs merged on 26 August were each read green
+before merging, so the convention held; it was a convention.
+
+**What it does NOT explain, and what stays open.** Protection being
+absent says nothing about why `ci` stopped producing runs. The last
+`ci` run of any kind, repo-wide, is `577666d` on main at 13:03 UTC on
+26 August, and two branch pushes plus a PR open since have created
+none. Adjacent facts, recorded without a causal claim joining them: the
+repository is PUBLIC (`"visibility": "public"`), its `updated_at` is
+2026-08-26T13:08:57Z (five minutes after the last run), the `ci`
+workflow reports `state: "active"`, `ci.yml` is byte-identical between
+`577666d` and the current branch head, it is valid YAML, and its `on:`
+block carries no `paths` or `paths-ignore` filter. Something in the
+repository's settings changed at 13:08 and CI has not run since. That
+correlation is not a diagnosis and is deliberately not written as one.
+
+**Not fixed here, and the reason is that two of the three questions are
+not engineering questions.** Whether `main` should be protected is a
+founder decision about friction on her own merges. Whether the repo
+should be public is a founder decision that Q's clean-history finding
+informs but does not make. Only the third, restoring the required
+checks once the answer is known, is a settings change, and it must be
+designed together with the `on:` block: a required check that never
+fires on a docs-only PR blocks that PR permanently. Today `ci.yml` has
+no path filter, so requiring `ci` is safe on that axis; adding a filter
+later without revisiting the requirement would reintroduce the problem
+in the opposite direction.
+
+**The WORK_QUEUE claim is corrected in the same change as this entry**,
+per the make-it-true-or-fix-the-file rule. It is corrected rather than
+deleted, because the fact that it was believed for a month is the part
+worth keeping.

@@ -1791,13 +1791,34 @@ and not lost, not proposing a build order.
 
 ## Not software
 
-0. **Branch protection: DONE 2026-07-28** (founder; gates and airplane
-   both required on main). The #60 hole is closed: a PR that never
-   triggers CI can no longer merge. Remaining from the same chore: check
-   whether the dormant well-kept-web Vercel project carries environment
-   variables, specifically a production DATABASE_URL; it auto-builds
-   every pushed branch, and the answer decides G-35 (and, if
-   uncomfortable, opens the security review).
+0. **Branch protection: the 2026-07-28 DONE is FALSE as of 2026-08-26,
+   and is corrected here rather than deleted (G-73).** This line read
+   "DONE 2026-07-28 (founder; gates and airplane both required on
+   main). The #60 hole is closed: a PR that never triggers CI can no
+   longer merge." Read directly on 26 August, `main` carries NO
+   protection of any kind: the branch endpoint returns
+   `"protected": false` with `enforcement_level: "off"` and empty
+   contexts, and the rulesets endpoint returns an empty list, so the
+   modern mechanism is not quietly holding it either. `ci` is not a
+   required check. Every merge to date has been gated by a person
+   reading run results, which is a convention, not a control, and it is
+   why PR #195 reports `mergeable_state: "clean"` with no `ci` run at
+   all. **Whether to protect `main` is a founder decision** about
+   friction on her own merges, so this is reopened rather than
+   re-closed; the engineering note is only that the requirement and
+   `ci.yml`'s `on:` block have to be designed together, since a required
+   check that never fires on a docs-only PR would block it forever
+   (today there is no path filter, so requiring `ci` is safe on that
+   axis). Kept as a correction because a month of believing it is the
+   part worth keeping. Remaining from the same chore, now ESCALATED by
+   the same reading: the well-kept-web Vercel project is not dormant,
+   it rebuilt this branch twice on 26 August and its configuration
+   changed between two of those builds (a `rootDirectory` appeared).
+   Reading its environment variables for a production DATABASE_URL,
+   WK_KMS_KEY or AUTH_SECRET is founder-side, since no Vercel
+   credential exists in the repo or the build container; the answer
+   decides G-35, and a yes makes it an incident with a written timeline
+   rather than a register line.
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111

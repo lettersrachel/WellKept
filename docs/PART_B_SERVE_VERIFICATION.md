@@ -78,6 +78,19 @@ So every write step below expects a green **Recorded:** line. A write
 that lands silently on this build is the G-68 class recurring and gets
 a register entry.
 
+**Caveat on the exact strings, recorded so a future reader does not
+assume more than is true.** The banner strings asserted below are
+UNGUARDED copy today. `RecordedBanner.tsx` sits outside every root the
+copy guard scans, and the `recorded(...)` message strings live in
+`apps/web/src/lib/actions.ts`, which no guard reads at all. So an
+assertion here that the banner reads exactly "Recorded: preference
+recorded" rests on a string a future edit can change with CI green.
+That is a real exposure, not a reason to soften the assertion: if a
+string has drifted, this run should catch it and the drift is the
+finding. The copy census (the render rule and the action-message rule)
+is the fix, and until it lands these assertions are held by this
+document rather than by the build.
+
 **2. `situation` has no `work_item_id`.** v1's B2 query asked for one.
 The column does not exist (see `0056_situation.sql`); asking for it
 fails the query rather than returning null.
