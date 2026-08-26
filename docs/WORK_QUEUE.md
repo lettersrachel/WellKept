@@ -481,11 +481,43 @@ ndaApproved claim (founder-confirmed 25 Aug). The 6 August sitting's
 two unfiled defects are RESOLVED: one was G-61, filed 24 Aug and
 already fixed in the live build; the other (em dashes in
 erase-household.mjs, wider than reported: about fifteen) is swept the
-same evening. Still open founder-side: the fresh section 4 sitting
-(checks 8, 10, 11, 13b, 14 have never run against any live build;
-incident 51a380e1 at check 13), the consent recording on the HG
-drill-in, and Lauren's first sign-in. HG will correctly flag on the
-{"gapDays":10} reconciliation knob if no visit lands within ten days.
+same evening. Still open founder-side AS OF THAT RUN, and every item of it has
+since closed (kept as written because the paragraph is the tenth run's
+record, not a live list; corrected here because it was read as one on
+26 August): the fresh section 4 sitting (checks 8, 10, 11, 13b, 14 had
+never run against any live build at that moment; incident 51a380e1 at
+check 13), the consent recording on the HG drill-in, and Lauren's
+first sign-in. The sitting RAN COMPLETE the same afternoon and all
+five earned live-build passes; see the frozen record. HG will
+correctly flag on the {"gapDays":10} reconciliation knob if no visit
+lands within ten days.
+
+**Production serves `747a98c` (2026-08-26 morning, the TWELFTH clean
+run; the eleventh carried `75bc6a4` earlier the same morning):**
+migrations agree three ways at 58 (0056 `situation` and 0057
+`preference_rule` applied on the eleventh run, moving 56 to 58), build
+id verified three times and confirmed independently at
+`/api/build-id`, `/api/health` reading ok with db up, mechanical
+checks 1/4a/4b/12/15 PASS. **G-63 earned the proof it could not have
+on the day it was fixed:** the preflight met a REAL two-migration gap
+and reported `database 56, disk 58` with nothing applied, which is the
+exact invocation that put the 0037-0055 batch into production ahead of
+its build; every earlier proof ran with database and disk in
+agreement, where applying and not applying are observationally
+identical. The eleventh run's first refusal was the dirty-tree guard
+catching an untracked floors export, correctly, since the deploy ships
+the tree; the export's default name is now gitignored, bare rather
+than path-pinned, with the filled-in review deliberately NOT covered.
+The two deploys carry into production: G-68 (every action confirms;
+the sixteenth guard), G-69 (the revocation audit row names its
+subject), SITUATIONS (0056), PreferenceRule (0057), and the day's
+docs corrections. **Section 4 standing after this deploy, stated
+precisely because it was misread once:** every check has run against a
+live build, but those passes describe `50ecd0f`, not this build. Run,
+and passing on the previous build, is not the same claim as never run;
+it is also not the same claim as passing here. The next sitting
+re-runs against `747a98c`, and checks 7 (fresh log) and 9
+(suppression) carry their honest partials into it.
 
 **And the G-62 candidate guard is BUILT (the fifteenth guard,
 legal-census.test.ts):** the same-PR legal rule's detection is now
