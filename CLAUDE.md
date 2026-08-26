@@ -188,6 +188,17 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   production, is the strongest form of the proof.** The KEK validation threw
   on a real malformed key with zero writes the same night it shipped; that
   did more than its round-trip test.
+- **Confirm a deliberate break LANDED before reading the result.** A
+  mutation that never applied and an assertion that cannot fail produce
+  the same green run, and they are opposite conclusions. Print the
+  changed line or assert the new text is present as its own step; a
+  patch tool reporting success is not evidence, the file's content is.
+  Two proofs in one session (2026-08-26) reported a pass on unmutated
+  code: one anchor matched two actions and the guarded replacement
+  refused, one path broke on a leftover `cd`. Qualify every anchor so it
+  matches once and refuses when ambiguous, and use absolute paths in
+  proof scripts, because a working directory is state and state that
+  survives between commands is state that will eventually be wrong.
 - **A recovery path is only real if it can be reached from the state it
   exists to recover from.** Backup codes were intact and unreachable,
   because the code opened the TOTP secret before falling back to them

@@ -4,7 +4,13 @@ status: living
 
 # Part B: serve verification for 0056 (situation) and 0057 (preference_rule)
 
-Version 1.3, 26 August 2026. Run against PRODUCTION with a browser.
+Version 4, 26 August 2026. Run against PRODUCTION with a browser.
+
+**One lineage from here.** The repo file and the chat drafts are now the
+same document at the same number: this is v4, drafted from what was
+v1.3 in the repo, folding the founder's v4 instruction list. Earlier
+copies (v1, v2, v3 in chat; v1.1, v1.2, v1.3 here) are superseded. A v5
+is drafted FROM THIS FILE.
 
 Lineage, because two versions were written in parallel and one of them
 is wrong on a load-bearing fact. v1 was uploaded and corrected to v1.1
@@ -71,7 +77,26 @@ Smoke Test Fixture; production carries the Training Household too). So
 v3's P4 either fails outright or, worse, invites the tester to pick the
 row that looks right, which is precisely the mistake P4 exists to
 prevent. Resolving by NAME, as v1.1 and this version do, returns
-exactly one row. Verified by query, not by reading the seed.
+exactly one row today. Verified by query, not by reading the seed.
+
+**And the predicate now matches the fixture's own, by construction
+rather than by coincidence.** `ensure-smoke-fixture.mjs:33` finds its
+household with `WHERE name = $1` against the constant
+`FIXTURE_NAME = "Smoke Test Fixture"` (line 25). This script uses the
+same predicate, so the script and the thing it tests agree by
+definition instead of by two people writing the same string twice.
+
+**The finding that came out of checking that, filed rather than worked
+around (G-71): `household.name` carries no unique constraint.** The
+table's only index is its primary key on `id`, confirmed against both
+the live schema and `tables.ts`. So the fixture script's own identifying
+predicate is non-unique BY SCHEMA: nothing stops a second household
+named "Smoke Test Fixture" existing, and if one ever did,
+`ensure-smoke-fixture.mjs` would silently take whichever row came back
+first. That is a real gap in the seeding tool, not a flaw in this
+script. What this script does about it is assert the count: P4 requires
+exactly one row and STOPS otherwise, so the ambiguity surfaces here
+even though it cannot be prevented here.
 
 **Adopted FROM v2, which reached these independently and improved on
 v1.1:** the identity check done by QUERY rather than by reading the
@@ -98,17 +123,18 @@ the question it raises is who else can write to that table.
 v3 said the production run should not be scheduled until these were
 done. They are done.
 
-### D1. Sensitivity of the rehearsal's assertions
+### D1. Sensitivity of the rehearsal's assertions: ALL FOUR DONE
 
 v3 was right that one assertion proven red is below the bar set by
-`success-visibility.test.ts` this morning. All four were attempted.
+`success-visibility.test.ts` this morning. All four now have the same
+treatment.
 
-| # | Mutation | Result |
-|---|---|---|
-| D1a | partial retirement group | UNREPRESENTABLE at the database, see below |
-| D1b | provenance other than `explicit` on create | RED, as required |
-| D1c | non-NULL `confidence` on create | UNREPRESENTABLE at the database |
-| D1d | mutate the situation label in resolve | RED, as required |
+| # | Mutation | Direct result | With the CHECK dropped |
+|---|---|---|---|
+| D1a | partial retirement group | UNREPRESENTABLE | RED, as required |
+| D1b | provenance other than `explicit` | RED, as required | n/a |
+| D1c | non-NULL `confidence` on create | UNREPRESENTABLE | RED, as required |
+| D1d | mutate the situation label in resolve | RED, as required | n/a |
 
 **D1b and D1d turned red on the assertion that exists for them**, and
 green again on revert. D1d is worth recording twice over: the first
