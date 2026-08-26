@@ -84,6 +84,11 @@ test("Part B rehearsal: A1-A4 and B1-B4 and C, against a local build", async ({ 
   await prefCard.getByLabel("The preference, in words").fill("abc");
   await prefCard.getByRole("button", { name: "Record preference" }).click();
   await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 30_000 });
+  // G-68 put recorded() beside refuse(), so a refusal must render its OWN
+  // banner and NOT a success one. A refusal that renders "Recorded:" is a
+  // distinct defect from a silent one, and until this line neither was
+  // detectable here.
+  await expect(page.getByText("Recorded:")).toHaveCount(0);
   ({ rows: [c] } = await pool.query(
     "SELECT count(*)::int n FROM preference_rule WHERE household_id=$1", [fixtureId]));
   expect(c.n, "a refused write must create no row").toBe(0);
