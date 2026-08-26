@@ -4,9 +4,16 @@ status: living
 
 # Part B: serve verification for 0056 (situation) and 0057 (preference_rule)
 
-Version 1.1, 26 August 2026. Run against PRODUCTION with a browser.
-Supersedes v1; v1's corrections are listed at the end so the changes are
-reviewable rather than silent.
+Version 1.2, 26 August 2026. Run against PRODUCTION with a browser.
+
+Lineage, because two versions were written in parallel and one of them
+is wrong on a load-bearing fact. v1 was uploaded and corrected to v1.1
+(this file, merged in PR #189). A v2 was then uploaded, written from v1
+rather than from v1.1: it reached several of the same improvements
+independently AND kept two of v1's errors. This v1.2 is v1.1 plus every
+genuine improvement v2 made. The corrections section below says which
+of v2's claims are wrong and how that was settled, so nobody
+reconciles it silently a third time.
 
 Purpose: prove the `situation` and `preference_rule` tables actually
 SERVE, not merely that their migrations applied. Health passing proves
@@ -40,6 +47,22 @@ Also corrected: v1 said the sign-in email and `/verify-request` address
 lines are not live. That part is RIGHT and stands. They landed in #187
 and #188, which production does not carry.
 
+**4. v2 repeats corrections 1 and 2 as written in v1, and both are
+still wrong.** v2 carries the same "No RecordedBanner ... silence is
+expected here and is not a failure" paragraph, and the same
+`<work_item_id_col?>` on `situation`. If a v3 is drafted, draft it from
+this file. The evidence for correction 1 is not a judgment call: the
+git ancestry command above, plus the banner observed rendering in
+production on 26 August.
+
+**Adopted FROM v2, which reached these independently and improved on
+v1.1:** the identity check done by QUERY rather than by reading the
+masthead; the explicit assertion that the resolved fixture id is not
+Field Test Home, and that it is copied from query output rather than
+retyped; the optional short-input negative check, which proves the
+refuse path serves as well as the write path; and A3's assertion that
+provenance and confidence are UNCHANGED by retirement.
+
 ---
 
 ## Scope and standing constraints
@@ -64,8 +87,21 @@ board shows one household and the fixture is not it. If you are still in
 the incognito window from the Field Test Home work, that window is the
 wrong identity for this script.
 
-Confirm before starting: the masthead reads your primary address, and
-the fleet board lists the fixture.
+**Confirm it by query, not by looking at the screen** (v2's improvement,
+and the standing rule):
+
+```sql
+SELECT a.role, a.household_id
+FROM household_role_assignment a
+JOIN auth_user u ON u.id = a.user_id
+WHERE u.email = :ACTING_EMAIL
+  AND a.household_id = :FIXTURE_ID;
+```
+
+Expected: one row, `role` in (`corporate_admin`, `corporate_ops`). Zero
+rows is a STOP, and the correct response is to fix the window, not to
+file a finding. A card that is absent entirely, at A1 or B1, is an
+ACCESS outcome and proves nothing about 0056 or 0057.
 
 ## Pre-flight
 
@@ -79,14 +115,23 @@ Do not start until all four hold. If any fails, stop and report.
 | P4 | Fixture household id | see below, confirmed not assumed |
 
 The fixture id recorded at the 25 August sitting is
-`8a4b9786-9698-4200-95b9-91abec7a40ef`. **Confirm it rather than trusting
-this line**, since a wrong id here sends test writes somewhere real:
+`8a4b9786-9698-4200-95b9-91abec7a40ef`. **Resolve it rather than trusting
+this line**, since a wrong id here sends test writes into a real
+household. The seed script names the household "Smoke Test Fixture"
+(`ensure-smoke-fixture.mjs:25`):
 
 ```sql
-SELECT id, name, is_fixture FROM household WHERE is_fixture = true;
+SELECT id, name, is_fixture FROM household WHERE name = 'Smoke Test Fixture';
 ```
 
-Record the confirmed value as `:FIXTURE_ID`: ____________________
+Assert all three:
+
+- exactly one row returned, and `is_fixture` is true
+- the returned id is **not** `d05ab5a2-7d9c-4cff-919a-250adafa0355`
+- the returned id is used verbatim as `:FIXTURE_ID` for the rest of the
+  run, copied from the query output rather than retyped
+
+Record the resolved value as `:FIXTURE_ID`: ____________________
 
 Shape read, once per table, so the tester knows what they are looking at:
 
@@ -107,8 +152,14 @@ refusal banner rather than failing silently:
 | situation label | 4 characters | `bad-input` |
 | resolution note | 4 characters | `gate-unmet` |
 
-The strings below are all comfortably longer. If you see a red banner,
-read it before assuming a fault.
+The strings below are all comfortably longer, so a refusal on the
+strings AS WRITTEN is a real finding.
+
+**Optional negative check, one per card, cheap and worth doing** (v2's
+addition): submit a three-character value, confirm the app refuses with
+a visible banner, confirm NO POST returning 303 occurred, and confirm no
+row was created. That proves the refuse path serves as well as the write
+path, which no other step here covers.
 
 ## Network instrument
 
@@ -214,7 +265,8 @@ Assert all five:
   variation
 - `status` is `retired` and `retired_reason`, `retired_at`, `retired_by`
   are ALL populated together
-- `household_id` unchanged
+- `household_id` unchanged, and **`provenance` and `confidence`
+  unchanged** by the retirement
 - `retired_reason` matches the recorded reason byte for byte
 - **`rule` is byte-identical to the string recorded in A2**
 
