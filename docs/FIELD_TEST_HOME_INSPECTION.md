@@ -41,12 +41,12 @@ order, and note anything surprising:
    if a drain ever completed; confirm what actually stands).
 4. **Incidents, photos, vault items**: expected none or test-only;
    a vault_item row would raise the stakes of the disposition.
-5. **Role assignments**: TWO are correct and expected, and two is
-   what stands: the granted corporate identity plus the founder's own
-   pre-existing `house_manager` (the reason an alter identity was
-   needed at all, step 4; the attempted revoke did not write, step 5).
-   A third identity, or any identity that is not the founder's, is a
-   finding.
+5. **Role assignments**: ONE is correct and expected, and one is what
+   stands as of 25 Aug 23:28: the granted corporate identity alone. The
+   founder's own pre-existing `house_manager` (the reason an alter
+   identity was needed at all, step 4) was revoked and verified, step 5.
+   A second field-role identity, or any identity that is not the
+   founder's, is a finding.
 6. **The audit trail**: what the household's history says about who
    touched it and when it went quiet.
 
@@ -113,17 +113,32 @@ so the disposition decision has them:
   (Filing is corporate only, so the primary account sees the capture
   and no control, which is not the failure mode here.)
 
-## Step 5: the field role, NOT revoked (correction, 25 August)
+## Step 5: the field role, revoked on the SECOND attempt (25 August)
 
-**This section previously recorded the revoke as done. It was not, and
-the correction is kept in place rather than rewritten away.** The
-founder reported the action clean, and this document, the weekly note,
-and G-65's interim line all recorded it. A verification query the same
-evening found the truth: `role_revoked` rows on this household number
-ZERO, and `lettersrachel@gmail.com` still holds `house_manager`
-(assignment aa4b7053). The screen said one thing and the trail said
-another; the trail wins, which is the whole reason the standing rule
-reads query the database, never trust the screen.
+**The first attempt did not write, and that correction is kept in place
+rather than rewritten away, because it is the more useful half of the
+story.** The founder reported the action clean, and this document, the
+weekly note, and G-65's interim line all recorded it as done. A
+verification query the same evening found the truth: `role_revoked`
+rows on this household numbered ZERO, and `lettersrachel@gmail.com`
+still held `house_manager` (assignment aa4b7053). The screen said one
+thing and the trail said another; the trail wins, which is the whole
+reason the standing rule reads query the database, never trust the
+screen.
+
+**The retry wrote, verified 25 Aug 23:28:59.** Field-role assignments
+on this household: zero. Assignment aa4b7053 is gone and a
+`role_revoked` audit row stands behind it, actor corporate_admin. The
+household is corporate only now, which keeps it passing check 15 on the
+ftc-admin assignment and takes it off the founder's field surface, so
+/visit resolves elsewhere for her. G-65's resolution RULE is untouched
+and still open.
+
+That the same click worked minutes later with no code change is
+evidence and not a closure: it rules out a systematic server fault in
+`revokeRole` and leaves the transient client-side causes standing. See
+G-67, which stays open, and whose other half (the capture dismissal)
+has still not been re-attempted.
 
 Not a permissions problem: the Revoke control renders whenever the
 viewer is corporate_admin on the household and the row is not their
@@ -131,10 +146,20 @@ own, both true for the ftc-admin identity here, and every refusal path
 in `revokeRole` redirects to a VISIBLE banner. A clean-looking click
 that wrote nothing is the documented stale-server-action hazard
 (DEPLOY.md's own sharp edge) or a click that never landed on that
-control. Undiagnosed, deliberately: the cheap decisive test is one
-retry from a hard-refreshed tab with the audit row checked
-immediately after, and that is the next action rather than a theory.
+control. The cheap retry-with-verification RAN and wrote (above), which
+narrows the cause without settling it; the decisive test, whether a
+POST leaves the browser at all, is still owed and now harder to gather,
+since the state that produced the silence is gone.
 
-So Field Test Home remains on the founder's field surface, she holds
-both roles there across two identities, and G-65 is untouched in every
-respect.
+So Field Test Home is a corporate-only household: one assignment, no
+house manager, no backup. It is off the founder's field surface, and
+G-65's resolution rule is untouched and still open.
+
+**Rider from the same verification, now G-69, filed and fixed:** that
+first `role_revoked` row carried `assignmentId` and nothing else, and
+the assignment it names is deleted by the same action, so the trail
+could not say whose role ended or which one. `revokeRole` now reads its
+subject before the delete and records the role, the NDA standing, and
+an ADR-006 subject token, matching what `role_assigned` has carried
+since G-59. Whether a revocation should also require a REASON stays a
+founder decision.

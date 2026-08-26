@@ -402,14 +402,32 @@ export async function revokeRole(formData: FormData) {
   if (!assignmentId || !householdId) refuse(householdId || null, "bad-input");
   const actor = await getPrincipal(householdId);
   if (actor?.role !== "corporate_admin") refuse(householdId, "forbidden");
-  const { householdRoleAssignment } = await import("@wellkept/schema");
+  const { householdRoleAssignment, authUser } = await import("@wellkept/schema");
   const [row] = await db.select().from(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
   if (!row || row.householdId !== householdId) refuse(householdId, "missing");
   if (row.userId === actor.userId) refuse(householdId, "self-target"); // never revoke your own admin here (lockout guard)
+  // G-69: read the subject BEFORE the delete, because after it there is
+  // nothing to read. The old detail carried assignmentId alone, which
+  // dereferences to nothing the moment the row is gone: the trail said
+  // "some assignment ended" without saying whose, which role, or under
+  // what NDA standing. This is the weaker half of a pair whose other half
+  // (role_assigned) has carried role, ndaApproved and an ADR-006 subject
+  // token since G-59. It now matches.
+  //
+  // ADR-006 holds on this side too: the token resolves to the address
+  // while the subject's mapping exists and stops resolving the day it is
+  // erased. The email itself never enters the audit row.
+  const [subject] = await db.select().from(authUser).where(eq(authUser.id, row.userId));
+  const subjectToken = subject?.email
+    ? await mintAuditSubjectToken(householdId, "email", subject.email)
+    : null;
   await db.delete(householdRoleAssignment).where(eq(householdRoleAssignment.id, assignmentId));
   await db.insert(auditEvent).values({
     id: randomUUID(), householdId, actorUser: actor.userId, actorRole: actor.role,
-    kind: "role_revoked", detail: { assignmentId },
+    kind: "role_revoked",
+    // subjectToken null means the user row was already gone, which is a
+    // fact worth recording rather than a blank to fill in.
+    detail: { assignmentId, subjectToken, role: row.role, ndaApproved: row.ndaApproved },
   });
   revalidatePath(`/oversight/${householdId}`);
   recorded(householdId, "role revoked");

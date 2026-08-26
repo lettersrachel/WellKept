@@ -1060,8 +1060,21 @@ test("G-68: assign and revoke SAY what they did, and the trail agrees", async ({
   await expect(page.getByText("role revoked")).toBeVisible({ timeout: 30_000 });
   expect((await assignments()).length).toBe(0);
   const { rows: revoked } = await pool.query(
-    "SELECT id FROM audit_event WHERE household_id=$1 AND kind='role_revoked'", [synId]);
+    "SELECT id, detail FROM audit_event WHERE household_id=$1 AND kind='role_revoked'", [synId]);
   expect(revoked.length).toBe(1);
+
+  // G-69, against a real database rather than a mock: the ending must say
+  // whose it was. The production row that produced this finding carried
+  // assignmentId alone, and the assignment it named was deleted by the
+  // same action, so the trail could not answer "whose role ended".
+  const detail = revoked[0].detail;
+  expect(detail.role).toBe("backup_hm");
+  expect(detail.ndaApproved).toBe(false);
+  expect(JSON.stringify(detail)).not.toContain(email); // ADR-006 on the revoke side
+  const { rows: [token] } = await pool.query(
+    "SELECT kind, value FROM audit_subject_token WHERE id=$1", [detail.subjectToken]);
+  expect(token.kind).toBe("email");
+  expect(token.value).toBe(email); // the mapping row is where the address lives
 
   // The refusal half of this page is not re-proven here on purpose: the
   // assign form's email input is type=email + required, so a bad address
