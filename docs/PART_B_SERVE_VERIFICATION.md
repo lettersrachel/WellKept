@@ -4,7 +4,24 @@ status: living
 
 # Part B: serve verification for 0056 (situation) and 0057 (preference_rule)
 
-Version 4, 26 August 2026. Run against PRODUCTION with a browser.
+Version 5, 26 August 2026. Run against PRODUCTION with a browser,
+AFTER the deploy to `6ebd728`.
+
+**Build choice: RESOLVED, run after the deploy.** v3 raised it as a
+founder decision between testing the old bundle against the new schema
+and testing the current product. Settled by the deploy itself: this run
+happens on `6ebd728`, so it answers the question that stays true for
+more than a day and picks up the banner assertions in the same pass
+instead of needing a follow-up run.
+
+**Why v5 exists, and it is not a tidy-up.** v4 was written for a run
+against `747a98c`. The deploy invalidates its central exclusion: G-68's
+confirmation banners are live, so a write that lands SAYS so, and v4
+told the tester to log their absence as expected. A script that
+instructs an operator to record the product's most important new
+signal as "expected to be missing" would suppress the exact finding it
+exists to catch. Every banner assertion below is a FAIL on absence, not
+an observation.
 
 **One lineage from here.** The repo file and the chat drafts are now the
 same document at the same number: this is v4, drafted from what was
@@ -163,6 +180,28 @@ rehearsal caught it, and the constraint was restored and verified
 present afterwards. Read that as: if the CHECK is ever dropped in a
 migration, the rehearsal notices.
 
+### D1e (v5). Are the four actions in the success-visibility guard's scope?
+
+Asked before v5's banner assertions shipped, because if any of the four
+sat in an allowlist or outside the guard, the assertion would fail for a
+reason having nothing to do with 0056 or 0057 and would read as a serve
+failure.
+
+**All four are in scope, and the allowlist is EMPTY.** Each writes
+(so the guard's `writes` detector includes it) and each ends in a
+confirmation:
+
+| Action | Confirmation string |
+|---|---|
+| `recordPreferenceRule` | `preference recorded` |
+| `retirePreferenceRule` | `preference retired` |
+| `createSituation` | `situation opened` |
+| `resolveSituation` | `situation resolved` |
+
+Those are the exact strings the write steps assert, read out of
+`actions.ts` rather than transcribed from memory. Nothing here is
+excused, so a missing banner on any of the four is a real finding.
+
 ### D2. Do the cards ship in the build under test?
 
 **YES.** The Situations card shipped in `5431ff0` (SITUATIONS bundling,
@@ -232,7 +271,7 @@ Do not start until all four hold. If any fails, stop and report.
 
 | # | Check | Expected |
 |---|-------|----------|
-| P1 | Deployed commit | `747a98c` |
+| P1 | Deployed commit | `6ebd728` or later |
 | P2 | Migration count, three ways | 58 / 58 / 58 |
 | P3 | Health endpoint | `{"ok":true,"db":"up"}` |
 | P4 | Fixture household id | see below, confirmed not assumed |
@@ -278,11 +317,38 @@ refusal banner rather than failing silently:
 The strings below are all comfortably longer, so a refusal on the
 strings AS WRITTEN is a real finding.
 
-**Optional negative check, one per card, cheap and worth doing** (v2's
-addition): submit a three-character value, confirm the app refuses with
-a visible banner, confirm NO POST returning 303 occurred, and confirm no
-row was created. That proves the refuse path serves as well as the write
-path, which no other step here covers.
+**The negative check, one per card. No longer optional on this build.**
+Submit a three-character value, then check all four:
+
+1. **The refusal banner renders**: "Action refused." with its reason.
+2. **NO success banner renders.** G-68 put `recorded()` beside
+   `refuse()`, so the two are now separate outcomes on the same page, and
+   a refusal that renders "Recorded:" is a DISTINCT defect from a silent
+   one. Before v5 neither was detectable here. Check the page carries no
+   green "Recorded:" line at all.
+3. **No POST returning 303.** A 303 is the confirmation redirect's
+   status; a refusal must not produce one.
+4. **No row was created.** Query it; a refusal that rendered and still
+   wrote satisfies a weaker script.
+
+Both halves of 1 and 2 are machine-checked in the local rehearsal
+(`tooling/e2e/partb-rehearsal.spec.ts`) and each was proven red on its
+own defect before v5 shipped: a refusal converted into a success turns
+the first red, and a redirect carrying BOTH parameters turns the second
+red with `Expected: 0, Received: 1`. So the assertions this section asks
+you to make by eye are the same ones CI now makes on every push.
+
+**Record the refusal SHAPE** (v3's addition, and the one thing a browser
+can answer that a query cannot):
+
+- **No POST row at all:** the client blocked it. Server-side enforcement
+  of the minimum is UNPROVEN, and a client-only minimum is bypassable.
+  Not a Part B failure. Record it and open a follow-up for a server-side
+  test.
+- **POST with a non-303, or a 303 back to the form carrying `?refused=`:**
+  the server refused. This is the outcome you want.
+
+Refusal shape observed, A-neg: CLIENT / SERVER   B-neg: CLIENT / SERVER
 
 ## Network instrument
 
@@ -330,8 +396,11 @@ RULE TEXT: PARTB-0057-<timestamp>-do-not-move-the-blue-bin
 2. Enter the rule in "the preference, in words" and submit. Leave
    "Review by" empty for this run.
 3. Network: one POST, `303`.
-4. Screen: **green "Recorded: preference recorded."** The empty state is
-   gone and the rule shows with `explicit` beside it.
+4. Screen, and this is now a FAIL on absence: the green banner reads
+   **"Recorded: preference recorded"**. The empty state is gone and the
+   rule shows with `explicit` beside it. A write that lands without its
+   banner on this build is the G-68 class recurring and gets a register
+   entry of its own.
 5. Database:
 
 ```sql
@@ -370,9 +439,10 @@ RETIRE REASON: PARTB-0057-<timestamp>-test-row-retired-after-serve-check
 1. Network panel filtered.
 2. Retire `:RULE_ID` through the card, entering the reason above.
 3. Network: one POST, `303`.
-4. Screen: **green "Recorded: preference retired."** Record what the card
-   does with the row: it should render in place with "retired: <reason>"
-   beneath the original text. Record what it actually does; do not assume.
+4. Screen, FAIL on absence: the green banner reads **"Recorded:
+   preference retired"**. Record what the card does with the row: it
+   should render in place with "retired: <reason>" beneath the original
+   text. Record what it actually does; do not assume.
 5. Database:
 
 ```sql
@@ -440,8 +510,8 @@ SITUATION TEXT: PARTB-0056-<timestamp>-front-gate-latch
 1. Network panel filtered.
 2. Enter it in "the situation, in words" and click Open situation.
 3. Network: one POST, `303`.
-4. Screen: **green "Recorded: situation opened."** The situation appears
-   reading `0 bundled · open`.
+4. Screen, FAIL on absence: the green banner reads **"Recorded:
+   situation opened"**. The situation appears reading `0 bundled · open`.
 5. Database:
 
 ```sql
@@ -475,8 +545,9 @@ RESOLVE NOTE: PARTB-0056-<timestamp>-test-row-resolved-after-serve-check
 1. Network panel filtered.
 2. Resolve `:SITUATION_ID` with the note above.
 3. Network: one POST, `303`.
-4. Screen: **green "Recorded: situation resolved."** Record what the card
-   does with the row; do not assume.
+4. Screen, FAIL on absence: the green banner reads **"Recorded:
+   situation resolved"**. Record what the card does with the row; do not
+   assume.
 5. Database:
 
 ```sql
@@ -535,15 +606,44 @@ assertions in A3 and B3 are the substance of this script.
 Leave the fixture rows in place. They are labeled and dated and are a
 useful baseline for anything that follows.
 
-**Not tested here, and deliberately:** the sign-in email's recipient line
-and the `/verify-request` address line (both landed after this build);
-the `role_revoked` audit detail (G-69, verified separately on 25 August);
-erasure treatment for either table; and automatic situation grouping,
-which is unbuilt by decision.
+**The success-visibility checks are no longer deferred.** v1.2 through v4
+each said this script would gain them "once production carries #186 and
+later". Production now does, and this is that version: the four write
+steps FAIL on a missing banner and the two negative checks FAIL on a
+spurious one. There is no later version waiting to add them.
+
+**Out of scope here, and LIVE rather than absent.** These render on this
+build; they are simply not what Part B is asking about, and testing them
+here would blur a serve question with a copy one:
+
+- the sign-in email's recipient line and the `/verify-request` address
+  line (G-70, shipped in #187 and #188). Both are worth a glance on the
+  first sign-in after the deploy, since neither has ever rendered in
+  production, but that glance is not a Part B step and gets no PASS/FAIL
+  box here.
+- the `role_revoked` audit detail (G-69, verified separately 25 August).
+- erasure treatment for either table.
+- automatic situation grouping, which is unbuilt by decision.
+
+**Two outcomes generate repo work rather than a line on this sheet.**
+Named here so they are not written into a box and forgotten:
+
+- **A CLIENT reading on either negative check** opens a server-side
+  minimum-enforcement test. A client-only minimum is bypassable, and a
+  browser cannot prove the server holds the line.
+- **A provenance other than `explicit`, or a non-NULL confidence.** That
+  is a STOP and its own register entry, because the question it raises
+  is who else can write to that table, which is bigger than whether the
+  card serves.
 
 ### Result
 
 - Date and time of run:
-- Commit confirmed serving at start:
+- Commit confirmed serving at start (expect `6ebd728` or later):
+- Acting identity and its role on the fixture:
+- Resolved `:FIXTURE_ID`:
+- All four write banners rendered: YES / NO
+- A-neg refusal shape: CLIENT / SERVER    B-neg: CLIENT / SERVER
+- Any success banner on a refusal: YES / NO   (YES is a defect)
 - Overall: PASS / PARTIAL / FAIL
 - Findings requiring a register entry:
