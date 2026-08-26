@@ -61,6 +61,13 @@ function formatSigninCode(token: string): string {
   return `${t.slice(0, 4)}-${t.slice(4)}`;
 }
 
+/** Minimal HTML escape for the one user-supplied value in the email body. */
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!
+  ));
+}
+
 async function sendMagicLink({ identifier, url, token }: { identifier: string; url: string; token: string }) {
   const sent = getSentLinks();
   if (process.env.NODE_ENV !== "production" || !process.env.RESEND_API_KEY) {
@@ -82,6 +89,14 @@ async function sendMagicLink({ identifier, url, token }: { identifier: string; u
       to: [identifier],
       subject: "Your Well Kept sign-in link",
       html: `<p>Sign in to Well Kept:</p><p><a href="${url}">Open your household</a></p>`
+        // G-70: SAY WHICH ADDRESS. Two identities can share one inbox
+        // (plus-addressing, which the one-role index forces when one
+        // person covers two roles on a household), and these emails were
+        // otherwise byte-identical: same subject, same body, differing
+        // only in a to: header most clients hide. Naming the address is
+        // the last place this can be caught before a link is clicked.
+        // Copy is a proposal, one string.
+        + `<p>This link signs in <strong>${escapeHtml(identifier)}</strong>. If that is not the address you meant, ignore this email and ask for another.</p>`
         + `<p>Signing in on the installed phone app? Enter this code on the "Check your email" screen instead:</p>`
         + `<p style="font-size:22px;letter-spacing:3px;font-family:monospace"><b>${formatSigninCode(token)}</b></p>`
         + `<p>The link and code expire in 1 hour and work once. If you didn't request this, ignore this email.</p>`,

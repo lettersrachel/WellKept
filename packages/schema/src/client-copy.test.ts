@@ -55,6 +55,13 @@ const COPY_SOURCES = [
   "../../../services/worker/src/seed-rules.ts",
   "../../../services/worker/src/digest.ts",
   "../../../packages/mail/src/index.ts",
+  // 26 Aug 2026 (G-70's rider): the SIGN-IN email was never scanned, and
+  // it is the one message every user receives, client and staff alike.
+  // W-10's own reasoning names email copy as in scope and its closure
+  // claims six sources; this was a seventh, uncovered since the guard
+  // was written. The rule wider than its guard, again, in the highest
+  // traffic place it could have been.
+  "../../../apps/web/src/lib/auth/config.ts",
   "../../../apps/web/src/lib/push.ts",
   // 25 Aug 2026, from the section 4 sitting: the operator CLI scripts
   // print user-facing copy too (the erasure tool's REFUSED message is
