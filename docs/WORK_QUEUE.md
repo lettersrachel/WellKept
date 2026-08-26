@@ -519,6 +519,40 @@ it is also not the same claim as passing here. The next sitting
 re-runs against `747a98c`, and checks 7 (fresh log) and 9
 (suppression) carry their honest partials into it.
 
+**And three of those checks were re-flagged for the wrong reason (26
+August, corrected here rather than carried).** A local reading of the
+standing list moved checks 2, 6 and 14 forward on the strength of what
+they test, which produced three wrong causes. Verified against the
+tree instead:
+
+- **Check 2 (magic link and sign-in) is the ONE check this delta
+  touches.** G-70's two files, `apps/web/src/app/verify-request/page.tsx`
+  and `apps/web/src/lib/auth/config.ts`, are both in
+  `747a98c..577666d` (confirmed with `git diff --name-only`), and they
+  are the only application-behavior changes in it. Check 2 re-runs
+  against the new build because its subject actually changed.
+- **Checks 6 (consent card) and 14 (trigger rules) were changed by the
+  TWELFTH run, not this one.** `recordHouseholdConsent`,
+  `setTriggerRuleEnabled` and `createTriggerRule` were all on G-68's
+  silent twenty-seven and all three now confirm (read from
+  `apps/web/src/lib/actions.ts`). G-68 merged as `e3fe0f5`, an ancestor
+  of `747a98c`, so their new behavior has been live since that run.
+  They are owed a re-run, and the run that owes it is the one already
+  named above.
+- **Checks 8 (CEO previews) and 10 are read-only and neither delta
+  reaches them.** They keep their `50ecd0f` standing unchanged.
+
+**The general form, which is the part worth keeping:** a
+carried-forward result needs its BASELINE COMMIT checked, not its
+subject matter. "This check covers a thing we changed" is a claim
+about the code; "this check's last pass describes build X" is a claim
+about a date, and only the second one tells you whether the result
+still holds. Reading the subject matter alone is how the same list
+produced three wrong causes at once: it never asked which build each
+pass was recorded against. Every future re-flag names the build the
+prior pass describes and the delta that invalidates it, or it is not a
+re-flag.
+
 **And the 25 August sitting's last remainder closes, with G-67
 dispositioned and G-70 filed (26 August morning):** the test capture on
 Field Test Home is DISMISSED and verified by query (all four fields

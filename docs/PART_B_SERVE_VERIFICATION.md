@@ -5,29 +5,40 @@ status: living
 # Part B: serve verification for 0056 (situation) and 0057 (preference_rule)
 
 Version 5, 26 August 2026. Run against PRODUCTION with a browser,
-AFTER the deploy to `6ebd728`.
+on `577666d` or later.
 
-**Build choice: RESOLVED, run after the deploy.** v3 raised it as a
+**Build choice: RESOLVED, run on the current build.** v3 raised it as a
 founder decision between testing the old bundle against the new schema
-and testing the current product. Settled by the deploy itself: this run
-happens on `6ebd728`, so it answers the question that stays true for
-more than a day and picks up the banner assertions in the same pass
-instead of needing a follow-up run.
+and testing the current product. Settled: this run happens on
+`577666d`, so it answers the question that stays true for more than a
+day.
 
-**Why v5 exists, and it is not a tidy-up.** v4 was written for a run
-against `747a98c`. The deploy invalidates its central exclusion: G-68's
-confirmation banners are live, so a write that lands SAYS so, and v4
-told the tester to log their absence as expected. A script that
-instructs an operator to record the product's most important new
-signal as "expected to be missing" would suppress the exact finding it
-exists to catch. Every banner assertion below is a FAIL on absence, not
-an observation.
+**Premise correction carried into v5, because v5's own first draft got
+it wrong.** That draft said the banner assertions became valid because
+"the deploy" made G-68 live. They did not. G-68 merged as `e3fe0f5`
+and G-69 as `75bc6a4`, and BOTH are ancestors of `747a98c`, the
+twelfth run's build, verified with `git merge-base --is-ancestor`.
+The confirmation banners have been live in production since that run.
+So the banner assertions below were already correct for a `747a98c`
+run, and nothing about them is new here. What the thirteenth run's
+delta actually contains is narrow: nine merged PRs, of which the only
+application-behavior changes are G-70's two sign-in-path files
+(`verify-request/page.tsx`, `lib/auth/config.ts`), plus one CI config
+change and one guard-scope change. **None of it touches the surfaces
+this script exercises.** Running on `577666d` is therefore about
+testing the current product, not about unlocking an assertion.
 
-**One lineage from here.** The repo file and the chat drafts are now the
-same document at the same number: this is v4, drafted from what was
-v1.3 in the repo, folding the founder's v4 instruction list. Earlier
-copies (v1, v2, v3 in chat; v1.1, v1.2, v1.3 here) are superseded. A v5
-is drafted FROM THIS FILE.
+**The assertion itself stands, on its own footing.** Every banner
+assertion below is a FAIL on absence, not an observation. An earlier
+draft told the tester to log a missing confirmation as expected, which
+would have instructed an operator to record the product's most
+important new signal as "expected to be missing" and suppressed the
+exact finding it exists to catch.
+
+**One lineage from here.** The repo file and the chat drafts are now
+the same document at the same number: this is v5, drafted from what was
+v4 in the repo. Earlier copies (v1, v2, v3 in chat; v1.1, v1.2, v1.3,
+v4 here) are superseded. A v6 is drafted FROM THIS FILE.
 
 Lineage, because two versions were written in parallel and one of them
 is wrong on a load-bearing fact. v1 was uploaded and corrected to v1.1
@@ -271,7 +282,7 @@ Do not start until all four hold. If any fails, stop and report.
 
 | # | Check | Expected |
 |---|-------|----------|
-| P1 | Deployed commit | `6ebd728` or later |
+| P1 | Deployed commit | `577666d` or later |
 | P2 | Migration count, three ways | 58 / 58 / 58 |
 | P3 | Health endpoint | `{"ok":true,"db":"up"}` |
 | P4 | Fixture household id | see below, confirmed not assumed |
@@ -639,7 +650,7 @@ Named here so they are not written into a box and forgotten:
 ### Result
 
 - Date and time of run:
-- Commit confirmed serving at start (expect `6ebd728` or later):
+- Commit confirmed serving at start (expect `577666d` or later):
 - Acting identity and its role on the fixture:
 - Resolved `:FIXTURE_ID`:
 - All four write banners rendered: YES / NO
