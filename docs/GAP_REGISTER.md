@@ -2692,3 +2692,27 @@ proposal, one string.
   operator running two identities and hurts the far more common case of
   one. That is a trade, not a defect, and picking it is not an
   engineering default.
+
+**AMENDMENT, same day: the email body is fixed too, as a proposal.** The
+sign-in email now carries "This link signs in <address>. If that is not
+the address you meant, ignore this email and ask for another." One
+string, the AG precedent, and the founder changes it without touching
+logic. The address is HTML-escaped, since it is the one user-supplied
+value in that template. Two of the three places now name the identity;
+only the autofill trade stays open, and it stays open because it is a
+trade.
+
+**RIDER, and the more serious half of this entry: the sign-in email was
+never covered by the copy guard.** `apps/web/src/lib/auth/config.ts`
+holds the body of the one message EVERY user receives, client and staff
+alike, and it was not in `client-copy.test.ts`'s COPY_SOURCES. W-10's
+own reasoning names email copy as in scope, and its closure claims six
+templated sources; this was a seventh, uncovered since the guard was
+written. Nothing was wrong in it (both em dashes in that file are in
+comments, which the guard strips), so this is a hole that had not yet
+been fallen into rather than a live violation. Added and proven in both
+directions: green on the file as it stands, red on a planted em dash in
+the email body, naming config.ts and its line. **The rule is always
+wider than its guard** is the standing CLAUDE.md warning, and this is
+the third time this month it has been the finding rather than the
+caveat.
