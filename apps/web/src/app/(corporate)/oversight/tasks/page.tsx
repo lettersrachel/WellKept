@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 import { createTaskDefinition } from "@/lib/actions";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +34,7 @@ export default async function TaskDefinitions({ searchParams }: {
   return (
     <div className="wrap">
       <RefusalBanner reason={refused} />
-      {recorded && (
-        <div className="card" role="status" style={{ borderColor: "#2E6B3F" }}>
-          <strong>Recorded:</strong> {recorded}
-        </div>
-      )}
+      <RecordedBanner what={recorded} />
       <div className="card">
         <div className="row" style={{ alignItems: "baseline", gap: 10 }}>
           <h2 style={{ flex: 1 }}>Task definitions (WL Gate 1)</h2>

@@ -52,7 +52,7 @@ async function mintAuditSubjectToken(
  * refusal path writes. Only the operator's feedback changes.
  */
 function refuseTo(path: string, reason: RefusalReason): never {
-  redirect(`${path}?refused=${reason}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}refused=${reason}`);
 }
 
 function refuse(householdId: string | null | undefined, reason: RefusalReason): never {
@@ -79,7 +79,26 @@ function resolveReturnTo(raw: string, householdId: string): string {
  * remounts the form's selects (an uncontrolled select keeps its DOM value
  * across re-renders - G-39). */
 function recordedTo(path: string, what: string): never {
-  redirect(`${path}?recorded=${encodeURIComponent(what)}&r=${randomUUID().slice(0, 8)}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}recorded=${encodeURIComponent(what)}&r=${randomUUID().slice(0, 8)}`);
+}
+
+/**
+ * G-68, round three of G-29's lesson: the symmetric twin of `refuse`.
+ *
+ * G-29 made every refusal visible. What it did not do is make every
+ * SUCCESS visible, and half the action layer shipped ending at
+ * `revalidatePath` - a write that landed, a page that re-rendered, and
+ * no statement that anything happened. The operator cannot tell that
+ * from a dead button, which is exactly the ambiguity G-29 existed to
+ * kill; it cost an evening of 25 August 2026 twice over (G-67), where
+ * two actions reported clean and wrote nothing and nobody could tell.
+ *
+ * The message names WHAT was recorded and never a value: it rides in a
+ * URL, so it goes in browser history and referrer headers. Roles, kinds,
+ * counts and field NAMES are fine; field values, emails and money are not.
+ */
+function recorded(householdId: string | null | undefined, what: string): never {
+  recordedTo(householdId ? `/oversight/${householdId}` : "/oversight", what);
 }
 
 /** The reasons a drill-in action can refuse. Keep in sync with REFUSALS in the drill-in page. */
@@ -136,9 +155,20 @@ export async function setStatusTag(formData: FormData) {
   }
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, `status tag ${tag}`);
 }
 
-/** REQ-022: a client edit lands in review state; it never touches the field directly. */
+/**
+ * REQ-022: a client edit lands in review state; it never touches the field directly.
+ *
+ * G-68 note, deliberate: success now confirms (below), but these guards
+ * still refuse with a bare `return`. Every other surface was converted to
+ * a visible refusal; this one is a MEMBER surface, and the refusal
+ * vocabulary in RefusalBanner is written in staff voice ("Your role on
+ * this household does not permit that action"). Translating it into
+ * plain client language is a copy decision the founder makes, not one to
+ * guess, so the gap is reported in the register rather than papered over.
+ */
 export async function proposeEdit(formData: FormData) {
   const fieldId = String(formData.get("fieldId") ?? "");
   const proposed = String(formData.get("proposedValue") ?? "").trim();
@@ -158,6 +188,7 @@ export async function proposeEdit(formData: FormData) {
     proposedValue: proposed,
   });
   revalidatePath("/playbook");
+  recordedTo("/playbook", "your suggestion is with your team");
 }
 
 /** HM-role review is the spec (REQ-022); corporate_admin covers it in the web demo
@@ -203,6 +234,7 @@ export async function reviewEdit(formData: FormData) {
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${edit.householdId}`);
   revalidatePath("/playbook");
+  recorded(edit.householdId, `client edit ${decision}`);
 }
 
 /**
@@ -233,6 +265,7 @@ export async function setVaultValue(formData: FormData) {
   });
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${f.householdId}`);
+  recorded(f.householdId, "secured value sealed in the vault");
 }
 
 /**
@@ -244,10 +277,10 @@ export async function logStrangerTest(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
   const notesRaw = String(formData.get("frictionNotes") ?? "").trim();
   const passed = formData.get("passed") === "yes";
-  if (!householdId) return;
+  if (!householdId) refuseTo("/visit", "bad-input");
   const principal = await getPrincipal(householdId);
-  if (!principal || (principal.role !== "backup_hm" && principal.role !== "house_manager")) return;
-  if (!passed && !notesRaw) return; // a failed test needs the friction named
+  if (!principal || (principal.role !== "backup_hm" && principal.role !== "house_manager")) refuseTo("/visit", "forbidden");
+  if (!passed && !notesRaw) refuseTo("/visit", "bad-input"); // a failed test needs the friction named
   await db.insert(strangerTest).values({
     id: randomUUID(),
     householdId,
@@ -258,6 +291,7 @@ export async function logStrangerTest(formData: FormData) {
   revalidatePath("/visit");
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${householdId}`);
+  recordedTo("/visit", passed ? "stranger test passed" : "stranger test recorded, with the friction named");
 }
 
 /** REQ-042 gate order is policy, not UI: queue -> cultural fit -> HM notified -> execute. */
@@ -276,6 +310,7 @@ export async function queueGesture(formData: FormData) {
   });
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, "gesture queued");
 }
 
 export async function gestureGate(formData: FormData) {
@@ -294,6 +329,7 @@ export async function gestureGate(formData: FormData) {
     .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${g.householdId}`);
+  recorded(g.householdId, gate === "cultural_fit" ? "gesture gate: cultural fit checked" : "gesture gate: HOM notified");
 }
 
 export async function executeGesture(formData: FormData) {
@@ -311,6 +347,7 @@ export async function executeGesture(formData: FormData) {
     .where(eq(gesture.id, gestureId));
   revalidatePath("/oversight");
   revalidatePath(`/oversight/${g.householdId}`);
+  recorded(g.householdId, "gesture executed");
 }
 
 /**
@@ -356,6 +393,7 @@ export async function assignRole(formData: FormData) {
     kind: "role_assigned", detail: { subjectToken, role, ndaApproved },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, `role assigned: ${role.replace(/_/g, " ")}`);
 }
 
 export async function revokeRole(formData: FormData) {
@@ -374,6 +412,7 @@ export async function revokeRole(formData: FormData) {
     kind: "role_revoked", detail: { assignmentId },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, "role revoked");
 }
 
 /**
@@ -415,6 +454,7 @@ export async function promoteDot(formData: FormData) {
   });
   await emitFieldChange(event);
   revalidatePath(`/oversight/${d.householdId}`);
+  recorded(d.householdId, `dot promoted into ${f.name}`);
 }
 
 /**
@@ -437,6 +477,7 @@ export async function forceSignOut(formData: FormData) {
     kind: "sessions_revoked", detail: { targetUserId, count: killed.length },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, `sessions ended (${killed.length})`);
 }
 
 /**
@@ -460,6 +501,7 @@ export async function resetTotp(formData: FormData) {
     kind: "totp_reset", detail: { targetUserId },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, "two-factor reset; the next sign-in enrolls a new authenticator");
 }
 
 /**
@@ -473,11 +515,15 @@ export async function resetTotp(formData: FormData) {
  */
 export async function captureField(formData: FormData) {
   const fieldId = String(formData.get("fieldId") ?? "");
-  if (!fieldId) return;
+  // The intake page routes by ?section=N; a confirmation that dropped it
+  // would bounce the HOM back to the section list mid-walkthrough.
+  const section = String(formData.get("section") ?? "").trim();
+  const back = /^\d+$/.test(section) ? `/intake?section=${section}` : "/intake";
+  if (!fieldId) refuseTo(back, "bad-input");
   const [f] = await db.select().from(playbookField).where(eq(playbookField.id, fieldId));
-  if (!f) return;
+  if (!f) refuseTo(back, "missing");
   const principal = await getPrincipal(f.householdId);
-  if (!principal || !["house_manager", "backup_hm"].includes(principal.role)) return; // fail closed
+  if (!principal || !["house_manager", "backup_hm"].includes(principal.role)) refuseTo(back, "forbidden"); // fail closed
 
   const PROV = ["asked", "observed", "verified_by_touch"] as const;
   const SENS = ["s1", "s2", "s3"] as const;
@@ -485,9 +531,9 @@ export async function captureField(formData: FormData) {
   const provRaw = String(formData.get("provenance") ?? "");
   const sensRaw = String(formData.get("sensitivity") ?? "");
   const flagRaw = String(formData.get("flag") ?? "none");
-  if (!(PROV as readonly string[]).includes(provRaw)) return;
-  if (!(SENS as readonly string[]).includes(sensRaw)) return;
-  if (!(FLAGS as readonly string[]).includes(flagRaw)) return;
+  if (!(PROV as readonly string[]).includes(provRaw)) refuseTo(back, "bad-input");
+  if (!(SENS as readonly string[]).includes(sensRaw)) refuseTo(back, "bad-input");
+  if (!(FLAGS as readonly string[]).includes(flagRaw)) refuseTo(back, "bad-input");
   const provenance = provRaw as (typeof PROV)[number];
   const flag = flagRaw as (typeof FLAGS)[number];
   // Sensitivity only ratchets up: a capture never quietly declassifies.
@@ -529,6 +575,7 @@ export async function captureField(formData: FormData) {
   if (valueChanged && sensitivity !== "s3" && value) await emitFieldChange(event);
   revalidatePath("/intake");
   revalidatePath("/visit");
+  recordedTo(back, `captured: ${f.name}`);
 }
 
 /**
@@ -538,14 +585,14 @@ export async function captureField(formData: FormData) {
  */
 export async function setMonthlyRate(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
-  if (!householdId) return;
+  if (!householdId) refuseTo("/oversight/economics", "bad-input");
   const principal = await getPrincipal(householdId);
-  if (principal?.role !== "corporate_admin") return; // fail closed
+  if (principal?.role !== "corporate_admin") refuseTo("/oversight/economics", "forbidden"); // fail closed
   const dollars = Number(String(formData.get("monthlyRate") ?? "").replace(/[^0-9.]/g, ""));
-  if (!Number.isFinite(dollars) || dollars < 0 || dollars > 1_000_000) return;
+  if (!Number.isFinite(dollars) || dollars < 0 || dollars > 1_000_000) refuseTo("/oversight/economics", "bad-input");
   const cents = Math.round(dollars * 100);
   const [hh] = await db.select().from(household).where(eq(household.id, householdId));
-  if (!hh) return;
+  if (!hh) refuseTo("/oversight/economics", "missing");
   const terms = { ...(hh.membershipTerms as Record<string, unknown> | null ?? {}), monthlyRateCents: cents };
   await db.update(household).set({ membershipTerms: terms, updatedAt: new Date() }).where(eq(household.id, householdId));
   await db.insert(auditEvent).values({
@@ -553,6 +600,7 @@ export async function setMonthlyRate(formData: FormData) {
     kind: "rate_change", detail: { monthlyRateCents: cents },
   });
   revalidatePath("/oversight/economics");
+  recordedTo("/oversight/economics", "monthly rate updated");
 }
 
 /**
@@ -580,6 +628,7 @@ export async function setTriggerRuleEnabled(formData: FormData) {
     kind: "trigger_rule_change", detail: { ruleId, enabled, packName: (rule.definition as { packName?: string }).packName },
   });
   revalidatePath("/oversight/triggers");
+  recordedTo("/oversight/triggers", enabled ? "rule enabled" : "rule disabled");
 }
 
 /**
@@ -613,6 +662,7 @@ export async function recordHouseholdConsent(formData: FormData) {
     },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, "household consent recorded");
 }
 
 /**
@@ -626,12 +676,12 @@ export async function recordPromptOutcome(formData: FormData) {
   const promptId = String(formData.get("promptId") ?? "");
   const outcome = String(formData.get("outcome") ?? "");
   const OUTCOMES = ["acted", "dismissed", "not_applicable", "already_done"] as const;
-  if (!promptId || !(OUTCOMES as readonly string[]).includes(outcome)) return;
+  if (!promptId || !(OUTCOMES as readonly string[]).includes(outcome)) refuseTo("/visit", "bad-input");
   const { promptPackItem, promptOutcome } = await import("@wellkept/schema");
   const [item] = await db.select().from(promptPackItem).where(eq(promptPackItem.id, promptId));
-  if (!item) return;
+  if (!item) refuseTo("/visit", "missing");
   const principal = await getPrincipal(item.householdId);
-  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) return;
+  if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo("/visit", "forbidden");
   const answeredAt = new Date();
   const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null; // s2
   // Session A: was_news only means something on acted ("Good catch" true /
@@ -669,6 +719,7 @@ export async function recordPromptOutcome(formData: FormData) {
   }).onConflictDoNothing({ target: [promptOutcome.promptId, promptOutcome.userId] });
   revalidatePath("/visit");
   revalidatePath("/oversight/triggers");
+  recordedTo("/visit", "prompt outcome recorded");
 }
 
 /**
@@ -708,6 +759,7 @@ export async function createAnticipationExclusion(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
+  recorded(householdId, `exclusion created (${scope})`);
 }
 
 /**
@@ -781,6 +833,7 @@ export async function resolveIncident(formData: FormData) {
   });
   revalidatePath(`/oversight/${inc.householdId}`);
   revalidatePath("/oversight");
+  recorded(inc.householdId, "incident resolved");
 }
 
 /**
@@ -805,6 +858,7 @@ export async function setPhotoRetentionHold(formData: FormData) {
     kind: "photo_hold_change", detail: { photoId, hold },
   });
   revalidatePath(`/oversight/${p.householdId}`);
+  recorded(p.householdId, hold ? "photo held from retention deletion" : "photo hold released");
 }
 
 /**
@@ -835,6 +889,7 @@ export async function setPhotoReuseAllowed(formData: FormData) {
     kind: "photo_reuse_change", detail: { photoId, reuseAllowed: allow },
   });
   revalidatePath(`/oversight/${p.householdId}`);
+  recorded(p.householdId, allow ? "photo reuse allowed" : "photo reuse withdrawn");
 }
 
 /** Ending an exclusion sets effective_to — nothing hard-deletes. Audited. */
@@ -860,6 +915,7 @@ export async function endAnticipationExclusion(formData: FormData) {
   });
   revalidatePath(`/oversight/${x.householdId}`);
   revalidatePath("/visit");
+  recorded(x.householdId, "exclusion ended");
 }
 
 export async function createTriggerRule(formData: FormData) {
@@ -902,6 +958,7 @@ export async function createTriggerRule(formData: FormData) {
     kind: "trigger_rule_change", detail: { ruleId, created: true, packName },
   });
   revalidatePath("/oversight/triggers");
+  recordedTo("/oversight/triggers", `rule created: ${packName}`);
 }
 
 /**
@@ -998,7 +1055,7 @@ export async function setReferralSource(formData: FormData) {
     kind: "referral_recorded", detail: { from: prior.referralSource, to: source },
   });
   revalidatePath(`/oversight/${householdId}`);
-  redirect(`/oversight/${householdId}?recorded=${encodeURIComponent("referral source")}`);
+  recorded(householdId, "referral source");
 }
 
 /**
@@ -1075,7 +1132,7 @@ export async function recordMembershipEvent(formData: FormData) {
     });
   });
   revalidatePath(`/oversight/${householdId}`);
-  redirect(`/oversight/${householdId}?recorded=${encodeURIComponent(`membership ${kind}`)}`);
+  recorded(householdId, `membership ${kind}`);
 }
 
 /**
@@ -1366,6 +1423,7 @@ export async function scoreShadowSignal(formData: FormData) {
     },
   });
   revalidatePath(`/oversight/${householdId}`);
+  recorded(householdId, `shadow signal scored ${score.replace(/_/g, " ")}`);
 }
 
 /**

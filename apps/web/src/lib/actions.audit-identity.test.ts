@@ -56,6 +56,15 @@ function form(fields: Record<string, string>): FormData {
 const tokenRows = () => inserts.filter((i) => i.table === auditSubjectToken).map((i) => i.row);
 const auditRows = () => inserts.filter((i) => i.table === auditEvent).map((i) => i.row);
 
+/**
+ * G-68: these actions now CONFIRM, which means they end in a redirect and
+ * therefore throw. Asserting the throw is not a workaround; it is the
+ * added coverage: a write that stopped confirming would fail here too.
+ */
+async function confirms(run: Promise<unknown>) {
+  await assert.rejects(run, /NEXT_REDIRECT/, "the action must confirm its write with a redirect");
+}
+
 beforeEach(() => {
   inserts.length = 0;
   for (const k of Object.keys(selectResults)) delete selectResults[k];
@@ -65,7 +74,7 @@ test("G-59: role_assigned audits a token, never the email", async () => {
   selectResults.authUser = [{ id: "u-target", email: "target@example.com" }];
   selectResults.roleAssignment = [];
   const { assignRole } = await import("./actions");
-  await assignRole(form({ householdId: "h-1", email: "target@example.com", role: "house_manager" }));
+  await confirms(assignRole(form({ householdId: "h-1", email: "target@example.com", role: "house_manager" })));
 
   const [tok] = tokenRows();
   assert.ok(tok, "a subject token row must be minted");
@@ -81,9 +90,9 @@ test("G-59: role_assigned audits a token, never the email", async () => {
 
 test("G-59: a person-scoped exclusion audits a token, never the name", async () => {
   const { createAnticipationExclusion } = await import("./actions");
-  await createAnticipationExclusion(form({
+  await confirms(createAnticipationExclusion(form({
     householdId: "h-1", scope: "person", target: "Grandma Ruth", requestedBy: "client",
-  }));
+  })));
 
   const [tok] = tokenRows();
   assert.ok(tok, "a subject token row must be minted for a person-scoped exclusion");
@@ -99,9 +108,9 @@ test("G-59: a person-scoped exclusion audits a token, never the name", async () 
 
 test("G-59, the other direction: a topic-scoped exclusion keeps its plaintext target", async () => {
   const { createAnticipationExclusion } = await import("./actions");
-  await createAnticipationExclusion(form({
+  await confirms(createAnticipationExclusion(form({
     householdId: "h-1", scope: "topic", target: "medication", requestedBy: "client",
-  }));
+  })));
 
   assert.equal(tokenRows().length, 0, "a topic tag is not a person - no token, no blanking");
   const audit = auditRows().find((a) => a.kind === "exclusion_created")!;
@@ -114,7 +123,7 @@ test("G-59: exclusion_ended tokenizes a person-scoped row's target the same way"
     id: "x-1", householdId: "h-1", scope: "person", target: "Grandma Ruth", effectiveTo: null,
   }];
   const { endAnticipationExclusion } = await import("./actions");
-  await endAnticipationExclusion(form({ exclusionId: "x-1" }));
+  await confirms(endAnticipationExclusion(form({ exclusionId: "x-1" })));
 
   const [tok] = tokenRows();
   assert.ok(tok, "ending a person-scoped exclusion must mint its own token");

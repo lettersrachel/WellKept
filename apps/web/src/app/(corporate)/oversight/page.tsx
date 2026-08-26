@@ -6,6 +6,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
@@ -25,9 +26,9 @@ export default async function FleetBoard({ searchParams }: {
   // exist, brought the operator here in silence. A click, a navigation, no
   // message: the exact shape of a false success. G-29 made refusal visible
   // on three surfaces and missed the fourth.
-  searchParams: Promise<{ refused?: string }>;
+  searchParams: Promise<{ refused?: string; recorded?: string }>;
 }) {
-  const { refused } = await searchParams;
+  const { refused, recorded } = await searchParams;
   const assigned = await getAssignedHouseholds();
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role));
   if (corporate.length === 0) redirect("/");
@@ -91,6 +92,7 @@ export default async function FleetBoard({ searchParams }: {
   return (
     <>
       <RefusalBanner reason={refused} />
+      <RecordedBanner what={recorded} />
       <div className="card">
         <div className="row">
           <h2 style={{ border: "none", margin: 0, padding: 0 }}>Fleet; {rows.length} household(s)</h2>

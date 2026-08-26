@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 import { setMonthlyRate } from "@/lib/actions";
 import { getPrincipal } from "@/lib/session";
+import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
@@ -26,7 +28,12 @@ const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { m
  * recency. Per-household queries, fine at pilot scale (same pattern as
  * the fleet board); the 150-household console aggregates server-side.
  */
-export default async function EconomicsPage() {
+export default async function EconomicsPage({ searchParams }: {
+  // G-68: the rate form used to refuse with a bare return and succeed in
+  // silence. Both now say so, and both land here.
+  searchParams: Promise<{ refused?: string; recorded?: string }>;
+}) {
+  const { refused, recorded } = await searchParams;
   const assigned = await getAssignedHouseholds();
   // Fixture households are not clients: out of every total and count here.
   const corporate = assigned.filter((a) => CORPORATE_ROLES.has(a.role) && !a.hh.isFixture);
@@ -84,6 +91,8 @@ export default async function EconomicsPage() {
 
   return (
     <>
+      <RefusalBanner reason={refused} />
+      <RecordedBanner what={recorded} />
       <div className="card">
         <div className="row" style={{ alignItems: "center", gap: 10 }}>
           <h2 style={{ border: "none", margin: 0, padding: 0, flex: 1 }}>Economics &amp; relationship health</h2>

@@ -7,6 +7,7 @@ import { getPrincipal } from "@/lib/session";
 import { db } from "@/lib/db";
 import { tellWellKept } from "@/lib/actions";
 import { RefusalBanner } from "@/components/RefusalBanner";
+import { RecordedBanner } from "@/components/RecordedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -57,11 +58,7 @@ export default async function AssetContext({ params, searchParams }: {
   return (
     <div className="wrap">
       <RefusalBanner reason={refused} />
-      {recorded && (
-        <div className="card" role="status" style={{ borderColor: "#2E6B3F" }}>
-          <strong>Recorded:</strong> {recorded}
-        </div>
-      )}
+      <RecordedBanner what={recorded} />
       <div className="card">
         <div className="eyebrow">SCANNED CONTEXT · WK-DEV-009 §3.3</div>
         <h2>{entry.label}</h2>
