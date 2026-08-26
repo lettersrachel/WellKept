@@ -101,7 +101,7 @@ row here fails CI, so the table cannot silently go stale.
 |---|---|---|
 | payload guards (`permissions.test.ts`) | client responses never carry staff-only rows | new routes until wired |
 | `erasure-coverage.test.ts` | household-referencing tables named in the erasure tool | whether the treatment is correct |
-| `client-copy.test.ts` (three scopes) | no em dashes in client pages, templated staff/email copy, or legal documents | anything outside the scanned roots and source list |
+| `client-copy.test.ts` (four scopes plus the copy census) | no em dashes in client pages, staff pages, hand-held templated copy sources, or legal documents; and the census DERIVES the copy-emitting surfaces from three rules (every `.tsx` the web app renders, every file that sends mail or push, every file carrying `recorded()`/`refuse()` operator copy), each with a floor, so scope is computed rather than remembered | free text a person writes into a sentence the rules cannot see; the hand-held residue, which stays a reviewed list because no syntax separates a sentence from an identifier; and anything named in `CENSUS_EXCUSALS`, which is the complete written inventory of what is deliberately unscanned |
 | `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind until classified |
 | `child-data-kinds.test.ts` | every registry kind classified child-data or client-safe; child kinds carry a CHECK; CHILD_DATA.md covers every surface | free-text content a database cannot read |
 | `guards-manifest.test.ts` | the guard set exists, is wired into CI, and matches this table | a test file that exists but asserts nothing |

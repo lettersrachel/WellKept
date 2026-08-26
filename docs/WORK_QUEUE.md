@@ -492,6 +492,45 @@ five earned live-build passes; see the frozen record. HG will
 correctly flag on the {"gapDays":10} reconciliation knob if no visit
 lands within ten days.
 
+**Production serves `577666d` (2026-08-26, the THIRTEENTH clean run):**
+build id verified three times and confirmed at `/api/build-id`,
+`/api/health` reading ok with db up, tree clean, mechanical checks
+1/4a/4b/12/15 PASS. Migrations agree three ways at 58 BOTH BEFORE AND
+AFTER: the read-only preflight reported nothing pending and the full
+run reported 58, because **this delta carries no migration at all**,
+the first run since the batch era to move the count by zero. G-63's
+preflight therefore ran its quiet case here, agreement rather than the
+two-migration gap it caught on the eleventh run, and both readings are
+worth having: one proves it refuses to apply, the other proves it
+reports honestly when there is nothing to apply.
+
+**What the delta actually contains, stated because it was misread
+before it was checked.** Nine merged PRs (#186 through #194), and the
+only application-behavior changes in the whole range are G-70's two
+sign-in-path files, `apps/web/src/app/verify-request/page.tsx` and
+`apps/web/src/lib/auth/config.ts`. Beside them: one CI config change
+(the airplane job now seeds the Smoke Test Fixture, so the Part B
+rehearsal has its household), one guard-scope change (`client-copy.test.ts`
+gains the sign-in email as a copy source, G-70's rider), the CLAUDE.md
+guard table, and docs. **G-68 and G-69 are NOT in this delta.** G-68
+merged as `e3fe0f5` and G-69 as `75bc6a4`, both ancestors of
+`747a98c`, so every confirmation banner has been live since the twelfth
+run. An earlier reading of this same range attributed them here, which
+is how a docs correction and a deploy record both came to rest on a
+false premise for half a day.
+
+**And the section 4 baseline correction belongs in this entry, not a
+later one.** The 25 August sitting's passes describe `50ecd0f` and
+nothing since. The measurable form of that: `actions.ts` carried 26
+confirmation call sites at `50ecd0f` and carries 60 at both `747a98c`
+and `577666d` (G-68's census counted 57 exported actions, of which 27
+were silent; call sites exceed actions because a branching action
+confirms twice). So no section 4 result recorded at the sitting can
+describe the confirmation behavior of either of the last two builds,
+whatever the check was about. The three corrected re-flag causes are
+in the re-flag paragraph further below; the standing they correct is
+this one.
+
 **Production serves `747a98c` (2026-08-26 morning, the TWELFTH clean
 run; the eleventh carried `75bc6a4` earlier the same morning):**
 migrations agree three ways at 58 (0056 `situation` and 0057
@@ -518,6 +557,40 @@ and passing on the previous build, is not the same claim as never run;
 it is also not the same claim as passing here. The next sitting
 re-runs against `747a98c`, and checks 7 (fresh log) and 9
 (suppression) carry their honest partials into it.
+
+**And three of those checks were re-flagged for the wrong reason (26
+August, corrected here rather than carried).** A local reading of the
+standing list moved checks 2, 6 and 14 forward on the strength of what
+they test, which produced three wrong causes. Verified against the
+tree instead:
+
+- **Check 2 (magic link and sign-in) is the ONE check this delta
+  touches.** G-70's two files, `apps/web/src/app/verify-request/page.tsx`
+  and `apps/web/src/lib/auth/config.ts`, are both in
+  `747a98c..577666d` (confirmed with `git diff --name-only`), and they
+  are the only application-behavior changes in it. Check 2 re-runs
+  against the new build because its subject actually changed.
+- **Checks 6 (consent card) and 14 (trigger rules) were changed by the
+  TWELFTH run, not this one.** `recordHouseholdConsent`,
+  `setTriggerRuleEnabled` and `createTriggerRule` were all on G-68's
+  silent twenty-seven and all three now confirm (read from
+  `apps/web/src/lib/actions.ts`). G-68 merged as `e3fe0f5`, an ancestor
+  of `747a98c`, so their new behavior has been live since that run.
+  They are owed a re-run, and the run that owes it is the one already
+  named above.
+- **Checks 8 (CEO previews) and 10 are read-only and neither delta
+  reaches them.** They keep their `50ecd0f` standing unchanged.
+
+**The general form, which is the part worth keeping:** a
+carried-forward result needs its BASELINE COMMIT checked, not its
+subject matter. "This check covers a thing we changed" is a claim
+about the code; "this check's last pass describes build X" is a claim
+about a date, and only the second one tells you whether the result
+still holds. Reading the subject matter alone is how the same list
+produced three wrong causes at once: it never asked which build each
+pass was recorded against. Every future re-flag names the build the
+prior pass describes and the delta that invalidates it, or it is not a
+re-flag.
 
 **And the 25 August sitting's last remainder closes, with G-67
 dispositioned and G-70 filed (26 August morning):** the test capture on
@@ -1718,13 +1791,56 @@ and not lost, not proposing a build order.
 
 ## Not software
 
-0. **Branch protection: DONE 2026-07-28** (founder; gates and airplane
-   both required on main). The #60 hole is closed: a PR that never
-   triggers CI can no longer merge. Remaining from the same chore: check
-   whether the dormant well-kept-web Vercel project carries environment
-   variables, specifically a production DATABASE_URL; it auto-builds
-   every pushed branch, and the answer decides G-35 (and, if
-   uncomfortable, opens the security review).
+0. **Branch protection: the 2026-07-28 DONE is FALSE as of 2026-08-26,
+   and is corrected here rather than deleted (G-73).** This line read
+   "DONE 2026-07-28 (founder; gates and airplane both required on
+   main). The #60 hole is closed: a PR that never triggers CI can no
+   longer merge." Read directly on 26 August, `main` carries NO
+   protection of any kind: the branch endpoint returns
+   `"protected": false` with `enforcement_level: "off"` and empty
+   contexts, and the rulesets endpoint returns an empty list, so the
+   modern mechanism is not quietly holding it either. `ci` is not a
+   required check. Every merge to date has been gated by a person
+   reading run results, which is a convention, not a control, and it is
+   why PR #195 reports `mergeable_state: "clean"` with no `ci` run at
+   all. **Whether to protect `main` is a founder decision** about
+   friction on her own merges, so this is reopened rather than
+   re-closed; the engineering note is only that the requirement and
+   `ci.yml`'s `on:` block have to be designed together, since a required
+   check that never fires on a docs-only PR would block it forever
+   (today there is no path filter, so requiring `ci` is safe on that
+   axis). Kept as a correction because a month of believing it is the
+   part worth keeping. Remaining from the same chore, now ESCALATED by
+   the same reading: the well-kept-web Vercel project is not dormant,
+   it rebuilt this branch twice on 26 August and its configuration
+   changed between two of those builds (a `rootDirectory` appeared).
+   Reading its environment variables for a production DATABASE_URL,
+   WK_KMS_KEY or AUTH_SECRET is founder-side, since no Vercel
+   credential exists in the repo or the build container; the answer
+   decides G-35, and a yes makes it an incident with a written timeline
+   rather than a register line.
+   **The `ci` stop is diagnosed and belongs with this item (G-73's
+   addendum).** No `ci` run has been created for any commit since 13:03
+   UTC on 26 August. The workflow is `state: active` and is the only one
+   in the repo, the owner is a User so there is no org policy, `ci.yml`
+   carries no path filter, and the pushing identity is unchanged from
+   the run that last fired. The decisive reading is the check-suite
+   differential: `577666d` carries five check suites including
+   `github-actions`, and the current head carries four with no
+   `github-actions` suite created at all, while the other four apps act
+   on the same commit normally. The only candidate consistent with that
+   is repository-level Actions disablement, stated as an inference
+   because the confirming endpoint is blocked to this session by its own
+   proxy. **Founder-side confirmation is one page: Settings, Actions,
+   General.** Recorded here rather than as a mechanical glitch because
+   it is a fourth control silently not in place, and because it
+   compounds with the protection absence above: right now nothing
+   automated stands between a push and production.
+
+   **Deciding the protection question, so it is decided with what is
+   known:** `ci.yml` has no `paths` or `paths-ignore`, so requiring `ci`
+   would block nothing that would not otherwise run. The docs-only-PR
+   objection does not apply to today's workflow.
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111

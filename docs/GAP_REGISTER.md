@@ -2807,3 +2807,217 @@ and "the break never happened", and those are opposite conclusions.
 nothing in the Part B record rests on the failed attempts. This entry
 exists because the failure mode is silent and would have produced a
 confident false claim, which is the class this register was created for.
+
+---
+
+### G-73. `main` has no branch protection, so CI green has never been a platform gate; a standing document says it is
+
+Filed 2026-08-26, from the investigation into why PR #195 produced no
+`ci` run yet reported `mergeable_state: "clean"`.
+
+**The reading, from primary sources.** Two independent endpoints agree
+that nothing gates `main`:
+
+- `GET /repos/lettersrachel/WellKept/branches/main` returns
+  `"protected": false`, with `required_status_checks` reading
+  `enforcement_level: "off"`, `contexts: []`, `checks: []`.
+- `GET /repos/lettersrachel/WellKept/rules/branches/main`, the modern
+  rulesets mechanism that can enforce checks while the legacy field
+  still reads false, returns an EMPTY LIST. Zero rules apply.
+
+The authoritative `/branches/main/protection` endpoint returns 403 to
+this session's token, so the two readings above are what is available
+here. They agree, and one of them (rulesets) is not subject to the
+legacy field's known blind spot.
+
+**What that falsifies.** `docs/WORK_QUEUE.md`, "Not software" item 0,
+reads: "Branch protection: DONE 2026-07-28 (founder; gates and airplane
+both required on main). The #60 hole is closed: a PR that never
+triggers CI can no longer merge." As of this reading that is false in
+both halves. `ci` is not a required check, and a PR that never triggers
+CI merges exactly as easily as one that passes it. This is the class
+CLAUDE.md's own opening paragraph exists for: a factual claim in a
+standing document that loads as premise into every session and that
+nothing re-reads critically.
+
+**What it explains.** `mergeable_state: "clean"` on #195 means nothing
+is blocking the merge, not that checks passed. With `ci` unreported and
+unrequired there is nothing to block, so `clean` is the correct value
+and it carries no information about CI at all. Every merge in this
+repository to date has been gated by a person reading run results, not
+by the platform. Nine PRs merged on 26 August were each read green
+before merging, so the convention held; it was a convention.
+
+**What it does NOT explain, and what stays open.** Protection being
+absent says nothing about why `ci` stopped producing runs. The last
+`ci` run of any kind, repo-wide, is `577666d` on main at 13:03 UTC on
+26 August, and two branch pushes plus a PR open since have created
+none. Adjacent facts, recorded without a causal claim joining them: the
+repository is PUBLIC (`"visibility": "public"`), its `updated_at` is
+2026-08-26T13:08:57Z (five minutes after the last run), the `ci`
+workflow reports `state: "active"`, `ci.yml` is byte-identical between
+`577666d` and the current branch head, it is valid YAML, and its `on:`
+block carries no `paths` or `paths-ignore` filter. Something in the
+repository's settings changed at 13:08 and CI has not run since. That
+correlation is not a diagnosis and is deliberately not written as one.
+
+**Not fixed here, and the reason is that two of the three questions are
+not engineering questions.** Whether `main` should be protected is a
+founder decision about friction on her own merges. Whether the repo
+should be public is a founder decision that Q's clean-history finding
+informs but does not make. Only the third, restoring the required
+checks once the answer is known, is a settings change, and it must be
+designed together with the `on:` block: a required check that never
+fires on a docs-only PR blocks that PR permanently. Today `ci.yml` has
+no path filter, so requiring `ci` is safe on that axis; adding a filter
+later without revisiting the requirement would reintroduce the problem
+in the opposite direction.
+
+**The WORK_QUEUE claim is corrected in the same change as this entry**,
+per the make-it-true-or-fix-the-file rule. It is corrected rather than
+deleted, because the fact that it was believed for a month is the part
+worth keeping.
+
+---
+
+**ADDENDUM, same day: the missing `ci` runs are DIAGNOSED, and it is a
+fourth control silently not in place.** The five candidates were worked
+in order against primary sources.
+
+- **Ruled out, the workflow itself.** `GET /actions/workflows` returns
+  exactly one workflow, `.github/workflows/ci.yml`, with
+  `state: "active"`. A manually disabled workflow reports
+  `disabled_manually` and would have produced exactly this silence; it
+  does not.
+- **Ruled out, an organization policy.** The repository owner is a
+  User, not an Organization, so there is no org-level Actions setting
+  to be off.
+- **Ruled out, a path filter.** `ci.yml` at `577666d` carries
+  `on: push: branches: [main]` and a bare `pull_request:`. No `paths`,
+  no `paths-ignore`.
+- **Ruled out, the credential.** A push made with a token that lacks
+  workflow permission silently creates no run, which is the same
+  signature. It is not this: the identity making today's pushes is the
+  User `lettersrachel`, and the same login is the `actor` and
+  `triggering_actor` on run 490, the last run that fired. Nothing about
+  the identity changed.
+- **Inapplicable, billing.** The repository is public, and
+  GitHub-hosted Actions minutes are free and unmetered for public
+  repositories. The billing endpoint is not readable from this session
+  in any case.
+- **Unreadable from here, a platform incident.** githubstatus.com is
+  blocked by the network egress proxy.
+
+**The decisive reading is the check-suite differential.** Every push
+creates one check suite per installed app. On `577666d`, the last
+commit that ran, there are FIVE: vercel, railway-app, sentry, claude,
+and `github-actions` (completed, success, 2 runs). On `da585c5`, the
+current head, there are FOUR: vercel, railway-app, sentry, claude.
+**No `github-actions` check suite is created at all.** That is not a
+queue delay and not a run that failed to start; the Actions app is not
+acting on the event for this repository, while four other apps act on
+the same commit normally. A platform incident does not selectively skip
+one app's suite while creating four others' on the same commit, twice,
+thirty minutes apart, across two and a half hours.
+
+**So the only candidate consistent with the evidence is repository-level
+Actions disablement** (Settings, Actions, General, "Disable actions").
+That is stated as an inference and not as a confirmed reading, because
+the confirming endpoint is not available here: this session's agent
+proxy refuses `GET /repos/{owner}/{repo}/actions/permissions` with its
+own 403 and its own documentation link, which is a proxy policy and not
+a GitHub answer. **The founder-side confirmation is one page:** repo
+Settings, Actions, General. If "Disable actions" is selected, that is
+the cause and re-enabling it restores the runs.
+
+Recorded as a control rather than a glitch, per the same reasoning as
+the rest of this entry: with `main` unprotected AND the runner not
+running, there is at present NO automated gate of any kind between a
+push and production. The two absences are independent and they
+compound.
+
+---
+
+### G-74. A register entry is evidence a control was built, never evidence it is still in place
+
+Filed 2026-08-26 alongside G-73, which is its first confirmed instance
+and the reason it exists.
+
+**The general form.** This register records that a control was
+implemented. It has no mechanism for recording that a control was later
+removed, reverted, silently reset by a platform, or never landed in the
+first place. So a DONE line is a claim about a past act, and reading it
+as a claim about the present state is the same error as reading a
+carried-forward test result without checking its baseline commit (the
+26 August section 4 correction, recorded in WORK_QUEUE). Both mistake a
+dated fact for a live one.
+
+**Therefore: every line asserting a control is in place must be re-read
+against the thing itself, not against this register.** A control that
+can only be confirmed by reading the document that claims it is not
+confirmed at all.
+
+**The re-read, run the day this was filed.** Split by whether the
+control is reachable from the build container at all, because that
+split is itself the finding: seven of fourteen cannot be checked from
+here, which means seven have been carried on the register's word.
+
+FALSE, both already corrected in their own entries:
+
+1. **Branch protection on `main`** (WORK_QUEUE "Not software" item 0,
+   asserted DONE 2026-07-28). No protection of any kind; G-73.
+2. **The `well-kept-web` Vercel project is dormant** (G-35's premise).
+   It rebuilt this branch twice on 26 August and its configuration
+   changed between the 15:39 and 15:47 payloads, when a `rootDirectory`
+   appeared. Not dormant.
+
+FALSE IN EFFECT, and new here:
+
+3. **The sixteen CI guards are enforced.** Each guard was built and
+   proven red and green, and each still passes when run by hand. What
+   enforces them on a merge is the `ci` workflow, and no `ci` run has
+   been created for any commit since 13:03 UTC (G-73's addendum). The
+   guard files are intact; the runner is not running. This compounds
+   with item 1 rather than overlapping it: with `main` unprotected AND
+   the runner stopped, there is at present no automated gate of any
+   kind between a push and production. Two independent absences, and
+   neither is visible from any document that claims either control.
+   `guards-manifest.test.ts`, the guard whose whole purpose is to
+   notice when a guard stops running, cannot notice this, because it
+   runs in the thing that stopped.
+
+HOLD, re-read against the system today:
+
+4. `sizes` CHECK: `registry_sizes_not_client_visible` present in the
+   database.
+5. The one-role unique index:
+   `household_role_assignment_user_household_unique` present.
+6. The check-15 allowlist is empty, as the 25 August Field Test Home
+   entry claims: `const ALLOWLIST = {}` in `tooling/smoke-mechanical.sh`.
+7. `ci.yml` still fans out `pnpm test` and `pnpm typecheck`.
+8. `erase-household.mjs`'s header still names its DELETE exceptions.
+
+NOT REACHABLE FROM THIS CONTAINER, so asserted-only until the founder
+reads them. Listing them is the point: each has been carried on a
+document's word for as long as it has existed.
+
+9. `visit_reconciliation` still `{"gapDays": 10}` in production.
+10. `flag_promotion.rateThreshold` still null in production, which is
+    what keeps promotion from firing.
+11. `capacity_gate` still at version 1 with the ruling's figures.
+12. The Railway worker still Git-connected and auto-deploying.
+13. The production `WK_KMS_KEY` still decoding to 32 valid bytes. Last
+    exercised at the seventh run, by the boot validation passing.
+14. `seed_reviewed` still false, which is what keeps the standards
+    library dark.
+
+**What this entry does not propose.** It does not propose a periodic
+re-read ritual, because a ritual nobody runs is another control asserted
+and absent. The durable fix is the census pattern already used three
+times here: where a control can be READ by a program, a guard should
+read it rather than a person remembering to. Items 4 through 8 are
+already in that shape. Items 9 through 14 are production state that no
+CI job can see, and the honest treatment is the one this entry gives
+them: named in a list that says out loud that they are unverified.
+Which of them deserve a check is a founder decision about where to
+spend the effort, not one to make here.

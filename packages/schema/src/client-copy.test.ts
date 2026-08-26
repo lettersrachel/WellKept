@@ -5,12 +5,25 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 /**
- * The no-em-dash rule for client-facing copy (CLAUDE.md conventions),
- * enforced the same way the erasure rule is: a guard, not a memory.
- * Scope is the pages a CLIENT can see — the (client) route group and the
- * public pages. Staff surfaces and prompt text are out of scope, and code
- * comments are stripped before checking (an em dash in a comment is not
- * user-facing).
+ * The no-em-dash rule (CLAUDE.md conventions), enforced the same way the
+ * erasure rule is: a guard, not a memory. Code comments are stripped
+ * before checking, since an em dash in a comment is not user-facing.
+ *
+ * SCOPE IS NOT STATED HERE, DELIBERATELY. Three earlier attempts to
+ * describe this guard's reach in prose were each wrong by the time they
+ * were read: W-10 closed claiming six copy sources when the list held
+ * more, the header claimed "client-facing pages" after staff roots and
+ * fourteen source files had been added, and a 26 August audit found a
+ * further five surfaces no scope covered at all, one of them the client
+ * report email's subject line. A stated number is a claim that rots; a
+ * derived one cannot. So the census below COMPUTES the copy-emitting
+ * surfaces from three rules and demands each one be scanned or excused
+ * in writing. Read the census, not a sentence, for what is covered.
+ *
+ * The hand-held half is labeled as such: COPY_SOURCES and DOC_DIRS name
+ * files no rule can derive, because whether a .ts file contains a
+ * sentence a person reads is not a syntactic property. That list stays
+ * short, stays reviewed, and is honest about being memory.
  *
  * Verified to fire: reintroducing an em dash into rendered playbook copy
  * turns this red naming the file and line.
@@ -53,8 +66,11 @@ const COPY_SOURCES = [
   "../../../packages/trigger-engine/src/cascades.ts",
   "../../../packages/trigger-engine/src/season.ts",
   "../../../services/worker/src/seed-rules.ts",
-  "../../../services/worker/src/digest.ts",
-  "../../../packages/mail/src/index.ts",
+  // 26 Aug 2026, the copy census: digest.ts and packages/mail/src/index.ts
+  // came OFF this list on the same day, because the channel rule now
+  // derives them. The hand-held list shrinking is the point; anything a
+  // rule can compute does not belong on a memory list, and the census
+  // fails if one is put back.
   // 26 Aug 2026 (G-70's rider): the SIGN-IN email was never scanned, and
   // it is the one message every user receives, client and staff alike.
   // W-10's own reasoning names email copy as in scope and its closure
@@ -196,4 +212,153 @@ test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {
   }
   assert.deepEqual(offenders, [],
     `em dash on a staff surface (J1; a HOM is a user): ${offenders.join(", ")}`);
+});
+
+
+// ---------------------------------------------------------------------------
+// The copy census (26 August 2026). The drift this closes is SILENT BY
+// CONSTRUCTION: an unguarded copy source produces no failure, only no
+// coverage, so nothing surfaces it until someone goes looking. Someone
+// went looking and found five uncovered surfaces, one of them the client
+// report email's subject line, which had shipped in violation since it
+// was written.
+//
+// Three rules DERIVE the surfaces that emit copy, so the scope is
+// computed rather than stated. Each rule computes its own input and
+// carries a floor, per CLAUDE.md's inputs doctrine: a detection that
+// silently breaks and returns a tiny set must FAIL, not pass vacuously.
+// Every derived file is scanned for em dashes unless it is excused here
+// in writing, so CENSUS_EXCUSALS is the complete inventory of
+// copy-emitting surfaces this guard does not check.
+//
+// What is deliberately NOT derived: everything else. A .ts file emits
+// copy only because a human wrote a sentence in it, and no syntax
+// separates that from an identifier or a log line. A rule broad enough to
+// catch those would need allowlists for SQL and console output, which is
+// a worse instrument than an honest list. That residue is COPY_SOURCES
+// and DOC_DIRS above: hand-held, short, and labeled as memory. The census
+// keeps it from re-bloating by refusing any residue entry a rule already
+// derives.
+// ---------------------------------------------------------------------------
+
+const REPO = path.join(here, "../../..");
+const repoRel = (p: string) => path.relative(REPO, p).split(path.sep).join("/");
+
+function walkFiles(dir: string, keep: (name: string) => boolean): string[] {
+  const out: string[] = [];
+  let entries: string[];
+  try { entries = readdirSync(dir); } catch { return out; }
+  for (const name of entries) {
+    const p = path.join(dir, name);
+    if (statSync(p).isDirectory()) out.push(...walkFiles(p, keep));
+    else if (keep(name)) out.push(p);
+  }
+  return out;
+}
+
+const notVendored = (f: string) => !f.includes("node_modules") && !f.includes(`${path.sep}dist${path.sep}`);
+
+/** Rule 1, RENDER: every .tsx under the web app renders to somebody's browser. */
+function deriveRenderRule(): string[] {
+  return [
+    ...walkFiles(webApp, (n) => n.endsWith(".tsx")),
+    ...walkFiles(path.join(here, "../../../apps/web/src/components"), (n) => n.endsWith(".tsx")),
+  ].filter(notVendored);
+}
+
+/** Rule 2, CHANNEL: a file that sends mail or push composes what arrives. */
+function deriveChannelRule(): string[] {
+  const send = /\bsendMail\(|\bsendResendEmail\(|\bsendPush\(/;
+  const out: string[] = [];
+  for (const dir of ["apps", "packages", "services"]) {
+    for (const f of walkFiles(path.join(REPO, dir), (n) => /\.(ts|tsx|mjs)$/.test(n) && !/\.test\./.test(n))) {
+      if (!notVendored(f)) continue;
+      if (send.test(stripComments(readFileSync(f, "utf8")))) out.push(f);
+    }
+  }
+  return out;
+}
+
+/** Rule 3, ACTION MESSAGE: recorded()/refuse() arguments are operator copy. */
+function deriveActionRule(): string[] {
+  const msg = /\brecorded\(|\brecordedTo\(|\brefuse\(|\brefuseTo\(/;
+  const out: string[] = [];
+  for (const f of walkFiles(path.join(REPO, "apps"), (n) => /\.(ts|tsx)$/.test(n) && !/\.test\./.test(n))) {
+    if (!notVendored(f)) continue;
+    if (msg.test(stripComments(readFileSync(f, "utf8")))) out.push(f);
+  }
+  return out;
+}
+
+function derivedByRule(): Record<string, string[]> {
+  return { render: deriveRenderRule(), channel: deriveChannelRule(), action: deriveActionRule() };
+}
+
+// Floors set BELOW today's counts, not at them, so ordinary growth does
+// not trip them and a broken detector still does.
+const RULE_FLOORS: Record<string, number> = { render: 30, channel: 4, action: 1 };
+
+// The sanctioned escape hatch, used as intended: each entry is a reviewed
+// exception with a written reason, never a silenced rule. Every entry
+// below exists for ONE reason, the pending voice pass: these surfaces
+// carry em dashes today, the rewrite is a voice decision on strings that
+// go out under the founder's name, and it is sequenced as its own session
+// AFTER this census so the strings are guarded before they are rewritten.
+// Removing an entry is how that session proves it finished a surface.
+const CENSUS_EXCUSALS: Record<string, string> = {
+  "apps/web/src/app/mfa/page.tsx":
+    "four rendered sentences on the staff second-factor screen; pending the voice pass sequenced after this census",
+  "apps/web/src/app/mfa/recovery-codes/page.tsx":
+    "two rendered sentences including a button label on the backup-codes screen; pending the same voice pass",
+  "apps/web/src/app/link-device/page.tsx":
+    "one rendered sentence on the device pairing screen; pending the same voice pass",
+  "apps/web/src/app/dev/last-email/page.tsx":
+    "one rendered sentence on the dev-only last-email helper, unreachable in production; pending the same voice pass",
+  "apps/web/src/app/api/visit-commands/route.ts":
+    "the corporate WATCH alert subject and body, staff-facing; its sibling CLIENT report subject on line 30 was fixed on sight 26 Aug, the staff half waits for the voice pass",
+};
+
+test("the copy census derives its own scope, and every exception is written down", () => {
+  const derived = derivedByRule();
+
+  for (const [rule, files] of Object.entries(derived)) {
+    assert.ok(
+      files.length >= RULE_FLOORS[rule]!,
+      `the ${rule} rule derived only ${files.length} files (floor ${RULE_FLOORS[rule]}). ` +
+        "A detection that breaks and returns a tiny set must fail rather than pass vacuously.",
+    );
+  }
+
+  for (const [key, reason] of Object.entries(CENSUS_EXCUSALS)) {
+    assert.ok(reason.trim().length > 10, `census excusal for ${key} needs a real written reason`);
+  }
+
+  // An excusal naming a file no rule derives any more is stale
+  // bookkeeping wearing the costume of a reviewed exception.
+  const allDerived = new Set(Object.values(derived).flat().map(repoRel));
+  const stale = Object.keys(CENSUS_EXCUSALS).filter((k) => !allDerived.has(k));
+  assert.deepEqual(stale, [],
+    `census excusal names a file no rule derives; remove it: ${stale.join(", ")}`);
+
+  // The hand-held residue must stay the residue. A file a rule already
+  // derives does not belong on a memory list; leaving it there is how the
+  // list grew to fifteen while its own comment still said six.
+  const residue = COPY_SOURCES.map((r) => repoRel(path.resolve(here, r)));
+  const derivable = residue.filter((r) => allDerived.has(r));
+  assert.deepEqual(derivable, [],
+    `COPY_SOURCES names files the census already derives; remove them from the hand-held list: ${derivable.join(", ")}`);
+});
+
+test("derived copy sources contain no em dashes outside comments", () => {
+  const offenders: string[] = [];
+  const files = [...new Set(Object.values(derivedByRule()).flat())].sort();
+  for (const file of files) {
+    const key = repoRel(file);
+    if (key in CENSUS_EXCUSALS) continue;
+    stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
+      if (line.includes("\u2014")) offenders.push(`${key}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    `em dash in a derived copy source (the copy census; CLAUDE.md: no em dashes anywhere): ${offenders.join(", ")}`);
 });
