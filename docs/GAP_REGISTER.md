@@ -2716,3 +2716,94 @@ the email body, naming config.ts and its line. **The rule is always
 wider than its guard** is the standing CLAUDE.md warning, and this is
 the third time this month it has been the finding rather than the
 caveat.
+### G-71. The Smoke Test Fixture is identified by a predicate the schema does not make unique
+
+Filed 2026-08-26 while replacing the Part B script's fixture-resolution
+step with the fixture tool's own predicate, so the two would agree by
+construction rather than by two people writing the same string twice.
+
+**The finding.** `ensure-smoke-fixture.mjs:33` locates its household
+with `SELECT ... FROM household WHERE name = $1` against the constant
+`FIXTURE_NAME = "Smoke Test Fixture"` (line 25), and destructures
+`rows: [hh]`. But `household` carries no unique constraint on `name`.
+Confirmed in both directions: the live table's index list is
+`household_pkey PRIMARY KEY, btree (id)` and nothing else, and
+`tables.ts` declares unique indexes on four other tables and none on
+this column.
+
+So a second household named "Smoke Test Fixture" is representable, and
+if one existed the tool would silently take whichever row the planner
+returned first. Every write the smoke checklist makes against "the
+fixture" would land wherever that pointed. The same is true of
+`db:export-floors` and any other tool that resolves a household by name.
+
+**Why it has not bitten.** Nothing creates households by name except
+seeds and the intake path, and no duplicate exists today. This is a
+gap nobody has fallen into, stated as such rather than dressed up.
+
+**NOT fixed here, and deliberately.** The fix is a unique index on
+`household.name`, which is a migration and therefore its own session
+under the one-migration rule. It is also not obviously the right fix:
+whether two households may ever share a name is a product question
+(two clients genuinely called "The Smith Residence" is not absurd), and
+a global unique index would refuse that. The narrower shape, a partial
+unique index on `name` where `is_fixture` is true, constrains only the
+fixtures and leaves real households alone. Either is a decision, not a
+default, so the register carries it rather than a migration inventing
+one.
+
+**Mitigated where it can be, today:** the Part B script's P4 asserts
+exactly one row from the name predicate and STOPS otherwise, so the
+ambiguity surfaces at the one moment it would do damage, even though
+nothing there can prevent it.
+
+### G-72. A mutation that never lands and a test that cannot fail look identical
+
+Filed 2026-08-26 from two near-misses in one session, both while proving
+Part B's rehearsal assertions sensitive.
+
+**What happened, twice.** The technique for proving an assertion is real
+is to break the code deliberately, watch the test go red, revert, and
+watch it go green. Twice in a row the deliberate break DID NOT LAND, and
+the run reported a pass:
+
+1. **D1d, an ambiguous anchor.** The patch matched on a field list that
+   appears in TWO actions (`resolvePausedDecision` and
+   `resolveSituation` set an identical `status`/`resolution`/timestamps
+   line), so the guarded replacement refused and the file was untouched.
+2. **D1c, a broken relative path.** A `cd` earlier in the same shell
+   meant the patch targeted a path that did not exist. The file was
+   untouched.
+
+In both cases the test then reported `1 passed`, which is the correct
+result for unmutated code and the WRONG conclusion about the assertion.
+Only a printed traceback and a printed "not found" caught them. Had
+either been quiet, the register would now say an assertion was proven
+sensitive when nothing had been proven at all.
+
+**Why this is the inputs doctrine and not carelessness.** CLAUDE.md
+already says a guard proven red and green tests its logic, not its
+inputs, and that where a guard can compute its own input it should. The
+same applies one level out, to the PROOF: a red-green proof tests the
+assertion, not whether the mutation reached the code. A green run after
+an intended break is ambiguous between "the assertion is decorative"
+and "the break never happened", and those are opposite conclusions.
+
+**The rule, adopted and added to CLAUDE.md's verification section:**
+
+- **Confirm the mutation landed before reading the result.** Print the
+  changed line, or assert the new text is present, as a separate
+  observable step. A patch that reports success is not evidence; the
+  file's content is.
+- **Qualify every anchor.** A patch anchor that matches more than once
+  is not an anchor. Prefer a line number resolved at patch time, or an
+  anchor that includes enough surrounding context to be unique, and make
+  the patch REFUSE on an ambiguous match rather than pick one.
+- **Use absolute paths in proof scripts.** Working directory is state,
+  and state that survives between commands is state that will eventually
+  be wrong.
+
+**Both proofs were then redone correctly and both turned red**, so
+nothing in the Part B record rests on the failed attempts. This entry
+exists because the failure mode is silent and would have produced a
+confident false claim, which is the class this register was created for.
