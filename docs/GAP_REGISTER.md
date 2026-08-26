@@ -2936,6 +2936,37 @@ running, there is at present NO automated gate of any kind between a
 push and production. The two absences are independent and they
 compound.
 
+**CONFIRMED at 16:25 UTC the same day, and the confirmation is the
+strongest form the inference could have taken.** The founder read the
+Settings, Actions, General page and re-enabled Actions. Within one
+minute the `ci` workflow fired on the unchanged head `73d67aa`, event
+`pull_request`, and both jobs passed (`gates` success, `airplane`
+success, run created 16:25:19). No commit, no workflow edit, no
+re-push: the only variable that moved was the setting, and the runs
+resumed immediately.
+
+That converts this from a diagnosis to a cause. The check-suite
+differential predicted something specific and falsifiable, that the
+`github-actions` suite would reappear on the SAME commit the moment the
+repository-level setting changed, and the prediction held on the first
+test. A queue delay, a platform incident, or a credential problem would
+each have failed that prediction. It is the same shape as the KEK
+validation earning its first real red in production: a claim made from
+indirect evidence, then met by the world.
+
+**Kept as written above rather than rewritten**, including the sentence
+saying the endpoint was unreadable and the cause was inferred. The
+value of this entry is partly that the reasoning is legible without the
+answer, since the next time a control is silently absent the confirming
+endpoint may be unavailable again and the differential is the technique
+that worked.
+
+One reading not established, and it stays open: WHEN and HOW Actions
+came to be disabled. The repository's `updated_at` moved at 13:08:57,
+five minutes after the last run before the stop, which is consistent
+and is not proof. The audit log that would settle it needs a scope this
+session does not hold. Left as a known unknown rather than a story.
+
 ---
 
 ### G-74. A register entry is evidence a control was built, never evidence it is still in place
