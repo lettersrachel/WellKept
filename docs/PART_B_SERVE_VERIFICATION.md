@@ -4,7 +4,7 @@ status: living
 
 # Part B: serve verification for 0056 (situation) and 0057 (preference_rule)
 
-Version 1.2, 26 August 2026. Run against PRODUCTION with a browser.
+Version 1.3, 26 August 2026. Run against PRODUCTION with a browser.
 
 Lineage, because two versions were written in parallel and one of them
 is wrong on a load-bearing fact. v1 was uploaded and corrected to v1.1
@@ -14,6 +14,14 @@ independently AND kept two of v1's errors. This v1.2 is v1.1 plus every
 genuine improvement v2 made. The corrections section below says which
 of v2's claims are wrong and how that was settled, so nobody
 reconciles it silently a third time.
+
+A v3 was then uploaded, again drafted from the chat lineage rather than
+from this file. It is the strongest draft yet in four places, all of
+them folded in below, AND it repeats the same two errors for a third
+time while introducing a new one that is more dangerous than either.
+This is v1.3: v1.2 plus v3's improvements, minus v3's errors, with the
+developer tasks v3 asked for actually run and answered. **Draft a v4
+from THIS FILE.**
 
 Purpose: prove the `situation` and `preference_rule` tables actually
 SERVE, not merely that their migrations applied. Health passing proves
@@ -55,6 +63,16 @@ this file. The evidence for correction 1 is not a judgment call: the
 git ancestry command above, plus the banner observed rendering in
 production on 26 August.
 
+**5. v3 repeats corrections 1 and 2 for a third time**, and adds a new
+error of its own: its P4 resolves the fixture with
+`WHERE is_fixture = true` and asserts exactly one row. **Three
+households carry that flag** (locally: HO Twin, The Training Household,
+Smoke Test Fixture; production carries the Training Household too). So
+v3's P4 either fails outright or, worse, invites the tester to pick the
+row that looks right, which is precisely the mistake P4 exists to
+prevent. Resolving by NAME, as v1.1 and this version do, returns
+exactly one row. Verified by query, not by reading the seed.
+
 **Adopted FROM v2, which reached these independently and improved on
 v1.1:** the identity check done by QUERY rather than by reading the
 masthead; the explicit assertion that the resolved fixture id is not
@@ -63,7 +81,86 @@ retyped; the optional short-input negative check, which proves the
 refuse path serves as well as the write path; and A3's assertion that
 provenance and confidence are UNCHANGED by retirement.
 
+**Adopted FROM v3, which is the strongest draft on all four of these:**
+the founder's build-timing decision made explicit before the run rather
+than falling out of when an hour is free; the three-step
+absent-card diagnosis (identity, then bundle, then serve failure, and
+only the third is a Part B finding); **recording the refusal SHAPE**,
+client-side versus server-side, which is the one thing a browser can
+answer that a query cannot and which no earlier version asked for; and
+the framing that a wrong provenance is its own register entry, because
+the question it raises is who else can write to that table.
+
 ---
+
+## The developer tasks v3 asked for: RUN AND ANSWERED, 26 August
+
+v3 said the production run should not be scheduled until these were
+done. They are done.
+
+### D1. Sensitivity of the rehearsal's assertions
+
+v3 was right that one assertion proven red is below the bar set by
+`success-visibility.test.ts` this morning. All four were attempted.
+
+| # | Mutation | Result |
+|---|---|---|
+| D1a | partial retirement group | UNREPRESENTABLE at the database, see below |
+| D1b | provenance other than `explicit` on create | RED, as required |
+| D1c | non-NULL `confidence` on create | UNREPRESENTABLE at the database |
+| D1d | mutate the situation label in resolve | RED, as required |
+
+**D1b and D1d turned red on the assertion that exists for them**, and
+green again on revert. D1d is worth recording twice over: the first
+attempt at it silently did not apply, because the anchor line appears in
+TWO actions (`resolvePausedDecision` and `resolveSituation` set an
+identical field list), and the run reported "1 passed". A mutation that
+never lands and a test that cannot fail look exactly the same from the
+outside. That is the inputs-doctrine failure in miniature, caught only
+because the patch printed a traceback.
+
+**D1a and D1c could not be made red, and that is the stronger answer.**
+Both states are refused by CHECK constraints, so no path through the app
+or a direct write can produce them. Proven in SQL rather than asserted:
+
+- partial retirement: `ERROR: new row for relation "preference_rule"
+  violates check constraint "preference_rule_retirement_is_whole"`
+- explicit provenance with a confidence: `ERROR: ... violates check
+  constraint "preference_rule_confidence_is_whole"`
+- the legitimate shape on the same table: `INSERT 0 1`
+
+So those two assertions are belt-and-braces over a structural guarantee
+rather than the only thing standing between the product and the defect.
+To show they are not merely decorative, D1a was ALSO proven red with the
+CHECK temporarily dropped and the action changed to omit the reason: the
+rehearsal caught it, and the constraint was restored and verified
+present afterwards. Read that as: if the CHECK is ever dropped in a
+migration, the rehearsal notices.
+
+### D2. Do the cards ship in the build under test?
+
+**YES.** The Situations card shipped in `5431ff0` (SITUATIONS bundling,
+0056) and the Preference rules card in `a940321` (Substrate backfill,
+0057). Both are ancestors of `747a98c`, verified with
+`git merge-base --is-ancestor`. So an absent card on that build is NOT
+explained by the bundle, and the three-step diagnosis collapses to
+identity first, then a real serve failure.
+
+### D3. CI coverage: CLOSED, not documented
+
+v3 offered two ways out and asked for a decision. Taken: **seed the
+fixture in CI**, which closes the gap rather than recording it.
+`ci.yml`'s airplane job now runs `ensure-smoke-fixture.mjs` after
+`db:seed`, so the rehearsal runs in CI instead of skipping, and
+`retirePreferenceRule` cannot be changed to mutate in place without
+something automated noticing.
+
+Chosen rather than the "accept it as a local artifact" option because a
+documented gap is still a gap, and the evidence that seeding is safe
+already existed: the full suite ran green locally WITH the fixture
+present before this change. The spec keeps its skip path, which is now
+a fallback for a database that lacks the fixture rather than the
+expected CI behaviour.
 
 ## Scope and standing constraints
 

@@ -109,6 +109,14 @@ jobs:
         run: |
           pnpm --filter @wellkept/schema db:migrate
           pnpm --filter @wellkept/schema db:seed
+      # The Smoke Test Fixture, so the Part B rehearsal is real coverage
+      # rather than a spec that skips here and runs on one machine. Without
+      # it, retirePreferenceRule could be changed to mutate in place and
+      # nothing automated would notice.
+      - name: Seed the Smoke Test Fixture (the Part B rehearsal's household)
+        run: node apps/web/scripts/ensure-smoke-fixture.mjs
+        env:
+          WK_ADMIN_EMAIL: rachel@wellkept.demo
       - name: Install Chromium for Playwright
         run: pnpm --filter @wellkept/e2e exec playwright install --with-deps chromium
       - name: Start the app (dev — skips prod-guard env)
