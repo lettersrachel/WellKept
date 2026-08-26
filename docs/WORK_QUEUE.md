@@ -492,6 +492,45 @@ five earned live-build passes; see the frozen record. HG will
 correctly flag on the {"gapDays":10} reconciliation knob if no visit
 lands within ten days.
 
+**Production serves `577666d` (2026-08-26, the THIRTEENTH clean run):**
+build id verified three times and confirmed at `/api/build-id`,
+`/api/health` reading ok with db up, tree clean, mechanical checks
+1/4a/4b/12/15 PASS. Migrations agree three ways at 58 BOTH BEFORE AND
+AFTER: the read-only preflight reported nothing pending and the full
+run reported 58, because **this delta carries no migration at all**,
+the first run since the batch era to move the count by zero. G-63's
+preflight therefore ran its quiet case here, agreement rather than the
+two-migration gap it caught on the eleventh run, and both readings are
+worth having: one proves it refuses to apply, the other proves it
+reports honestly when there is nothing to apply.
+
+**What the delta actually contains, stated because it was misread
+before it was checked.** Nine merged PRs (#186 through #194), and the
+only application-behavior changes in the whole range are G-70's two
+sign-in-path files, `apps/web/src/app/verify-request/page.tsx` and
+`apps/web/src/lib/auth/config.ts`. Beside them: one CI config change
+(the airplane job now seeds the Smoke Test Fixture, so the Part B
+rehearsal has its household), one guard-scope change (`client-copy.test.ts`
+gains the sign-in email as a copy source, G-70's rider), the CLAUDE.md
+guard table, and docs. **G-68 and G-69 are NOT in this delta.** G-68
+merged as `e3fe0f5` and G-69 as `75bc6a4`, both ancestors of
+`747a98c`, so every confirmation banner has been live since the twelfth
+run. An earlier reading of this same range attributed them here, which
+is how a docs correction and a deploy record both came to rest on a
+false premise for half a day.
+
+**And the section 4 baseline correction belongs in this entry, not a
+later one.** The 25 August sitting's passes describe `50ecd0f` and
+nothing since. The measurable form of that: `actions.ts` carried 26
+confirmation call sites at `50ecd0f` and carries 60 at both `747a98c`
+and `577666d` (G-68's census counted 57 exported actions, of which 27
+were silent; call sites exceed actions because a branching action
+confirms twice). So no section 4 result recorded at the sitting can
+describe the confirmation behavior of either of the last two builds,
+whatever the check was about. The three corrected re-flag causes are
+in the re-flag paragraph further below; the standing they correct is
+this one.
+
 **Production serves `747a98c` (2026-08-26 morning, the TWELFTH clean
 run; the eleventh carried `75bc6a4` earlier the same morning):**
 migrations agree three ways at 58 (0056 `situation` and 0057
