@@ -15,7 +15,18 @@ export default async function VerifyRequest({
     <div className="card" style={{ maxWidth: 460, margin: "60px auto" }}>
       <h2>Check your email</h2>
       <div className="note">
-        A sign-in link is on its way. The link and code expire in 1 hour and work once.
+        {/* G-70: SAY WHICH ADDRESS. An operator running two plus-addressed
+            identities into one inbox (the pattern the one-role index forces
+            when one person covers two roles on a household) has no way to
+            tell the two sign-in emails apart: same subject, same body, and
+            only the to: header differs, which most clients hide. Browser
+            autofill silently replacing a typed alter address cost a
+            diagnostic round on 2026-08-26. The page already holds the
+            value; echoing it is the cheapest of the three places this
+            could have been caught. Copy is a proposal. */}
+        {email
+          ? <>A sign-in link is on its way to <strong>{email}</strong>. Check that this is the address you meant; the link and code expire in 1 hour and work once.</>
+          : <>A sign-in link is on its way. The link and code expire in 1 hour and work once.</>}
       </div>
       {/* G-30: a delivered email can still land in spam or arrive late —
           observed 2026-07-25 (Resend showed delivered; the inbox didn't).

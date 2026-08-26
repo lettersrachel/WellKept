@@ -163,3 +163,31 @@ subject before the delete and records the role, the NDA standing, and
 an ADR-006 subject token, matching what `role_assigned` has carried
 since G-59. Whether a revocation should also require a REASON stays a
 founder decision.
+
+## Step 6: the capture, dismissed and verified (26 August)
+
+The sitting's last remainder is closed. The artifact moved `captured` to
+`dismissed` at 09:42:04 on 26 August with all four fields set together
+(status, disposition, filed_by, filed_at) and `work_item_id` correctly
+NULL, since a dismissal files nothing into work. Verified by query, not
+by screen; the confirmation banner and the ninety-second brief's
+"0 capture(s) awaiting the router" agreed from two separate reads.
+
+The disposition answers the question the first look could not: the
+artifact was never a stuck flow. It was a test capture nobody had gone
+back to.
+
+**Worth remembering when this row is read later, because it looks like
+two people and it was one.** `captured_by` is the founder's primary
+identity acting as house_manager; `filed_by` is the ftc-admin alter
+identity acting as corporate_admin. Same human, two user ids, and the
+trail records both honestly because that is what actually happened. It
+is also the grant from the day before being used for exactly what it was
+created for: the artifact was unreachable by any corporate operator
+until that grant existed. This is the cost of the one-role index and the
+AJ option-1 trade, now visible in a production row rather than a design
+note.
+
+Also true and worth stating once: `capture_artifact` has held exactly
+one row in its production life, and that row has now completed its whole
+lifecycle. The file-into-work-item path is unexercised outside tests.

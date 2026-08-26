@@ -2450,6 +2450,58 @@ close this entry: a confirmation proves the code path ran to its end,
 not that the row committed, and it says nothing at all about a request
 that never left the browser.
 
+## DISPOSITION, 2026-08-26: cause NOT observed, both symptoms resolved on retry, the instrument now calibrated
+
+**Not closed as fixed, and the distinction is the whole entry.** Both
+actions this was filed for have now written on retry with no code change
+between the failure and the success:
+
+- `revokeRole`, 25 Aug 23:28:59: the assignment deleted, a `role_revoked`
+  audit row behind it.
+- `fileCaptureArtifact`, 26 Aug 09:42:04: the artifact moved `captured`
+  to `dismissed`, all four fields together (status, disposition,
+  filed_by 7f1da977 the ftc-admin identity, filed_at), `work_item_id`
+  correctly NULL for a dismissal. Nothing half-set.
+
+**The healthy path was watched end to end, which had never been done.**
+With the network panel open and filtered to `method:POST`, the
+dismissal produced exactly one request of ours: a POST to the drill-in
+URL returning **303**, 152 kB, 685 ms, followed by the re-rendered page
+carrying the row as dismissed and G-68's confirmation banner. Three of
+the four POSTs in that log were other sites in other tabs; ours was the
+303.
+
+**What that buys, stated plainly, because it is less than it looks.** It
+does not diagnose the original failure: that failure did not reproduce,
+and a mechanism never watched failing is a mechanism not diagnosed. What
+it does is CALIBRATE THE INSTRUMENT. Before this, nobody knew what a
+healthy server action looks like in the network panel, so a silent click
+could not be read against anything. Now it can, and the next occurrence
+is a two-minute diagnosis rather than an open question:
+
+- `method:POST` shows NO row for the surface: the request never left the
+  browser. Client-side, and the honest fix is detection.
+- A row with anything other than 303: the request landed and the server
+  refused or failed. More serious, and immediately actionable.
+
+**Ruled out with more confidence than before:** a systematic server-side
+fault in either action. Both call paths ran correctly, twice, against
+production data. **Still standing:** a transient client-side failure on
+the first attempt, most plausibly a stale server-action id across a
+deploy or a form that never hydrated.
+
+**The register's position:** this entry stays OPEN as a known,
+unreproduced failure mode with its detection in place, rather than being
+closed on the strength of two retries. If it never recurs, it ages out
+as an unexplained pair; if it recurs, the panel now answers it in one
+click. Either is honest. Claiming a fix would not be.
+
+**Coverage note from the same verification, worth keeping:**
+`capture_artifact` has now had exactly ONE row through its entire
+lifecycle, captured to dismissed, in about seventeen hours, and it is
+the only row the table has ever held in production. The
+file-into-work-item path is unexercised outside tests.
+
 ### G-68. Half the action layer changed stored state and said nothing, so a working click and a dead click looked identical
 
 Filed and FIXED 2026-08-25, the same evening as G-67 and directly out
@@ -2592,3 +2644,51 @@ is a decision on the record rather than a gap nobody noticed.
 production row correctly carries no `recordedLate` marker. That
 revocation happened when it says it did. Only the July GRANT's
 provenance is missing, which is G-66, and nothing can honestly fill it.
+
+### G-70. Nothing in the sign-in flow says which address it is signing you in as
+
+Filed 2026-08-26 from a live diagnostic round it cost. Reported with one
+half fixed; the rest is the founder's copy call.
+
+**What happened.** Signing in as the alter corporate identity
+(`lettersrachel+ftc-admin@gmail.com`) failed three times in a row and
+looked like a broken login. It was not: browser autofill silently
+replaced the typed alter address with the primary one, so the link that
+arrived was for the wrong identity, and nothing anywhere said so.
+
+**Why it could not be caught.** Plus-addressing means both identities
+deliver into ONE inbox, and the two sign-in emails are byte-identical:
+same subject, same body, same button. The only difference is the `to:`
+header, which most mail clients collapse by default. The MFA page does
+name the identity ("Signed in as ..."), which is how the session was
+finally read correctly, but by then three rounds had been spent.
+
+**Three places could have echoed the address back, and none did:**
+
+1. `/signin` accepts an autofilled address with no confirmation of what
+   was actually submitted.
+2. `/verify-request` said only "A sign-in link is on its way" while
+   HOLDING the address in its own query string and in the code form's
+   field below.
+3. The email body names no recipient at all.
+
+**Why this is not a one-off.** The alter-identity pattern is not a
+workaround, it is what the one-role index REQUIRES when one person
+covers two roles on a household (AJ, 2026-07-28, option 1), and the
+Field Test Home grant is the first production instance of it. It will
+recur every time it is used.
+
+**FIXED, the cheapest of the three:** `/verify-request` now names the
+address it sent to and asks the reader to check it is the one they
+meant. The page already held the value; this echoes it. Copy is a
+proposal, one string.
+
+**NOT fixed, both founder calls:**
+
+- **The email body naming its recipient.** A line like "This link signs
+  in <address>" would have caught it at the last possible moment. It is
+  client-facing copy in a template the founder owns.
+- **Autofill behaviour on `/signin`.** Suppressing autofill helps the
+  operator running two identities and hurts the far more common case of
+  one. That is a trade, not a defect, and picking it is not an
+  engineering default.
