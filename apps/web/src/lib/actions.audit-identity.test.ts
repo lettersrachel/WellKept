@@ -34,6 +34,10 @@ vi.mock("./db", () => ({
       },
     }),
     update: () => ({ set: () => ({ where: () => Promise.resolve() }) }),
+    // The delete EMPTIES what a later select would find, so an action that
+    // reads its subject after deleting the row gets nothing. That is what
+    // makes G-69's ordering claim a test rather than a code comment.
+    delete: () => ({ where: () => { selectResults.roleAssignment = []; selectResults.authUser = []; return Promise.resolve(); } }),
   },
 }));
 vi.mock("./session", () => ({
@@ -131,4 +135,48 @@ test("G-59: exclusion_ended tokenizes a person-scoped row's target the same way"
   const audit = auditRows().find((a) => a.kind === "exclusion_ended")!;
   assert.ok(!JSON.stringify(audit.detail).includes("Grandma Ruth"));
   assert.equal((audit.detail as Record<string, unknown>).subjectToken, tok!.id);
+});
+
+test("G-69: role_revoked carries the token, the role and the NDA standing, read before the delete", async () => {
+  // The production row that produced this finding carried assignmentId
+  // alone. Once the assignment is deleted that id dereferences to
+  // nothing, so the trail could say an assignment ended and never say
+  // whose, which role, or under what standing. The values must be read
+  // BEFORE the delete, which is what this test is really pinning.
+  selectResults.roleAssignment = [{
+    id: "a-1", householdId: "h-1", userId: "u-target", role: "house_manager", ndaApproved: true,
+  }];
+  selectResults.authUser = [{ id: "u-target", email: "target@example.com" }];
+  const { revokeRole } = await import("./actions");
+  await confirms(revokeRole(form({ assignmentId: "a-1", householdId: "h-1" })));
+
+  const [tok] = tokenRows();
+  assert.ok(tok, "revoking must mint its own subject token, the assignRole pattern");
+  assert.equal(tok!.kind, "email");
+  assert.equal(tok!.value, "target@example.com", "the mapping row holds the value");
+
+  const audit = auditRows().find((a) => a.kind === "role_revoked")!;
+  const detail = audit.detail as Record<string, unknown>;
+  assert.equal(detail.subjectToken, tok!.id, "the audit row carries the token");
+  assert.equal(detail.role, "house_manager", "which role ended is the point of the row");
+  assert.equal(detail.ndaApproved, true, "the standing the assignment carried, kept as it stood");
+  assert.equal(detail.assignmentId, "a-1", "the existing key survives; production rows carry it");
+  assert.ok(!JSON.stringify(detail).includes("target@example.com"),
+    "ADR-006 holds on the revoke side too: the address never enters the audit detail");
+});
+
+test("G-69, the other direction: a subject whose user row is already gone records that fact", async () => {
+  // Not a blank to fill in later. A null token is the honest statement
+  // that there was no address to tokenize at revocation time.
+  selectResults.roleAssignment = [{
+    id: "a-2", householdId: "h-1", userId: "u-vanished", role: "client", ndaApproved: false,
+  }];
+  selectResults.authUser = [];
+  const { revokeRole } = await import("./actions");
+  await confirms(revokeRole(form({ assignmentId: "a-2", householdId: "h-1" })));
+
+  assert.equal(tokenRows().length, 0, "no address, no token, and no invented one");
+  const detail = auditRows().find((a) => a.kind === "role_revoked")!.detail as Record<string, unknown>;
+  assert.equal(detail.subjectToken, null);
+  assert.equal(detail.role, "client", "the role is still known from the assignment row itself");
 });

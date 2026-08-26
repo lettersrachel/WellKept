@@ -815,6 +815,38 @@ recorded and never a value, since it rides in a URL. Twenty-five e2e
 green, the new journey proving assign and revoke on the exact controls
 with the audit row read behind the banner.
 
+**And the founder read the first role_revoked row this system has ever
+written, which opened G-69 (filed and FIXED) and settled G-65's
+interim.** The retry wrote, verified by query at 23:28:59: zero
+field-role assignments on Field Test Home, the July `house_manager`
+row gone, a `role_revoked` audit row behind it. The household is
+corporate only now (one assignment, still passing check 15), it is off
+the founder's field surface, and **G-65's resolution rule is untouched
+and still hers**. The same verification cleared an unrelated loose end
+without a defect behind it: the Smoke Test Fixture assignment that
+looked like it had vanished was revoked through the app at 16:34 with
+its own audit row, missed by a first query that never read
+role_revoked. **G-67 gains real evidence and stays OPEN:** the same
+action, control and identity wrote correctly on a later attempt with
+no code change, which rules out a systematic server fault in
+`revokeRole` and leaves the transient client-side causes (a stale
+server-action id, a form that never hydrated) standing; the decisive
+network-panel evidence is still owed and now harder to gather, and the
+capture-dismissal half has not been re-attempted at all. **G-69 is the
+founder's own find in the row itself:** the detail carried
+`assignmentId` and nothing else, and the assignment is DELETED by the
+same action, so the id dereferences to nothing and the trail could say
+an assignment ended but never whose, which role, or under what NDA
+standing, while `role_assigned` has carried role, ndaApproved and an
+ADR-006 subject token since G-59. Fixed by reading the subject BEFORE
+the delete and mirroring that detail (token, never the address; a
+vanished user row records a null token rather than a blank), proven red
+on the old thin detail and red again on the reordered read, since the
+suite's db mock empties its select results when a delete runs. Left
+undecided on purpose: whether a revocation should require a REASON is a
+policy question about friction on that control, and `db:grant` requiring
+one does not settle it for the in-app form.
+
 The ninth run's record, kept for history: production served `0cedc9f`
 (2026-08-25, the ninth run's record):
 the nineteen-migration batch 0037-0055 applied (counts 56/56/56), the

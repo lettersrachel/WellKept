@@ -2284,6 +2284,22 @@ ftc-admin corporate assignment, which the failed revoke does not
 touch. Retry-with-verification is the next action, and G-66 records
 the surrounding finding.
 
+**Interim NOW TAKEN, verified (25 Aug 2026, 23:28:59). The retry
+wrote.** Field-role assignments on Field Test Home: ZERO; the July
+`house_manager` row aa4b7053 is gone, and a `role_revoked` audit row
+stands behind it, actor corporate_admin. The household is corporate
+only now: one assignment, the ftc-admin identity, so check 15 still
+passes and no field surface resolves there. **G-65 itself is
+UNCHANGED and still open**: the interim removes the founder from that
+household's field surface, which is why /visit now resolves elsewhere
+for her, but the resolution RULE (oldest field-role assignment wins,
+data.ts:46) is untouched and still hers to decide. The verification
+also settled an unrelated loose end recorded here so it is not chased
+again: the Smoke Test Fixture assignment that vanished earlier today
+was revoked through the app at 16:34 with its own audit row, which
+the first query missed by not reading role_revoked at all. Not a
+defect; a query that looked in the wrong table.
+
 ### G-66. Role assignments made before 25 August carry no audit history at all, and the backfill is refused on purpose
 
 Filed 2026-08-25, from the verification that corrected G-65's interim
@@ -2390,6 +2406,35 @@ does.
 apply to every other corporate action on that page, which is most of
 the ways a person changes anything in this product.
 
+**UPDATE 25 Aug 2026, 23:28:59: the revoke SUCCEEDED on retry, and
+that is evidence, not a closure.** Same action, same control, same
+identity, same household, a later attempt: the assignment is deleted
+and a `role_revoked` audit row stands behind it (verified by query,
+not by screen). What this narrows: a systematic server-side fault in
+`revokeRole` is ruled out, since the identical call path wrote
+correctly minutes later with no code change in between. What survives:
+a transient failure on the FIRST attempt, which is the stale
+server-action id or the never-hydrated form, both of which produce a
+click that never reaches the server and are indistinguishable from
+success at the screen. **The decisive evidence is still owed and still
+the same** (whether a POST leaves the browser), and it is now harder to
+gather, because the state that produced it is gone. A retry that works
+is the weakest kind of diagnosis: it proves the code can work, never
+that the failure will not recur.
+
+**Still open on the other half:** the capture dismissal
+(`fileCaptureArtifact`) has NOT been re-attempted or re-verified since
+the original silence. It is the second of the two actions this entry
+was filed for, and it stays unclaimed.
+
+**What changed around it:** G-68 (filed and fixed the same night) makes
+the operator-facing half legible. Every action now confirms, so a click
+that produces no green line is visibly a click that did not run. That
+would have made this evening diagnosable in the moment. It does not
+close this entry: a confirmation proves the code path ran to its end,
+not that the row committed, and it says nothing at all about a request
+that never left the browser.
+
 ### G-68. Half the action layer changed stored state and said nothing, so a working click and a dead click looked identical
 
 Filed and FIXED 2026-08-25, the same evening as G-67 and directly out
@@ -2480,3 +2525,55 @@ one string, and the founder adjusts any of them without touching logic.
 The one rule that is not copy: a message names WHAT was recorded and
 never a value, because it rides in a URL and lands in browser history.
 The guard enforces that for the actions that hash or seal their input.
+
+### G-69. The revocation audit row could not say whose role ended
+
+Filed and FIXED 2026-08-26, from the founder's read of the first
+`role_revoked` row this system has ever written in production. She
+found it herself, in the row itself, the same night it was created.
+
+**The finding.** The detail carried `{"assignmentId":"aa4b7053-..."}`
+and nothing else. No subject, no role, no NDA standing, no reason. And
+because the assignment ROW IS DELETED by the same action, that id
+dereferences to nothing the moment it is written: the trail says an
+assignment ended, and cannot say whose it was, which role it carried,
+or under what standing.
+
+**Why it is a real gap and not a nit.** It is the weaker half of a pair
+whose other half is careful. `role_assigned` has carried `role`,
+`ndaApproved`, a reason where the caller supplies one, and an ADR-006
+`subjectToken` since G-59 (2026-08-06). So a household's role history
+reads as a series of well-described beginnings and undescribed endings.
+That is exactly the asymmetry an audit trail cannot afford: for
+questions like "who had access to this household in July", the ending
+matters as much as the beginning, and the deletion is the one event
+after which the answer can no longer be recovered from anywhere else.
+
+**FIXED.** `revokeRole` now reads its subject BEFORE the delete (there
+is nothing to read after it) and writes `{ assignmentId, subjectToken,
+role, ndaApproved }`, mirroring `role_assigned`. ADR-006 holds on this
+side too: the token resolves to the address while the subject's mapping
+exists and stops resolving the day it is erased; the email itself never
+enters the audit row. A subject whose `auth_user` row is already gone
+records `subjectToken: null`, which is the honest statement that there
+was no address to tokenize, not a blank to fill in later.
+
+Proven in both directions, and the ordering claim is a test rather than
+a comment: the suite's database mock EMPTIES its select results when a
+delete runs, so an implementation that read the subject after deleting
+would fail. Red on the old thin detail (two tests), red on the reordered
+read (one test), green on the fix.
+
+**NOT fixed, and a founder decision rather than an omission: there is
+still no reason on a revocation.** `db:grant` requires `--reason` and
+records it, because a grant from outside the app has no other context;
+the in-app `assignRole` and `revokeRole` forms ask for none. Whether
+removing someone's access should require the operator to say why is a
+policy question about how much friction belongs on that control, and it
+is the founder's, not a default to invent. Recorded here so the absence
+is a decision on the record rather than a gap nobody noticed.
+
+**Not a second finding, recorded so it is not counted twice:** the
+production row correctly carries no `recordedLate` marker. That
+revocation happened when it says it did. Only the July GRANT's
+provenance is missing, which is G-66, and nothing can honestly fill it.
