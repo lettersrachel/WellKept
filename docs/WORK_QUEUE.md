@@ -519,6 +519,34 @@ it is also not the same claim as passing here. The next sitting
 re-runs against `747a98c`, and checks 7 (fresh log) and 9
 (suppression) carry their honest partials into it.
 
+**And the 25 August sitting's last remainder closes, with G-67
+dispositioned and G-70 filed (26 August morning):** the test capture on
+Field Test Home is DISMISSED and verified by query (all four fields
+together, `work_item_id` NULL, filed by the ftc-admin identity at
+09:42:04), so the sitting has nothing left open that it named. **G-67 is
+dispositioned, NOT closed:** both actions it was filed for have now
+written on retry with no code change between, and the healthy path was
+watched end to end for the first time (network panel filtered to
+`method:POST`: one request of ours, a 303, 152 kB, 685 ms, then the
+re-rendered row and G-68's banner). That does not diagnose the original
+failure, which never reproduced; what it does is CALIBRATE THE
+INSTRUMENT, so the next silent click reads in two minutes (no POST row
+means client-side, a non-303 means the server). The entry stays open as
+a known unreproduced failure mode with detection in place, because
+claiming a fix for a mechanism never watched failing would not be true.
+**G-68's confirmation banner rendered in production for the first time**
+on that very dismissal, the exact class of click that made 25 August
+unresolvable. **G-70 is filed from the diagnostic round it cost:**
+nothing in the sign-in flow says which address it is signing you in as,
+so browser autofill silently swapped the alter identity for the primary
+one, and three places could have echoed it back while none did;
+`/verify-request` now names the address (the cheapest of the three, copy
+a proposal), while the email body's recipient line and the autofill
+trade on `/signin` are founder calls. Coverage note kept with it:
+`capture_artifact` has held exactly one production row, now through its
+whole lifecycle, and the file-into-work path is unexercised outside
+tests.
+
 **And the G-62 candidate guard is BUILT (the fifteenth guard,
 legal-census.test.ts):** the same-PR legal rule's detection is now
 computed, not remembered. The census (household-referencing tables
