@@ -1814,11 +1814,25 @@ and not lost, not proposing a build order.
    the same reading: the well-kept-web Vercel project is not dormant,
    it rebuilt this branch twice on 26 August and its configuration
    changed between two of those builds (a `rootDirectory` appeared).
-   Reading its environment variables for a production DATABASE_URL,
-   WK_KMS_KEY or AUTH_SECRET is founder-side, since no Vercel
-   credential exists in the repo or the build container; the answer
-   decides G-35, and a yes makes it an incident with a written timeline
-   rather than a register line.
+   **G-35 IS ANSWERED, 26 August, and the answer is NO.** The founder
+   read both projects' settings pages directly:
+   `well-kept-web/settings/environment-variables` shows "No Environment
+   Variables Added", so the stray holds nothing at all, while the
+   production set lives in the project named `wellkept`, all
+   Production-scoped, added 18-19 July, which is where it belongs.
+   `deploy.sh:27` (`EXPECTED_PROJECT="wellkept"`) and `:35`
+   (`PROD_HOST="https://wellkept-orcin.vercel.app"`) settle which
+   project is which from the repository without a dashboard. So this
+   is the "if no, it is noise" branch, and the incident opened against
+   it is WITHDRAWN (see
+   `docs/INCIDENT_2026-08-26_STRAY_PROJECT_CREDENTIALS.md`, kept as a
+   record of how a false premise got written down). What survives:
+   the stray still builds on every push, seven times across 26-27
+   August including twice after its Git integration was reported
+   disconnected, which is a cost and tidiness matter now rather than a
+   security one; and the repository's GitHub `homepage` field points
+   at the empty stray instead of `PROD_HOST`, a one-line fix in repo
+   settings.
    **The `ci` stop is diagnosed and belongs with this item (G-73's
    addendum).** No `ci` run has been created for any commit since 13:03
    UTC on 26 August. The workflow is `state: active` and is the only one
