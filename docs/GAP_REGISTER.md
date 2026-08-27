@@ -3940,12 +3940,27 @@ worked around within a week, so the refusal is the default and
 the gap concretely: the commit count behind, and the tip's sha. Two
 riders the founder specified:
 
-- **`--rollback` on the current tip says so.** Passing the flag and
+- **`--rollback` on the current tip REFUSES.** Passing the flag and
   hitting the tip means somebody believed they were going back and were
   not, which is a false belief about which code is shipping, and this
-  gate exists to prevent exactly that in either direction. It is a loud
-  notice, not a refusal; whether it should refuse is an open question
-  and is noted with the ruling rather than decided here.
+  gate exists to prevent exactly that in either direction.
+
+  **This is a CORRECTION to the original instruction, not a fresh
+  decision, and the weaker call was the founder's own.** Her first
+  instruction was "say so": warn and proceed. She corrected it the same
+  day, reasoning that the gate treats a false belief about which code is
+  shipping as serious enough to interrupt in the stale direction, and
+  that someone passing `--rollback` on the tip holds the same false
+  belief pointed the other way. **The practical asymmetry settles it:**
+  refusing costs one re-run without the flag; proceeding costs an
+  operator who believes a rollback happened and reasons from that belief
+  afterwards, which is the shape of most entries filed this week.
+
+  Recorded this way deliberately. A register that shows only the final
+  call reads as though the right answer was obvious, and the useful
+  information is that the weaker version was stated first, by the person
+  with the most context, and corrected within the hour on a second
+  reading.
 - **The tip is read from the ref this script FETCHED**, never from
   whatever a stale remote-tracking ref held. A currency check reading a
   stale ref would inherit the exact defect it exists to catch, which
@@ -3962,25 +3977,62 @@ out at `a538ace`, the gate refused and computed **13 commits behind**,
 matching the founder's independently derived count, and the same run
 with `--rollback` proceeded past it.
 
-**Two proof errors made and corrected in the same session, both of the
-kind this register exists for.**
+#### The proof errors, which are the more useful half of this round
 
-1. **A break that was not a break.** The fourth deliberate mutation
-   renamed `is NOT CURRENT` to `is NOT CURRENTX` EVERYWHERE, including
-   the selftest's own grep target, so the gate kept working with
-   different wording and the suite passed. It was read for a moment as
-   "the precondition did not fire". A consistent rename is not a
-   mutation of behavior, and "confirm the break landed" has to mean
-   confirming the BEHAVIOR changed, not that the text did.
-2. **A vacuous precondition, written to prevent vacuous cases.** Case
-   15 originally ran `grep -q "is NOT CURRENT" "$0"`, and that
-   assertion line itself contains the string, so it matched itself and
-   could never fail. Deleting the gate entirely left case 15 GREEN and
-   case 16 caught the problem instead. Now it greps the runtime refusal
-   specifically, and deleting the gate makes case 15 fail as designed,
-   proven. **A guard that reads the file it lives in must not match its
-   own text**, which is the same self-reference the sha gate had when it
-   was handed `$(git rev-parse HEAD)`.
+Three instances, all in the INSTRUMENT rather than in the thing being
+measured. Stated as instances rather than as an aside, because that is
+now the dominant category: the gate itself was correct on its first
+write, and every error made proving it was an error about the proof.
+
+**Instance 1. A consistent rename is not a mutation of behavior.** One
+deliberate break renamed `is NOT CURRENT` to `is NOT CURRENTX`
+EVERYWHERE, including the selftest's own grep target. The gate kept
+working with different wording, the suite passed, and for a moment that
+read as a precondition failing to fire. Changing every occurrence of a
+string changes wording and leaves behavior intact. **"Confirm the break
+landed" has to mean confirming the BEHAVIOR changed, not that the text
+did**, which is a harder thing to check and therefore the thing that
+gets skipped.
+
+**Instance 2. A guard that reads the file it lives in must not match its
+own text.** Case 15 originally ran `grep -q "is NOT CURRENT" "$0"`, and
+that assertion line itself contains the string, so it matched itself and
+could never fail: a vacuous precondition written to prevent vacuous
+cases. Deleting the gate entirely left case 15 GREEN.
+
+**And case 16 caught the deletion instead, which is the argument for the
+four-direction discipline.** The individual case failed and the redundancy
+did its work. That is what having four directions is FOR, and it is the
+first time in this register that the redundancy can be shown paying for
+itself rather than asserted to. A single case, however carefully written,
+is one thing that can be wrong; four cases pointed at the same mechanism
+from different sides survive one of them being wrong.
+
+**Instance 3, the same error again, twice more, in the check written to
+catch it.** While proving the corrected refusal, the landed-check
+`grep -c 'fail "--rollback was passed'` reported the runtime refusal
+still present after two mutations that had removed it. It was matching
+case 15's own assertion line, which quotes the refusal text. Third
+occurrence of self-matching in one session, in the instrument built
+because of the first two. Corrected by printing the actual matching
+lines with numbers rather than a count, so the two sites are visibly
+distinct.
+
+Isolating case 18 needed a fourth attempt for the same reason: removing
+the refusal fires case 15 first, and changing `fail` to `echo` also
+fires case 15, because that precondition checks for the refusal
+specifically. The mutation that isolates case 18 keeps the refusal text
+intact and makes its branch unreachable. **The general lesson is that a
+layered proof needs mutations designed for each layer**, and a mutation
+that trips an earlier layer proves the earlier layer, not the one you
+aimed at.
+
+**Why this category matters more than the defect it found.** A wrong
+instrument does not fail loudly. It reports the answer you expected,
+which is exactly when nobody looks again. Every instance above produced
+a GREEN or a plausible-looking result, and each was caught only by
+someone asking a second question about a run that had already answered
+the first.
 
 **Base rate (G-75), eleventh of eleven:** found by a person reading
 prose written for a different purpose, not by a check. The instructions
