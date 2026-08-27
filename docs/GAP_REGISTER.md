@@ -4478,25 +4478,47 @@ in it.
 > transport, not of the cause.** The fix is never to make the operator
 > smarter about the symptom; it is to carry the reason up.
 
-#### Can the 403 surface as itself? YES, and the precedent already exists
+#### The empty catch IS the mechanism
 
-Reported, not built. The obstacle is one line: the queue's drain wraps
-the transport in `try { ... } catch { ... }` with an **empty catch**
-(`offline-queue/src/index.ts:141`), which discards the error object
-entirely. Every failure becomes attempts+1 and a break, so a 403, a 500
-and an offline radio are literally the same event by the time the card
-renders. Not even the console keeps the reason.
+`offline-queue/src/index.ts:141` is `} catch {`, with no binding. The
+error object is discarded at the moment it arrives, and the item becomes
+attempts+1 and a break. So a 403, a 500 and an offline radio are
+literally the same event by the time the card renders, and not even the
+console keeps the reason.
 
-**The shape to copy is `conflict`, which the queue already does.** The
-transport returns a structured `{ conflict, reason }`, the drain moves the
-item to a `conflict` state, and the reason is preserved onto a conflict
-marker the operator can read. A `refused` outcome would be the same
-pattern one value wider: the transport reads the response status and
-body, returns `{ refused: true, reason }`, the drain parks the item in a
-`refused` state carrying the reason rather than counting attempts, and the
-card says what happened. Retrying a 403 is pointless by definition, so
-"refused" is a genuinely different state from "not sent yet" rather than a
-cosmetic relabel.
+**That one line is where a definite answer becomes an indefinite
+symptom.** The server said something exact and final: no second factor,
+do not retry, here is what to do. By the time it reaches the person it
+has become "attempt 3", which is a statement about how many times we
+have tried and about nothing else. The information was not lost in
+transit or degraded by distance; it was received and thrown away, one
+line below where it would have been useful.
+
+#### The fix is copying an existing pattern, not adding a capability
+
+This matters for how it gets prioritized, so it is stated plainly rather
+than left to be inferred from the design sketch.
+
+**The queue already knows how to surface a non-retryable outcome.** The
+`conflict` path does exactly this today: the transport returns a
+structured `{ conflict, reason }`, the drain parks the item in its own
+`conflict` state instead of counting attempts, and the reason survives
+onto a marker the operator reads. The state vocabulary, the structured
+transport result, the reason string, the parking behaviour and the
+operator-facing marker all exist and are proven.
+
+So **`refused` is a MISSING CASE, not a missing capability.** The work is
+to bind the error, read the status, return `{ refused: true, reason }`,
+and add one member to a union that already has four. Nothing is invented
+and no new concept enters the queue. That is a materially smaller and
+lower-risk change than the design sketch alone suggests, and a reader
+deciding what to schedule should know it.
+
+The distinction is also the honest one for the register to record: when a
+system already contains the shape a fix needs, the gap is that nobody
+noticed the new case belonged to an old pattern. Retrying a 403 is
+pointless by definition, so "refused" was always a different fact from
+"not sent yet"; it simply never got its own name.
 
 Three things that would need deciding and are therefore not decided here:
 which statuses count as refused rather than retryable (403 clearly, 400
