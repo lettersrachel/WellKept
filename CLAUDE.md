@@ -205,6 +205,20 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   and every string, staff-facing and client-facing alike. The rule exists to
   keep copy sounding human, so read for voice, not only for punctuation.
   `client-copy.test.ts` enforces a subset; the rest is on you.
+- **A dated log's entries are frozen at the moment they are written, and a
+  file being open for append does not make its contents editable**
+  (founder ruling, 27 August 2026). The em dash rule applies to NEW
+  entries; existing ones stay as written. Rewriting the prose inside a
+  closed register entry to satisfy a style rule would be editing a record
+  after the fact, which is the same objection Ruling 3 rests on, and
+  `status: living` does not decide the question: it says the file is
+  appended to, not that its contents are open. `GAP_REGISTER.md` is the
+  decided instance. Anything else that is a dated log rather than a
+  document is treated the same way. A genuine DOCUMENT is in scope and
+  gets swept at the voice pass; `LAUNCH.md` and `SPEC_AUDIT.md` are named
+  as in-scope by the same ruling. Recorded as a ruling rather than left
+  as a judgment call, because the next person counting em dashes hits
+  exactly this question and would otherwise have to decide it alone.
 - **No count is written where it can be computed.** Three confirmations,
   all the same shape: W-10 closed claiming six copy sources when the list
   held fifteen; the copy guard's own scope comment described a reach it
