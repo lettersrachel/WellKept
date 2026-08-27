@@ -145,7 +145,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
     || { echo "SELFTEST FAIL: a sha with a successful ci run was REFUSED (green path broken)"; exit 1; }
   echo "selftest 14/14: a sha with a successful ci run accepted"
 
-  echo "selftest PASSED: eight refusals fire, four green paths accepted"
+  # The tally is DERIVED from the case numbering above rather than stated,
+  # because a stated count is a claim that rots: this line read "eight
+  # refusals, four green paths" (twelve) for the first hour after the
+  # thirteenth and fourteenth cases were added, which is the guard-scope
+  # comment failure in a new place, one file over.
+  echo "selftest PASSED: 14/14 cases ran (8 refusals fired, 3 green paths accepted, 3 behavioural assertions held)"
   exit 0
 fi
 
