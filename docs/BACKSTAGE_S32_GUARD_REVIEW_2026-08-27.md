@@ -270,33 +270,55 @@ expires.
 
 ---
 
-## Accessibility: FOUNDER RULING, 27 August 2026, deferred with a trigger
+## Accessibility: FOUNDER RULING, 27 August 2026, TWO triggers
 
-**The ruling.** Adopt the no-diagnosis gate now (done, CLAUDE.md). Defer
-the accessibility TEST SUITE, because this is a scope decision and not
-yet a testing question. **The revisit trigger is the moment the client
-side unfreezes**, stated as a trigger rather than a date so it cannot
-lapse quietly: a date passes and nothing happens, a trigger fires when
-the condition that justified the deferral stops holding.
+Deferred, not dismissed, and deferred against **two separate triggers
+neither of which inherits the other**. The no-diagnosis gate is adopted
+now (CLAUDE.md); what is deferred is the test suite.
 
-That is the right shape for the reason this document already gives about
-vacuous ticks. A deferral with a date becomes a silent omission the day
-the date passes unread. A deferral with a trigger is answerable by
-anybody who asks whether the condition still holds.
+| Surface | Trigger | Fires |
+|---|---|---|
+| **Staff (the HOM field app)** | the first HOM who is not the founder or Lauren | **sooner**, before February training |
+| **Client** | the client side unfreezing from the digest | later, no date |
 
-**One part of the risk the ruling does not reach, flagged rather than
-absorbed.** The trigger is client-side, and the accessibility gap is not.
-The HOM field surface exists today, is used on a phone from a home-screen
-install, and is the surface the spec's own low-capacity risk describes:
-interrupted, one-handed, low-attention use in somebody's house. Under
-this ruling it has **no accessibility coverage and no trigger that would
-create any**, because the client side unfreezing says nothing about it.
+**Triggers rather than dates, deliberately.** A date passes and nothing
+happens. A trigger is answerable by anybody who asks whether the
+condition still holds, which is the only form that survives being
+forgotten.
 
-Recorded as an open question rather than answered here, since scope is
-the founder's: whether the staff surface gets its own trigger, shares
-the client one, or is deliberately out of scope. What must not happen is
-that it inherits the client deferral by silence, which is exactly how the
-two vacuous ticks above came to look like passes.
+**Why the staff trigger fires first, which is the counterintuitive
+part.** The client side is frozen at the digest and has almost no
+surface. The HOM field app is in daily use RIGHT NOW: on a phone, from a
+home-screen install, one-handed, interrupted, in somebody's house. That
+is not adjacent to section 32's low-capacity risk; **it is the
+description of it.** Once someone is using that surface as their actual
+job rather than as a test, keyboard, focus and reflow stop being
+hypothetical.
+
+### The staff trigger was MISSING from the first version of this ruling
+
+Recorded because the mechanism matters more than the omission.
+
+The ruling as first given tied the deferral to the client surface
+unfreezing, full stop. Under it the staff surface would have **inherited
+a client deferral by silence**: not exempted by a decision, not listed as
+out of scope, simply never mentioned, with no trigger that could ever
+fire for it. That is precisely the mechanism that produced the two
+vacuous ticks elsewhere in this document, arriving in a ruling written
+the same afternoon by the person who had just read about it.
+
+**How the correction was found, which generalizes.** Not by re-reading
+the ruling, which was internally consistent and plausible. By checking it
+against what the repository actually contains: a live field surface, used
+on a phone, that the spec's own risk describes almost word for word. **The
+spec describes a system; the repository is one.** Where a ruling is
+scoped by reference to the spec's shape rather than to the built shape,
+the gap between them becomes an unstated exemption.
+
+The founder identified the error as hers on being shown it. Kept in the
+record rather than smoothed over, because a ruling that was wrong on its
+face and corrected within the hour is more useful to a later reader than
+a ruling that appears to have been right first time.
 
 ## The vacuous-satisfaction category, named because it has no home
 

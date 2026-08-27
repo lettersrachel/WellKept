@@ -641,8 +641,15 @@ simplified mode exists).
 because the surface does not exist and are listed rather than ticked,
 since each is true today for a reason that expires. **Accessibility is
 the one total gap**: no axe, no a11y assertions, no keyboard path
-anywhere, verified by search, and it needs a scope decision before it
-needs a test.
+anywhere, verified by search. **RULED 27 August, TWO triggers, neither
+inheriting the other**: the staff surface revisits at the first HOM who
+is not the founder or Lauren (sooner, before February training), the
+client surface at the client side unfreezing. The staff trigger was
+missing from the ruling as first given and would have let that surface
+inherit a client deferral by silence, which is the mechanism that
+produced the vacuous ticks below; the correction came from checking the
+ruling against what the repository CONTAINS rather than against what the
+spec describes.
 
 Two risks are vacuously satisfied and **will silently stop being so**
 (the ease baseline and the no-diagnosis gate). Those re-check on a
