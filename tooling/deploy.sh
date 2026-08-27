@@ -8,6 +8,8 @@
 # Usage:
 #   DATABASE_URL=... bash tooling/deploy.sh <expected-main-sha>
 #   DATABASE_URL=... bash tooling/deploy.sh --preflight <sha>   # READ-ONLY: no migrate, no deploy
+#   DATABASE_URL=... bash tooling/deploy.sh --rollback <sha>    # deliberately deploy an sha BEHIND the tip
+#     (flags are order-independent and may be combined)
 #   bash tooling/deploy.sh --selftest      # prove the refusals fire AND the green paths pass
 #
 # G-63 (2026-08-25): --preflight once RAN the migration, because the
@@ -59,13 +61,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # NOT about the origin/main gate pin it to HEAD via the selftest-only
   # override, so a dev tree with unpushed commits can still prove them.
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/14: wrong sha refused"
+  echo "selftest 1/18: wrong sha refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/14: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  echo "selftest 2/18: migration-count mismatch refused (the assertion itself, migrate skipped)"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/14: unexpected project refused"
+  echo "selftest 3/18: unexpected project refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/14: absent/wrong project link refused BEFORE deploy"
+  echo "selftest 4/18: absent/wrong project link refused BEFORE deploy"
 
   # Round seven, session T: the class case. A commit that EXISTS locally but
   # is not on origin/main must be refused, however the argument was produced.
@@ -74,7 +76,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   LOCAL_ONLY=$(git commit-tree "HEAD^{tree}" -p HEAD -m "deploy.sh selftest: local-only commit, never pushed")
   WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$LOCAL_ONLY" 2>/dev/null \
     && { echo "SELFTEST FAIL: a local-only sha (not on origin/main) was accepted"; exit 1; }
-  echo "selftest 5/14: a sha that exists locally but is not on origin/main refused"
+  echo "selftest 5/18: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
   # guard suite that only tests red passes while refusing everything - which
@@ -82,12 +84,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # the checks ACCEPT what they are supposed to accept.
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: correct sha + real project link REFUSED (green path broken)"; exit 1; }
-  echo "selftest 6/14: correct sha and real project link accepted"
+  echo "selftest 6/18: correct sha and real project link accepted"
 
   GREEN=$(printf '{"id":"%s"}' "$(git rev-parse HEAD)" | extract_build_id)
   [[ "$GREEN" == "$(git rev-parse HEAD)" ]] \
     || { echo "SELFTEST FAIL: build-id extraction returned '$GREEN'"; exit 1; }
-  echo "selftest 7/14: build-id extracted from its JSON body"
+  echo "selftest 7/18: build-id extracted from its JSON body"
 
   # Env presence (2026-07-29): a rm-then-failed-add on WK_KMS_KEY left the
   # project with no key, and a routine deploy would have shipped a build
@@ -96,13 +98,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
     WK_DEPLOY_TEST_ENV_LS=$' AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: a project missing WK_KMS_KEY was accepted"; exit 1; }
-  echo "selftest 8/14: missing required env var refused"
+  echo "selftest 8/18: missing required env var refused"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
     WK_DEPLOY_TEST_ENV_LS=$' WK_KMS_KEY Encrypted Production\n AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: a complete env set was refused (green path broken)"; exit 1; }
-  echo "selftest 9/14: complete env set accepted"
+  echo "selftest 9/18: complete env set accepted"
 
   # G-63, proven in both directions with a live sentinel rather than by
   # reading the code: the migrate path must fire in FULL mode and must
@@ -114,19 +116,19 @@ if [[ "${1:-}" == "--selftest" ]]; then
   [[ -e "$SENTINEL" ]] && { echo "SELFTEST FAIL: preflight FIRED the migrate path (G-63 regressed)"; exit 1; }
   printf '%s' "$PF_OUT" | grep -q "PENDING" \
     || { echo "SELFTEST FAIL: preflight did not report the pending migrations"; exit 1; }
-  echo "selftest 10/14: preflight left a pending migration pending, and said so"
+  echo "selftest 10/18: preflight left a pending migration pending, and said so"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_MIGRATE_CMD="touch $SENTINEL" WK_DEPLOY_TEST_DB_COUNT=1 \
     bash "$0" "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: full mode accepted a count mismatch"; exit 1; }
   [[ -e "$SENTINEL" ]] || { echo "SELFTEST FAIL: full mode never fired the migrate path (the write half is broken)"; exit 1; }
   rm -f "$SENTINEL"
-  echo "selftest 11/14: full mode fires the migrate path (then refuses the mismatched count downstream)"
+  echo "selftest 11/18: full mode fires the migrate path (then refuses the mismatched count downstream)"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=999 \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: preflight accepted a database AHEAD of the tree"; exit 1; }
-  echo "selftest 12/14: preflight refuses a stale tree (database ahead of disk)"
+  echo "selftest 12/18: preflight refuses a stale tree (database ahead of disk)"
 
   # The CI gate, both directions (2026-08-27). Red first: a sha whose ci
   # run is absent, or concluded anything but success, must not deploy.
@@ -136,28 +138,79 @@ if [[ "${1:-}" == "--selftest" ]]; then
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
     WK_DEPLOY_TEST_CI=startup_failure bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: a sha whose ci run died at startup was accepted"; exit 1; }
-  echo "selftest 13/14: a sha with no ci run, or a startup_failure, refused"
+  echo "selftest 13/18: a sha with no ci run, or a startup_failure, refused"
 
   # Green: the passing direction, because a gate that only ever refuses is
   # as broken as one that never fires (it just fails safe).
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
     WK_DEPLOY_TEST_CI=success bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: a sha with a successful ci run was REFUSED (green path broken)"; exit 1; }
-  echo "selftest 14/14: a sha with a successful ci run accepted"
+  echo "selftest 14/18: a sha with a successful ci run accepted"
+
+  # The CURRENCY gate (G-82), four directions. PRECONDITIONS FIRST: a
+  # currency case is only meaningful if the gate is actually in the file
+  # and the flag is actually parsed. Without these, all four cases below
+  # would pass on a script that had never heard of --rollback: the
+  # not-current one because SOME refusal fired, the current ones because
+  # nothing refuses anyway.
+  grep -q 'fail "sha \$FULL_SHA is NOT CURRENT' "$0" || { echo "SELFTEST FAIL: the currency gate's refusal is absent from this script; cases 16-18 would be vacuous"; exit 1; }
+  grep -q -- "--rollback) *ROLLBACK=1" "$0" || { echo "SELFTEST FAIL: --rollback is not parsed; cases 17-18 would prove nothing"; exit 1; }
+  echo "selftest 15/18: preconditions hold (the currency gate exists and --rollback is parsed)"
+
+  # A stale-but-merged sha is the whole finding: on main, equal to HEAD,
+  # and thirteen commits behind. It must REFUSE without the flag.
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_TIP=0000000000000000000000000000000000000000 \
+    bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: a sha behind the origin/main tip was accepted with no --rollback"; exit 1; }
+  echo "selftest 16/18: a legitimate but NOT CURRENT sha refused without --rollback"
+
+  # Same sha, same staleness, with the flag: a deliberate rollback proceeds.
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_TIP=0000000000000000000000000000000000000000 \
+    bash "$0" --preflight --rollback "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    || { echo "SELFTEST FAIL: --rollback did not permit a deliberate older-sha deploy"; exit 1; }
+  echo "selftest 17/18: the same stale sha ACCEPTED with --rollback (the green path of the gate)"
+
+  # The tip with no flag must pass silently, and the tip WITH the flag must
+  # pass while saying it is not a rollback. Asserted on the message, not
+  # only the exit code, because a silent acceptance here is the case where
+  # somebody believed they were going back and were not.
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    || { echo "SELFTEST FAIL: the current tip was refused with no flag (green path broken)"; exit 1; }
+  ROLLBACK_ON_TIP=$(WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    bash "$0" --preflight --rollback "$(git rev-parse HEAD)" 2>&1 >/dev/null) || true
+  printf '%s' "$ROLLBACK_ON_TIP" | grep -q "This is NOT a rollback" \
+    || { echo "SELFTEST FAIL: --rollback on the current tip said nothing; a false belief about which code ships passed silently"; exit 1; }
+  echo "selftest 18/18: the tip accepted bare, and --rollback on the tip accepted WITH the not-a-rollback notice"
 
   # The tally is DERIVED from the case numbering above rather than stated,
   # because a stated count is a claim that rots: this line read "eight
   # refusals, four green paths" (twelve) for the first hour after the
   # thirteenth and fourteenth cases were added, which is the guard-scope
   # comment failure in a new place, one file over.
-  echo "selftest PASSED: 14/14 cases ran (8 refusals fired, 3 green paths accepted, 3 behavioural assertions held)"
+  echo "selftest PASSED: 18/18 cases ran (9 refusals fired, 5 green paths accepted, 4 behavioural assertions held)"
   exit 0
 fi
 
 # --preflight runs every check up to (not including) the deploy, then exits 0.
 # Lets the green path be asserted without shipping anything.
 PREFLIGHT=""
-if [[ "${1:-}" == "--preflight" ]]; then PREFLIGHT=1; shift; fi
+# --rollback (2026-08-27): deploying an sha that is NOT the origin/main tip
+# is a legitimate act, and refusing it outright would simply get worked
+# around. So the currency gate below refuses by default and this flag is
+# how a deliberate rollback says so out loud. Order-independent with
+# --preflight, because a caller who has to remember flag order will
+# eventually get it wrong and a shifted argument becomes the sha.
+ROLLBACK=""
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --preflight) PREFLIGHT=1; shift ;;
+    --rollback)  ROLLBACK=1; shift ;;
+    *) fail "unknown flag '$1' (expected --preflight, --rollback, or --selftest)" ;;
+  esac
+done
 
 SHA="${1:-}"
 [[ -n "$SHA" ]] || fail "expected main sha is a required argument"
@@ -198,6 +251,42 @@ git merge-base --is-ancestor "$FULL_SHA" "$MAIN_REF" \
   || fail "sha $FULL_SHA is not on $MAIN_REF. Name the merge commit from the merged PR; a locally derived sha cannot pass this gate."
 HEAD_SHA=$(git rev-parse HEAD)
 [[ "$HEAD_SHA" == "$FULL_SHA" ]] || fail "HEAD is $HEAD_SHA, expected $FULL_SHA. Pull and confirm the merge before deploying."
+
+# 1b. The CURRENCY gate (2026-08-27, G-82). The two checks above prove the
+# sha is LEGITIMATE: on origin/main, and checked out. Neither asks whether
+# it is CURRENT. A stale-but-merged sha satisfies both, because an ancestor
+# of the tip is still an ancestor and it really is HEAD, so a checkout
+# sitting thirteen commits back deploys thirteen commits of stale code
+# through a green gate, and step 7's three build-id reads then verify the
+# WRONG SHA CORRECTLY three times over. That is the "'already up to date'
+# is not confirmation" doctrine in a new place: legitimacy and currency
+# feel identical when both pass, and only one of them was being checked.
+#
+# The tip is read from the ref this script FETCHED above, never from
+# whatever a stale remote-tracking ref happened to hold. A currency check
+# reading a stale ref would inherit the exact defect it exists to catch.
+if [[ -n "$SELFTEST_MODE" && -n "${WK_DEPLOY_TEST_TIP:-}" ]]; then
+  TIP_SHA="$WK_DEPLOY_TEST_TIP"
+else
+  TIP_SHA=$(git rev-parse --verify --quiet "$MAIN_REF") \
+    || fail "could not resolve $MAIN_REF to verify the named sha is current"
+fi
+if [[ "$FULL_SHA" != "$TIP_SHA" ]]; then
+  BEHIND=$(git rev-list --count "$FULL_SHA..$TIP_SHA" 2>/dev/null || echo "?")
+  [[ -n "$ROLLBACK" ]] || fail "sha $FULL_SHA is NOT CURRENT: it is $BEHIND commit(s) behind origin/main, whose tip is $TIP_SHA.
+  It is on main and it is your HEAD, so every other gate passes and the build-id check would verify this stale sha three times over.
+  To ship the current code: git fetch origin main && git reset --hard origin/main, then name $TIP_SHA.
+  To deploy this older sha ON PURPOSE (a rollback), re-run with --rollback."
+  echo "ROLLBACK: deploying $FULL_SHA, which is $BEHIND commit(s) BEHIND origin/main ($TIP_SHA). Proceeding because --rollback was passed."
+else
+  if [[ -n "$ROLLBACK" ]]; then
+    # Someone believed they were rolling back and were not. Said loudly
+    # rather than passed over: a false belief about WHICH code is shipping
+    # is the thing this gate exists to prevent, in either direction.
+    echo "NOTE: --rollback was passed, but $FULL_SHA IS the current origin/main tip. This is NOT a rollback; you are deploying the newest code. If you meant to go back to an earlier build, stop and name that sha instead." >&2
+  fi
+  echo "sha is current: $FULL_SHA is the origin/main tip"
+fi
 # The deploy ships the WORKING TREE (vercel uploads the directory, not the
 # commit), so a dirty tree deploys unreviewed state under a clean sha.
 # Selftest mode skips this: a dev tree proving refusals is dirty by nature.
