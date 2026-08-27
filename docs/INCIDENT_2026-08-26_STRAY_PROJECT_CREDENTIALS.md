@@ -64,6 +64,45 @@ what gets written is a blocking question. The author treated it as one
 in the sentence "delete nothing until this is answered," and then did
 not treat it as one when writing the record.
 
+## The mechanism, named, because the false premise is only the symptom
+
+The failure has a repeatable shape and it is not "got a fact wrong". It
+is this:
+
+**Flag an inference as unverified, then write from it anyway as though
+the flag were a substitute for the verification.**
+
+The flag feels like diligence. It reads like diligence to a later
+reader. It changes nothing about what gets written, and the written
+thing then circulates with the qualifier attached and the qualifier is
+what gets skimmed past. In this document the author wrote a whole
+section headed BLANK, describing precisely which fact was missing and
+why it gated everything, and then wrote the rotation plan, the blast
+radius, and the timeline that all depended on it.
+
+**This is the fourth instance in a week.** The others:
+
+1. **Branch protection** (G-73). A document asserted a control; nobody
+   re-read it against the system for a month.
+2. **The "dormant" project** (G-74). A register entry recorded an
+   observation; the word was carried unexamined while the project
+   rebuilt on every push.
+3. **The section 4 re-flags.** Three checks moved forward on the
+   strength of what they test rather than which build their last pass
+   described, producing three wrong causes at once.
+4. **This document.**
+
+The first three were the register's or a prior session's. This one was
+written by the session that had just filed G-73 and G-74, in a document
+whose closing section is about exactly this failure. Proximity to the
+lesson did not prevent it.
+
+**The operational form, for a later reader:** when a document contains
+a sentence naming a fact as missing and load-bearing, that sentence is
+a stop, not a caveat. Either the fact arrives or the dependent sections
+do not get written. A section that says "this is unverified" and then
+proceeds has verified nothing and has committed everything.
+
 ---
 
 ## What survives, verified, and is NOT withdrawn
