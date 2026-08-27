@@ -146,12 +146,52 @@ built it.
   the whole point: an accommodations branch is far harder to remove than
   to prevent, and once a simpler surface is gated on a flag, the flag
   becomes a thing the record must hold about a person.
-- **The section 29 anti-patterns.** Most restate rules already standing
-  here. The one quoted to this session, and the only one this file can
-  state accurately, is **no universal HOM stopwatch**. The remainder are
-  NOT transcribed, because the document has not reached this repository
-  and a paraphrase of a list nobody can check is worse than a gap: see
-  the open item in WORK_QUEUE.
+- **The section 29 anti-patterns, received in full 27 August and adopted.**
+  Twenty-six items, counted by hand. **Sixteen restate rules already
+  standing here** and are not repeated: no direct notification from every
+  feature and no divergent per-channel queues (the notification firewall,
+  and `emitOutboxEvent` as the one way an event enters the outbox); no
+  opaque recommendation without evidence or provenance (provenance is
+  stamped server-side on every write; the brief snapshot is the evidence
+  rail); no native vendor app before a scoped web link is shown
+  insufficient (WK-DEV-010); no employee speed or cognitive-load
+  leaderboard (Ruling 1, and the bar already written on
+  WorkCognitiveLoadProfile in the CAND ledger); no autonomous scheduling
+  optimization before evidence and governance (the optimizer is the
+  standing first entry of the weekly deliberately-not-built line); no
+  client-facing field merely because the backend knows it (the 0058
+  keep-it-closed ruling); no best-practice import without source and
+  review (the standards library's change-control path, founder to
+  corrected sheet to loader); no HOM prompt merely because it can be
+  displayed (promotion raises attention, never a prompt); no false
+  closure because provider activity ended (resolving a situation closes
+  the grouping, never the noticing); no client task-management dashboard
+  and no activity feed (the client side is frozen at the digest); no AI
+  auto-commit or select-all (the invariant above); no universal HOM
+  stopwatch; no shared household or vendor credentials and no permanent
+  access from a known relationship (per-identity auth, the one-role
+  index, revocation audited).
+
+  **Ten add something this file did not say**, and are adopted as
+  written: no generic AI chat box as the primary service interface; no
+  generic "Well Kept Verified" badge without an exact definition; no
+  client engagement score; no raw smart-home surveillance or telemetry
+  hoarding; **no retraining as the default response to confusing
+  software**; no long manual as the primary mechanism for standards
+  compliance; no separate continuous-improvement form where normal
+  workflow data can generate the signal; **no field merely because
+  analytics might someday use it**; no new client interaction merely
+  because a standard changed; and **no sensitive inference from
+  household demographics, property title, family relationship or
+  identity**.
+
+  Three of those ten are load-bearing rather than cautionary. The
+  retraining one names the reflex that turns a software defect into a
+  person's failing. The analytics-field one is the collection-side twin
+  of the producer requirement: that rule asks what WRITES a column, this
+  one asks what it is FOR, and a column can pass the first and fail the
+  second. The inference one is a boundary of the same class as the
+  per-person analytics ban and should be read beside it.
 
 ## Boundary (ADR-004)
 

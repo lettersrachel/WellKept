@@ -619,30 +619,42 @@ T28** already exist in some form. Until that reconciliation is done the
 sequence is a list of tickets whose sizes are unknown, and any estimate
 against it would be a number with a hidden conversion in it.
 
-#### BLOCKED: the document has not reached this repository
+#### Section 32 and section 29 received in full, 27 August: UNBLOCKED and worked
 
-Two requested items cannot be done from here, and are named rather than
-approximated:
+Both lists arrived verbatim. The section 32 review is
+`docs/BACKSTAGE_S32_GUARD_REVIEW_2026-08-27.md`: 26 risks, three-way
+split, with the floor applied first.
 
-- **The section 29 anti-patterns list.** One item was quoted to this
-  session (no universal HOM stopwatch) and is adopted. Which of the
-  remainder restate standing rules and which do not is a question about
-  a list this repository does not hold. A paraphrase would be a
-  reviewable-looking claim about text nobody can check.
-- **The release-blocking test list, checked against the guards.** The
-  interesting category is the third one, a named risk covered by
-  something that would pass for the wrong reason, which is G-83's shape
-  and the reason the check is worth doing. It needs the risk NAMES;
-  matching guards against a remembered summary would manufacture exactly
-  the false assurance the exercise exists to find.
+**Six pass for the wrong reason**, which was the point of the exercise:
+the client projection (four mechanisms check labels, shapes and key sets,
+none checks CONTENT); presentation suppression (G-81 is that risk and was
+found by a person while success-visibility stayed green); observability
+privacy (the guard's own not-covered column concedes two of the four
+named surfaces, and URLs are the live one); notification duplication (the
+situations journey proves bundling on a STAFF surface while the risk is
+about member channels situations never reach); equivalent input paths
+(each path is journey-proven in isolation and nothing compares them);
+and the universal ease baseline (vacuously satisfied because no
+simplified mode exists).
 
-**What can be said without the document, as a floor for that work:** the
-guard set is seventeen rows in the CLAUDE.md table over fifteen guard
-files plus the `sizes` CHECK, and its two structural blind spots are
-already written in the not-covered column: **free text a person writes**,
-and **what a permitted key CONTAINS** rather than which keys are
-present. Any release-blocking risk that reduces to either will be
-uncovered no matter which guard appears to address it.
+**Seven covered, thirteen uncovered**, of which six are not-yet-applicable
+because the surface does not exist and are listed rather than ticked,
+since each is true today for a reason that expires. **Accessibility is
+the one total gap**: no axe, no a11y assertions, no keyboard path
+anywhere, verified by search, and it needs a scope decision before it
+needs a test.
+
+Two risks are vacuously satisfied and **will silently stop being so**
+(the ease baseline and the no-diagnosis gate). Those re-check on a
+calendar, not on a change, because no change to this repository will
+trigger them.
+
+Section 29 is adopted in full in CLAUDE.md: 26 items counted by hand,
+sixteen restating standing rules and ten adding something. Three of the
+ten are load-bearing rather than cautionary, and one is the collection-
+side twin of the producer requirement: that rule asks what WRITES a
+column, "no field merely because analytics might someday use it" asks
+what it is FOR, and a column can pass the first and fail the second.
 
 ### Section 4 check ledger, opened 27 August 2026 BEFORE the results exist
 
