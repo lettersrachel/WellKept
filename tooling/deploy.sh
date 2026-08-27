@@ -9,6 +9,8 @@
 #   DATABASE_URL=... bash tooling/deploy.sh <expected-main-sha>
 #   DATABASE_URL=... bash tooling/deploy.sh --preflight <sha>   # READ-ONLY: no migrate, no deploy
 #   DATABASE_URL=... bash tooling/deploy.sh --rollback <sha>    # deliberately deploy an sha BEHIND the tip
+#     (refuses if <sha> IS the tip: that is not a rollback, and believing
+#      it is one is the same false belief the stale direction stops)
 #     (flags are order-independent and may be combined)
 #   bash tooling/deploy.sh --selftest      # prove the refusals fire AND the green paths pass
 #
@@ -155,6 +157,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # nothing refuses anyway.
   grep -q 'fail "sha \$FULL_SHA is NOT CURRENT' "$0" || { echo "SELFTEST FAIL: the currency gate's refusal is absent from this script; cases 16-18 would be vacuous"; exit 1; }
   grep -q -- "--rollback) *ROLLBACK=1" "$0" || { echo "SELFTEST FAIL: --rollback is not parsed; cases 17-18 would prove nothing"; exit 1; }
+  grep -q 'fail "--rollback was passed, but \$FULL_SHA IS ALREADY' "$0" || { echo "SELFTEST FAIL: the tip-with-rollback REFUSAL is absent; case 18 would be vacuous"; exit 1; }
   echo "selftest 15/18: preconditions hold (the currency gate exists and --rollback is parsed)"
 
   # A stale-but-merged sha is the whole finding: on main, equal to HEAD,
@@ -180,17 +183,27 @@ if [[ "${1:-}" == "--selftest" ]]; then
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     || { echo "SELFTEST FAIL: the current tip was refused with no flag (green path broken)"; exit 1; }
   ROLLBACK_ON_TIP=$(WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
-    bash "$0" --preflight --rollback "$(git rev-parse HEAD)" 2>&1 >/dev/null) || true
-  printf '%s' "$ROLLBACK_ON_TIP" | grep -q "This is NOT a rollback" \
-    || { echo "SELFTEST FAIL: --rollback on the current tip said nothing; a false belief about which code ships passed silently"; exit 1; }
-  echo "selftest 18/18: the tip accepted bare, and --rollback on the tip accepted WITH the not-a-rollback notice"
+    bash "$0" --preflight --rollback "$(git rev-parse HEAD)" 2>&1 >/dev/null) \
+    && { echo "SELFTEST FAIL: --rollback on the current tip was ACCEPTED; the operator believes they reverted and shipped the newest code"; exit 1; }
+  # Asserted on the MESSAGE as well as the exit code, so an unrelated
+  # refusal further down cannot stand in for this one.
+  printf '%s' "$ROLLBACK_ON_TIP" | grep -q "ALREADY the current origin/main tip" \
+    || { echo "SELFTEST FAIL: --rollback on the tip refused for some OTHER reason; this case proves nothing"; exit 1; }
+  echo "selftest 18/18: the tip accepted bare, and --rollback on the tip REFUSED by its own message"
 
   # The tally is DERIVED from the case numbering above rather than stated,
   # because a stated count is a claim that rots: this line read "eight
   # refusals, four green paths" (twelve) for the first hour after the
   # thirteenth and fourteenth cases were added, which is the guard-scope
   # comment failure in a new place, one file over.
-  echo "selftest PASSED: 18/18 cases ran (9 refusals fired, 5 green paths accepted, 4 behavioural assertions held)"
+  # The case count comes from the numbering above. The BREAKDOWN that used
+  # to follow it (refusals / green paths / behavioural assertions) is gone
+  # rather than corrected: it was hand-maintained prose sitting beside the
+  # thing it counted, it drifted twice, and it drifted a third time the
+  # moment case 18 changed from two acceptances to an acceptance plus a
+  # refusal. Nothing computes it, so per the count rule it does not get
+  # stated. Each case prints what it proved on its own line above.
+  echo "selftest PASSED: 18/18 cases ran (see the per-case lines above for what each one proved)"
   exit 0
 fi
 
@@ -280,10 +293,19 @@ if [[ "$FULL_SHA" != "$TIP_SHA" ]]; then
   echo "ROLLBACK: deploying $FULL_SHA, which is $BEHIND commit(s) BEHIND origin/main ($TIP_SHA). Proceeding because --rollback was passed."
 else
   if [[ -n "$ROLLBACK" ]]; then
-    # Someone believed they were rolling back and were not. Said loudly
-    # rather than passed over: a false belief about WHICH code is shipping
-    # is the thing this gate exists to prevent, in either direction.
-    echo "NOTE: --rollback was passed, but $FULL_SHA IS the current origin/main tip. This is NOT a rollback; you are deploying the newest code. If you meant to go back to an earlier build, stop and name that sha instead." >&2
+    # REFUSES, corrected 2026-08-27 (the founder's own correction to her
+    # first instruction, which was to warn and proceed). Someone passing
+    # --rollback on the tip holds the SAME false belief the stale
+    # direction is stopped for, pointed the other way: they believe they
+    # are reverting and they are shipping current code. If the belief is
+    # what this gate protects, both directions warrant a stop. The
+    # asymmetry settles it: refusing costs one re-run without the flag,
+    # proceeding costs an operator who reasons from "we rolled back" for
+    # as long as it takes somebody to notice.
+    fail "--rollback was passed, but $FULL_SHA IS ALREADY the current origin/main tip, so there is nothing to roll back to.
+  You would be deploying the NEWEST code while believing you were reverting.
+  To deploy the current tip, re-run without --rollback.
+  To actually roll back, check out the earlier sha and name THAT one."
   fi
   echo "sha is current: $FULL_SHA is the origin/main tip"
 fi
