@@ -71,7 +71,7 @@ test("an empty declared list is refused rather than treated as a passing guard",
 
 test("the declared registry list matches the table, or the difference is written down", () => {
   const actual = actualRegistryColumns();
-  const declared = [...CLIENT_REGISTRY_ENTRY_KEYS].sort();
+  const declared: string[] = [...CLIENT_REGISTRY_ENTRY_KEYS].sort();
 
   const phantom = declared.filter((k) => !actual.includes(k));
   assert.deepEqual(phantom, [],
@@ -139,7 +139,8 @@ test("RED: a column added without a declaration throws through the SPREAD projec
   // The mutation LANDED at the intended site: assert the new key is really
   // on the payload before reading the throw. A projection that silently
   // dropped it and an assertion that cannot fire produce the same green.
-  assert.ok("installerPhoneNumber" in payload[0],
+  const [mutatedRow] = payload;
+  assert.ok(mutatedRow && "installerPhoneNumber" in mutatedRow,
     "the simulated new column never reached the payload; the case below would pass vacuously");
 
   assert.throws(
@@ -157,7 +158,8 @@ test("the LITERAL projection is safe by construction, which is why the guard bit
     id: "f1", section: 2, name: "Trash day", value: "Tuesday",
     flag: null, sensitivity: "s1", installerPhoneNumber: "555-0100",
   }]);
-  assert.ok(!("installerPhoneNumber" in payload[0]),
+  const [projectedRow] = payload;
+  assert.ok(projectedRow && !("installerPhoneNumber" in projectedRow),
     "the literal projection grew a key it does not name; the claim above is false");
   assert.equal(assertDeclaredClientKeys(payload, CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"), true);
 });
