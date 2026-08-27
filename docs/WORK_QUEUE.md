@@ -585,10 +585,33 @@ debts on one check are two facts, not one.
 | 14, trigger rules | the TWELFTH run (`e3fe0f5`, ancestor of `747a98c`) | `setTriggerRuleEnabled` and `createTriggerRule`, same G-68 census | *pending* | *fill* |
 | 10, briefing recall section | **no delta. NOT owed.** | read-only, and no file behind it is in any range since its last pass; it keeps its `50ecd0f` standing | n/a | n/a |
 
-**Check 10 is listed to be struck, not filled.** It appeared on the
-carried-forward list and no delta reaches it. Leaving it off entirely
+**Check 10 is listed to be struck, not filled.** Leaving it off entirely
 would lose the fact that it was checked and cleared, which is how a
 non-debt becomes a debt again on the next reading.
+
+**Which of the two readings won, and why, since both are in the record
+and a later reader cannot otherwise tell which was the mistake.** Check
+10 appears twice: as READ-ONLY AND UNTOUCHED by either delta (the
+twelfth-run correction paragraph, which says checks 8 and 10 "are
+read-only and neither delta reaches them", keeping their `50ecd0f`
+standing), and as OWED, in the list carried forward after the fourteenth
+deploy.
+
+**The not-owed reading wins, and the reason is not that it came first.**
+It is that only one of the two is a checkable claim. "No file behind
+check 10 is in any range since its last pass" names a subject and a
+range and can be verified with `git diff --name-only`, which is how it
+was settled. The owed reading named **no delta at all**: it asserted a
+debt without saying which change created it, so there was nothing to
+confirm or refute. A re-flag that cannot name its delta is not a
+re-flag, which is the rule this ledger exists to hold, and an
+unattributed claim loses to an attributed one regardless of which was
+written down first.
+
+**The general form, worth keeping because it decides the next one:** when
+two readings of the same check conflict, prefer the one that states what
+would make it false. Recency and confidence are not evidence; a named
+range is.
 
 **Check 8 is deliberately NOT in this table.** Its debt was created by
 this delta, so its result belongs in the fourteenth-run entry below,
@@ -667,6 +690,39 @@ composes and renders without the working-note columns"; the wider claim
 would be "the client surface is verified", and only the first was
 tested. A later reader who compresses those two into one will assume
 more than happened.
+
+**THE FOURTEENTH RUN'S OWED CHECKS ARE ALL CLOSED, 27 August 2026.**
+
+**Client report email: PASS, the first production run of the projection
+and escaping path.** Subject `This week's visit at Smoke Test Fixture`;
+three sentences present, in order, as typed; photo count rendered;
+separators middots; no em dash; **no HTML entities visible**, which is
+the escaping working rather than over-firing (the subject is plain text
+and deliberately unescaped, so an entity there would have been the
+regression). Describes `7bcbb16`.
+
+**Visit close: PASS.** One applied visit, last applied 2026-08-27, zero
+conflicts, two photos in the record, queue drained with zero commands
+remaining. The second factor was cleared first, so G-88 did not bite.
+
+**Sign-in email recipient line: PASS**, G-70's first render in
+production. **Recorded against `747a98c..577666d`, not this run**, per
+the ledger's own rule: the debt was created by G-70's two sign-in files
+in that range, and this result describes `7bcbb16` because that is what
+production serves.
+
+**A correction that is the founder's own, recorded because of WHEN it
+happened.** The Gmail LIST PREVIEW was first read as the subject line,
+and the household name reported missing; the preview shows the body's
+opening heading, not the subject. Corrected on opening the message.
+That is the same narrow-fact-versus-wider-claim class the register
+catalogued all day (G-84, G-88): a true reading of one thing taken as a
+reading of another. **It was made on the last check of the sitting, by
+the person who had filed four entries about the pattern that day**,
+which is the part worth keeping. Fatigue at the end of a long
+verification is exactly when the compressed reading wins, and no rule
+written earlier in the day prevented it. The remedy that worked was the
+cheap one: open the actual artifact rather than its summary.
 
 **Baseline reading, same sitting: the board's exception queue is EMPTY**,
 which is the correct pre-visit state. No send has been suppressed

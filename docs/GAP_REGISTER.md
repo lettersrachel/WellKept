@@ -4368,6 +4368,59 @@ what this entry adds is the mechanism, the producer, and the reason the
 calibration is not merely delayed but would be actively wrong if run
 against today's rows.
 
+**CONFIRMED WITH A USER-FACING CONSEQUENCE, 27 August 2026, on the live
+`/visit` surface.** Four identical meds-day prompts rendered, **each with
+its own Acted and Dismiss controls**. One was answered; three remained.
+After the visit closed, all four scheduled rows persisted on the
+corporate record.
+
+So the HOM's position is a choice between two wrong things: **answer the
+same instruction four times**, which makes the outcome record claim four
+separate acts of noticing that never happened, or **answer once and leave
+three looking outstanding**, which makes the panel and the corporate
+record both read as ignored work. There is no third option on the screen,
+and neither branch is the HOM's fault.
+
+#### Why this BLOCKS the calibration rather than merely annoying a HOM
+
+This is the part that upgrades the entry from a display defect.
+
+`informativeRateFloor` is deliberately unset so it can be set from real
+data, and **the displayed firing rate is its calibration input** (W-9).
+The duplication corrupts that input from BOTH ends at once:
+
+- **The denominator.** Each smoke sitting mints another set of items, so
+  `fired` counts test runs alongside real firings. W-2 established the
+  same effect from one delinquent object re-firing; this is that
+  mechanism with the fixture's maintenance loop as the driver.
+- **The numerator.** `prompt_outcome` rows are per item, so the HOM's
+  forced choice skews it **either way**: answering four times inflates
+  answered, answering once inflates ignored, and W-2 already established
+  that an ignored prompt is itself the signal. There is no way to answer
+  the panel that leaves the number undisturbed.
+
+So the honest statement is not "the numbers are noisy". It is that
+**there are no real numbers to calibrate from while this holds**, because
+every path through the surface writes a distorted one. A floor set from
+them is set permanently wrong, and W-9 already recorded that the wrong
+direction here under-retires forever rather than degrading gracefully.
+
+**And the codebase called this exact risk a month before it happened.**
+`packages/schema/src/flags.ts:11-12` reads: "Feeding synthetic prompts
+into the uncalibrated health metrics would corrupt the exact numbers the
+knobs wait for." That sentence was written to justify why a promoted flag
+raises attention rather than creating a prompt. The reasoning was right
+and the scope was too narrow: the engine was stopped from feeding
+synthetic prompts, and the TEST FIXTURE was left free to.
+
+**One precision, because two knobs are easy to conflate and only one is
+affected.** `flag_promotion.rateThreshold` (`flags.ts:19-20`) is condition
+points lost per 30 days on a flag's OBSERVATION SERIES; it reads
+`object_observation`, never `prompt_pack_item`, and this entry does not
+touch it. What is blocked is the prompt-retirement calibration W-2 and
+W-9 name. Both knobs ship null under the same posture, which is why the
+distinction has to be stated rather than assumed.
+
 **And "due today" is a BUCKET, not a date, which is why they look
 identical.** `visit/page.tsx:127-129` computes
 `endOfToday = new Date()` with `setHours(23,59,59,999)` and splits pack
@@ -4378,6 +4431,24 @@ are four instances with four different `fireAt` values, computed from
 four different `changedAt` instants, all now in the past and therefore
 flattened into one visual group. The display is hiding the very fact
 that would have made the duplication legible a month ago.
+
+**A bucket rather than a date means the surface has no concept of AGE.**
+Observed in production, 27 August: eight prompts spanning 19 July to 18
+August all read as today. Nothing on the screen distinguishes a prompt
+raised yesterday from one that has been waiting five weeks, and **no
+amount of careful reading would recover that**, because the information
+is not rendered at all.
+
+**This is separable from the duplication and probably the more
+consequential of the two.** Duplication is visible: four identical lines
+announce themselves, which is how it was found. Age is invisible, and an
+invisible five-week-old prompt is exactly the thing the anticipation
+engine exists to surface. A HOM triaging that panel has no way to tell
+what has been ignored longest, and a corporate reader looking at the same
+household sees the dates because the drill-in prints them, so the two
+surfaces support different conclusions from identical data. Recorded here
+because it was found alongside the duplication; it should be weighed
+separately.
 
 Two riders on that. `endOfToday` is SERVER-LOCAL, so the day boundary is
 the runtime's zone rather than the household's, which is a separate small
@@ -4456,13 +4527,25 @@ check. `POST /api/visit-commands` gates on the second factor
 without a cleared factor can open the close flow, complete every step and
 press submit, and the refusal happens at a layer they are not looking at.
 
-**What the person sees.** The offline queue turns the failure into
-`retrying, attempt 3`, then a stuck warning, then a dead-letter. Those are
-AF's honest-card states working exactly as designed for the case they were
-designed for, which is a network that is not there. **A HOM in the field
-reads "retrying" as connectivity and waits.** Waiting cannot fix it. The
-one thing that would (visit `/mfa`) is not suggested anywhere on the
-path, because nothing on that path knows why the send failed.
+**What the person sees, and why they are RIGHT to read it that way.** The
+offline queue turns the failure into `retrying, attempt 3`, then a stuck
+warning, then a dead-letter. Those are AF's honest-card states working
+exactly as designed, for the case they were designed for, which is a
+network that is not there.
+
+**A HOM in the field sees "retrying, attempt 3" when the true answer is
+"you have no second factor". They will read it as connectivity, wait, and
+be right to.** That is the part worth being exact about: waiting is the
+correct response to the symptom as presented. The reading is not careless
+and better training would not prevent it, because every fact on the
+screen supports it. Waiting simply cannot fix this cause, and the one
+thing that would, visiting `/mfa`, is suggested nowhere on the path,
+because nothing on that path knows why the send failed.
+
+**So the honest card is working correctly WHILE misleading**, which is
+the uncomfortable half. It is not a copy defect and there is no wrong
+string to rewrite. The card faithfully reports everything it was given;
+it was given the wrong thing.
 
 **Adjacent to G-84 and NOT the same, which is why it is its own entry.**
 G-84 is a TRUE READING supporting a wider claim than it can carry: the
@@ -4551,3 +4634,71 @@ G-65's resolution rule is unchanged and still the founder's.
 **Base rate (G-75), seventeenth of seventeen:** found while writing
 instructions for a check, not by running one. Third time this week that
 explaining a mechanism exposed what it did not do.
+
+---
+
+### G-89. "Delivery hours record themselves" describes bookkeeping, and is read as measurement
+
+Filed 2026-08-27 from the fourteenth-run sitting, where the founder
+noticed that the fixture's 4.0h had been typed rather than computed.
+
+**The question was whether self-recording exists and is being overridden,
+or whether the copy describes something unbuilt. Neither, exactly, and
+the third answer is the useful one.**
+
+**Self-recording exists and is not overridden.** `visit-command-store.ts:207-218`
+inserts a `time_entry` on every applied `visit.submit`, in the visit's own
+transaction, `category: "delivery"`, `source: "visit_close"`, carrying
+`visitCommandId` and computing `minutes` from the interval. It is
+idempotent with the command, so it survives offline sync. That half works
+and ran correctly in production today.
+
+**What records itself is the ENTRY, not the HOURS.**
+`VisitWizard.tsx:398-399` is two `datetime-local` inputs, both
+initialised to `""`. There is no arrival tap, no departure tap, no clock,
+no geofence. The HOM types both timestamps, and `minutes` is arithmetic
+over what they typed: `Math.round((+end - +start) / 60_000)`.
+
+So the sentence is TRUE about filing and FALSE about measuring, and a
+reader hears the second. "Your visit's delivery hours record themselves
+when you close" means "you do not file a separate timesheet". It is heard
+as "the system knows when you arrived and left". The founder's 4.0h was
+typed exactly as designed, and the copy is what made that surprising.
+
+**Same class as 0058's header, and a distinct sub-case.** 0058 described
+a capture form in the FUTURE tense and was read as present. This is
+PRESENT-tense copy for a feature that genuinely exists and means less
+than it sounds like. The first is a tense problem; this is a scope
+problem, and the second is harder to catch because nothing in the
+sentence is wrong.
+
+**Two riders found in the same read, both sharper than the copy itself.**
+
+1. **The reassurance describes a mechanism that does not exist.** The
+   Hours card carries "Suggestion only; nothing bills from a geofence
+   alone." There is no geofence anywhere in the codebase. A note
+   reassuring the reader about a constraint on location capture actively
+   implies location capture is happening. That is worse than the headline
+   copy: it answers a question nobody could have had unless they believed
+   the feature was there.
+2. **The codebase and the register both call these values "taps".**
+   `visit-command-store.ts:220` says "the applied visit's hours ARE the
+   arrival and departure taps"; WORK_QUEUE's 0054 entry says "an applied
+   visit's taps become its active segment". A tap is a gesture at a
+   moment. These are two typed datetimes. The word has been carrying an
+   implication through the code, the comments and the record for a month,
+   and `time_segment`'s whole no-manual-timing posture rests on the
+   derivation being from taps. **The derivation is honest; the noun is
+   not.** Worth stating because 0054's guarantee reads stronger than it
+   is: manual per-segment timing is unrepresentable, but the visit
+   interval every segment derives FROM is manual.
+
+**Nothing changed.** The copy is the founder's, the geofence note is a
+founder call, and whether hours should be tapped rather than typed is a
+product decision with a device dependency behind it. What is recorded is
+that all three sentences are currently truer of an intended system than
+of this one.
+
+**Base rate (G-75), eighteenth of eighteen:** found because a founder
+compared a number on a screen against how it got there. No check compares
+copy to behaviour, and none could.
