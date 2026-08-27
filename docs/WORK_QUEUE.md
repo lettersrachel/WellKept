@@ -549,6 +549,65 @@ visit"` does NOT find `0cf411a`, because `-S` counts occurrences and
 the edit preserved the phrase. `-G` finds it. A search that cannot see
 the change it is looking for reads as "never happened".
 
+**Production serves `7bcbb16` (2026-08-27, the FOURTEENTH clean run):**
+build id verified three times by the script and confirmed independently
+at `/api/build-id`, `/api/health` reading `{"ok":true,"db":"up"}`, tree
+clean, mechanical checks 1/4a/4b/12/15 PASS. Migrations moved **58 to
+59** and agree three ways at 59, the first non-zero delta since G-63's
+preflight fix; the read-only preflight reported `1 migration(s) PENDING
+(database 58, disk 59). NOTHING was applied` beforehand, which is that
+fix's own accepting direction on a real pending migration rather than on
+a sentinel.
+
+**The delta, verified rather than characterized.** `577666d..7bcbb16` is
+**43 commits**, counted with `git rev-list --count`, carrying six merged
+PRs (#201 through #206). It applies exactly one migration, 0058, the
+largest schema change since the August batch: eight new columns on
+`registry_entry` (install date and its granularity, verbatim serial,
+derivation source and derived year, install confidence, and the two
+capture-pass stamps), plus `registry_entry_id` on both `capture_artifact`
+and `visit_photo`. Four CHECK constraints, two of them whole-or-absent
+pairs, the deferral and paused-decision posture. **The two new foreign
+keys are composite on `(household_id, id)`**, so a photo can only point
+at a registry entry in its own household: a tenancy guarantee in the
+schema rather than a convention. Read before applying and confirmed
+purely additive (sixteen `ALTER TABLE`, one `CREATE UNIQUE INDEX`, no
+DROP, no ALTER COLUMN, no RENAME, no column made NOT NULL), which is why
+the migrate-then-deploy window was safe: the old build ignores columns it
+does not know.
+
+**Three gates fired live for the first time, and what each returned.**
+
+| Gate | First live return |
+|---|---|
+| The currency gate (G-82) | `sha is current: 7bcbb162... is the origin/main tip`. Its refusing direction was proven against a real `a538ace` worktree (13 commits behind) but NOT in the founder's environment, so only the accepting half has run where it matters |
+| The CI gate (G-73's answer) | passed against a MERGE COMMIT, which it had never met; `ci` runs on `push: branches: [main]`, so the run exists |
+| G-63's preflight, non-zero delta | reported one pending and applied nothing, then the full run applied it and read 59 three ways |
+
+**A correction that is the founder's own, recorded because the pattern's
+persistence is the useful part.** The post-deploy note carried section 4
+checks **2, 6, 10 and 14** forward as owed against this delta. Only **8**
+belongs to it: `(client)/playbook/page.tsx` and `data.ts` are in the
+range, and the client preview rendering is the live pass for 0058's new
+key assertion. The other four are real debts and belong elsewhere: 2 was
+owed against `747a98c..577666d` (G-70's two sign-in files) and 6 and 14
+were changed by the TWELFTH run, not this one. **This is exactly the
+carried-forward-result error the register already names**, committed by
+the person holding the rule, four paragraphs above where the rule is
+written down. The rule survives unchanged and gains an instance: a
+re-flag names the build the prior pass describes and the delta that
+invalidates it, or it is not a re-flag. Knowing the rule is not the same
+as applying it, and the failure mode is that the checks feel related to
+what changed.
+
+**Owed by this delta and NOT on the numbered list:** the registry date
+rendering on a drill-in and on `/context/[id]` (`RegistryCard.tsx` plus
+0058), and a fixture visit close to confirm the client report email
+arrives with all three sentences, since that path is newly built from a
+projection and escaped and has never run in production. If it does not
+arrive, look for `SEND SUPPRESSED` in the log and an open row on
+`/oversight/board`'s exception queue, which would be G-81's first firing.
+
 **Production serves `577666d` (2026-08-26, the THIRTEENTH clean run):**
 build id verified three times and confirmed at `/api/build-id`,
 `/api/health` reading ok with db up, tree clean, mechanical checks
