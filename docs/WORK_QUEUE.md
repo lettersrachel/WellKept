@@ -674,6 +674,17 @@ because no visit has been closed. Recorded as the baseline the
 post-visit-close check is read against, so a queue that is still empty
 afterwards means something and is not mistaken for the same quiet.
 
+**Registry date rendering: PASS, 27 August 2026, on a real value.**
+Fernbrook Demo's water heater renders `Jun 1, 2019` against a stored
+`key_date` of a bare `2019-06-01`, which is **midnight, not noon**. That
+is exactly the case the G-61 fix exists for: a noon-stamped value renders
+the same day in every US zone and proves nothing, while a midnight value
+renders one day early under any zone west of UTC. Confirmed in
+production against the stored value rather than against another render.
+Describes `7bcbb16`. Recorded with its source, since the same card's
+"installed 2019" comes from `detail.installYear` (jsonb, never
+date-formatted) and not from a date column at all: two sources, one line.
+
 **Owed by this delta and NOT on the numbered list:** the registry date
 rendering on a drill-in and on `/context/[id]` (`RegistryCard.tsx` plus
 0058), and a fixture visit close to confirm the client report email

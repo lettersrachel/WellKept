@@ -4368,6 +4368,24 @@ what this entry adds is the mechanism, the producer, and the reason the
 calibration is not merely delayed but would be actively wrong if run
 against today's rows.
 
+**And "due today" is a BUCKET, not a date, which is why they look
+identical.** `visit/page.tsx:127-129` computes
+`endOfToday = new Date()` with `setHours(23,59,59,999)` and splits pack
+items on `fireAt <= endOfToday`. Everything OVERDUE falls in the same
+bucket as everything due today, and the bucket renders no date. So the
+four meds-day rows are not four copies of one obligation due today: they
+are four instances with four different `fireAt` values, computed from
+four different `changedAt` instants, all now in the past and therefore
+flattened into one visual group. The display is hiding the very fact
+that would have made the duplication legible a month ago.
+
+Two riders on that. `endOfToday` is SERVER-LOCAL, so the day boundary is
+the runtime's zone rather than the household's, which is a separate small
+question from the G-61 family. And the corporate drill-in DOES print each
+item's `fireAt` (`page.tsx:1258`), so the two surfaces disagree in
+information rather than in data: the drill-in can show that the dates
+differ and the field surface cannot.
+
 **NOT fixed.** A dedup is a decision about what counts as the same
 prompt (same rule and text within a window? per object? per household?),
 which is a threshold, and thresholds are the founder's. Two notes for
@@ -4425,3 +4443,89 @@ a mechanism.
 
 **Base rate (G-75), sixteenth of sixteen:** found because a text anchor
 failed to match, not because anybody checked the reset.
+
+---
+
+### G-88. A permission enforced one layer below the surface the person is standing on produces a symptom that points at the wrong subsystem
+
+Filed 2026-08-27, found while preparing the fixture visit close.
+
+**The mechanism.** `/visit` gates on ROLE only; it has no second-factor
+check. `POST /api/visit-commands` gates on the second factor
+(`route.ts:129`) and returns `403 second factor required`. So a HOM
+without a cleared factor can open the close flow, complete every step and
+press submit, and the refusal happens at a layer they are not looking at.
+
+**What the person sees.** The offline queue turns the failure into
+`retrying, attempt 3`, then a stuck warning, then a dead-letter. Those are
+AF's honest-card states working exactly as designed for the case they were
+designed for, which is a network that is not there. **A HOM in the field
+reads "retrying" as connectivity and waits.** Waiting cannot fix it. The
+one thing that would (visit `/mfa`) is not suggested anywhere on the
+path, because nothing on that path knows why the send failed.
+
+**Adjacent to G-84 and NOT the same, which is why it is its own entry.**
+G-84 is a TRUE READING supporting a wider claim than it can carry: the
+observation is right and the inference overreaches. This is a **TRUE
+SYMPTOM pointing at the wrong subsystem**: the reading ("sending is
+failing, retrying") is accurate and complete about the layer it can see,
+and the cause is in a layer it cannot see at all. No amount of care
+reading the symptom gets you to the cause, because the information is not
+in it.
+
+> **The general form: where a permission is enforced below the surface
+> that offers the action, the failure's APPEARANCE is a property of the
+> transport, not of the cause.** The fix is never to make the operator
+> smarter about the symptom; it is to carry the reason up.
+
+#### Can the 403 surface as itself? YES, and the precedent already exists
+
+Reported, not built. The obstacle is one line: the queue's drain wraps
+the transport in `try { ... } catch { ... }` with an **empty catch**
+(`offline-queue/src/index.ts:141`), which discards the error object
+entirely. Every failure becomes attempts+1 and a break, so a 403, a 500
+and an offline radio are literally the same event by the time the card
+renders. Not even the console keeps the reason.
+
+**The shape to copy is `conflict`, which the queue already does.** The
+transport returns a structured `{ conflict, reason }`, the drain moves the
+item to a `conflict` state, and the reason is preserved onto a conflict
+marker the operator can read. A `refused` outcome would be the same
+pattern one value wider: the transport reads the response status and
+body, returns `{ refused: true, reason }`, the drain parks the item in a
+`refused` state carrying the reason rather than counting attempts, and the
+card says what happened. Retrying a 403 is pointless by definition, so
+"refused" is a genuinely different state from "not sent yet" rather than a
+cosmetic relabel.
+
+Three things that would need deciding and are therefore not decided here:
+which statuses count as refused rather than retryable (403 clearly, 400
+probably, 409 is already conflict), what the card says (copy is the
+founder's), and whether a refused item blocks the tail the way a dead head
+does.
+
+**Interim, needing no code:** clear the second factor at `/mfa` BEFORE
+starting a close flow. That is a habit, and it is exactly the class of
+thing this register keeps recording as insufficient.
+
+#### The G-65 precision, recorded here because this is where it would bite
+
+The fixture HM identity holds exactly one assignment today
+(`house_manager` on the Smoke Test Fixture, confirmed by query), so
+`/visit` resolves to that household by construction and G-65 is not a
+blocker for the current sitting.
+
+**That is a property of the DATA, not of the code.**
+`getFieldHouseholdAndPrincipal` still takes the oldest field-role
+assignment with no way to steer it from the URL, so a single `db:grant`
+or in-app `assignRole` reintroduces the ambiguity **silently**: nothing
+announces that `/visit` now resolves somewhere else, and the operator's
+first sign that they closed a visit against the wrong household would be
+the visit itself. The narrow fact is "this identity reaches the fixture";
+the wider claim would be "`/visit` resolves correctly", and only the
+first is established. Filed here rather than as a new entry because
+G-65's resolution rule is unchanged and still the founder's.
+
+**Base rate (G-75), seventeenth of seventeen:** found while writing
+instructions for a check, not by running one. Third time this week that
+explaining a mechanism exposed what it did not do.
