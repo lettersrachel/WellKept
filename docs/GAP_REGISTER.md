@@ -2757,6 +2757,43 @@ exactly one row from the name predicate and STOPS otherwise, so the
 ambiguity surfaces at the one moment it would do damage, even though
 nothing there can prevent it.
 
+**A CONCRETE INSTANCE, 27 August 2026, replacing the hypothetical.** The
+corporate board reads four active households, and two of them are demo
+households: **Fernbrook Demo and Chen-Williams Demo**. They carry
+distinct names today, so nothing is ambiguous and nothing is broken. What
+changed is the argument. This entry was filed with "nothing creates
+households by name except seeds and the intake path, and no duplicate
+exists today", which is true and reads as remote. The board now shows a
+live population where **two households of the same class coexist and are
+told apart by name alone**, which is the shape the predicate depends on,
+one duplicate away from the failure. The distance from "no duplicate
+exists" to "a duplicate exists" is one intake with a repeated name, and
+the intake path does not check.
+
+**A SECOND INSTANCE, same day, different domain.** The fixture's
+commercial record carries six membership events all dated
+`2026-07-27`: a start, four tier changes, and a pause. Displayed by
+date, there is no way to tell which is current. That is this entry's
+shape moved from IDENTITY to ORDERING: a record whose meaning depends on
+a field that can tie, with nothing breaking the tie. The register is
+append-only and `created_at` exists, so the data can still answer the
+question even where the display cannot, which makes this a rendering and
+ordering choice rather than a loss. Recorded here rather than as its own
+entry because the generalization is the same: **a value being usually
+distinct is not the same as a value being unique, and code that reads it
+as an identifier or as an order is correct only while the accident
+holds.** Whether the display should order by `created_at` or carry a
+sequence number is a decision and is not made here.
+
+It also sharpens the product question the entry left open. The demo pair
+argues FOR the narrow fix rather than the global one: a partial unique
+index on `name` where `is_fixture` is true would not have touched either
+demo household, since neither is a fixture, while still pinning the one
+household the smoke tooling resolves by name. Two real clients called
+"The Smith Residence" stay representable. Still a decision and still not
+made here, but the option space is now informed by a real population
+rather than by a thought experiment.
+
 ### G-72. A mutation that never lands and a test that cannot fail look identical
 
 Filed 2026-08-26 from two near-misses in one session, both while proving
@@ -4167,3 +4204,224 @@ written apart and identical when compressed into one.
 
 **Base rate (G-75), thirteenth of thirteen:** surfaced by a hook firing on
 something unrelated to the work in hand.
+
+---
+
+### G-85. Migration 0058 shipped ten columns with no producer, and every guard around them is correct and inert
+
+Filed 2026-08-27, **HIGH**, from the founder's browser sitting on the
+fourteenth run. Not a navigation problem: a real gap between a migration
+APPLYING and a feature EXISTING.
+
+**The finding.** 0058 added eight columns to `registry_entry`
+(`install_date`, `install_date_granularity`, `serial_verbatim`,
+`derivation_source`, `derived_year`, `install_confidence`,
+`photo_pass_at`, `ask_pass_at`) plus `registry_entry_id` on
+`capture_artifact` and `visit_photo`. **Nothing writes any of them and
+nothing ever has.** Every one is NULL on every row in production.
+
+**No UI path creates a registry entry at all.** Every write to
+`registry_entry` in the repository, searched exhaustively:
+
+| Writer | What it is |
+|---|---|
+| `demo-content.ts:150` | seed script |
+| `provision-hg.ts:212` | seed script |
+| `training-household.ts:169` | seed script |
+| `journeys.spec.ts:587` | test fixture |
+| `erase-household.mjs:305` | erasure; blanks and tombstones only |
+
+Nothing in `apps/web/src` inserts or updates the table: no create route,
+no form, no server action. The two action-layer references to a
+`registryEntryId` READ it, to check the object belongs to the household
+before attaching an observation or a condition flag. The only appearance
+of the new column names anywhere in the app is `data.ts:277-281`, which
+nulls five of them for clients.
+
+**The migration said so, and it was read as a design note.** 0058's own
+header calls `install_date` "what the capture form writes", in the
+FUTURE TENSE. The sentence was accurate. Nobody read it as a statement
+that the producing surface did not exist.
+
+**The consequence, plainly: three mechanisms guard an unreachable path,
+and all three are correct and inert.**
+
+- `assertDeclaredClientKeys` on the registry payload refuses an
+  undeclared key. Every key it governs is NULL, so it has never had a
+  value to protect.
+- The four CHECK constraints, both whole-or-absent pairs included, cannot
+  fire: no INSERT or UPDATE supplies a value that could violate them.
+- `RegistryCard`'s granularity-aware render, which exists precisely so a
+  decoded "2011" is never printed as a specific day, is unreachable.
+  `install_date_granularity` is NULL everywhere, so the branch never
+  runs.
+
+None of that work is wrong or wasted. It is **untested in the only way
+that counts**, and a later reader seeing green guards, applied
+constraints and a merged migration would reasonably conclude the feature
+works.
+
+#### The process observation, which is the transferable part
+
+**Part B exists because applying a migration is not the same as serving
+it.** That question was asked of the deploy and answered: sha current,
+count 58 to 59, build id verified three times. **Nobody asked it of 0058
+itself**, and the answer would have been that it does not serve, because
+nothing writes to it.
+
+> **A migration should not merge without naming its producer, or
+> explicitly recording that it has none yet.** One line in the migration
+> header or the PR body: "written by <surface>", or "NO PRODUCER YET;
+> the capture form is <session>". A schema shipped ahead of its writer is
+> a legitimate thing to do deliberately. It is not a legitimate thing to
+> do by accident, and after the fact the two are indistinguishable.
+
+The same reading runs backwards into the guards. **A guard over a column
+nothing writes cannot fail**, which is G-83's shape reached by a
+different road: G-83 was a guard blind to the question asked of it, this
+is a guard pointed at exactly the right question with no input to answer
+it. Both look identical on a green CI summary.
+
+**NOT BUILT, deliberately.** The capture form is a founder decision about
+scope and sequencing, not an engineering default. What the register
+carries is that the producer is missing and the guards are inert until
+it exists.
+
+**Base rate (G-75), fourteenth of fourteen:** found by the founder
+navigating the product looking for a form. Nothing in CI can notice that
+a column has no writer.
+
+---
+
+### G-86. The smoke checklist manufactures its own duplicate prompts, because the dedup key includes the change instant
+
+Filed 2026-08-27 from the fourteenth-run browser sitting. **Predates
+today by a month and is NOT the fourteenth run's**, recorded against its
+real origin rather than the entry that happened to be open, which is the
+G-84 discipline applied at the moment of filing.
+
+**The observation.** The fixture shows the same meds-day prompt four
+times as due today, plus an identical Sep 25 pair, on the corporate page
+and the HOM projection alike.
+
+**Duplicate ROWS, not one row rendering repeatedly.** `prompt_pack_item`
+carries no unique constraint, only
+`index("prompt_pack_item_household_idx")`. Dedup is entirely the primary
+key, built by `deterministicItemId` (`engine.ts:162`) from
+`householdId | fieldId | changedAt | ruleId | itemText`.
+
+**`changedAt` is in the key.** Each field change is a distinct event, so
+the same rule emitting the same text for the same field on a different
+change yields a different id, a new row, another render.
+`onConflictDoNothing` protects only against redelivery of the SAME
+event, which is exactly what its comment claims and all it claims.
+
+**And the checklist is the producer.** `ensure-smoke-fixture.mjs:92-94`
+re-seeds a pending client edit on the `medication` field every run,
+because "each smoke run's approval consumes it", and the file's own
+comment records that this field "binds the meds-day cascade -> panel
+items". Section 4 check 3 then approves it. So **every smoke sitting
+fires a fresh `medication` change and mints a new set of meds-day
+items.** The count is not a scheduler fault; it is a tally of how many
+times check 3 has run.
+
+**Which build it belongs to.** `deterministicItemId` has carried
+`changedAt` since `engine.ts` first existed, merged 2026-07-28. The
+behavior predates every deploy recorded in the work queue, and the
+duplication has accumulated since the first sitting that ran check 3
+against the fixture. Naming the exact build needs `created_at` on the
+fixture's `prompt_pack_item` rows, a production query not run from here.
+**What IS settled is the negative: it is not the fourteenth run's, and
+no file in `577666d..7bcbb16` touches it.**
+
+#### Why this is worth fixing rather than tolerating: the instrument counts itself
+
+`informativeRateFloor` is DELIBERATELY UNSET so that it can be calibrated
+from real numbers once real numbers exist. The numbers available to
+calibrate it against are inflated by the checklist that produces them:
+every section 4 sitting fires a `medication` change and mints another set
+of meds-day items, so the fixture's firing rate is partly a count of how
+often the fixture has been tested.
+
+**Calibrating a promotion threshold against data the test harness
+manufactured would be a wrong instrument feeding a real decision, and it
+would look like evidence at the moment it was used.** That is the whole
+danger: the number is not obviously wrong, it is a true count of rows
+that really exist, and nothing about it announces that the harness put
+them there. A floor set too high under-retires forever, which W-9 already
+named as permanent rather than recoverable.
+
+**So this belongs to the family the register has been accumulating all
+week: the instrument counting itself.** The guard that grepped its own
+assertion line and stayed green when the thing it guarded was deleted;
+the constraint proof that reported six clean REFUSED verdicts against a
+database that was down; and now a rate meant to calibrate a threshold,
+partly measuring the act of measuring. Each produced a plausible number
+or a green run, and in each the instrument was inside the thing it was
+supposed to observe from outside.
+
+**Family, not novelty.** This is also the ROUND5 "real object key plus
+fired dedup" item and the W-2/W-9 family, gated together on the first
+calibration read against real data. W-2 already established that repeat
+firings are not deduplicated and that this depresses the displayed rate;
+what this entry adds is the mechanism, the producer, and the reason the
+calibration is not merely delayed but would be actively wrong if run
+against today's rows.
+
+**NOT fixed.** A dedup is a decision about what counts as the same
+prompt (same rule and text within a window? per object? per household?),
+which is a threshold, and thresholds are the founder's. Two notes for
+whoever takes it: the fixture's inflation is separable from real
+households by `is_fixture`, and any dedup keyed on text inherits the
+K-survey string-as-identifier problem.
+
+**Base rate (G-75), fifteenth of fifteen:** found by a person looking at
+a panel and noticing the same sentence four times.
+
+---
+
+### G-87. The inverse of G-84: resetting a pointer discarded the only local copy, and it survived only because it had been pushed
+
+Filed 2026-08-27, the same day as G-84 and deliberately BESIDE it rather
+than inside it. **Nothing was lost and the commit was recovered intact**,
+so this entry is about the mechanism, not a consequence.
+
+**What happened.** After merging PR #207, the local feature branch was
+reset onto `origin/main` with `git checkout -B <branch> origin/main`.
+Commit `fe33007` (check 8's result, the empty-queue baseline, and G-71's
+first concrete instance) had been pushed to the remote feature branch but
+never merged, so the reset abandoned the only local copy of it. It was
+noticed a minute later, when an edit anchored on text that commit had
+introduced failed to match, and recovered whole by resetting back onto
+`origin/<branch>`.
+
+**Why it is filed with G-84 rather than in it.** G-84 says a difference
+between two pointers is not a claim that work is lost: two refs differed
+and nothing was at risk. This is the same narrow fact pointed the other
+way: **two refs differed and the work really was in only one of them.**
+
+| | The narrow fact | The wider claim | Was the claim true? |
+|---|---|---|---|
+| G-84 | these two refs differ | work exists only locally | **No** |
+| G-87 | these two refs differ | both copies are safe | **No** |
+
+**The pair is more useful than either alone, and that is the point of
+filing them separately.** Read on its own, G-84 teaches "a divergence is
+probably nothing", which is the wrong lesson and would have made this
+one worse. Read on its own, this entry teaches "a divergence is probably
+dangerous", equally wrong. Together they say the only true thing:
+**the observation supports neither conclusion, and the question of where
+the work actually lives has to be asked separately every time.**
+
+`git log origin/main..HEAD` answers it in one line and was what recovered
+this. That command, not the divergence, is the check.
+
+**One narrower operational note.** A `checkout -B` onto a new base is
+safe exactly when everything on the old branch is either merged or
+pushed, and unsafe otherwise, and the difference is invisible in the
+command. Checking `git log <newbase>..<branch>` BEFORE the reset would
+have shown the one unmerged commit, which is the cheap habit rather than
+a mechanism.
+
+**Base rate (G-75), sixteenth of sixteen:** found because a text anchor
+failed to match, not because anybody checked the reset.
