@@ -3262,3 +3262,62 @@ so this race cannot have caused it. That failure remains OPEN with two
 candidates now eliminated: a concurrent writer of CLAUDE.md (there is
 none in repo code; one reader, zero writers) and this race. Recorded so
 it does not age into resolved by silence.
+
+---
+
+### G-77. The completeness survey counted renders and the thing at risk was columns, so its number was wrong in the reassuring direction
+
+Filed 2026-08-27, from the systems-schema read. Fifth instance of the
+count problem this week, and **the first produced by a survey whose
+stated purpose was completeness.**
+
+**What the survey said.** The G-61 class re-verification of 25 August
+surveyed the zoned date renders, found ten, traced every one to a true
+instant, and concluded the entry's exactly-two-members claim survives
+with **ONE LATENT MEMBER**: `registry_entry.key_date`, timestamp-typed
+like the broken pair but protected because seed scripts stamp noon UTC.
+
+**What is actually true.** `RegistryCard.tsx` formats THREE date-only
+columns through one Eastern-pinned helper: `key_date`, `installed_at`,
+and `last_serviced_at`. The survey enumerated render SITES and reported
+a count of COLUMNS. RegistryCard is one site, so it contributed one to
+the tally, and the two extra columns behind it were never counted.
+
+**And the protection did not cover them.** Read against the seeded
+database: `key_date` is stamped 12:00, `installed_at` and
+`last_serviced_at` are stamped **00:00**. The noon convention that made
+`key_date` safe was never applied to the other two, so the defect was
+not latent at all. It was rendering one day early, on the corporate
+drill-in and on the CLIENT playbook, on seeded values, the whole time.
+Proven red and green on the real render path; fixed in the commit
+beside this entry.
+
+**Why the direction matters.** The error was not random. Counting sites
+while reporting columns can only ever UNDERCOUNT, because one site can
+carry many columns and no site carries fewer than one. So the mistake
+made the system look safer than it was, and it did so inside a document
+whose entire job was to establish that nothing had been missed. A
+survey that undercounts is worse than no survey, because it closes the
+question.
+
+**The rule this joins.** CLAUDE.md already carries "no count is written
+where it can be computed", from three prior instances. This adds the
+second half:
+
+> **State the unit, and check that the unit you counted is the unit at
+> risk.** A survey reporting a count must name what it enumerated, not
+> only what it concluded. "Ten renders, therefore two members" is a
+> claim with a hidden conversion in it, and the conversion is where the
+> error lives.
+
+**What would have caught it.** Nothing that existed. The columns are
+discoverable from the schema (`timestamp` columns fed by date-only
+facts) and the render sites are discoverable from the source, so the
+census shape applies: derive the date-only column set, require each
+render of one to be UTC-pinned or excused in writing. That is proposed
+as its own session and deliberately NOT built here, since it is a guard
+and guards get proven in both directions before they are trusted.
+
+**Base-rate note (G-75):** this one also surfaced as a side effect,
+while reading the schema for an unrelated systems-import question.
+Nobody re-read the survey. Sixth of six.
