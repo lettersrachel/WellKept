@@ -3953,6 +3953,22 @@ household, states that the visit stands, and states that no email was
 sent. That is the loudest thing available to it, and it is still a log
 line in a serverless runtime that no operator opens.
 
+**THIS ENTRY IS THE WORKED EXAMPLE OF A NAMED RELEASE-BLOCKING RISK**,
+recorded 27 August after the Backstage section 32 list arrived. That
+list's "presentation suppression: no human-value runtime changes remain
+silent" IS this defect, and the review found that
+`success-visibility.test.ts` appears to cover it and does not.
+
+The guard was CORRECT throughout. It watches an action confirming what
+it did, and the action here completed: the visit applied, the record
+committed, the confirmation was true. What went unannounced was a
+SUPPRESSION, which is a different event, and no guard watches those. So
+the risk was real, the guard was right, and a person found the gap
+between them. Stated here rather than only in the review, because a
+later reader meeting a green success-visibility run beside a
+release-blocking risk phrased in the same words would reasonably
+conclude the risk was handled.
+
 **Why this is the G-29 shape again, one surface along.** G-29 was about
 an operator unable to tell "declined" from "down". G-68 was the same
 reasoning in the success direction: an action that wrote and said

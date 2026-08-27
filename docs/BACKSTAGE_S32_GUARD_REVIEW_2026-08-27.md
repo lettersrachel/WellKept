@@ -270,6 +270,51 @@ expires.
 
 ---
 
+## Accessibility: FOUNDER RULING, 27 August 2026, deferred with a trigger
+
+**The ruling.** Adopt the no-diagnosis gate now (done, CLAUDE.md). Defer
+the accessibility TEST SUITE, because this is a scope decision and not
+yet a testing question. **The revisit trigger is the moment the client
+side unfreezes**, stated as a trigger rather than a date so it cannot
+lapse quietly: a date passes and nothing happens, a trigger fires when
+the condition that justified the deferral stops holding.
+
+That is the right shape for the reason this document already gives about
+vacuous ticks. A deferral with a date becomes a silent omission the day
+the date passes unread. A deferral with a trigger is answerable by
+anybody who asks whether the condition still holds.
+
+**One part of the risk the ruling does not reach, flagged rather than
+absorbed.** The trigger is client-side, and the accessibility gap is not.
+The HOM field surface exists today, is used on a phone from a home-screen
+install, and is the surface the spec's own low-capacity risk describes:
+interrupted, one-handed, low-attention use in somebody's house. Under
+this ruling it has **no accessibility coverage and no trigger that would
+create any**, because the client side unfreezing says nothing about it.
+
+Recorded as an open question rather than answered here, since scope is
+the founder's: whether the staff surface gets its own trigger, shares
+the client one, or is deliberately out of scope. What must not happen is
+that it inherits the client deferral by silence, which is exactly how the
+two vacuous ticks above came to look like passes.
+
+## The vacuous-satisfaction category, named because it has no home
+
+Two risks on this list pass because **the feature they guard against does
+not exist**: the universal ease baseline and the no-diagnosis gate.
+
+This is G-83's shape arriving from the opposite direction. G-83 is a
+guard that cannot fail on the question asked of it. This is a RISK that
+cannot fail on any question, because nothing exists to violate it. Both
+produce a tick; neither produces information.
+
+**The distinguishing property, and the reason this needs a mechanism:**
+no change to this repository will trigger a re-check. A guard re-runs
+when code changes. A vacuously satisfied risk becomes live when a FEATURE
+IS ADDED, and the tick against it was recorded before that feature was
+imagined. So the only instrument is a calendar or a trigger, and this
+document is where both are written down.
+
 ## What this review changes
 
 Nothing is built. Three things are now known that were not:
