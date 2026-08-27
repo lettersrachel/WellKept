@@ -3562,3 +3562,54 @@ private error: this register is read as premise.
 a side effect of being ordered to implement the fix, not from anybody
 re-reading the entry. Same shape as G-77's own base-rate note, one day
 later.
+
+#### Precision on the correction, same day, before it was acted on
+
+Two claims in the correction above did not survive the read that the
+guard proposal required. Left standing and corrected here, same
+discipline as the correction itself.
+
+**1. The wrong function was named.** The correction says
+`assertClientPayloadSafe` is "a known-bad-signature check". It is not.
+Read at `packages/permissions/src/index.ts:143`, it asserts that every
+row in the payload carries a KNOWN sensitivity and that the sensitivity
+is `s1`. It inspects one key per row and nothing else. The
+known-bad-signature checks are its two neighbours,
+`assertNoProvisionRows` and `assertNoAnticipationRows`, which recognize
+provision ids and anticipation column pairs however deeply nested. The
+conclusion is unchanged and is if anything firmer: **none of the three
+sees a new column**, the first because it reads only `sensitivity`, the
+other two because a column invented tomorrow matches no signature they
+know.
+
+**2. "Yes, it was" overstated the registry exposure.** The correction's
+table says every column of `registry_entry` reached the member through
+`getRegistries`. What is actually true: the rows are passed whole into
+`<RegistryCard entries={...}>`, and **RegistryCard is a server
+component** (no `"use client"`, imports one type, renders no nested
+component) inside a server-component page. It renders none of the eight
+columns 0058 added. So those columns were composed into a payload object
+that never left the machine. The accurate statement is that
+`getRegistries` was default-open **at the payload**, and the last mile
+that turns a payload into exposure, a render or a `"use client"` prop
+crossing, did not exist for those columns.
+
+**This does not change 0058 and does not reopen the ruling.** Nulling
+the six working-note columns for `role === "client"` is still right and
+is still what was ruled on. What changes is the justification: it is
+defense in depth at the boundary, not the closing of a live leak. Saying
+so matters because "a live leak was closed" and "a latent one was made
+structural" carry different urgency for everything queued behind them.
+
+**Third instance in three days, same shape.** G-77 counted render sites
+and reported columns. G-78 counted bare queries and reported payloads
+reaching a member. This one counted payload composition and reported
+exposure, when the unit at risk is what a member can actually receive,
+which on a server-rendered page is the HTML and nothing else. Each time
+the reported unit sat one conversion away from the unit that mattered,
+and each time the conversion was invisible on the page. **The one
+difference worth keeping:** this one was caught by checking a premise
+before writing the next thing on top of it, rather than by being ordered
+to implement it. That is the cheapest place any of the three was ever
+going to be caught, and it is the only one of the three that cost
+nothing downstream.
