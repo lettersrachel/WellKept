@@ -1917,19 +1917,61 @@ and not lost, not proposing a build order.
    the only variable that moved, so the inference is now a cause. When
    and how it came to be disabled is not established and stays open.
 
-   **DECIDED 27 August, in favour: require `ci` on `main`, jobs `gates`
-   and `airplane`.** The deciding argument is this week's, not last
-   week's. Requiring `ci` converts a silent Actions stop into blocked
-   merges, and Actions was off for ten hours on 26 August with sixteen
-   guards enforcing nothing while the only signal was a person noticing
-   a run was missing. `ci.yml` carries no `paths` or `paths-ignore`, so
-   nothing gets blocked that would not otherwise run. Founder-side to
-   apply: Settings, Branches, add a rule for `main`, require status
-   checks, add `gates` and `airplane` by job name (not `ci`). Leave
-   "require a pull request before merging" unticked unless direct
-   pushes to `main` should also stop. This line becomes true when the
-   rule exists, and not before; per G-74 it is to be re-read against
-   the branch endpoint rather than against this sentence.
+   **DONE 27 August 2026, and this time the evidence is the endpoint.**
+   Ruleset 21654765, name `main`, `enforcement: active`, target branch,
+   conditions including exactly `refs/heads/main`, `bypass_actors` empty.
+   Its rules: `required_status_checks` carrying `gates` and `airplane`
+   by name on integration 15368 with
+   `strict_required_status_checks_policy: true`, plus `pull_request`,
+   `non_fast_forward` and `deletion`. Read from
+   `/repos/.../rules/branches/main` and `/repos/.../rulesets/21654765`,
+   founder-confirmed and independently re-read the same afternoon.
+
+   **The reading has a trap in it, and the trap is the reason this line
+   was false for a month.** The CLASSIC branch endpoint
+   (`/repos/.../branches/main`) reports `protected: true` with
+   `contexts: []` and `enforcement_level: off`. Read alone, that is
+   indistinguishable from protection configured and doing nothing, which
+   is the exact shape Gate 3 was written to refuse. It reads that way
+   because the protection lives in a RULESET, and the classic endpoint
+   does not project ruleset rules into its `contexts` array. So the
+   check is now two endpoints, not one: the classic endpoint can say
+   `protected: false` while a ruleset protects the branch, and can say
+   `protected: true` while nothing does. **Neither endpoint alone
+   answers the question.** G-73's original reading was correct in its
+   conclusion and got there by checking both, which is why it also
+   checked the rulesets endpoint and found it empty.
+
+   **And protection earned a real red on its first PR, within the
+   hour.** #203 came to the gate at `a259749` with `gates` FAILING on
+   three `tsc` errors in the new guard's own test file, in a change I
+   had reported as green. The suite was green; I had typechecked
+   `packages/permissions` and `apps/web` and never `packages/schema`,
+   the one package the new file was in, and vitest does not typecheck.
+   Under the old convention that merge would have gone in on a person
+   reading a summary. This is the KEK-validation pattern again: a
+   control proven in a container is worth less than a control that
+   refuses something real, and this one refused on day one. Fixed at
+   `f5ab83d`, both jobs green, merged as `324b2931` through the
+   verify-then-merge script, which bound the sha it read to the sha it
+   merged.
+
+   **What the month of falsehood cost, kept because it is the point.**
+   This line read DONE from 2026-07-28 and was corrected on 26 August
+   (G-73) after a direct read showed no protection of any kind. Between
+   those dates every merge was gated by a person reading run results,
+   and for ten hours on 26 August Actions was disabled entirely, so
+   sixteen guards enforced nothing while the only signal was somebody
+   noticing a run was missing. Nothing in the system could have said
+   so, because the claim lived in a sentence rather than in a reading.
+   **That is the origin of the verify-against-the-endpoint rule**, and
+   it now applies to this very line: re-read it against both endpoints
+   rather than against this paragraph.
+
+   Still open from this same chore, both stated above and unchanged by
+   the protection landing: the repository `homepage` field pointing at
+   the deleted stray project, and how Actions came to be disabled on 26
+   August, which was confirmed as the cause and never explained.
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111

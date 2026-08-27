@@ -4,10 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "airplane": "playwright test"
+    "airplane": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@playwright/test": "1.55.1",
     "pg": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/pg": "8.20.0",
+    "typescript": "5.8.3"
   }
 }

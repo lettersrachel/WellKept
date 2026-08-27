@@ -3657,3 +3657,235 @@ The short form: this checks which keys may be PRESENT, never what a
 permitted key CONTAINS. A staff-only fact typed into a correctly
 client-visible column reaches the member and nothing in this system
 catches it.
+
+---
+
+### G-79. The endpoint that answers "is this branch protected" depends on how it was protected, and each one alone can answer wrongly in both directions
+
+Filed 2026-08-27, from applying G-74's own rule to branch protection on
+the day it finally landed. Not a defect in the repository: a defect in
+the CHECK that G-73 and G-74 left behind.
+
+**The reading.** Protection is now in force on `main`, and the classic
+branch endpoint says this about it:
+
+```
+GET /repos/lettersrachel/WellKept/branches/main
+  protected: True
+  required_status_checks.contexts: []
+  enforcement_level: off
+```
+
+Read alone, that is a branch with protection configured and enforcing
+nothing. It is also, word for word, the shape Gate 3 was written to
+refuse ("empty contexts with `protected: true` does not clear the
+gate"). The truth is the opposite: the rules endpoint carries ruleset
+21654765, `enforcement: active`, `bypass_actors` empty, requiring
+`gates` and `airplane` BY NAME on integration 15368 with
+`strict_required_status_checks_policy`, plus `pull_request` and
+`non_fast_forward`.
+
+**The mechanism.** Classic branch protection and rulesets are two
+systems. The classic endpoint does not project ruleset rules into its
+own `contexts` array, so a ruleset-protected branch reads as
+protected-but-empty there. The failure runs both ways:
+
+| Endpoint | Can wrongly say NOT protected | Can wrongly say protected |
+|---|---|---|
+| `/branches/main` | yes, when a ruleset holds it (today) | yes, `protected: true` with nothing enforced |
+| `/rules/branches/main` | yes, when CLASSIC protection holds it | no |
+
+So **neither endpoint alone answers the question**, and the correct
+check is both, every time. G-73's August reading happened to be right
+because it checked both and found the rulesets list empty as well. That
+was thoroughness, not a rule, and a rule is what this entry adds.
+
+**The generalization, which is the part that outlives this API.** G-74
+says a register entry is evidence a control was built, never evidence it
+is still in place, and the remedy was "read the endpoint". This is the
+next layer down: **an endpoint is a view, and a view has a scope.**
+Reading one and treating its silence as absence is the same error as
+reading a document and treating its claim as fact, one step closer to
+the machine and therefore more convincing. When a control can be
+implemented two ways, "I checked" means checking for both
+implementations, and a verification that names only one is incomplete
+even when it happens to return the right answer.
+
+**Where this lands.** WORK_QUEUE "Not software" item 0 now closes on
+both readings, and its own text carries the instruction to re-read it
+against both endpoints rather than against its paragraph.
+
+**Base rate (G-75), ninth of nine:** found while verifying something
+else, on the way to a merge. Nobody was auditing the verification
+method; it just failed to match what the founder had already
+confirmed, and the mismatch was the signal.
+
+---
+
+### G-80. Protection earned a real red on its first pull request, on a change reported green
+
+Filed 2026-08-27, the same afternoon, and kept as a short entry because
+the value is the fact rather than the analysis.
+
+#203 reached the gate at `a259749` and `gates` FAILED: three `tsc`
+errors in `client-payload-shape.test.ts`, the seventeenth guard's own
+test file, in a change reported here as proven in four directions with
+the full suite green.
+
+**The suite WAS green. Vitest does not typecheck.** The miss was
+process: `packages/permissions` and `apps/web` were typechecked and
+`packages/schema` was not, which is the one package the new file was
+in. A green test run said nothing about it and was read as though it
+did.
+
+**Why it belongs in the register rather than only in a commit
+message.** Under the convention that stood until this morning, that
+merge would have gone in, because the convention was a person reading a
+summary and the summary said green. The control that caught it had
+existed for under an hour. This is the KEK-validation pattern exactly:
+a guard proven red and green in a container is worth something, and a
+guard that refuses something real on its first day is worth more.
+
+**The lesson that transfers:** "the suite is green" and "the change
+compiles" are different claims, and the first is routinely offered for
+the second. Typecheck the package you added a file to, by name, and do
+not let a passing runner in a sibling package stand in for it.
+
+**Addendum, on the mechanism rather than the incident.** Vitest does not
+typecheck. It transpiles and runs, so a suite can be green on code that
+does not compile, and the greener the suite the more confidently the
+wrong conclusion is drawn. The package that gained the new file was the
+one package never typechecked, which is not a coincidence: the packages
+I chose to check were the ones I had EDITED existing files in, and the
+new file felt like it belonged to the guard rather than to a package.
+
+**And the gate was never the problem.** Confirmed by reading `ci.yml`
+and `turbo.json`: the `gates` job runs `pnpm typecheck` at the root,
+which is `turbo run typecheck`, fanning out to every package carrying
+the script. Eleven ran on the failing run and eleven ran on the fixing
+one. So CI checks all of them and always would have; the miss was
+entirely local, in running per-package filters instead of the root task.
+**The local rule is therefore: run `pnpm typecheck` at the root, not
+`pnpm --filter <pkg> typecheck`.** A filter encodes a guess about which
+packages a change touched, and that guess is exactly what was wrong.
+
+**One real gap found while confirming it. RESOLVED 27 August, founder
+ruling.** Three workspace packages carried NO `typecheck` script, so
+nothing typechecked them anywhere: `@wellkept/e2e`, `@wellkept/export`,
+and `@wellkept/security-tooling`.
+
+`@wellkept/e2e` now has one, and the root fan-out is twelve rather than
+eleven. **This is the same shape as vitest not typechecking, one layer
+out:** the journeys are TypeScript and ran under Playwright's own
+transpile, so a type error in a spec was invisible until that spec ran,
+and the journeys could rot silently between runs.
+
+**What its first run found, reported exactly:** 16 errors across 5 files
+(`airplane`, `floor-bypass`, `journeys`, `partb-rehearsal`,
+`playwright.config`), and **every one was a missing type declaration
+rather than a defect in the spec logic**: `process`, `Buffer` and
+`node:crypto` unresolved, and `pg` implicitly `any`. Fixed by adding
+`@types/node`, `@types/pg` and `typescript` as devDependencies at the
+versions the rest of the workspace already pins, plus a `tsconfig.json`
+extending the base. No new library enters the project and no spec was
+edited. Zero errors after.
+
+`@wellkept/export` and `@wellkept/security-tooling` are **NOT given
+one**, and the reason is that a `tsc --noEmit` there would check
+nothing. Each is a single plain-JavaScript `.mjs` file
+(`wk_playbook_export.mjs`, `authz-probe.mjs`), run by hand through its
+own `pnpm` script, imported by nothing anywhere in the tree (verified by
+search). A typecheck script over them would pass vacuously, which is the
+guard-that-checks-nothing shape the census floors exist to prevent.
+Type-checking them at all would mean `allowJs` plus `checkJs`, a
+different and larger decision about whether the operator scripts should
+be TypeScript, and it is not made here.
+
+Fixed at `f5ab83d`; both jobs green; merged as `324b2931` through the
+verify-then-merge script, which bound the sha it verified to the sha it
+merged.
+
+---
+
+### G-81. A suppressed client email is visible only in a log nobody reads
+
+Filed 2026-08-27 with the Step 5a assertion, as its own known gap rather
+than as a caveat inside it.
+
+**The mechanism.** The client visit report now refuses to send when the
+payload does not carry exactly three non-empty sentences (the close-flow
+contract, enforced at the boundary because the state machine that owns
+it runs client-side and this route validates no shape at all). The
+founder ruling is that a refusal must NOT throw: `applyVisitCommand` has
+already committed by then, so throwing would hand the HOM a false
+failure and make the offline queue retry a landed write. The record is
+the record.
+
+**So the refusal is a `console.error` and nothing else.** It names the
+household, states that the visit stands, and states that no email was
+sent. That is the loudest thing available to it, and it is still a log
+line in a serverless runtime that no operator opens.
+
+**Why this is the G-29 shape again, one surface along.** G-29 was about
+an operator unable to tell "declined" from "down". G-68 was the same
+reasoning in the success direction: an action that wrote and said
+nothing. This is the third: a MEMBER-facing thing that did not happen,
+where the person who would care is a corporate operator and the person
+who caused it is a HOM who has already walked out of the house. Nobody
+learns. The member simply never gets an email, which is
+indistinguishable from a quiet week.
+
+**A surface exists and is NOT wired, deliberately.** The corporate board
+at `/oversight/board` already renders an exception queue of open
+`attention_record` rows with household, age, and seen/unseen, and the
+notification firewall already carries a `corporate_queue` destination
+for exactly this class of noticing. Writing an attention record from the
+mail path would put a suppressed send in front of the one person who
+should see it, using machinery that already exists and needs no
+migration.
+
+**RULED AND WIRED, 27 August 2026, narrowly.** A client-facing send that
+the system itself refused now raises an `attention_record` with
+`audience: corporate`, routed by `destinationFor` (never a literal) to
+`corporate_queue`, where the board's exception queue already renders it
+with household, age and seen/unseen. No migration: `source_kind`
+`system` with a null `source_id` is already in the CHECK's vocabulary,
+and nulls never collide in the `(source_kind, source_id)` unique index,
+so each suppressed send is its own row, which is right because each one
+is a separate thing a member did not receive. The reason is STRUCTURAL
+and never carries a report sentence: the sentences are the member's own
+content, and a message names what happened, never a value (G-68's rule).
+Recording is best-effort like the send it reports on, since
+`applyVisitCommand` has already committed.
+
+**This is a SCOPED EXCEPTION to the standing posture, not a precedent
+for routing decisions being made in engineering.** The posture is
+unchanged and still governs: it is why the capture router does no
+keyword or severity routing, why nothing reaches `immediate_interrupt`,
+and why the firewall shipped a deliberately conservative v1. The
+exception was granted for one stated reason, and the reason does not
+generalize: **the failure is invisible by construction.** A member who
+receives nothing cannot distinguish a suppressed send from a quiet week,
+and neither can anyone else, so no rule set can ever be written about an
+event nobody can observe. Where a founder rule set CAN be written later,
+the posture applies unchanged.
+
+**The boundary, written where it can be enforced rather than remembered
+(the module's own header, and asserted in tests):** one trigger, a send
+this system decided not to make. NOT delivery failures, NOT bounces, NOT
+vendor or provider errors, which are things that happened TO a send we
+chose to make and already surface as thrown errors at the mail seam. No
+adjacent event class joins because it fits the same plumbing. When a
+broader capture-router ruling exists, this folds into it; it does not
+stand in for one.
+
+**Proven both directions.** Green against a real database, with the
+liveness precondition asserted first: the row lands open, audience
+corporate, destination corporate_queue, source id null, reason
+structural, and its `attention_record.opened` event carries ids only.
+Red twice: routing to the HOM brief instead failed both the integration
+assertion and the narrowness assertion, and making the recorder throw
+instead of logging failed the best-effort case with a real FK refusal.
+
+**Base rate (G-75), tenth of ten:** surfaced by building the assertion,
+not by anybody asking what happens when a guard refuses.

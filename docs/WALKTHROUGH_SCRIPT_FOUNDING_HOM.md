@@ -88,6 +88,43 @@ PASS / FAIL / friction notes:
 4. DRILL: total interaction time for a routine close. The standard is
    under two minutes.
 
+**The three sentences are the one thing here no software checks, and
+this station is where that is taught.** Everything else on the close
+flow is bounded by something: tasks come from a list, hours are a
+number, photos are stripped at capture, the life-change check is a
+yes or no. The three sentences are free text, and they are mailed to
+the member, verbatim, within seconds of Confirm close. There is no
+review step between the HOM typing them and the member reading them.
+
+What the software does and does not do, stated exactly so nobody
+assumes more:
+
+- It refuses to send unless there are exactly three non-empty
+  sentences. That is a COUNT, not a reading.
+- It escapes them, so punctuation cannot break the email.
+- It checks nothing about what they SAY. Not tone, not accuracy, not
+  whether a sentence names another household, a staff member, a
+  price, a diagnosis, or a judgment about the family.
+
+So the rules for the three sentences are a matter of training and
+review, not of a guard:
+
+1. Write what a member would be glad to read and would recognize as
+   true. If it would embarrass anyone to have it read aloud in the
+   kitchen, it is the wrong sentence.
+2. Never name another household, another member, or a colleague.
+3. Never put an internal judgment in a sentence. What was done and
+   what was noticed; not what you concluded about the people.
+4. Never put a price, an estimate, or a duration in a sentence (the
+   D7 wall exists for the same reason and the software cannot see
+   prose).
+5. If a sentence would be better said out loud, say it out loud and
+   write a plainer one.
+
+DRILL for this station: write one sentence that breaks rule 3, read
+it back, and rewrite it. The point is to feel how easily an ordinary
+internal thought becomes a sentence a member reads.
+
 PASS / FAIL / friction notes:
 
 ## Station 6: intake mode and a correction
