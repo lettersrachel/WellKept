@@ -95,6 +95,31 @@ in A582; the found catalog and the WKT namespace coexist by design.
 - `UNCERTAIN (T-###...)`: a candidate exists but choosing would be a
   guess; the founder rules.
 
+**R18 (founder ruling, 27 August 2026, process only, no build): an
+UNCERTAIN row MAY terminate at no-mapping, with a stated reason.**
+
+UNCERTAIN was written as a question that must resolve to a T-id, on the
+assumption that a named candidate means a mapping exists and only the
+choice is open. That is not always true: a candidate can be near enough
+to raise and still not be the same work. Under R18 the founder's verdict
+on an UNCERTAIN row may be `NO-MAP: <reason>`, which is a DECISION and
+not an unresolved row.
+
+Two consequences for whoever applies the verdicts:
+
+- **A terminating UNCERTAIN is complete, not deferred.** It carries the
+  same weight as any other decided row and does not hold the freeze, the
+  provisional flip, or the loader.
+- **The reason is required, and is the point.** "No defensible
+  counterpart" recorded against a row that named a candidate is more
+  informative than a row that never had one, because it says the near
+  miss was considered and rejected. Without the reason the two are
+  indistinguishable later, which is the same failure the register keeps
+  filing about unattributed claims.
+
+The eight UNCERTAIN rows in the catalog below are unchanged; R18 widens
+what their verdicts may be, not what they say today.
+
 ## The catalog
 
 ### Visit structure (STD-000, STD-018)

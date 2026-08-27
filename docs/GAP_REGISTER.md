@@ -2785,14 +2785,43 @@ as an identifier or as an order is correct only while the accident
 holds.** Whether the display should order by `created_at` or carry a
 sequence number is a decision and is not made here.
 
-It also sharpens the product question the entry left open. The demo pair
-argues FOR the narrow fix rather than the global one: a partial unique
-index on `name` where `is_fixture` is true would not have touched either
-demo household, since neither is a fixture, while still pinning the one
-household the smoke tooling resolves by name. Two real clients called
-"The Smith Residence" stay representable. Still a decision and still not
-made here, but the option space is now informed by a real population
-rather than by a thought experiment.
+**R17 (founder ruling, 27 August 2026, pending two keys): SHARED
+HOUSEHOLD NAMES ARE PERMITTED.** Two member families named Chen is
+ordinary, and a uniqueness constraint would eventually force a member to
+accept a name that is not theirs. **So the fix this entry proposed is
+WITHDRAWN**: no unique index on `household.name`, global or partial, and
+the product question the entry left open is closed in the permissive
+direction.
+
+**What survives the ruling, and is now the whole of the defect.**
+`ensure-smoke-fixture.mjs:33` identifies its household with
+`SELECT ... FROM household WHERE name = 'Smoke Test Fixture'` and
+destructures one row. With shared names permitted BY POLICY rather than
+merely unconstrained, the tool and the record agree by luck, and the luck
+is now sanctioned. The answer is no longer to constrain the data; it is
+to stop identifying a fixture by its display name.
+
+**`is_fixture` is NOT the answer as it stands**, per the same ruling:
+three households carry it (the smoke fixture and the training household
+set it directly, `training-household.ts:74` and
+`ensure-smoke-fixture.mjs:41,45`), so it selects a class and not a row.
+
+**The class is wider than the fixture tool, which matters for whichever
+option is taken.** Five sites resolve a household by name today:
+`ensure-smoke-fixture.mjs:33` and `partb-rehearsal.spec.ts:33` both
+hard-code the same string independently, so they agree by two people
+typing it; `load-bindings.ts:60` and `load-template.ts:36` take a name as
+an argument, which is a loader's legitimate interface and not this
+defect; and `floor-bypass.spec.ts:35` uses `name ILIKE '%fernbrook%'`, a
+SUBSTRING match, which is the same defect one degree looser. A fix that
+only touches the fixture tool leaves the Part B spec agreeing by
+coincidence with a string it does not share.
+
+**Options reported, none built.** See the session report of 27 August;
+the summary is that a reserved id constant needs NO migration and is the
+strongest available uniqueness (the primary key), a dedicated lookup
+column or an alias table both need one, and only the column and table
+forms generalize beyond naming each fixture individually.
 
 ### G-72. A mutation that never lands and a test that cannot fail look identical
 
