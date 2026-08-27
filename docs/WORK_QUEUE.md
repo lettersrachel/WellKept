@@ -549,6 +549,101 @@ visit"` does NOT find `0cf411a`, because `-S` counts occurrences and
 the edit preserved the phrase. `-G` finds it. A search that cannot see
 the change it is looking for reads as "never happened".
 
+### Backstage Intelligence spec v2 (27 August 2026): what was adopted, what conflicts, what is blocked
+
+**Tier C by its own framing.** Four items adopted as CONSTRAINTS, nothing
+built, nothing else adopted. The three statable invariants are in
+CLAUDE.md so a future session meets them where it would otherwise build
+past them; the per-column producer requirement is in CLAUDE.md, the PR
+template and RFC-PRIM-01.
+
+**A count settled the same day.** Four invariants were named and three
+were listed (AI individual-confirmation, the no-diagnosis gate, the
+section 29 anti-patterns). **The fourth was the release-blocking test
+list itself, named as an invariant and then handed over as its own task,
+so it was DOUBLE-COUNTED rather than missing** (founder, 27 August).
+
+Kept in the record because the recovery is the useful part: the gap was
+recorded as a gap instead of filled with a plausible fourth, and a
+plausible fourth invented here would have read as adopted law from the
+moment it was written. An unresolved count is cheap; an invented one is
+indistinguishable from a real one afterwards.
+
+#### Two conflicts, REPORTED AND NOT RESOLVED
+
+Per the standing doctrine, the same posture the Ruling 1 / section 5
+disagreement took: report both, hold the stricter reading, let the
+founder rule.
+
+**1. ExecutionActual's seven segments against section 29's stopwatch
+prohibition.** The spec specifies separate actuals for active, setup,
+dwell, remote, wait, travel and close, and section 29 forbids a universal
+HOM stopwatch. Both cannot hold.
+
+**The live version of this is today's G-89 finding, which makes it
+concrete rather than theoretical.** A visit's hours are two
+`datetime-local` inputs the HOM types, called "taps" in the code, the
+comments and this file. One interval, typed. **Seven segments cannot be
+typed without becoming precisely the burden section 29 exists to
+prevent**, and nothing derives them: 0054's `time_segment` derives from
+the visit interval, so its nine-kind taxonomy currently resolves to one
+derived row from two typed fields. So the conflict is not merely
+between two sentences in a document, it is between the spec and what the
+capture surface can do without a stopwatch. Unresolved and not resolvable
+in engineering: whether a HOM ever times a segment is a founder call
+about the field day.
+
+**2. Sequencing: the spec's T09 against WK-DEV-007.** The spec puts
+member surface conversion at T09. WK-DEV-007 puts the input spine and the
+HOM Cockpit first, with the client side FROZEN at the digest.
+
+**By the spec's own Tier A rule, WK-DEV-007 controls.** Stated explicitly
+because the failure mode is silent: a later reader reaches for the newer
+document because it is newer, and the tier ordering is the thing that
+says not to. Recency is not authority here; the tier is.
+
+#### The ticket sequence cannot be costed yet (note only, no work)
+
+**T01's output should be a THREE-WAY split**: exists and conforms, exists
+and diverges, does not exist. Not a two-way present/absent, because
+"exists and diverges" is where the work actually is and it is invisible
+in a binary.
+
+**That convention is already this repository's**, which is the argument
+for it: RFC-PRIM-01 classified its nine primitives EXISTS / PARTIAL /
+ABSENT and the window's real build fell out of the middle column. T01 is
+asking for the same instrument.
+
+A substantial number of **T05, T07, T08, T10, T11, T13, T15, T22 and
+T28** already exist in some form. Until that reconciliation is done the
+sequence is a list of tickets whose sizes are unknown, and any estimate
+against it would be a number with a hidden conversion in it.
+
+#### BLOCKED: the document has not reached this repository
+
+Two requested items cannot be done from here, and are named rather than
+approximated:
+
+- **The section 29 anti-patterns list.** One item was quoted to this
+  session (no universal HOM stopwatch) and is adopted. Which of the
+  remainder restate standing rules and which do not is a question about
+  a list this repository does not hold. A paraphrase would be a
+  reviewable-looking claim about text nobody can check.
+- **The release-blocking test list, checked against the guards.** The
+  interesting category is the third one, a named risk covered by
+  something that would pass for the wrong reason, which is G-83's shape
+  and the reason the check is worth doing. It needs the risk NAMES;
+  matching guards against a remembered summary would manufacture exactly
+  the false assurance the exercise exists to find.
+
+**What can be said without the document, as a floor for that work:** the
+guard set is seventeen rows in the CLAUDE.md table over fifteen guard
+files plus the `sizes` CHECK, and its two structural blind spots are
+already written in the not-covered column: **free text a person writes**,
+and **what a permitted key CONTAINS** rather than which keys are
+present. Any release-blocking risk that reduces to either will be
+uncovered no matter which guard appears to address it.
+
 ### Section 4 check ledger, opened 27 August 2026 BEFORE the results exist
 
 This exists so four results have a designated place to land, decided

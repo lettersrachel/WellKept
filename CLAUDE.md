@@ -124,6 +124,35 @@ Adding a guard is the preferred fix for anything currently held by memory.
 Prove it in both directions before trusting it: red on a violation, green on
 a known-good case.
 
+## Adopted invariants (Backstage Intelligence spec v2, 27 August 2026)
+
+The spec is **Tier C by its own framing**. Four items are adopted as
+CONSTRAINTS now; nothing else from it is adopted and nothing is built.
+They are here rather than only in the register because a constraint that
+forecloses a future build has to be met by the session that would have
+built it.
+
+- **Every AI-created fact stays a SUGGESTION until one authorized human
+  confirms it INDIVIDUALLY.** No select-all, no batch confirm, no
+  auto-commit, no "confirm remaining" gesture over machine-authored
+  rows. Nothing in the system does this today, so adopting costs nothing
+  and forecloses it. Note the shape it must NOT borrow:
+  `confirmRemainingAsExpected` is a legitimate one-gesture batch because
+  it covers the HOM's OWN planned work, which a person authored; the
+  same gesture over AI output is exactly what this bars.
+- **No baseline UI, communication simplification, or reduced-interaction
+  behaviour may REQUIRE a disability, age, diagnosis, or vulnerability
+  flag.** Adopted before anything exists that would violate it, which is
+  the whole point: an accommodations branch is far harder to remove than
+  to prevent, and once a simpler surface is gated on a flag, the flag
+  becomes a thing the record must hold about a person.
+- **The section 29 anti-patterns.** Most restate rules already standing
+  here. The one quoted to this session, and the only one this file can
+  state accurately, is **no universal HOM stopwatch**. The remainder are
+  NOT transcribed, because the document has not reached this repository
+  and a paraphrase of a list nobody can check is worse than a gap: see
+  the open item in WORK_QUEUE.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
@@ -171,9 +200,15 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 - **One migration per session.** If it feels like two, the session is too big.
   Report that instead of proceeding.
-- **A migration names its PRODUCER, or records that it has none yet.** One
-  line, in the migration header or the PR body: "written by <surface>", or
-  "NO PRODUCER YET; <surface> is <session>". 0058 shipped ten columns that
+- **A migration names its PRODUCER PER COLUMN, or records that a column
+  has none yet.** In the migration header or the PR body: "written by
+  <surface>", or "NO PRODUCER YET; <surface> is <session>", **for each
+  column added or altered**. Per column, not per migration: 0058 would
+  have passed a table-level answer, because it had a producer in mind for
+  some of its ten columns and none for any of them, and one sentence
+  about `registry_entry` would have concealed exactly that. The Backstage
+  spec lists roughly thirty-five primitives; without the per-column form
+  this repeats at that scale. 0058 shipped ten columns that
   nothing writes, all NULL on every production row, with a shape
   assertion, four CHECK constraints and a granularity-aware render
   guarding a path no data can reach: correct, inert, and

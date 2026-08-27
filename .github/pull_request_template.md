@@ -25,8 +25,19 @@ case and be allowlisted into silence. It stays a question a person
 answers at the only moment the answer is known.
 -->
 
-- **Written by:** <!-- the surface that writes these columns, e.g. "the close flow's capture step" -->
-- or **NO PRODUCER YET:** <!-- name the session that will build it, e.g. "the systems capture form, its own session" -->
+Answer PER COLUMN, not per migration. 0058 would have passed a
+migration-level answer: it had a producer in mind for some columns and
+none for any of them, and one line about the table would have hidden
+that. List every column the migration adds or alters:
+
+| Column | Written by, or NO PRODUCER YET |
+|---|---|
+| `table.column` | the surface that writes it, or the session that will |
+
+"NO PRODUCER YET" is a legitimate answer and needs no defence. An
+UNANSWERED row is the thing this section exists to prevent, because a
+column with a writer and a column without one are indistinguishable
+after the fact.
 
 ## Proofs
 
