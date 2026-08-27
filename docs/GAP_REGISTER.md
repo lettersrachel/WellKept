@@ -4816,3 +4816,53 @@ of this one.
 **Base rate (G-75), eighteenth of eighteen:** found because a founder
 compared a number on a screen against how it got there. No check compares
 copy to behaviour, and none could.
+
+---
+
+### G-90. A guard that fails for reasons unrelated to what it guards is allowlisted into silence by re-running, with no allowlist involved
+
+Filed 2026-08-27, when the copy census timed out on a real CI gate during
+a comment-only change.
+
+**The failure.** `client-copy.test.ts:384`, "the copy census derives its
+own scope", exceeded vitest's 5000ms default in the `gates` job. Nothing
+it guards had changed; the commit edited one code comment.
+
+**Why it is slow, and why that is correct.** The census DERIVES its scope
+by walking the repository, which is the whole reason it exists: the copy
+sources are computed rather than remembered, so the guard cannot go stale
+the way the hand-maintained list it replaced did. That walk costs about a
+second alone and exceeds five under fourteen parallel test files on a
+loaded runner. The test is not wrong. Its budget was.
+
+**The part worth filing is what nearly happened instead.** It had already
+failed three times locally the same day and was dismissed each time as
+local noise, twice by observing that it passed when run alone, which is
+true and is exactly the reasoning that keeps a flake alive.
+
+> **A guard that fails for reasons unrelated to what it guards trains the
+> person watching to press the button again. A guard everyone re-runs to
+> green has been allowlisted into silence, and no allowlist was edited,
+> nobody decided anything, and nothing in the repository records it.**
+
+That is worse than a written allowlist entry, which at least carries a
+reason and a name. This register already holds the sanctioned-escape-hatch
+rule: the first legitimate exception is a reviewed line, never a
+commented-out guard. Flakiness is the unwritten version of the same
+retreat, and it arrives by attrition rather than by decision.
+
+**Fixed by raising the budget, not by re-running.** 30 seconds, stated as
+a proposal rather than a measurement: about thirty times the observed solo
+cost, chosen so contention cannot reach it rather than to sit just above
+the worst case seen. A census that genuinely takes thirty seconds has a
+real problem and should fail.
+
+**What this does not fix, said plainly.** Nothing detects the next flake.
+A test that fails intermittently is indistinguishable on any single run
+from a test that found something, and the only signal is a person
+noticing the same guard failing for different reasons on different days.
+That noticing is what produced this entry, and it took three dismissals
+first.
+
+**Base rate (G-75), nineteenth of nineteen:** surfaced by a CI gate on an
+unrelated change, after three local instances were explained away.
