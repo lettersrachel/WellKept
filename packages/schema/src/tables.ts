@@ -420,7 +420,29 @@ export const visitPhoto = pgTable("visit_photo", {
   // household (enforced in the action, not just the interface).
   reuseAllowed: boolean("reuse_allowed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [index("visit_photo_household_idx").on(t.householdId)]);
+  // 0058: WHICH system this photograph is of, where it is of one. The
+  // systems walk-through takes two frames per station, and the second
+  // exists only to disambiguate which unit a plate belongs to when a
+  // mechanical room holds two; attaching to the household alone throws
+  // that away at import.
+  //
+  // NOT the object_observation two-nullable-subjects pattern, which was
+  // considered and does not fit: that CHECK exists because an
+  // observation has no other subject, while every photo already carries
+  // household_id NOT NULL. This is an optional refinement, so there is
+  // no at-least-one CHECK and no backfill; the 41 existing rows, which
+  // have no knowable subject, stay valid untouched.
+  registryEntryId: uuid("registry_entry_id"),
+}, (t) => [
+  index("visit_photo_household_idx").on(t.householdId),
+  // The situation precedent: a photo naming another household's entry is
+  // unrepresentable, not merely unlikely.
+  foreignKey({
+    name: "visit_photo_registry_entry_same_household_fk",
+    columns: [t.householdId, t.registryEntryId],
+    foreignColumns: [registryEntry.householdId, registryEntry.id],
+  }),
+]);
 
 // The incident & complaint register (LAUNCH §3, 2026-07-25): a client
 // complaint, breakage, injury, or near-miss. NOT a registry kind — registries
@@ -566,9 +588,77 @@ export const registryEntry = pgTable("registry_entry", {
   sensitivity: sensitivityEnum("sensitivity").notNull().default("s1"),
   sourceFieldId: uuid("source_field_id"),
   tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }), // tombstone, never delete
+
+  // 0058, the systems walk-through (WK-FORM-108 pending its number).
+  //
+  // INSTALL DATE, second representation, DELIBERATELY alongside the
+  // installed_at timestamp above rather than replacing it. Converting
+  // that column is a table rewrite under ACCESS EXCLUSIVE and belongs to
+  // the Temporal Layer window, which converts consent_signed_at and
+  // incident_report.occurred_at as ONE class change; a half-converted
+  // class is harder to reason about than an unconverted one. So two
+  // representations coexist on purpose until that window resolves them:
+  // installed_at is the legacy timestamp, install_date is what the
+  // capture form writes.
+  //
+  // A `date` ends the G-61 timezone defect (no zone to shift) and does
+  // NOT end the fabricated precision: a decoded "2011" stored as a date
+  // is still 2011-01-01, which reads as a specific day nobody should
+  // trust. install_date_granularity is what ends that, and it ends it AT
+  // THE RENDER: the marker says how much of the date to print (year ->
+  // 2011, month -> March 2011, day -> the full date), so precision the
+  // record does not have is never shown, rather than being shown with a
+  // caveat a reader has to know about.
+  installDate: date("install_date"),
+  installDateGranularity: text("install_date_granularity"),
+
+  // The install-year ASSESSMENT. Install years are not printed on
+  // equipment; they are decoded from serials with no universal pattern,
+  // so a decoded guess and a corroborated fact must not collapse into
+  // one column. The preference_rule provenance/confidence precedent.
+  //
+  // derivation_source is FREE TEXT, in words, deliberately: a vocabulary
+  // for how a year was derived is a taxonomy, and no engineer picks the
+  // taxonomy here (the estimate_snapshot basis precedent, the
+  // condition_flag no-kinds posture).
+  //
+  // Nullable, with the CHECK conditioned on presence, because 22 existing
+  // rows were never assessed and inventing a provenance for them is a
+  // claim about data nobody looked at (the G-66 refused backfill).
+  serialVerbatim: text("serial_verbatim"),
+  derivationSource: text("derivation_source"),
+  derivedYear: integer("derived_year"),
+  installConfidence: text("install_confidence"),
+
+  // Capture completeness, per ENTRY not per field (the accepted limit).
+  // Before these, a record with all sixteen field types empty and one
+  // with the nine photograph-closable filled and the ask pass never run
+  // were the same state, and so was "we asked and there was nothing to
+  // record". A pass that ran is a timestamp; completeness derives from
+  // these plus the fields themselves, so no count is stored.
+  photoPassAt: timestamp("photo_pass_at", { withTimezone: true }),
+  askPassAt: timestamp("ask_pass_at", { withTimezone: true }),
 }, (t) => [
   index("registry_entry_household_idx").on(t.householdId),
   index("registry_entry_household_kind_idx").on(t.householdId, t.kind),
+  // The situation precedent: the composite key a child table references
+  // so a cross-household link is UNREPRESENTABLE rather than unlikely.
+  uniqueIndex("registry_entry_household_id_key").on(t.householdId, t.id),
+  check("registry_entry_install_granularity_known",
+    sql`${t.installDateGranularity} IS NULL OR ${t.installDateGranularity} IN ('year','month','day')`),
+  // Whole or absent, both directions: a date without a granularity would
+  // be read at full precision, and a granularity without a date says how
+  // to print nothing.
+  check("registry_entry_install_date_is_whole",
+    sql`(${t.installDate} IS NULL AND ${t.installDateGranularity} IS NULL) OR (${t.installDate} IS NOT NULL AND ${t.installDateGranularity} IS NOT NULL)`),
+  check("registry_entry_install_confidence_known",
+    sql`${t.installConfidence} IS NULL OR ${t.installConfidence} IN ('confirmed','derived','uncertain')`),
+  // The assessment is whole or absent. A derived year with no stated
+  // source and no confidence is the exact collapse this group exists to
+  // prevent. serial_verbatim stands OUTSIDE the group on purpose:
+  // recording a plate you have not decoded yet is a valid, common state.
+  check("registry_entry_install_assessment_is_whole",
+    sql`(${t.derivationSource} IS NULL AND ${t.installConfidence} IS NULL AND ${t.derivedYear} IS NULL) OR (${t.derivationSource} IS NOT NULL AND ${t.installConfidence} IS NOT NULL)`),
   // W-4 (WORK_QUEUE) / WK-SOP-019: children's sizes are child data and
   // must never be client-visible by default. The column default stays s1
   // (right for dates/vendors); this constraint makes the unsafe combo
@@ -1286,8 +1376,18 @@ export const captureArtifact = pgTable("capture_artifact", {
   workItemId: uuid("work_item_id").references(() => workItem.id), // set when filing created one
   filedAt: timestamp("filed_at", { withTimezone: true }),
   filedBy: text("filed_by").references(() => authUser.id),
+  // 0058: the system an artifact is about, where it is about one. Same
+  // shape and same reasoning as visit_photo.registry_entry_id: an
+  // optional refinement on a row that already has household_id, so no
+  // at-least-one CHECK and no backfill.
+  registryEntryId: uuid("registry_entry_id"),
 }, (t) => [
   index("capture_artifact_household_idx").on(t.householdId, t.status),
+  foreignKey({
+    name: "capture_artifact_registry_entry_same_household_fk",
+    columns: [t.householdId, t.registryEntryId],
+    foreignColumns: [registryEntry.householdId, registryEntry.id],
+  }),
   check("capture_artifact_kind_known",
     sql`${t.kind} IN ('text','voice','photo','scan')`),
   check("capture_artifact_extraction_known",

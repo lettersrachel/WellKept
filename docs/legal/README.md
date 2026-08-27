@@ -90,6 +90,22 @@ Four documents, one per audience and direction:
   Records that state changed, never that money moved (ADR-004, QuickBooks
   is the billing system of record).
 - **Registries**, important dates, vendors, appliances, subscriptions.
+- **Systems detail** (added 2026-08-27, migration 0058): for equipment we
+  care for, the serial number as printed on the plate, the install date
+  with a marker saying how precisely it is known (year, month or day),
+  and, where the year was decoded from a serial rather than read from a
+  record, how it was decoded and how far it should be trusted
+  (confirmed, derived, uncertain). Install years are not printed on
+  equipment and there is no universal decoding pattern, so a decoded
+  guess is recorded as a guess and never as a fact. The decode notes and
+  the confidence are INTERNAL and are filtered out of the client view;
+  the serial and the install date are the member's own equipment facts
+  and are shown. Photographs of a plate may be linked to the specific
+  unit they show, so a record with two like units can say which is
+  which. Also recorded: whether the photograph pass and the ask pass
+  have been run on an entry, so an unasked question is distinguishable
+  from an answered one with nothing to record. Cleared with the
+  household on erasure.
 - **Object observations** (added 2026-07-27, G-49); repeated staff
   observations of registry objects over time: condition (1–5) and fill
   level, with an optional internal note and who recorded them. Internal

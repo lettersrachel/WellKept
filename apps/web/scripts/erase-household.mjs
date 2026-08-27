@@ -26,7 +26,16 @@
  *    --despite-open-incidents is passed. The 2am default must never
  *    silently choose between a deletion request and a live dispute.
  *  - playbook_field: value/note cleared, tombstoned.
- *  - registry_entry: label '[erased]', detail {}, tombstoned.
+ *  - registry_entry: label '[erased]', detail {}, tombstoned; the 0058
+ *    systems fields (install_date + granularity, the serial, the
+ *    derivation source, derived year and confidence, both capture-pass
+ *    stamps) cleared with them, each whole-or-absent group cleared as a
+ *    group so the CHECKs survive erasure.
+ *  - visit_photo.registry_entry_id / capture_artifact.registry_entry_id:
+ *    KEPT. The link is skeleton, not content, and it points at a
+ *    registry_entry that this same pass tombstones and blanks, so it can
+ *    only ever resolve to '[erased]'. capture_artifact rows are deleted
+ *    outright anyway.
  *  - dot / visit / visit_command / gesture / stranger_test / client_edit /
  *    season_observation / prompt_pack_item / prompt_outcome notes: free-text
  *    content replaced with '[erased]' or cleared; rows remain as structure.
@@ -287,7 +296,13 @@ try {
     [householdId],
   );
   await c.query("UPDATE playbook_field SET value='', note='', tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId]);
-  await c.query("UPDATE registry_entry SET label=$2, detail='{}', installed_at=NULL, lifespan_months=NULL, maintenance_interval_months=NULL, last_serviced_at=NULL, tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // 0058 columns join the blanking. install_date and its granularity go
+  // NULL TOGETHER, and the assessment group goes NULL as a group, because
+  // both carry whole-or-absent CHECKs: clearing half of either would make
+  // erasure itself fail. All-NULL is an explicitly valid state for both,
+  // so no marker value is needed here (contrast the W-6 revisit_condition
+  // marker, where NULL was not a legal state).
+  await c.query("UPDATE registry_entry SET label=$2, detail='{}', installed_at=NULL, lifespan_months=NULL, maintenance_interval_months=NULL, last_serviced_at=NULL, install_date=NULL, install_date_granularity=NULL, serial_verbatim=NULL, derivation_source=NULL, derived_year=NULL, install_confidence=NULL, photo_pass_at=NULL, ask_pass_at=NULL, tombstoned_at=now(), updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE dot SET verbatim=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
   await c.query("UPDATE visit SET changes_noticed=NULL, signal_detail=NULL, zone_drift_notes='', report_sentence_1='', report_sentence_2='', report_sentence_3='', updated_at=now() WHERE household_id=$1", [householdId]);
   await c.query("UPDATE visit_command SET payload='{}', reason=NULL WHERE household_id=$1", [householdId]);

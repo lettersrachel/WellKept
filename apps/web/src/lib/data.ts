@@ -256,7 +256,27 @@ export async function getRegistries(householdId: string, role: string) {
   const rows = await db.select().from(registryEntry)
     .where(and(eq(registryEntry.householdId, householdId), isNull(registryEntry.tombstonedAt)))
     .orderBy(asc(registryEntry.kind), asc(registryEntry.label));
-  return rows.filter((r) => readDecision(role, r.sensitivity) !== "denied");
+  const visible = rows.filter((r) => readDecision(role, r.sensitivity) !== "denied");
+  // 0058: row-level sensitivity is not enough here. select() takes every
+  // column, so the install-year ASSESSMENT would reach a client
+  // unfiltered. install_date, its granularity and the serial are facts
+  // about the client's own equipment and stay; derivation_source,
+  // derived_year and install_confidence are OUR working notes about how
+  // much we trust a decode, and the capture-pass stamps are our process
+  // state. Neither is the client's record (the estimate_snapshot posture:
+  // the drill-in shows the estimate and never the estimator).
+  // COPY AND POLICY ARE A PROPOSAL, not a settled decision: whether a
+  // client should see "we are uncertain about this date" is the founder's
+  // call, and shipping the conservative version keeps the option open.
+  if (role !== "client") return visible;
+  return visible.map((r) => ({
+    ...r,
+    derivationSource: null,
+    derivedYear: null,
+    installConfidence: null,
+    photoPassAt: null,
+    askPassAt: null,
+  }));
 }
 
 /**

@@ -232,6 +232,16 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   matches once and refuses when ambiguous, and use absolute paths in
   proof scripts, because a working directory is state and state that
   survives between commands is state that will eventually be wrong.
+- **A cast from `timestamptz` to `date` pins UTC explicitly, or it writes
+  the timezone bug into the data.** `installed_at::date` uses the SESSION
+  TimeZone, not UTC: the same row reads `2018-10-01` from a UTC session
+  and `2018-09-30` from Eastern or Pacific, proven three ways on seeded
+  values. A migration written with a bare cast and run from a non-UTC
+  session shifts every date back one day, and unlike the G-61 RENDER bug
+  this one is **not recoverable**, because the original timestamp is gone
+  once the column is converted. Always
+  `USING (col AT TIME ZONE 'UTC')::date`. The same caution applies to any
+  read that compares or groups a date-only fact.
 - **A recovery path is only real if it can be reached from the state it
   exists to recover from.** Backup codes were intact and unreachable,
   because the code opened the TOTP secret before falling back to them
