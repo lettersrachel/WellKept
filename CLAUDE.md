@@ -171,6 +171,22 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 - **One migration per session.** If it feels like two, the session is too big.
   Report that instead of proceeding.
+- **A migration names its PRODUCER, or records that it has none yet.** One
+  line, in the migration header or the PR body: "written by <surface>", or
+  "NO PRODUCER YET; <surface> is <session>". 0058 shipped ten columns that
+  nothing writes, all NULL on every production row, with a shape
+  assertion, four CHECK constraints and a granularity-aware render
+  guarding a path no data can reach: correct, inert, and
+  indistinguishable from a working feature on a green CI summary (G-85).
+  Its header even said "what the capture form writes", in the future
+  tense, and that read as a design note. Schema ahead of its writer is
+  fine deliberately and not by accident, and after the fact the two look
+  the same. **This cannot become a guard**: a static reader cannot tell
+  which columns a runtime-assembled insert touches, so detection would be
+  table-scoped, which is exactly the blindness G-83 is about; and "no
+  writer" is a valid state, so the guard would fire on every intentional
+  case and be allowlisted into silence. It stays a sentence a person
+  writes at the only moment the answer is known.
 - **Generated migration SQL is READ before it is applied.** `drizzle-kit`
   emitted 0058's two composite foreign keys BEFORE the unique index they
   reference; Postgres refused with "there is no unique constraint
