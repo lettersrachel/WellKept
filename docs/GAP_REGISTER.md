@@ -3657,3 +3657,100 @@ The short form: this checks which keys may be PRESENT, never what a
 permitted key CONTAINS. A staff-only fact typed into a correctly
 client-visible column reaches the member and nothing in this system
 catches it.
+
+---
+
+### G-79. The endpoint that answers "is this branch protected" depends on how it was protected, and each one alone can answer wrongly in both directions
+
+Filed 2026-08-27, from applying G-74's own rule to branch protection on
+the day it finally landed. Not a defect in the repository: a defect in
+the CHECK that G-73 and G-74 left behind.
+
+**The reading.** Protection is now in force on `main`, and the classic
+branch endpoint says this about it:
+
+```
+GET /repos/lettersrachel/WellKept/branches/main
+  protected: True
+  required_status_checks.contexts: []
+  enforcement_level: off
+```
+
+Read alone, that is a branch with protection configured and enforcing
+nothing. It is also, word for word, the shape Gate 3 was written to
+refuse ("empty contexts with `protected: true` does not clear the
+gate"). The truth is the opposite: the rules endpoint carries ruleset
+21654765, `enforcement: active`, `bypass_actors` empty, requiring
+`gates` and `airplane` BY NAME on integration 15368 with
+`strict_required_status_checks_policy`, plus `pull_request` and
+`non_fast_forward`.
+
+**The mechanism.** Classic branch protection and rulesets are two
+systems. The classic endpoint does not project ruleset rules into its
+own `contexts` array, so a ruleset-protected branch reads as
+protected-but-empty there. The failure runs both ways:
+
+| Endpoint | Can wrongly say NOT protected | Can wrongly say protected |
+|---|---|---|
+| `/branches/main` | yes, when a ruleset holds it (today) | yes, `protected: true` with nothing enforced |
+| `/rules/branches/main` | yes, when CLASSIC protection holds it | no |
+
+So **neither endpoint alone answers the question**, and the correct
+check is both, every time. G-73's August reading happened to be right
+because it checked both and found the rulesets list empty as well. That
+was thoroughness, not a rule, and a rule is what this entry adds.
+
+**The generalization, which is the part that outlives this API.** G-74
+says a register entry is evidence a control was built, never evidence it
+is still in place, and the remedy was "read the endpoint". This is the
+next layer down: **an endpoint is a view, and a view has a scope.**
+Reading one and treating its silence as absence is the same error as
+reading a document and treating its claim as fact, one step closer to
+the machine and therefore more convincing. When a control can be
+implemented two ways, "I checked" means checking for both
+implementations, and a verification that names only one is incomplete
+even when it happens to return the right answer.
+
+**Where this lands.** WORK_QUEUE "Not software" item 0 now closes on
+both readings, and its own text carries the instruction to re-read it
+against both endpoints rather than against its paragraph.
+
+**Base rate (G-75), ninth of nine:** found while verifying something
+else, on the way to a merge. Nobody was auditing the verification
+method; it just failed to match what the founder had already
+confirmed, and the mismatch was the signal.
+
+---
+
+### G-80. Protection earned a real red on its first pull request, on a change reported green
+
+Filed 2026-08-27, the same afternoon, and kept as a short entry because
+the value is the fact rather than the analysis.
+
+#203 reached the gate at `a259749` and `gates` FAILED: three `tsc`
+errors in `client-payload-shape.test.ts`, the seventeenth guard's own
+test file, in a change reported here as proven in four directions with
+the full suite green.
+
+**The suite WAS green. Vitest does not typecheck.** The miss was
+process: `packages/permissions` and `apps/web` were typechecked and
+`packages/schema` was not, which is the one package the new file was
+in. A green test run said nothing about it and was read as though it
+did.
+
+**Why it belongs in the register rather than only in a commit
+message.** Under the convention that stood until this morning, that
+merge would have gone in, because the convention was a person reading a
+summary and the summary said green. The control that caught it had
+existed for under an hour. This is the KEK-validation pattern exactly:
+a guard proven red and green in a container is worth something, and a
+guard that refuses something real on its first day is worth more.
+
+**The lesson that transfers:** "the suite is green" and "the change
+compiles" are different claims, and the first is routinely offered for
+the second. Typecheck the package you added a file to, by name, and do
+not let a passing runner in a sibling package stand in for it.
+
+Fixed at `f5ab83d`; both jobs green; merged as `324b2931` through the
+verify-then-merge script, which bound the sha it verified to the sha it
+merged.
