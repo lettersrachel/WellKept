@@ -3392,6 +3392,13 @@ Nobody re-read the survey. Sixth of six.
 
 ### G-78. The client projection is default-open at the column level: every new column reaches the member unless someone remembers to filter it
 
+**CORRECTED THE SAME DAY IT WAS FILED, 27 August 2026. The measurement
+below is wrong and the fix it recommends is withdrawn.** The original
+text is left standing rather than rewritten clean, the way the withdrawn
+stray-project incident is kept: how the claim came to be written down is
+the part worth having. Read the correction at the end of this entry
+before acting on anything above it.
+
 Filed 2026-08-27, found while adding columns in migration 0058. Caught
 that time because the new columns were obviously internal. The next set
 may not be.
@@ -3459,3 +3466,99 @@ already doing four things.
 
 **Base rate (G-75), seventh of seven:** found as a side effect of adding
 columns, not by anybody auditing projections.
+
+#### Correction, 27 August 2026: the measurement, and the fix it recommended
+
+**What the entry claimed**, kept visible above in its own words: "The
+client playbook reads through six functions. Three take every column
+(`getRegistries`, `getFields`, `getPendingEdits`) and three do not. Two
+of the six already use explicit column lists (`getStewardship`,
+`getClientDeferrals`), so the correct pattern is already in the codebase
+and the outliers are the exception rather than the rule." And its step
+1: "Bring the three outliers into line with their two siblings: explicit
+column lists at the three client-reaching reads."
+
+**What is actually true, read from the tree rather than from the query
+layer alone.**
+
+| Read | Query | Does every column reach the member? |
+|---|---|---|
+| `getFields` | bare `select()` | **No.** The playbook projects at the call site to six named fields, then runs three live assertions over the projected array |
+| `getPendingEdits` | bare `select()` | **No.** The result is reduced to a `Set` of `fieldId` before anything renders |
+| `getRegistries` | bare `select()` | **Yes, it was.** Passed whole into `<RegistryCard entries={...}>`. Already closed by 0058, which nulls the six assessment and capture-pass columns when `role === "client"` |
+
+So the three was a count of BARE QUERIES. The thing at risk is payloads
+that reach a member, and there was exactly one, which the migration this
+entry was filed beside had already closed.
+
+**The "correct pattern already in the codebase" half does not survive
+either.** `getStewardship` and `getClientDeferrals` have one caller
+each, the client playbook. `getFields` has six callers, `getRegistries`
+five, `getPendingEdits` two. Those two are not a pattern the others fail
+to follow; they are single-purpose client reads, which is exactly why an
+explicit column list fits them and says nothing about a read five staff
+surfaces share. There was no outlier to conform.
+
+**The founder's ruling, which replaces the recommended fix.** The
+invariant is **projection at the boundary, not explicit column lists at
+the query.** `getFields` and `getRegistries` are both already correct
+under it, and shared reads are not to be narrowed. Narrowing a read that
+six surfaces use, five of them staff, to fit the one client surface,
+moves the constraint away from where the risk lives and buries a client
+rule inside a staff query.
+
+**The corrected finding, which is narrower and harder than the one
+filed.** One default-open read existed and is closed. What remains is
+that **nothing enforces projection before a shared read crosses to a
+member.** The projection on the playbook is a thing a person wrote and
+the next person can forget, and `assertClientPayloadSafe` cannot cover
+for that, because it is a known-bad-signature check: it knows the shapes
+that must never appear, so a column invented tomorrow passes it
+unnoticed. The guard shape is proposed separately and is deliberately
+not built here.
+
+#### The unit error, recorded rather than absorbed
+
+**I counted queries and reported exposure.** Different units, and the
+conversion between them is the call site, which is precisely where the
+answer was. **Filed one day after G-77**, which is an entry about this
+exact mechanism, written by the same session, and the rule it added to
+CLAUDE.md ("state the unit, and check that the unit you counted is the
+unit at risk") did not fire on the next survey I wrote. So the honest
+reading is that writing a rule down is weaker evidence of having learned
+it than it feels at the moment of writing.
+
+**Second instance in two days**, and the two point in OPPOSITE
+directions, which is worth stating precisely because it was put to me as
+though they matched:
+
+| Entry | Counted | Reported | Direction |
+|---|---|---|---|
+| G-77 | render sites | columns at risk | UNDERCOUNT. Made the system look safer than it was, inside a document whose job was completeness |
+| G-78 | bare queries | payloads reaching a member | OVERCOUNT. Three claimed, one real |
+
+**Reported and not reconciled**, per the standing doctrine: the founder's
+instruction for this correction characterized both instances as
+inflating the problem. G-77 as written says the opposite of that in its
+own heading ("wrong in the reassuring direction") and in its body ("made
+the system look safer than it was"). Both are recorded here as they
+stand rather than one being edited to agree with the other.
+
+The generalization that does hold across both is not the direction, it
+is that **a hidden unit conversion inside a number carries no marker at
+all.** Undercounting closes a question that should stay open;
+overcounting sends work at a problem that is not there. Neither reads as
+uncertain on the page, and that is the shared failure.
+
+**And this one propagated rather than sitting inert.** The recommended
+fix was endorsed downstream on the strength of the unmeasured claim, and
+came back as an instruction to bring three client-reaching reads into
+line. Had the diff been produced on the order rather than the
+measurement being checked first, two shared staff reads would have been
+narrowed to satisfy a count. A wrong number in a register entry is not a
+private error: this register is read as premise.
+
+**Base rate (G-75), eighth of eight:** the correction itself surfaced as
+a side effect of being ordered to implement the fix, not from anybody
+re-reading the entry. Same shape as G-77's own base-rate note, one day
+later.
