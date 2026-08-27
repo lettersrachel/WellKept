@@ -2817,11 +2817,72 @@ SUBSTRING match, which is the same defect one degree looser. A fix that
 only touches the fixture tool leaves the Part B spec agreeing by
 coincidence with a string it does not share.
 
-**Options reported, none built.** See the session report of 27 August;
-the summary is that a reserved id constant needs NO migration and is the
-strongest available uniqueness (the primary key), a dedicated lookup
-column or an alias table both need one, and only the column and table
-forms generalize beyond naming each fixture individually.
+**FIXED 27 August 2026 by identity, no migration.** `tooling/fixture-ids.mjs`
+is the single exported module; `ensure-smoke-fixture.mjs`,
+`partb-rehearsal.spec.ts` and `floor-bypass.spec.ts` all import it, so a
+change lands everywhere or nowhere. A constant copied into each file
+would have reproduced the defect with better syntax.
+
+**A CORRECTION to this entry's own framing, because the true version is
+a stronger finding.** This was reported as a proposal borrowed from
+`deploy.sh`'s `EXPECTED_PROJECT_ID`. That undersold it.
+**`training-household.ts:61` already does exactly this**, with
+`const HH = "01997700-0000-7000-8000-000000000001"` and
+`onConflictDoNothing`, so the training household creates-or-finds by
+primary key and has been immune to G-71 by construction since the day it
+was written. Pinning an id is therefore **the repository's existing
+convention for seeded households**, and the fixture script was the
+outlier that did not follow it, not a candidate for a new pattern. The
+same is true of Fernbrook, whose id has always been carried in
+`fernbrook_template_seed.json`; pinning it surfaced an existing constant
+rather than introducing one, confirmed identical in the seed file and a
+local database independently of the production URL it was read from.
+
+**One wrinkle the training household does not have.** Its id is
+DELIBERATELY STRUCTURED and minted by its own seed, so every environment
+converges. The fixture's id was `randomUUID()` at creation, so every
+database that ran the old script has a DIFFERENT id for the same
+fixture (proven: local held `d0181db3...` while production holds
+`8a4b9786...`). A single pin therefore cannot already be true
+everywhere. The script fails closed on exactly that: if the pinned id
+finds nothing but a household with the fixture NAME exists, it REFUSES
+and names both situations, because on a disposable database the answer
+is "delete and re-run" and on production it is "stop, do not create a
+second one". Pre-pin databases need a one-time reconcile; that is the
+cost of the pin and it is stated rather than discovered.
+
+**The `ILIKE` match is closed by identity, not tightened.** An exact name
+match would have left the same defect with better wording, which is the
+version most likely to be mistaken for fixed later. The two loaders
+(`load-bindings.ts:60`, `load-template.ts:36`) are untouched: a name
+ARGUMENT is a legitimate interface and not this defect.
+
+**Proven, preconditions asserted first** (database live, both constants
+exported, three sites importing rather than carrying literals):
+
+- **Red.** The pinned id absent while a same-named household exists:
+  refused, exit 1, and the household count was identical before and
+  after, so it created nothing.
+- **Green.** With no conflicting name present, the script created the
+  row AT the pinned id and found it on the next run.
+- **The case the fix exists for.** With TWO households named "Smoke Test
+  Fixture", the old predicate returned **different rows depending on how
+  it was written**: bare `LIMIT 1` gave one, `ORDER BY created_at LIMIT 1`
+  gave the other. Two defensible readings, two different households. The
+  new predicate returned the pinned row and can only ever return one,
+  because it is the primary key. **Recorded precisely: on the first run
+  the old predicate happened to return the right row, which is luck and
+  not a pass, and saying so is the point of the case.**
+
+**When to revisit, written as a TRIGGER rather than a preference so a
+later reader need not rederive the argument:** the moment fixtures need
+finding as a CLASS rather than being named one at a time, a pinned
+constant becomes two constants pretending to be a pattern, and the
+dedicated column (a `fixture_key` with a partial unique index, one
+migration) is right. **Nothing currently approaches that trigger**: there
+are two named fixtures, the training household already solves this its
+own way, and `is_fixture` remains unsuitable because it selects a class
+of three rather than a row.
 
 ### G-72. A mutation that never lands and a test that cannot fail look identical
 
