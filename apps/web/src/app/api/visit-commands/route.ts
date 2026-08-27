@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { getPrincipal } from "@/lib/session";
 import { applyVisitCommand, type ApplyInput } from "@/lib/visit-command-store";
 import { sendMail, escapeHtml } from "@/lib/mail";
+import { projectClientReport } from "@/lib/client-report";
 
 /**
  * REQ-061: on an applied visit.submit, the client receives the report —
@@ -13,6 +14,8 @@ import { sendMail, escapeHtml } from "@/lib/mail";
  * the record); it logs and moves on.
  */
 async function deliverClientReport(householdId: string, payload: { report?: string[]; photoIds?: string[] }) {
+  const projected = projectClientReport(householdId, payload);
+  if (!projected) return;
   const [hh] = await db.select().from(household).where(eq(household.id, householdId));
   const clients = await db
     .select({ email: authUser.email, name: authUser.name })
@@ -26,7 +29,7 @@ async function deliverClientReport(householdId: string, payload: { report?: stri
   // because `${...}` is concatenation and not markup-aware: an ampersand
   // in a house name or a "<" in a sentence otherwise reaches a member's
   // inbox as broken markup.
-  const sentences = (payload.report ?? []).map((s) => `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#26241f;margin:6px 0">${escapeHtml(s)}</p>`).join("");
+  const sentences = projected.report.map((s) => `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#26241f;margin:6px 0">${escapeHtml(s)}</p>`).join("");
   for (const client of clients) {
     try {
       await sendMail({
@@ -36,7 +39,7 @@ async function deliverClientReport(householdId: string, payload: { report?: stri
         // household name never reaches this email's MARKUP; only the
         // sentences do, and those are escaped above.
         subject: `This week's visit at ${hh?.name ?? "your household"}`,
-        html: `<div style="max-width:560px;margin:0 auto"><h2 style="font-family:Georgia,serif;color:#1c3d2e">This week&rsquo;s visit</h2>${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">${(payload.photoIds ?? []).length} photo(s) attached &middot; photo-supported report &middot; Well Kept</p></div>`,
+        html: `<div style="max-width:560px;margin:0 auto"><h2 style="font-family:Georgia,serif;color:#1c3d2e">This week&rsquo;s visit</h2>${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">${projected.photoCount} photo(s) attached &middot; photo-supported report &middot; Well Kept</p></div>`,
       });
     } catch (err) {
       console.error("[visit-report] delivery failed (visit stays applied):", err instanceof Error ? err.message : err);

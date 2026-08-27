@@ -52,8 +52,12 @@ test("the client report and the corporate alert both escape what a person typed"
   const here = path.dirname(fileURLToPath(import.meta.url));
   const route = readFileSync(path.join(here, "../app/api/visit-commands/route.ts"), "utf8");
 
-  // Both report renderers escape each sentence.
-  const sentenceRenders = route.match(/payload\.report \?\? \[\]\)\.map\(\(s\) =>[^\n]*/g) ?? [];
+  // Both report renderers escape each sentence. They read from different
+  // sources by design: the client composer takes the PROJECTION (Step 5a),
+  // the corporate alert still takes the raw payload, since it is a staff
+  // surface and outside that ruling. Matched on the render itself rather
+  // than on the source, so this stays true when either source changes.
+  const sentenceRenders = route.match(/\.map\(\(s\) => `<p style="font-family:Georgia[^\n]*/g) ?? [];
   expect(sentenceRenders.length).toBe(2);
   for (const line of sentenceRenders) expect(line).toContain("escapeHtml(s)");
 

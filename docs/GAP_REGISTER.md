@@ -3751,6 +3751,84 @@ compiles" are different claims, and the first is routinely offered for
 the second. Typecheck the package you added a file to, by name, and do
 not let a passing runner in a sibling package stand in for it.
 
+**Addendum, on the mechanism rather than the incident.** Vitest does not
+typecheck. It transpiles and runs, so a suite can be green on code that
+does not compile, and the greener the suite the more confidently the
+wrong conclusion is drawn. The package that gained the new file was the
+one package never typechecked, which is not a coincidence: the packages
+I chose to check were the ones I had EDITED existing files in, and the
+new file felt like it belonged to the guard rather than to a package.
+
+**And the gate was never the problem.** Confirmed by reading `ci.yml`
+and `turbo.json`: the `gates` job runs `pnpm typecheck` at the root,
+which is `turbo run typecheck`, fanning out to every package carrying
+the script. Eleven ran on the failing run and eleven ran on the fixing
+one. So CI checks all of them and always would have; the miss was
+entirely local, in running per-package filters instead of the root task.
+**The local rule is therefore: run `pnpm typecheck` at the root, not
+`pnpm --filter <pkg> typecheck`.** A filter encodes a guess about which
+packages a change touched, and that guess is exactly what was wrong.
+
+**One real gap found while confirming it, reported not fixed.** Three
+workspace packages carry NO `typecheck` script at all, so nothing
+typechecks them anywhere: `@wellkept/e2e`, `@wellkept/export`, and
+`@wellkept/security-tooling`. `@wellkept/e2e` is the Playwright journeys,
+which are TypeScript, so a type error in a journey spec is invisible
+until the journey runs. Whether they should have one is a decision (the
+e2e package in particular may be deliberate, since its specs run under
+Playwright's own transpile), so it is named here rather than added.
+
 Fixed at `f5ab83d`; both jobs green; merged as `324b2931` through the
 verify-then-merge script, which bound the sha it verified to the sha it
 merged.
+
+---
+
+### G-81. A suppressed client email is visible only in a log nobody reads
+
+Filed 2026-08-27 with the Step 5a assertion, as its own known gap rather
+than as a caveat inside it.
+
+**The mechanism.** The client visit report now refuses to send when the
+payload does not carry exactly three non-empty sentences (the close-flow
+contract, enforced at the boundary because the state machine that owns
+it runs client-side and this route validates no shape at all). The
+founder ruling is that a refusal must NOT throw: `applyVisitCommand` has
+already committed by then, so throwing would hand the HOM a false
+failure and make the offline queue retry a landed write. The record is
+the record.
+
+**So the refusal is a `console.error` and nothing else.** It names the
+household, states that the visit stands, and states that no email was
+sent. That is the loudest thing available to it, and it is still a log
+line in a serverless runtime that no operator opens.
+
+**Why this is the G-29 shape again, one surface along.** G-29 was about
+an operator unable to tell "declined" from "down". G-68 was the same
+reasoning in the success direction: an action that wrote and said
+nothing. This is the third: a MEMBER-facing thing that did not happen,
+where the person who would care is a corporate operator and the person
+who caused it is a HOM who has already walked out of the house. Nobody
+learns. The member simply never gets an email, which is
+indistinguishable from a quiet week.
+
+**A surface exists and is NOT wired, deliberately.** The corporate board
+at `/oversight/board` already renders an exception queue of open
+`attention_record` rows with household, age, and seen/unseen, and the
+notification firewall already carries a `corporate_queue` destination
+for exactly this class of noticing. Writing an attention record from the
+mail path would put a suppressed send in front of the one person who
+should see it, using machinery that already exists and needs no
+migration.
+
+It is not built because **which events justify corporate attention is a
+founder rule set, not an engineering default** (the capture-router
+posture, the firewall's own v1 policy, and the reason nothing routes to
+`immediate_interrupt` today). Naming the surface and leaving the ruling
+open is the same discipline those took.
+
+**Until it is ruled on, the honest statement is:** the send is refused
+correctly, the visit is unaffected correctly, and no person is told.
+
+**Base rate (G-75), tenth of ten:** surfaced by building the assertion,
+not by anybody asking what happens when a guard refuses.
