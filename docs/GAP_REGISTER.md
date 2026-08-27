@@ -2757,6 +2757,28 @@ exactly one row from the name predicate and STOPS otherwise, so the
 ambiguity surfaces at the one moment it would do damage, even though
 nothing there can prevent it.
 
+**A CONCRETE INSTANCE, 27 August 2026, replacing the hypothetical.** The
+corporate board reads four active households, and two of them are demo
+households: **Fernbrook Demo and Chen-Williams Demo**. They carry
+distinct names today, so nothing is ambiguous and nothing is broken. What
+changed is the argument. This entry was filed with "nothing creates
+households by name except seeds and the intake path, and no duplicate
+exists today", which is true and reads as remote. The board now shows a
+live population where **two households of the same class coexist and are
+told apart by name alone**, which is the shape the predicate depends on,
+one duplicate away from the failure. The distance from "no duplicate
+exists" to "a duplicate exists" is one intake with a repeated name, and
+the intake path does not check.
+
+It also sharpens the product question the entry left open. The demo pair
+argues FOR the narrow fix rather than the global one: a partial unique
+index on `name` where `is_fixture` is true would not have touched either
+demo household, since neither is a fixture, while still pinning the one
+household the smoke tooling resolves by name. Two real clients called
+"The Smith Residence" stay representable. Still a decision and still not
+made here, but the option space is now informed by a real population
+rather than by a thought experiment.
+
 ### G-72. A mutation that never lands and a test that cannot fail look identical
 
 Filed 2026-08-26 from two near-misses in one session, both while proving

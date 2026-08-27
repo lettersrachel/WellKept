@@ -651,6 +651,29 @@ invalidates it, or it is not a re-flag. Knowing the rule is not the same
 as applying it, and the failure mode is that the checks feel related to
 what changed.
 
+**Check 8 result, 27 August 2026: PASS, ON THE PREVIEW SURFACE.** The
+client projection rendered at
+`/oversight/8a4b9786-9698-4200-95b9-91abec7a40ef/preview/client`, the
+page states its guards ran live rendering it, and **none of 0058's
+working-note columns appear**. Describes `7bcbb16`.
+
+**The scope limit, recorded at the moment of writing rather than after
+(G-84 applied forwards).** This was the CORPORATE PREVIEW of the client
+projection, viewed as corporate. It runs the same server-side permission
+matrix as the real surface, so it is a legitimate pass and not a
+rehearsal. It is **not** a client account loading its own playbook, and
+no client account exists yet. The narrow fact is "the client projection
+composes and renders without the working-note columns"; the wider claim
+would be "the client surface is verified", and only the first was
+tested. A later reader who compresses those two into one will assume
+more than happened.
+
+**Baseline reading, same sitting: the board's exception queue is EMPTY**,
+which is the correct pre-visit state. No send has been suppressed
+because no visit has been closed. Recorded as the baseline the
+post-visit-close check is read against, so a queue that is still empty
+afterwards means something and is not mistaken for the same quiet.
+
 **Owed by this delta and NOT on the numbered list:** the registry date
 rendering on a drill-in and on `/context/[id]` (`RegistryCard.tsx` plus
 0058), and a fixture visit close to confirm the client report email
