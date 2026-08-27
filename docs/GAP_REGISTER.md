@@ -4334,15 +4334,39 @@ fixture's `prompt_pack_item` rows, a production query not run from here.
 **What IS settled is the negative: it is not the fourteenth run's, and
 no file in `577666d..7bcbb16` touches it.**
 
-**Family, not novelty.** This is the ROUND5 "real object key plus fired
-dedup" item and the W-2/W-9 family, gated together on the first
+#### Why this is worth fixing rather than tolerating: the instrument counts itself
+
+`informativeRateFloor` is DELIBERATELY UNSET so that it can be calibrated
+from real numbers once real numbers exist. The numbers available to
+calibrate it against are inflated by the checklist that produces them:
+every section 4 sitting fires a `medication` change and mints another set
+of meds-day items, so the fixture's firing rate is partly a count of how
+often the fixture has been tested.
+
+**Calibrating a promotion threshold against data the test harness
+manufactured would be a wrong instrument feeding a real decision, and it
+would look like evidence at the moment it was used.** That is the whole
+danger: the number is not obviously wrong, it is a true count of rows
+that really exist, and nothing about it announces that the harness put
+them there. A floor set too high under-retires forever, which W-9 already
+named as permanent rather than recoverable.
+
+**So this belongs to the family the register has been accumulating all
+week: the instrument counting itself.** The guard that grepped its own
+assertion line and stayed green when the thing it guarded was deleted;
+the constraint proof that reported six clean REFUSED verdicts against a
+database that was down; and now a rate meant to calibrate a threshold,
+partly measuring the act of measuring. Each produced a plausible number
+or a green run, and in each the instrument was inside the thing it was
+supposed to observe from outside.
+
+**Family, not novelty.** This is also the ROUND5 "real object key plus
+fired dedup" item and the W-2/W-9 family, gated together on the first
 calibration read against real data. W-2 already established that repeat
-firings are not deduplicated and that this depresses the displayed rate.
-What this adds is the mechanism and one fact that matters for
-calibration: **the fixture's own maintenance loop is the largest
-generator of duplicates today**, so `informativeRateFloor`, which is
-deliberately unset so it can be set from real numbers, would be set from
-numbers the checklist inflated.
+firings are not deduplicated and that this depresses the displayed rate;
+what this entry adds is the mechanism, the producer, and the reason the
+calibration is not merely delayed but would be actively wrong if run
+against today's rows.
 
 **NOT fixed.** A dedup is a decision about what counts as the same
 prompt (same rule and text within a window? per object? per household?),
@@ -4353,3 +4377,51 @@ K-survey string-as-identifier problem.
 
 **Base rate (G-75), fifteenth of fifteen:** found by a person looking at
 a panel and noticing the same sentence four times.
+
+---
+
+### G-87. The inverse of G-84: resetting a pointer discarded the only local copy, and it survived only because it had been pushed
+
+Filed 2026-08-27, the same day as G-84 and deliberately BESIDE it rather
+than inside it. **Nothing was lost and the commit was recovered intact**,
+so this entry is about the mechanism, not a consequence.
+
+**What happened.** After merging PR #207, the local feature branch was
+reset onto `origin/main` with `git checkout -B <branch> origin/main`.
+Commit `fe33007` (check 8's result, the empty-queue baseline, and G-71's
+first concrete instance) had been pushed to the remote feature branch but
+never merged, so the reset abandoned the only local copy of it. It was
+noticed a minute later, when an edit anchored on text that commit had
+introduced failed to match, and recovered whole by resetting back onto
+`origin/<branch>`.
+
+**Why it is filed with G-84 rather than in it.** G-84 says a difference
+between two pointers is not a claim that work is lost: two refs differed
+and nothing was at risk. This is the same narrow fact pointed the other
+way: **two refs differed and the work really was in only one of them.**
+
+| | The narrow fact | The wider claim | Was the claim true? |
+|---|---|---|---|
+| G-84 | these two refs differ | work exists only locally | **No** |
+| G-87 | these two refs differ | both copies are safe | **No** |
+
+**The pair is more useful than either alone, and that is the point of
+filing them separately.** Read on its own, G-84 teaches "a divergence is
+probably nothing", which is the wrong lesson and would have made this
+one worse. Read on its own, this entry teaches "a divergence is probably
+dangerous", equally wrong. Together they say the only true thing:
+**the observation supports neither conclusion, and the question of where
+the work actually lives has to be asked separately every time.**
+
+`git log origin/main..HEAD` answers it in one line and was what recovered
+this. That command, not the divergence, is the check.
+
+**One narrower operational note.** A `checkout -B` onto a new base is
+safe exactly when everything on the old branch is either merged or
+pushed, and unsafe otherwise, and the difference is invisible in the
+command. Checking `git log <newbase>..<branch>` BEFORE the reset would
+have shown the one unmerged commit, which is the cheap habit rather than
+a mechanism.
+
+**Base rate (G-75), sixteenth of sixteen:** found because a text anchor
+failed to match, not because anybody checked the reset.
