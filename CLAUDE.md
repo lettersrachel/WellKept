@@ -230,6 +230,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 - **"Already up to date" is not confirmation.** A pull can succeed against a
   main that does not contain the change, because the merge has not happened.
   Verify the specific lines before acting on a claim about them.
+- **A check that a value is LEGITIMATE is not a check that it is CURRENT,
+  and the two feel identical when both pass.** The deploy's sha gate
+  proved the named sha was on `origin/main` and equal to HEAD, and both
+  were true of a sha thirteen commits stale; the deploy would have
+  shipped it and the three build-id reads would have confirmed the wrong
+  sha correctly (G-82). Ancestry, membership, well-formedness,
+  signature and existence are all LEGITIMACY. Freshness is a separate
+  question with a separate answer, and a passing legitimacy check is
+  exactly what stops anyone asking it. Where a value can go stale, name
+  the currency check separately or write down that staleness is
+  acceptable. The line above is one instance of this; so is a
+  carried-forward check result describing an older build.
 - **A guard proven red and green locally, then earning its first real red in
   production, is the strongest form of the proof.** The KEK validation threw
   on a real malformed key with zero writes the same night it shipped; that

@@ -3889,3 +3889,100 @@ instead of logging failed the best-effort case with a real FK refusal.
 
 **Base rate (G-75), tenth of ten:** surfaced by building the assertion,
 not by anybody asking what happens when a guard refuses.
+
+---
+
+### G-82. A check that a value is LEGITIMATE is not a check that it is CURRENT, and the two feel identical when both pass
+
+Filed 2026-08-27, found by the founder while reading the deploy
+instructions written the same afternoon, against a real checkout.
+
+**The hole.** `deploy.sh` made two checks on the named sha, and both were
+correct:
+
+```
+git merge-base --is-ancestor "$FULL_SHA" "$MAIN_REF"   # any ANCESTOR passes
+[[ "$HEAD_SHA" == "$FULL_SHA" ]]                       # local HEAD must match
+```
+
+Nothing compared it to the TIP. Run `deploy.sh a538ace` from a checkout
+sitting at `a538ace` and both pass, because it genuinely is on
+`origin/main` and it genuinely is HEAD. It is also **thirteen commits
+behind**. The deploy would ship thirteen commits of stale code through a
+green gate, and step 7's three build-id reads would then confirm the
+wrong sha, correctly, three times over.
+
+**Why the shape is worth naming rather than just patching.** This is
+"'already up to date' is not confirmation" in a new place. The gate
+established PROVENANCE (this sha is real, merged, and checked out) and
+was read as establishing CURRENCY (this sha is what we want to ship).
+Both feel like the same reassurance at the moment they pass, and the
+difference only becomes visible when the answer is wrong.
+
+> **The general form: a check that a value is LEGITIMATE is not a check
+> that it is CURRENT.** Ancestry, membership, well-formedness, signature,
+> and existence are all legitimacy. Freshness is a separate question with
+> a separate answer, and a passing legitimacy check is exactly what makes
+> nobody ask it. Where a value can go stale, name the currency check
+> separately or state in writing that staleness is acceptable.
+
+The same sentence covers the variants already in this register: a pull
+that succeeds against a `main` not yet carrying the change (legitimate
+pull, stale result); `/api/build-id` serving one stale reading
+mid-alias-flip (legitimate response, stale value); and a
+carried-forward section 4 pass describing an older build (legitimate
+result, stale subject).
+
+**The fix, and why it warns rather than refuses.** Deploying an older sha
+is a legitimate rollback, and a gate that refused it outright would be
+worked around within a week, so the refusal is the default and
+`--rollback` is how a deliberate rollback says so out loud. It states
+the gap concretely: the commit count behind, and the tip's sha. Two
+riders the founder specified:
+
+- **`--rollback` on the current tip says so.** Passing the flag and
+  hitting the tip means somebody believed they were going back and were
+  not, which is a false belief about which code is shipping, and this
+  gate exists to prevent exactly that in either direction. It is a loud
+  notice, not a refusal; whether it should refuse is an open question
+  and is noted with the ruling rather than decided here.
+- **The tip is read from the ref this script FETCHED**, never from
+  whatever a stale remote-tracking ref held. A currency check reading a
+  stale ref would inherit the exact defect it exists to catch, which
+  would have been a fine joke and a real outage.
+
+**Proven in four directions plus the real input.** Selftest cases 15-18
+(the file is now at eighteen, with the tally derived from the case
+numbering as the count rule requires): preconditions, stale-without-flag
+refused, stale-with-flag accepted, tip bare accepted, and tip-with-flag
+accepted WITH the not-a-rollback notice asserted on the message rather
+than the exit code. Then the real input, because a sentinel proves the
+logic and not the input: run against `a538ace` from a worktree checked
+out at `a538ace`, the gate refused and computed **13 commits behind**,
+matching the founder's independently derived count, and the same run
+with `--rollback` proceeded past it.
+
+**Two proof errors made and corrected in the same session, both of the
+kind this register exists for.**
+
+1. **A break that was not a break.** The fourth deliberate mutation
+   renamed `is NOT CURRENT` to `is NOT CURRENTX` EVERYWHERE, including
+   the selftest's own grep target, so the gate kept working with
+   different wording and the suite passed. It was read for a moment as
+   "the precondition did not fire". A consistent rename is not a
+   mutation of behavior, and "confirm the break landed" has to mean
+   confirming the BEHAVIOR changed, not that the text did.
+2. **A vacuous precondition, written to prevent vacuous cases.** Case
+   15 originally ran `grep -q "is NOT CURRENT" "$0"`, and that
+   assertion line itself contains the string, so it matched itself and
+   could never fail. Deleting the gate entirely left case 15 GREEN and
+   case 16 caught the problem instead. Now it greps the runtime refusal
+   specifically, and deleting the gate makes case 15 fail as designed,
+   proven. **A guard that reads the file it lives in must not match its
+   own text**, which is the same self-reference the sha gate had when it
+   was handed `$(git rev-parse HEAD)`.
+
+**Base rate (G-75), eleventh of eleven:** found by a person reading
+prose written for a different purpose, not by a check. The instructions
+were being written to explain the gate; explaining it is what exposed
+what it did not do.
