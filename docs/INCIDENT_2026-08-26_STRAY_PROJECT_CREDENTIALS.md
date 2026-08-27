@@ -68,13 +68,16 @@ not treat it as one when writing the record.
 
 ## What survives, verified, and is NOT withdrawn
 
-1. **The stray project exists and still builds on every push.** Seven
+1. **The stray project built on every push, and is now DELETED.** Eight
    deployments across 26-27 August, each with a public preview URL, the
-   last two AFTER its Git integration was reported disconnected. That
-   is real and unexplained. It is now a tidiness and cost matter rather
-   than a security one, since the project has nothing in it to leak,
-   but "a project that reactivates on push is not dormant" still holds
-   and disconnecting it is still right.
+   last several AFTER its Git integration was reported disconnected,
+   which is why disconnecting was not enough. The founder deleted the
+   project on 26 August after confirming it carried no custom domain
+   (only the auto-generated `well-kept-web.vercel.app`) and no
+   environment variables. The Vercel team now lists ONE project,
+   `wellkept` at `wellkept-orcin.vercel.app`. Why the disconnect did not
+   hold is no longer answerable and no longer matters; deletion closed
+   it.
 2. **Both projects sit in one Vercel team**, `team_XaVg0eFgp7o1vcakrmKMO5CX`.
 3. **The repository's GitHub `homepage` field is wrong.** It reads
    `https://well-kept-web.vercel.app`, pointing at the empty stray.

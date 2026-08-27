@@ -1827,12 +1827,16 @@ and not lost, not proposing a build order.
    it is WITHDRAWN (see
    `docs/INCIDENT_2026-08-26_STRAY_PROJECT_CREDENTIALS.md`, kept as a
    record of how a false premise got written down). What survives:
-   the stray still builds on every push, seven times across 26-27
-   August including twice after its Git integration was reported
-   disconnected, which is a cost and tidiness matter now rather than a
-   security one; and the repository's GitHub `homepage` field points
-   at the empty stray instead of `PROD_HOST`, a one-line fix in repo
-   settings.
+   the stray built on every push, eight times across 26-27 August
+   including several times after its Git integration was reported
+   disconnected, which is why disconnecting was not enough. **RESOLVED
+   26 August: the founder DELETED the project**, after confirming it
+   carried no custom domain and no environment variables; the Vercel
+   team now lists one project, `wellkept` at
+   `wellkept-orcin.vercel.app`. Remaining from this chore: the
+   repository's GitHub `homepage` field still points at the deleted
+   stray instead of `PROD_HOST`, which is now a dead link rather than
+   merely a wrong one, a one-line fix in repo settings.
    **The `ci` stop is diagnosed and belongs with this item (G-73's
    addendum).** No `ci` run has been created for any commit since 13:03
    UTC on 26 August. The workflow is `state: active` and is the only one
