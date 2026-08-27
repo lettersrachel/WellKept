@@ -4882,3 +4882,50 @@ first.
 
 **Base rate (G-75), nineteenth of nineteen:** surfaced by a CI gate on an
 unrelated change, after three local instances were explained away.
+
+---
+
+### G-91. A wait loop matched the states it expected and read an unexpected state as done
+
+**Filed 27 August 2026. Throwaway code, real mechanism, no damage.** The
+loop polling CI before the verify-then-merge script matched
+`REFUSED: suite queued` and nothing else. GitHub moved the suite from
+`queued` to `in_progress` between two polls, the grep missed, the loop
+treated a transient state as terminal and exited with code 0, reporting
+success.
+
+**Nothing merged on the false exit**, because the merge script itself
+refused correctly throughout; what got the polling wrong was the thing
+calling it. So the cost was one wasted cycle. The mechanism is the
+filing-worthy part, not the consequence.
+
+> **A filter that matches only the states you thought of reads a state
+> you did not think of as done.**
+
+**This is the same shape as two entries already here**, which is why it
+is filed rather than fixed silently: the substring match that was green
+until it was tested in the failing direction, and the endpoint scope
+question in G-79, where reading one endpoint answered a narrower question
+than the one being asked. Each is a check whose coverage was assumed from
+the cases its author enumerated.
+
+**Fixed by widening the alternation, not by narrowing it.** The loop now
+matches every in-flight state (`queued|in_progress|pending|requested|waiting`)
+and continues on any of them. Some extra polling is the correct trade
+against exiting early on a state nobody listed. The general form, which
+is the monitor doctrine pointed at a poll loop: silence and an
+unrecognized line are the same event to a filter that only matches good
+news.
+
+**The reason it is worth a line at all is WHERE it happened.** This was a
+disposable shell loop in a scratchpad, written while the actual lesson of
+the session was being applied carefully to guards, gates and proofs. The
+loop was not thought of as a check, so no rule was applied to it, and it
+failed in exactly the way the rules exist to prevent. **A mechanism does
+not become exempt by being temporary.** The places where nobody is
+applying the doctrine are where its absence shows up first, and they are
+by definition the places nobody is looking.
+
+**Base rate (G-75), twentieth of twenty:** found because a background
+task reported success and the output did not say what success would have
+said. Read rather than trusted.
