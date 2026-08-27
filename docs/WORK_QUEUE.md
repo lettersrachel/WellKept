@@ -585,10 +585,33 @@ debts on one check are two facts, not one.
 | 14, trigger rules | the TWELFTH run (`e3fe0f5`, ancestor of `747a98c`) | `setTriggerRuleEnabled` and `createTriggerRule`, same G-68 census | *pending* | *fill* |
 | 10, briefing recall section | **no delta. NOT owed.** | read-only, and no file behind it is in any range since its last pass; it keeps its `50ecd0f` standing | n/a | n/a |
 
-**Check 10 is listed to be struck, not filled.** It appeared on the
-carried-forward list and no delta reaches it. Leaving it off entirely
+**Check 10 is listed to be struck, not filled.** Leaving it off entirely
 would lose the fact that it was checked and cleared, which is how a
 non-debt becomes a debt again on the next reading.
+
+**Which of the two readings won, and why, since both are in the record
+and a later reader cannot otherwise tell which was the mistake.** Check
+10 appears twice: as READ-ONLY AND UNTOUCHED by either delta (the
+twelfth-run correction paragraph, which says checks 8 and 10 "are
+read-only and neither delta reaches them", keeping their `50ecd0f`
+standing), and as OWED, in the list carried forward after the fourteenth
+deploy.
+
+**The not-owed reading wins, and the reason is not that it came first.**
+It is that only one of the two is a checkable claim. "No file behind
+check 10 is in any range since its last pass" names a subject and a
+range and can be verified with `git diff --name-only`, which is how it
+was settled. The owed reading named **no delta at all**: it asserted a
+debt without saying which change created it, so there was nothing to
+confirm or refute. A re-flag that cannot name its delta is not a
+re-flag, which is the rule this ledger exists to hold, and an
+unattributed claim loses to an attributed one regardless of which was
+written down first.
+
+**The general form, worth keeping because it decides the next one:** when
+two readings of the same check conflict, prefer the one that states what
+would make it false. Recency and confidence are not evidence; a named
+range is.
 
 **Check 8 is deliberately NOT in this table.** Its debt was created by
 this delta, so its result belongs in the fourteenth-run entry below,

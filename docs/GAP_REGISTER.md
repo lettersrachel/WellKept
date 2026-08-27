@@ -4379,6 +4379,24 @@ four different `changedAt` instants, all now in the past and therefore
 flattened into one visual group. The display is hiding the very fact
 that would have made the duplication legible a month ago.
 
+**A bucket rather than a date means the surface has no concept of AGE.**
+Observed in production, 27 August: eight prompts spanning 19 July to 18
+August all read as today. Nothing on the screen distinguishes a prompt
+raised yesterday from one that has been waiting five weeks, and **no
+amount of careful reading would recover that**, because the information
+is not rendered at all.
+
+**This is separable from the duplication and probably the more
+consequential of the two.** Duplication is visible: four identical lines
+announce themselves, which is how it was found. Age is invisible, and an
+invisible five-week-old prompt is exactly the thing the anticipation
+engine exists to surface. A HOM triaging that panel has no way to tell
+what has been ignored longest, and a corporate reader looking at the same
+household sees the dates because the drill-in prints them, so the two
+surfaces support different conclusions from identical data. Recorded here
+because it was found alongside the duplication; it should be weighed
+separately.
+
 Two riders on that. `endOfToday` is SERVER-LOCAL, so the day boundary is
 the runtime's zone rather than the household's, which is a separate small
 question from the G-61 family. And the corporate drill-in DOES print each
@@ -4456,13 +4474,25 @@ check. `POST /api/visit-commands` gates on the second factor
 without a cleared factor can open the close flow, complete every step and
 press submit, and the refusal happens at a layer they are not looking at.
 
-**What the person sees.** The offline queue turns the failure into
-`retrying, attempt 3`, then a stuck warning, then a dead-letter. Those are
-AF's honest-card states working exactly as designed for the case they were
-designed for, which is a network that is not there. **A HOM in the field
-reads "retrying" as connectivity and waits.** Waiting cannot fix it. The
-one thing that would (visit `/mfa`) is not suggested anywhere on the
-path, because nothing on that path knows why the send failed.
+**What the person sees, and why they are RIGHT to read it that way.** The
+offline queue turns the failure into `retrying, attempt 3`, then a stuck
+warning, then a dead-letter. Those are AF's honest-card states working
+exactly as designed, for the case they were designed for, which is a
+network that is not there.
+
+**A HOM in the field sees "retrying, attempt 3" when the true answer is
+"you have no second factor". They will read it as connectivity, wait, and
+be right to.** That is the part worth being exact about: waiting is the
+correct response to the symptom as presented. The reading is not careless
+and better training would not prevent it, because every fact on the
+screen supports it. Waiting simply cannot fix this cause, and the one
+thing that would, visiting `/mfa`, is suggested nowhere on the path,
+because nothing on that path knows why the send failed.
+
+**So the honest card is working correctly WHILE misleading**, which is
+the uncomfortable half. It is not a copy defect and there is no wrong
+string to rewrite. The card faithfully reports everything it was given;
+it was given the wrong thing.
 
 **Adjacent to G-84 and NOT the same, which is why it is its own entry.**
 G-84 is a TRUE READING supporting a wider claim than it can carry: the
