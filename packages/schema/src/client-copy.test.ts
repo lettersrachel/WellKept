@@ -272,7 +272,22 @@ function walkFiles(dir: string, keep: (name: string) => boolean): string[] {
   return out;
 }
 
-const notVendored = (f: string) => !f.includes("node_modules") && !f.includes(`${path.sep}dist${path.sep}`);
+// Vendored output is not ours, and `__tmp_` files are test scaffolding
+// that exists for milliseconds. The scaffolding exclusion is not a
+// convenience: `provisional-markers.test.ts` writes `__tmp_marker_*.ts`
+// INSIDE packages/schema/src and unlinks them in a finally, vitest runs
+// test files in parallel by default, and the channel rule below walks
+// `packages` and readFileSync's what it enumerates. A file listed by
+// readdir and unlinked before the read throws ENOENT and fails this
+// guard for a reason that has nothing to do with copy. The race was
+// introduced by the channel rule itself on 26 August, since nothing had
+// walked that directory before (G-76). Excluded by NAME PATTERN rather
+// than by catching the read error, because swallowing ENOENT would also
+// hide a real file disappearing.
+const notVendored = (f: string) =>
+  !f.includes("node_modules")
+  && !f.includes(`${path.sep}dist${path.sep}`)
+  && !path.basename(f).startsWith("__tmp_");
 
 /** Rule 1, RENDER: every .tsx under the web app renders to somebody's browser. */
 function deriveRenderRule(): string[] {

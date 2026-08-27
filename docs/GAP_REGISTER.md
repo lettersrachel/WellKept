@@ -3190,3 +3190,75 @@ exercised separately against four live shas.
 while building the check the comment said was unnecessary, which is the
 same accident that found the other four. Nothing structural currently
 finds a circuit; the rule above is the only defence, and it is memory.
+
+**THE BASE RATE, stated as a number because a future reader weighing
+whether a check is worth building needs one and not an intuition.**
+Five controls were found absent in the week of 26 August:
+
+| Control | How it surfaced |
+|---|---|
+| Branch protection on `main` | while investigating why a PR showed `mergeable_state: clean` with no run |
+| The `well-kept-web` project's dormancy | while reading PR event payloads for something else |
+| Actions, first stop | while waiting for a merge that never went green |
+| Actions, second stop | while waiting for a different merge |
+| The `deploy.sh` check-status comment | while building the check it said was unnecessary |
+
+**Five out of five surfaced as a side effect of doing something else.
+Zero were found by looking.** Nobody audited, and no scheduled review
+would have run in that window anyway.
+
+That is the argument for structural controls over attentive people, and
+it is not a claim that the people were inattentive. The same week
+produced sixteen CI guards, a computed copy census, and a
+verify-then-merge protocol, all built by paying attention. Attention
+was abundant. It still found nothing by looking, because looking
+requires a prompt, and an absent control is precisely the thing that
+emits no prompt.
+
+**So the operative test when deciding whether to build a check is not
+"would we notice this?" It is "what would make us look?"** If the answer
+is a person happening to be nearby, the base rate above says the honest
+expected detection time is however long until the next unrelated
+investigation touches it. For branch protection that was a month. For
+the first Actions stop it was ten hours, and only because someone was
+actively merging.
+
+---
+
+### G-76. The copy census walked a directory a test writes into, and vitest runs files in parallel
+
+Filed 2026-08-27, found while eliminating a candidate for an
+unreproduced failure rather than by looking for it (the G-75 base rate,
+sixth instance).
+
+**The mechanism.** `provisional-markers.test.ts` proves itself against
+real files on disk: it writes `__tmp_marker_*.ts` INSIDE
+`packages/schema/src`, scans them, and unlinks them in a `finally`. That
+has been safe since it was written, because nothing else walked that
+directory.
+
+The copy census's **channel rule**, added 26 August, walks `apps`,
+`packages` and `services` for `.ts` files and `readFileSync`s each one.
+Vitest runs test FILES in parallel by default and this package has no
+config overriding it. So a `__tmp_marker_*.ts` enumerated by `readdir`
+and unlinked before the census reads it throws `ENOENT`, failing
+`client-copy.test.ts` for a reason that has nothing to do with copy.
+
+**Introduced by the census itself.** The older test did not become
+wrong; the new guard reached into a directory that was never meant to
+hold stable files. A guard's scope is not only what it checks, it is
+what it touches.
+
+**Fixed by excluding `__tmp_` by NAME PATTERN**, not by catching the
+read error. Swallowing `ENOENT` would also hide a real file
+disappearing, which is a defect the census should report rather than
+absorb. Proven: a planted `__tmp_marker_probe_race.ts` is excluded by
+the predicate, and the suite stays green.
+
+**What this does NOT explain.** The unreproduced failure of 27 August
+was a two-file invocation, `guards-manifest.test.ts` plus
+`client-copy.test.ts`. `provisional-markers.test.ts` was not running,
+so this race cannot have caused it. That failure remains OPEN with two
+candidates now eliminated: a concurrent writer of CLAUDE.md (there is
+none in repo code; one reader, zero writers) and this race. Recorded so
+it does not age into resolved by silence.
