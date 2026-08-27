@@ -1644,6 +1644,38 @@ job, the non-marketable export exclusion) is not built yet and is its own
 session; a recipient not being a household, so erase-household.mjs cannot
 reach one, is a separately flagged engineering gap.
 
+### W-16. Classify three part-log, part-document files (OPEN, added 27 August 2026)
+
+The 27 August ruling settles that a dated log's entries are frozen at the
+moment they are written and that `status: living` does not make contents
+editable (CLAUDE.md conventions). `GAP_REGISTER.md` is the decided log;
+`LAUNCH.md` and `SPEC_AUDIT.md` are named as in-scope documents.
+
+**Three files are genuinely ambiguous under that criterion and are
+deliberately NOT classified:** `ANTICIPATION_SESSIONS.md`,
+`CUSTODY_SITTING.md`, `ROUND4_D_FIELD_MAP.md`. Each reads as part log and
+part document. Classifying them is a taxonomy decision, and a guess
+recorded as a classification is indistinguishable from a decision later,
+which is the whole reason the question is being left open rather than
+answered cheaply.
+
+**Founder INPUT, explicitly not a ruling (27 August 2026), recorded so it
+is available when the question is taken up:** the test that would settle
+them is whether a reader would be MISLED BY A CHANGED WORD. If a file's
+value is that it says what was true at a moment, it is a record. If its
+value is that it says what is true now, it is a document. Some files will
+split by SECTION rather than by file, which is fine and is also a bigger
+call than a voice pass wants to carry.
+
+Do not apply the paragraph above as law. It is input to a decision that
+has not been made, and it sits here rather than in CLAUDE.md for exactly
+that reason: CLAUDE.md loads as premise into every session, and a premise
+is applied rather than weighed.
+
+**Surfaced by:** counting em dashes in the register during an unrelated
+commit. Fourteen files under `docs/` carry them and the frozen/living
+split does not line up with the log/document one.
+
 ---
 
 ## Gated
