@@ -170,6 +170,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 - **One migration per session.** If it feels like two, the session is too big.
   Report that instead of proceeding.
+- **Generated migration SQL is READ before it is applied.** `drizzle-kit`
+  emitted 0058's two composite foreign keys BEFORE the unique index they
+  reference; Postgres refused with "there is no unique constraint
+  matching given keys for referenced table" and the file failed halfway,
+  leaving ten columns applied and no journal entry. A generator orders
+  statements by its own model of the diff, not by what Postgres requires
+  at apply time, so the ordering is the reviewer's job. Reorder in the
+  file and leave a note saying why, since regenerating undoes it.
+  **The timing is the reason this matters:** CI runs migrations in the
+  airplane job, so the gate would have caught this only AFTER the merge,
+  and with no branch protection on `main` that means the default branch
+  carries a broken migration until a person reads a log.
 - **Migration numbers and gap register IDs are allocated at write time, never
   reserved in advance.** Read the current maximum first. Two documents both
   claiming the next number will collide.
@@ -221,6 +233,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   production, is the strongest form of the proof.** The KEK validation threw
   on a real malformed key with zero writes the same night it shipped; that
   did more than its round-trip test.
+- **A proof asserts its own preconditions before any case runs.** The
+  preconditions are whatever the conclusion silently rests on, and they
+  are always what nobody thinks to check. Six CHECK-constraint refusals
+  once reported a clean REFUSED with POSTGRES DOWN: no mutation was
+  involved, so the narrower rule below did not catch it, and every case
+  would have read REFUSED with or without a constraint existing.
+  Mutation proof: the patch landed, at the intended site, once.
+  Constraint proof: the database answers AND the constraint is present,
+  printed from `pg_constraint` first. Guard proof: the detection returns
+  a non-trivial input set. Gate proof: the input is real, not a
+  sentinel. Stated at the category level because the narrow form has
+  now been evaded twice by variants that were not mutations (G-72).
 - **Confirm a deliberate break LANDED before reading the result.** A
   mutation that never applied and an assertion that cannot fail produce
   the same green run, and they are opposite conclusions. Print the

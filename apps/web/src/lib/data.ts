@@ -265,9 +265,12 @@ export async function getRegistries(householdId: string, role: string) {
   // much we trust a decode, and the capture-pass stamps are our process
   // state. Neither is the client's record (the estimate_snapshot posture:
   // the drill-in shows the estimate and never the estimator).
-  // COPY AND POLICY ARE A PROPOSAL, not a settled decision: whether a
-  // client should see "we are uncertain about this date" is the founder's
-  // call, and shipping the conservative version keeps the option open.
+  // FOUNDER RULING, 2026-08-27, confirmed and not a placeholder: keep it
+  // closed. The serial and the install date are the member's equipment
+  // facts and stay. Our confidence in our OWN decode is a working note.
+  // A member who could resolve an uncertain date gets ASKED in Pass 3,
+  // which is a question, rather than shown a card about our doubt, which
+  // is not. Do not widen this without a new ruling.
   if (role !== "client") return visible;
   return visible.map((r) => ({
     ...r,

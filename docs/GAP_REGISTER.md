@@ -2789,6 +2789,39 @@ assertion, not whether the mutation reached the code. A green run after
 an intended break is ambiguous between "the assertion is decorative"
 and "the break never happened", and those are opposite conclusions.
 
+**WIDENED 2026-08-27, after the same failure arrived in a second
+costume.** As first written this entry said: confirm the mutation
+landed before reading the result. That is the narrow form, and the
+narrow form is what the next variant walks straight past.
+
+While proving migration 0058's CHECK constraints, six refusal cases
+reported a clean REFUSED **while Postgres was down**. Nothing had been
+mutated and nothing needed to be: every case would have read REFUSED
+with or without a constraint existing, because the connection failed
+before the statement ran. The proof asserted the right answer for a
+reason that had nothing to do with the thing under test.
+
+No mutation was involved, so the narrow rule did not apply. The general
+one does:
+
+> **A proof asserts its own preconditions before any case runs.**
+
+The preconditions are whatever the proof's conclusion silently depends
+on, and they are always the things nobody thinks to check:
+
+- **Mutation proof:** the patch landed, at the intended site, once.
+- **Constraint proof:** the database is reachable AND the constraint
+  exists. Print the constraint names from `pg_constraint` first.
+- **Guard proof:** the guard file is the one being run, and its
+  detection returns a non-trivial input set (the floors doctrine).
+- **Gate proof:** the input is real, not a sentinel (the four-live-sha
+  rule below).
+
+Stated at this level because the narrow version has now been evaded
+twice by variants that were not mutations at all. A third costume is
+likelier than not; the rule has to be about the CATEGORY, which is a
+proof resting on an unstated assumption, rather than about patches.
+
 **The rule, adopted and added to CLAUDE.md's verification section:**
 
 - **Confirm the mutation landed before reading the result.** Print the
@@ -3321,3 +3354,75 @@ and guards get proven in both directions before they are trusted.
 **Base-rate note (G-75):** this one also surfaced as a side effect,
 while reading the schema for an unrelated systems-import question.
 Nobody re-read the survey. Sixth of six.
+
+---
+
+### G-78. The client projection is default-open at the column level: every new column reaches the member unless someone remembers to filter it
+
+Filed 2026-08-27, found while adding columns in migration 0058. Caught
+that time because the new columns were obviously internal. The next set
+may not be.
+
+**The mechanism.** `getRegistries` reads with a bare `db.select()`,
+which takes every column of `registry_entry`, then filters with
+`readDecision(role, r.sensitivity)`. That filter drops ROWS whose
+sensitivity the role may not read. It does nothing about columns. So
+adding a column to a table a client can read publishes it, and the
+publishing is the default rather than the decision.
+
+**Three mechanisms exist and none of them sees a new column.**
+
+| Mechanism | What it actually does | New column? |
+|---|---|---|
+| `readDecision(role, sensitivity)` | drops rows by row sensitivity | invisible |
+| `filterFields(role, fields)` | drops rows by row sensitivity (`continue`) | invisible |
+| `assertClientPayloadSafe` | rejects KNOWN staff-only signatures | invisible |
+
+The payload guard is the closest thing and it asks a different
+question: it knows the shapes that must never appear, so it catches a
+`recordedBy` or a `decidedBy`, and a column invented tomorrow matches
+nothing it knows.
+
+**The size, measured rather than estimated.** The client playbook reads
+through six functions. Three take every column
+(`getRegistries`, `getFields`, `getPendingEdits`) and three do not.
+**Two of the six already use explicit column lists**
+(`getStewardship`, `getClientDeferrals`), so the correct pattern is
+already in the codebase and the outliers are the exception rather than
+the rule.
+
+**Why this is the wrong direction for a household record.** Everything
+else here fails closed: a blank sensitivity fails closed in
+`readDecision`, the vault refuses without an audit row, the erasure
+tool refuses on an open incident. A projection that publishes by
+default is the one surface where forgetting has a permissive outcome.
+It is also the same shape as an access register that records who holds
+a key and has no revocation trigger: the additive act is easy and the
+subtractive one depends on somebody remembering.
+
+**Cheapest fix, reported and NOT built.**
+
+1. **Bring the three outliers into line with their two siblings**:
+   explicit column lists at the three client-reaching reads. This flips
+   the direction at the earliest possible point, because a new column
+   then requires an affirmative act to reach a member. Three functions,
+   no new machinery, no new concept, and the pattern is already here to
+   copy.
+2. **To make it STAY flipped, a guard**: no client-reaching read uses a
+   bare `.select()`. The "client-reaching" set is derivable, unusually
+   for this codebase, because the client route group is a directory:
+   walk `(client)`, collect what it imports from `data.ts`, assert each
+   uses an explicit column list or is excused in writing. That is the
+   census shape and it is cheap here precisely because the input is a
+   directory rather than a judgment.
+
+Step 1 alone is worth more than step 2 and should not wait for it. Step
+2 without step 1 protects nothing.
+
+**Not built, deliberately.** Step 1 touches three client-facing reads
+and would need the payload guard exercised against each; that is its
+own session with its own proofs, not a rider on a migration that is
+already doing four things.
+
+**Base rate (G-75), seventh of seven:** found as a side effect of adding
+columns, not by anybody auditing projections.
