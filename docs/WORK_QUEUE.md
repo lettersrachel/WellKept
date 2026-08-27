@@ -557,10 +557,17 @@ CLAUDE.md so a future session meets them where it would otherwise build
 past them; the per-column producer requirement is in CLAUDE.md, the PR
 template and RFC-PRIM-01.
 
-**A count to settle before it hardens: four invariants were named and
-three were listed** (AI individual-confirmation, the no-diagnosis gate,
-the section 29 anti-patterns). Recorded rather than guessed at, since a
-plausible fourth invented here would read as adopted law.
+**A count settled the same day.** Four invariants were named and three
+were listed (AI individual-confirmation, the no-diagnosis gate, the
+section 29 anti-patterns). **The fourth was the release-blocking test
+list itself, named as an invariant and then handed over as its own task,
+so it was DOUBLE-COUNTED rather than missing** (founder, 27 August).
+
+Kept in the record because the recovery is the useful part: the gap was
+recorded as a gap instead of filled with a plausible fourth, and a
+plausible fourth invented here would have read as adopted law from the
+moment it was written. An unresolved count is cheap; an invented one is
+indistinguishable from a real one afterwards.
 
 #### Two conflicts, REPORTED AND NOT RESOLVED
 
