@@ -1,4 +1,5 @@
-import { filterFields, assertClientPayloadSafe, type FieldRecord } from "@wellkept/permissions";
+import { filterFields, assertClientPayloadSafe, assertDeclaredClientKeys,
+  CLIENT_PLAYBOOK_FIELD_KEYS, CLIENT_REGISTRY_ENTRY_KEYS, type FieldRecord } from "@wellkept/permissions";
 import { SECTION_NAMES, assertNoProvisionRows, assertNoAnticipationRows } from "@wellkept/schema";
 import { redirect } from "next/navigation";
 import { getHouseholdAndPrincipal, getFields, getPendingEdits } from "@/lib/data";
@@ -155,6 +156,12 @@ export default async function ClientPlaybook({
   assertClientPayloadSafe(visible); // the payload test, live in the page's data path
   assertNoProvisionRows(visible); // T7: no provision rows or references, ever
   assertNoAnticipationRows(visible); // A2: recall/outcome rows are s2, never client-facing
+  // G-78: the other three read sensitivity or known-bad shapes; this one
+  // reads the KEY SET, so a column invented tomorrow cannot arrive by
+  // default. Redundant on this projection by construction (the literal
+  // above cannot grow a key on its own) and kept so both client payloads
+  // are governed identically.
+  assertDeclaredClientKeys(visible, CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields");
 
   // REQ-020 search: server-side, within the client's own (already
   // filtered) view — the search space itself can never contain s2/s3.
@@ -190,7 +197,16 @@ export default async function ClientPlaybook({
         </div>
       ) : null}
 
-      <RegistryCard entries={await getRegistries(hh.id, "client")} />
+      {/* G-78: getRegistries projects by SPREAD with a deny-list, so this
+          payload carries every column of registry_entry and grows a key
+          whenever the table does. This is the surface the key assertion
+          exists for; it throws on an undeclared key rather than
+          publishing it. */}
+      {await (async () => {
+        const entries = await getRegistries(hh.id, "client");
+        assertDeclaredClientKeys(entries, CLIENT_REGISTRY_ENTRY_KEYS, "registry entries");
+        return <RegistryCard entries={entries} />;
+      })()}
 
       {/* W-6 (STD-016): what was noticed and deliberately left, with the
           reason and the intended timing. A clean bathroom demonstrates

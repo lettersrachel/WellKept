@@ -157,5 +157,114 @@ export function assertClientPayloadSafe(payloadFields: FieldRecord[]): true {
   return true;
 }
 
+/**
+ * G-78 (corrected), the shape assertion. `assertClientPayloadSafe` above
+ * reads ONE key per row, `sensitivity`, and asserts it is s1. It says
+ * nothing about which OTHER keys the row carries, and neither do
+ * `assertNoProvisionRows` and `assertNoAnticipationRows`, which recognize
+ * the shapes that must never appear and therefore cannot recognize a
+ * column invented tomorrow. So all three are blind in the same place, for
+ * two different reasons, and a new column reached a member-bound payload
+ * by default rather than by decision.
+ *
+ * This closes that direction: the payload may carry ONLY the keys named
+ * in a declared list, and anything else throws. Widening a client payload
+ * becomes an affirmative edit to a list a person reads, which is the
+ * whole point. It fails closed and it runs in production, so its first
+ * real red is worth more than its test (the KEK validation precedent).
+ *
+ * WHAT IT DOES NOT CATCH, recorded here beside the guard rather than in a
+ * later entry, because a guard read without its residue is read as wider
+ * than it is:
+ *
+ *  1. **A staff-only FACT typed into a correctly client-visible column.**
+ *     `playbook_field.value` is gated by ROW sensitivity, so an s1 field
+ *     is client-visible by design. A HOM who types an internal note into
+ *     one publishes it, and this guard sees a permitted key carrying a
+ *     permitted-looking string. Nothing else catches it either: not
+ *     `assertClientPayloadSafe` (the row really is s1), not the copy
+ *     census (free text a person writes is its stated residue), not the
+ *     database. It is the same class as the copy guard's free text and it
+ *     has no mechanical answer.
+ *  2. **The inside of a jsonb column.** The check is per row, top level.
+ *     `registry_entry.detail` is ONE permitted key whose contents are
+ *     unread, so anything written into that object reaches a member
+ *     unexamined.
+ *  3. **A value that should have been nulled.** The list governs which
+ *     keys may be PRESENT, not what they hold. `getRegistries` nulls five
+ *     working-note columns for a client and this guard would not notice
+ *     if that stopped happening. A must-be-null half is a real extension
+ *     and is deliberately NOT built here, so the reviewed surface stays
+ *     exactly the one that was approved.
+ */
+export function assertDeclaredClientKeys(
+  rows: readonly unknown[],
+  allowed: readonly string[],
+  label: string,
+): true {
+  // Preconditions before any row is read. An empty allow-list would
+  // accept an empty array and read as a passing guard, which is the
+  // vacuous-coverage shape the census guards carry floors against.
+  if (!Array.isArray(rows)) {
+    throw new Error(`${label}: payload must be an array of rows`);
+  }
+  if (!Array.isArray(allowed) || allowed.length === 0) {
+    throw new Error(`${label}: declared key list is empty; nothing is being checked`);
+  }
+  const permitted = new Set(allowed);
+  for (const [i, row] of rows.entries()) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      throw new Error(`${label}[${i}]: payload row is not an object`);
+    }
+    for (const key of Object.keys(row)) {
+      if (!permitted.has(key)) {
+        throw new Error(
+          `SEVERE: undeclared key "${key}" reached a client payload at ${label}[${i}]. ` +
+          `If a member may see it, add it to the declared list for ${label} in a reviewed change; ` +
+          `if not, project it out at the boundary.`,
+        );
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * The client playbook's field projection, an ALLOW-LIST LITERAL: the page
+ * builds each row key by key, so a new column on `playbook_field` cannot
+ * reach a member through it whatever this list says. Declared anyway, so
+ * the two client payloads are governed the same way and neither depends
+ * on a reader knowing which syntax is in use at which call site.
+ */
+export const CLIENT_PLAYBOOK_FIELD_KEYS = [
+  "id", "section", "name", "value", "flag", "sensitivity",
+] as const;
+
+/**
+ * The client registry projection, a SPREAD WITH A DENY-LIST:
+ * `getRegistries` returns `{...row, derivationSource: null, ...}`, so the
+ * payload carries EVERY column of `registry_entry` and the five
+ * working-note columns arrive present-and-emptied rather than absent.
+ * This is the shape the guard exists for. The list is therefore the whole
+ * column set as of migration 0058, and a column added tomorrow is an
+ * undeclared key that throws.
+ *
+ * That five of these are nulled for a client is a DIFFERENT mechanism
+ * (the founder ruling of 27 August 2026) which this list does not carry
+ * and does not replace. A key being declared here means a member's
+ * payload may CONTAIN it, never that a member may READ its value.
+ */
+export const CLIENT_REGISTRY_ENTRY_KEYS = [
+  "id", "createdAt", "updatedAt",
+  "householdId", "kind", "label", "detail",
+  "keyDate", "cadence",
+  "installedAt", "lifespanMonths", "maintenanceIntervalMonths", "lastServicedAt",
+  "sensitivity", "sourceFieldId", "tombstonedAt",
+  // 0058, the systems walk-through.
+  "installDate", "installDateGranularity",
+  "serialVerbatim", "derivationSource", "derivedYear", "installConfidence",
+  "photoPassAt", "askPassAt",
+] as const;
+
 /** DEV-004 Section 3 canonical entry-point name; same function. */
 export const filterFieldsForRole = filterFields;

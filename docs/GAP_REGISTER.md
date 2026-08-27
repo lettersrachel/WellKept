@@ -3613,3 +3613,47 @@ before writing the next thing on top of it, rather than by being ordered
 to implement it. That is the cheapest place any of the three was ever
 going to be caught, and it is the only one of the three that cost
 nothing downstream.
+
+#### FIXED, 27 August 2026: the shape assertion ships as the seventeenth guard
+
+`assertDeclaredClientKeys` (packages/permissions) plus
+`client-payload-shape.test.ts` (packages/schema). A member-reaching
+payload may carry only the keys declared for it; anything else throws.
+The declared registry list is asserted against `registry_entry`'s own
+columns with a written-exclusion hatch, empty today, so a migration that
+adds a column fails CI until somebody decides whether a member may see
+it. Both blessed projections pass unchanged: the allow-list literal and
+the spread-with-deny-list.
+
+**Proven in four directions, preconditions first** (the assertion is
+exported, the column derivation clears a floor of 20, and no database is
+involved, said plainly so a green run here is not read as evidence about
+one):
+
+1. A simulated migration 0059 column added to `tables.ts` turned the
+   census red AND made the runtime assertion fire through the
+   schema-derived payload, which is the real input rather than a fixture.
+2. The assertion call deleted from the page turned the wiring test red.
+3. **The live data path, which is the strongest of the four:** with the
+   undeclared key added to `getRegistries`, the running dev server threw
+   `undeclared key "installerPhoneNumber" reached a client payload at
+   registry entries[0]` and the client playbook refused to render rather
+   than publishing it. Restored, and the journey passes again.
+4. Green on the unmutated tree throughout, and the full suite plus 26
+   e2e journeys.
+
+**One asymmetry worth recording, because it bounds the guard's value.**
+The guard bites on the SPREAD projection and is redundant on the
+allow-list literal, which cannot grow a key on its own whatever the
+declared list says. So the protection is concentrated entirely on the
+deny-list shape, which is also the shape that produced the finding. It
+is wired on both so neither payload depends on a reader knowing which
+syntax is at which call site.
+
+**The residue is recorded at the guard**, in the function's own comment,
+the test header, and the CLAUDE.md table's not-covered column, rather
+than here where it would be read separately from the thing it qualifies.
+The short form: this checks which keys may be PRESENT, never what a
+permitted key CONTAINS. A staff-only fact typed into a correctly
+client-visible column reaches the member and nothing in this system
+catches it.
