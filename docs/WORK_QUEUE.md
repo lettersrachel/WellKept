@@ -492,6 +492,22 @@ five earned live-build passes; see the frozen record. HG will
 correctly flag on the {"gapDays":10} reconciliation knob if no visit
 lands within ten days.
 
+**The pending deploy is NOT docs-only, corrected 27 August.** `main`
+is at `2845202`, four merges ahead of production, and the range
+`577666d..2845202` contains ONE application-code change:
+`apps/web/src/app/api/visit-commands/route.ts` (commit `0cf411a`, in
+PR #195), which removes an em dash from the subject line of REQ-061's
+client report email. That subject renders to `client.email`. **So the
+em dash is still going out to clients on every visit close until a
+deploy happens**, and any description of this delta as docs-only is
+wrong. The proposed replacement copy ("This week's visit: <household>")
+is a founder call and the FIRST STRING OF THE VOICE PASS, arriving
+early because it could not wait for the rest; it is not to be deployed
+as a mechanical fix. Method note worth keeping: `git log -S"This week's
+visit"` does NOT find `0cf411a`, because `-S` counts occurrences and
+the edit preserved the phrase. `-G` finds it. A search that cannot see
+the change it is looking for reads as "never happened".
+
 **Production serves `577666d` (2026-08-26, the THIRTEENTH clean run):**
 build id verified three times and confirmed at `/api/build-id`,
 `/api/health` reading ok with db up, tree clean, mechanical checks
@@ -1860,10 +1876,19 @@ and not lost, not proposing a build order.
    the only variable that moved, so the inference is now a cause. When
    and how it came to be disabled is not established and stays open.
 
-   **Deciding the protection question, so it is decided with what is
-   known:** `ci.yml` has no `paths` or `paths-ignore`, so requiring `ci`
-   would block nothing that would not otherwise run. The docs-only-PR
-   objection does not apply to today's workflow.
+   **DECIDED 27 August, in favour: require `ci` on `main`, jobs `gates`
+   and `airplane`.** The deciding argument is this week's, not last
+   week's. Requiring `ci` converts a silent Actions stop into blocked
+   merges, and Actions was off for ten hours on 26 August with sixteen
+   guards enforcing nothing while the only signal was a person noticing
+   a run was missing. `ci.yml` carries no `paths` or `paths-ignore`, so
+   nothing gets blocked that would not otherwise run. Founder-side to
+   apply: Settings, Branches, add a rule for `main`, require status
+   checks, add `gates` and `airplane` by job name (not `ci`). Leave
+   "require a pull request before merging" unticked unless direct
+   pushes to `main` should also stop. This line becomes true when the
+   rule exists, and not before; per G-74 it is to be re-read against
+   the branch endpoint rather than against this sentence.
 1. **The 300-row floor review.** Column I of the provision workbook is empty, so
    `seed_reviewed` stays false, so the entire standards library renders nowhere
    for anyone. Filter column E and review the floor rows: 189 `floor_1` plus 111

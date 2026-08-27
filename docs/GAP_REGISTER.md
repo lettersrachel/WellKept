@@ -3017,6 +3017,35 @@ a control is silent by construction.**
 
 ---
 
+**THIRD ADDENDUM, recorded as UNEXPLAINED rather than closed: the stray
+project reconfigured itself mid-afternoon and the artifact is now
+gone.** Between the Vercel payloads of 15:39 and 15:47 UTC on 26
+August, the `well-kept-web` project's build configuration CHANGED: the
+later payload carries `"rootDirectory":"apps/web"` and the earlier one
+carries no `rootDirectory` at all. Nobody reported making that change.
+
+**It is probably benign.** The likeliest reading is that a
+`vercel --prod --yes` or a dashboard action set the root directory on a
+project that had none, which is exactly the class of accident
+`deploy.sh:278` exists to catch and did not need to catch here, since
+the pinned-id checks kept every real deploy on `wellkept`.
+
+**But probably is the whole point of this entry.** The project was
+deleted later the same evening, so the deployment history, the build
+settings history, and whatever actor record Vercel held are gone with
+it. **The question is now permanently unanswerable**, and it is
+recorded that way rather than folded into the deletion as though the
+deletion resolved it. Deleting the thing that would have answered a
+question is not an answer.
+
+Kept because the shape recurs: a configuration changed with no actor
+recorded, was noticed, and then the evidence was destroyed by a
+remediation that was correct on its own terms. If the same shape
+appears again, capture the settings history BEFORE removing the
+artifact.
+
+---
+
 ### G-74. A register entry is evidence a control was built, never evidence it is still in place
 
 Filed 2026-08-26 alongside G-73, which is its first confirmed instance
