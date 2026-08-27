@@ -502,10 +502,36 @@ COMMENT that had stood in the same file since round seven, which read
 that being on `origin/main` "implies the required checks were green,
 since branch protection refuses the merge without them". There is no
 branch protection (G-73), so that was never true, and the gate now does
-the half the comment claimed was free. Selftest is 14 cases; the two
-new ones are proven red twice (`none`, `startup_failure`) and green
-past the gate, and the REAL API path was exercised separately against
-four live shas because a sentinel proves the logic and not the input.
+the half the comment claimed was free. The REAL API path was exercised
+against four live shas because a sentinel proves the logic and not the
+input: a green sha reads `success`, the sha that actually died at
+startup on 27 August reads `startup_failure`, an absent sha reads
+`none`, and a garbage body reads `unparseable`.
+
+**And the selftest coverage boundary is CLOSED, by running it rather
+than by describing it.** The count was a sixth thing carried on a
+document's word: the file said fourteen cases and only cases 1 to 5 had
+ever been observed completing anywhere. **All 14 ran and passed against
+`5bfe2fc`** (8 refusals fired, 3 green paths accepted, 3 behavioural
+assertions held). The single external dependency turned out to be the
+gitignored `.vercel/project.json` and nothing else: no Vercel login is
+needed, because selftest mode stubs `vercel env ls`, and no database is
+needed, because the counts come from sentinels. Running it is also
+provably incapable of deploying, traced case by case: every full-mode
+case refuses before line 336, and every preflight case exits at 334.
+The link file was created for the run and REMOVED after, since a
+deploy-capable link in a container that must never deploy is a latent
+hazard. The run corrected a stale line in the file itself, which still
+read "eight refusals fire, four green paths accepted", a total of
+twelve, an hour after two cases were added; the tally is now stated
+from the case numbering. **Record the sha and which cases ran, never
+the count.**
+
+**Subject line ruling, CONFIRMED by the founder 27 August and not a
+placeholder.** The client report email subject is
+`This week's visit at ${hh?.name ?? "your household"}`, as merged. It
+is settled copy, not an interim string awaiting the voice pass, and the
+voice pass is not to revisit it.
 
 **The pending deploy is NOT docs-only, corrected 27 August.** `main`
 is at `2845202`, four merges ahead of production, and the range

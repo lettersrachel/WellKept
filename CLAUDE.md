@@ -174,6 +174,17 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   A substring match that matched anything was green until it was tested in
   the failing direction; the deploy gate was red until it was tested in the
   passing one.
+- **A gate whose input comes from outside the process is exercised
+  against REAL inputs, including its failure shapes, before it is
+  trusted.** A sentinel proves the logic and not the input. Two
+  instances in two days: a mutation proof that reported a pass because
+  the mutation never landed (G-72), and the CI gate, whose sentinel
+  cases said nothing about whether the runs API answers the way the
+  parser expects. The CI gate was therefore run against four live shas
+  (a green one, one that really died at startup, an absent one, and a
+  garbage body) and each returned the value the gate keys on. Where the
+  real input cannot be reached from the machine you are on, say so and
+  name where it can, rather than letting the fixture stand in for it.
 - **Proving a guard red and green tests its logic, not its inputs.** A guard
   that takes an argument can be defeated by the argument while passing every
   case written for it; the sha gate ran as a no-op when handed
@@ -215,6 +226,29 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   is the defect class of G-53 rather than a safeguard against it.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
+
+## Merging
+
+Two controls, and **both are kept**. They do different jobs and neither
+replaces the other:
+
+- **Branch protection refuses the merge.** Structural, applies to
+  everyone and every path, cannot be forgotten.
+- **The verify-then-merge script refuses to attempt one.** It reads the
+  head from the PR, demands the `github-actions` suite exist AND carry
+  more than zero runs (a zero-run suite is the `startup_failure` shape,
+  which looks present and ran nothing), demands `gates` and `airplane`
+  both be present BY NAME rather than inferred from the absence of a
+  failure, and merges through the REST endpoint's `sha` parameter so
+  GitHub itself refuses if the head moved between the read and the
+  merge.
+
+The script's residual is honest: it lives in a script a person chooses
+to run, so it is a better convention than the one it replaced and still
+a convention. That is an argument for protection, not against the
+script. Protection cannot check the zero-run case or bind the sha you
+verified to the sha you merge; the script cannot apply to a merge it is
+not used for. **Do not retire the script once the rule exists.**
 
 ## Deploying
 

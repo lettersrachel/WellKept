@@ -3129,3 +3129,64 @@ CI job can see, and the honest treatment is the one this entry gives
 them: named in a list that says out loud that they are unverified.
 Which of them deserve a check is a founder decision about where to
 spend the effort, not one to make here.
+
+---
+
+### G-75. The absent control was cited as the reason to skip the check that would have found it absent
+
+Filed 2026-08-27. This is the fifth instance of the week's premise
+pattern, and it is filed separately from the other four because it is
+not a recurrence. It is the pattern completing a circuit, and the
+circuit explains why the other four survived as long as they did.
+
+**The artifact.** `tooling/deploy.sh` carried this comment from round
+seven until 27 August, on the named-sha gate:
+
+> Being on origin/main also implies the required checks were green,
+> since branch protection refuses the merge without them: the
+> check-status half of the brief needs no API call and no token.
+
+Read it as a syllogism and the shape is exact:
+
+1. **Premise:** branch protection exists and refuses un-green merges.
+2. **Inference:** therefore a sha on `origin/main` carries green checks.
+3. **Conclusion:** therefore this script need not ask whether CI passed.
+
+The premise was false the entire time (G-73: no protection of any kind,
+`ci` never a required check). So the conclusion is unsupported. But the
+damage is not that one inference was wrong.
+
+**The damage is that step 3 removed the only mechanism that would have
+tested step 1.** An API call asking "did `ci` pass for this sha" would
+have returned `none` on any commit merged without a run, on any day
+Actions was off, and on the very first deploy after the protection was
+believed to exist. The check was declined *because of* the control, and
+the check was the thing that could have revealed the control was
+absent. That is a closed loop: the absence justifies not looking, and
+not looking preserves the absence.
+
+**Why this is worth its own entry.** G-74 says a register entry is
+evidence a control was built, never that it is still in place, and
+prescribes reading the system instead of the document. That is
+necessary and it is not sufficient, because it assumes someone goes
+looking. A circuit is what removes the reason to look. The four earlier
+instances each had a moment where someone could have checked and had no
+particular prompt to; this one had a comment in the deploy path
+explaining, persuasively and in writing, why checking was unnecessary.
+
+**The general form, and it is a design rule rather than a habit:**
+
+> When a control is the reason a check is skipped, the skipped check is
+> usually the cheapest test of that control. Cite a control to explain
+> what a check is FOR, never to justify not performing it.
+
+**Fixed in the same change.** The comment is corrected in place, naming
+what it used to claim, and the CI gate now performs the half the
+comment described as free. It computes its own input and fails closed
+on every unclear answer. Selftest 14/14, with the real API path
+exercised separately against four live shas.
+
+**Not claimed:** that the circuit was noticed by insight. It was found
+while building the check the comment said was unnecessary, which is the
+same accident that found the other four. Nothing structural currently
+finds a circuit; the rule above is the only defence, and it is memory.
