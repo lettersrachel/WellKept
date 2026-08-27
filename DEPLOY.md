@@ -108,6 +108,28 @@ pending client edit for item 3, and a visit photo for item 11):
 
     cd apps/web && DATABASE_URL=... WK_ADMIN_EMAIL=<your corporate login> node scripts/ensure-smoke-fixture.mjs
 
+**If that command REFUSES with a pinned-id mismatch, read this before
+doing anything.** Since 2026-08-27 the fixture is resolved by a pinned id
+in `tooling/fixture-ids.mjs`, not by its display name (G-71: shared
+household names are permitted under R17, so a name lookup agreed with the
+record by luck). The script created its household with a random uuid
+before that change, so **every database seeded under the old script holds
+a DIFFERENT id for the same fixture**, and the pinned value is
+production's. The refusal is that divergence, surfaced rather than
+compounded. What to do depends entirely on which database you are on:
+
+- **A disposable database (local, or a CI run):** it predates the pin.
+  Delete the mismatched household named in the refusal and re-run, and
+  the script recreates it at the pinned id. One time only.
+- **PRODUCTION: stop.** Either the pin is wrong or the fixture was
+  recreated. Re-pin `tooling/fixture-ids.mjs` from the real row. Do NOT
+  let anything create a second fixture, which is the failure the refusal
+  exists to prevent.
+
+The script never creates a row when a same-named household already
+exists at a different id, so a wrong pin cannot compound while you work
+this out.
+
 The fixture carries `is_fixture=true`: excluded from fleet counts,
 economics totals, and the weekly digest; rendered dimmed + tagged where it
 appears; `archive-demo-data.mjs` exempts it by column and REFUSES to run

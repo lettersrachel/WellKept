@@ -4238,6 +4238,30 @@ household-referencing table, require each to be named in the erasure tool
 or excused in writing). It is a guard, guards are proven in both
 directions before they are trusted, and it is its own session.
 
+**A SECOND INSTANCE, same day, written by the session that filed this
+entry.** The G-71 fix switched `partb-rehearsal.spec.ts` to resolve the
+fixture by pinned id, and left its P4 assertion in place:
+`expect(rows[0].id).not.toBe("<a stale literal>")`. The row is now
+SELECTED BY that pin, so its id equals the pin by construction and the
+refusal could only fire if the pin itself were the stale literal. A guard
+that had been meaningful under name resolution became one that cannot
+fail, by a change that had nothing to do with it.
+
+Replaced with the assertion that carries weight under the new scheme,
+that the pin resolves to a row whose NAME and fixture flag are the
+fixture's, which catches the genuinely dangerous mis-pin at a real member
+household; proven red by pointing the constant at Fernbrook Demo.
+
+**Two things worth keeping from the pair.** First, **a guard can be
+made vacuous by a change elsewhere**, without anyone editing it: the
+assertion was correct when written and was hollowed out by the
+resolution strategy moving underneath it. Nothing flags that transition,
+and the guard keeps passing throughout. Second, **both instances were
+caught by a person asking whether the guard could fail**, not by any
+mechanism. That question is cheap, it is the only thing that has worked
+twice, and it belongs in the definition of done for any guard: name the
+mutation that turns it red, and if none exists, the guard is decoration.
+
 **Base rate (G-75), twelfth of twelve:** found because the founder asked a
 question about a green run rather than accepting it. No check produced
 this; a person distrusting a pass did.
