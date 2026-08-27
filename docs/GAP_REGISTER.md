@@ -4381,12 +4381,45 @@ three looking outstanding**, which makes the panel and the corporate
 record both read as ignored work. There is no third option on the screen,
 and neither branch is the HOM's fault.
 
-This also lands on the anticipation metrics rather than only on the
-display. `prompt_outcome` rows are per item, so the first branch inflates
-the answered count and the second inflates the ignored count, and W-2
-already established that an ignored prompt is itself the signal. The
-duplication therefore corrupts the same numbers the calibration below
-depends on, from the other end.
+#### Why this BLOCKS the calibration rather than merely annoying a HOM
+
+This is the part that upgrades the entry from a display defect.
+
+`informativeRateFloor` is deliberately unset so it can be set from real
+data, and **the displayed firing rate is its calibration input** (W-9).
+The duplication corrupts that input from BOTH ends at once:
+
+- **The denominator.** Each smoke sitting mints another set of items, so
+  `fired` counts test runs alongside real firings. W-2 established the
+  same effect from one delinquent object re-firing; this is that
+  mechanism with the fixture's maintenance loop as the driver.
+- **The numerator.** `prompt_outcome` rows are per item, so the HOM's
+  forced choice skews it **either way**: answering four times inflates
+  answered, answering once inflates ignored, and W-2 already established
+  that an ignored prompt is itself the signal. There is no way to answer
+  the panel that leaves the number undisturbed.
+
+So the honest statement is not "the numbers are noisy". It is that
+**there are no real numbers to calibrate from while this holds**, because
+every path through the surface writes a distorted one. A floor set from
+them is set permanently wrong, and W-9 already recorded that the wrong
+direction here under-retires forever rather than degrading gracefully.
+
+**And the codebase called this exact risk a month before it happened.**
+`packages/schema/src/flags.ts:11-12` reads: "Feeding synthetic prompts
+into the uncalibrated health metrics would corrupt the exact numbers the
+knobs wait for." That sentence was written to justify why a promoted flag
+raises attention rather than creating a prompt. The reasoning was right
+and the scope was too narrow: the engine was stopped from feeding
+synthetic prompts, and the TEST FIXTURE was left free to.
+
+**One precision, because two knobs are easy to conflate and only one is
+affected.** `flag_promotion.rateThreshold` (`flags.ts:19-20`) is condition
+points lost per 30 days on a flag's OBSERVATION SERIES; it reads
+`object_observation`, never `prompt_pack_item`, and this entry does not
+touch it. What is blocked is the prompt-retirement calibration W-2 and
+W-9 name. Both knobs ship null under the same posture, which is why the
+distinction has to be stated rather than assumed.
 
 **And "due today" is a BUCKET, not a date, which is why they look
 identical.** `visit/page.tsx:127-129` computes
