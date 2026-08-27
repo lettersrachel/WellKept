@@ -22,7 +22,10 @@
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 
-const FIXTURE_NAME = "Smoke Test Fixture";
+import { SMOKE_TEST_FIXTURE_ID, SMOKE_TEST_FIXTURE_NAME } from "../../../tooling/fixture-ids.mjs";
+
+const FIXTURE_NAME = SMOKE_TEST_FIXTURE_NAME;
+const FIXTURE_ID = SMOKE_TEST_FIXTURE_ID;
 const email = (process.argv[2] ?? process.env.WK_ADMIN_EMAIL)?.trim().toLowerCase() || null;
 
 const url = process.env.DATABASE_URL;
@@ -30,9 +33,25 @@ if (!url) { console.error("Set DATABASE_URL."); process.exit(1); }
 const c = new pg.Client({ connectionString: url });
 await c.connect();
 
-let { rows: [hh] } = await c.query("SELECT id, is_fixture, archived_at FROM household WHERE name=$1", [FIXTURE_NAME]);
+// G-71 / R17: resolve by IDENTITY, never by display name. Shared names
+// are permitted policy, so a name lookup agrees with the record by luck.
+// The shape is training-household.ts's: create-or-find by primary key.
+//
+// FAIL CLOSED on a mismatch. If the pinned id finds nothing but a
+// household with the fixture NAME exists, the pin and the database
+// disagree, and creating a row would silently make a SECOND fixture,
+// which is the exact failure this change exists to prevent. Refuse and
+// say which situation the operator is in, because the answer differs.
+let { rows: [hh] } = await c.query("SELECT id, is_fixture, archived_at FROM household WHERE id=$1", [FIXTURE_ID]);
 if (!hh) {
-  const id = randomUUID();
+  const { rows: byName } = await c.query("SELECT id FROM household WHERE name=$1", [FIXTURE_NAME]);
+  if (byName.length > 0) {
+    console.error(`REFUSED: no household at the pinned fixture id ${FIXTURE_ID}, but ${byName.length} household(s) named "${FIXTURE_NAME}" exist here: ${byName.map((r) => r.id).join(", ")}.`);
+    console.error("  On a DISPOSABLE database (local or CI) this database predates the pin: delete that household and re-run, or update its id.");
+    console.error("  On PRODUCTION, stop. Either the pin is wrong or the fixture was recreated; re-pin tooling/fixture-ids.mjs from the real row rather than creating a second one.");
+    process.exit(1);
+  }
+  const id = FIXTURE_ID;
   await c.query(
     `INSERT INTO household (id, name, tier, status_tag, is_fixture, created_at, updated_at)
      VALUES ($1, $2, 'family_ops', 'STEADY', true, now(), now())`,

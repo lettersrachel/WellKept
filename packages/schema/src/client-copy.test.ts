@@ -381,7 +381,29 @@ const CENSUS_EXCUSALS: Record<string, Excusal> = {
   },
 };
 
-test("the copy census derives its own scope, and every exception is written down", () => {
+/**
+ * TIMEOUT RAISED 2026-08-27, and the reason matters more than the number.
+ *
+ * This test walks the repository to DERIVE its own scope, which is the
+ * point of it and also why it is the slowest thing in the suite: about a
+ * second alone, and past vitest's 5s default when fourteen files run in
+ * parallel on a loaded machine. It failed intermittently on three local
+ * runs and was dismissed each time as local noise. Then it failed a real
+ * CI gate on a comment-only change.
+ *
+ * **The dangerous outcome was never the red run. It was the re-run.** A
+ * guard that fails for reasons unrelated to what it guards teaches the
+ * person watching to press the button again, and a guard everyone re-runs
+ * to green is allowlisted into silence without anyone editing an
+ * allowlist. Raising the budget is the fix; re-running would have been
+ * the defect.
+ *
+ * 30s is a proposal, not a measurement: roughly thirty times the observed
+ * solo cost, chosen so contention cannot reach it rather than to sit just
+ * above the worst case seen. A census that genuinely takes 30s has a real
+ * problem worth failing on.
+ */
+test("the copy census derives its own scope, and every exception is written down", { timeout: 30_000 }, () => {
   const derived = derivedByRule();
 
   for (const [rule, files] of Object.entries(derived)) {

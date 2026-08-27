@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import pg from "pg";
+import { FERNBROOK_DEMO_ID } from "../fixture-ids.mjs";
 
 /**
  * G-05: the floor-bypass live assertion (Addendum A2 finding 7 — "someone
@@ -32,7 +33,13 @@ async function promptExists(householdId: string, text: string): Promise<boolean>
 }
 
 test("G-05: exclusions never suppress a floor (live scheduler path)", async ({ request }) => {
-  const { rows: [hh] } = await pool.query("SELECT id FROM household WHERE name ILIKE '%fernbrook%' LIMIT 1");
+  // G-71: was `name ILIKE '%fernbrook%' LIMIT 1`, which would find a real
+  // member household named Fernbrook the day one exists, and LIMIT 1 meant
+  // it would find one of them silently. R17 permits shared names, so the
+  // match is closed by IDENTITY rather than tightened to an exact string:
+  // an exact name match leaves the same defect with better wording, which
+  // is the version most likely to be mistaken for fixed.
+  const { rows: [hh] } = await pool.query("SELECT id FROM household WHERE id=$1", [FERNBROOK_DEMO_ID]);
   expect(hh, "seeded Fernbrook household").toBeTruthy();
   const { rows: [user] } = await pool.query("SELECT id FROM auth_user LIMIT 1");
   expect(user, "a seeded auth user for approved_by").toBeTruthy();

@@ -2817,11 +2817,72 @@ SUBSTRING match, which is the same defect one degree looser. A fix that
 only touches the fixture tool leaves the Part B spec agreeing by
 coincidence with a string it does not share.
 
-**Options reported, none built.** See the session report of 27 August;
-the summary is that a reserved id constant needs NO migration and is the
-strongest available uniqueness (the primary key), a dedicated lookup
-column or an alias table both need one, and only the column and table
-forms generalize beyond naming each fixture individually.
+**FIXED 27 August 2026 by identity, no migration.** `tooling/fixture-ids.mjs`
+is the single exported module; `ensure-smoke-fixture.mjs`,
+`partb-rehearsal.spec.ts` and `floor-bypass.spec.ts` all import it, so a
+change lands everywhere or nowhere. A constant copied into each file
+would have reproduced the defect with better syntax.
+
+**A CORRECTION to this entry's own framing, because the true version is
+a stronger finding.** This was reported as a proposal borrowed from
+`deploy.sh`'s `EXPECTED_PROJECT_ID`. That undersold it.
+**`training-household.ts:61` already does exactly this**, with
+`const HH = "01997700-0000-7000-8000-000000000001"` and
+`onConflictDoNothing`, so the training household creates-or-finds by
+primary key and has been immune to G-71 by construction since the day it
+was written. Pinning an id is therefore **the repository's existing
+convention for seeded households**, and the fixture script was the
+outlier that did not follow it, not a candidate for a new pattern. The
+same is true of Fernbrook, whose id has always been carried in
+`fernbrook_template_seed.json`; pinning it surfaced an existing constant
+rather than introducing one, confirmed identical in the seed file and a
+local database independently of the production URL it was read from.
+
+**One wrinkle the training household does not have.** Its id is
+DELIBERATELY STRUCTURED and minted by its own seed, so every environment
+converges. The fixture's id was `randomUUID()` at creation, so every
+database that ran the old script has a DIFFERENT id for the same
+fixture (proven: local held `d0181db3...` while production holds
+`8a4b9786...`). A single pin therefore cannot already be true
+everywhere. The script fails closed on exactly that: if the pinned id
+finds nothing but a household with the fixture NAME exists, it REFUSES
+and names both situations, because on a disposable database the answer
+is "delete and re-run" and on production it is "stop, do not create a
+second one". Pre-pin databases need a one-time reconcile; that is the
+cost of the pin and it is stated rather than discovered.
+
+**The `ILIKE` match is closed by identity, not tightened.** An exact name
+match would have left the same defect with better wording, which is the
+version most likely to be mistaken for fixed later. The two loaders
+(`load-bindings.ts:60`, `load-template.ts:36`) are untouched: a name
+ARGUMENT is a legitimate interface and not this defect.
+
+**Proven, preconditions asserted first** (database live, both constants
+exported, three sites importing rather than carrying literals):
+
+- **Red.** The pinned id absent while a same-named household exists:
+  refused, exit 1, and the household count was identical before and
+  after, so it created nothing.
+- **Green.** With no conflicting name present, the script created the
+  row AT the pinned id and found it on the next run.
+- **The case the fix exists for.** With TWO households named "Smoke Test
+  Fixture", the old predicate returned **different rows depending on how
+  it was written**: bare `LIMIT 1` gave one, `ORDER BY created_at LIMIT 1`
+  gave the other. Two defensible readings, two different households. The
+  new predicate returned the pinned row and can only ever return one,
+  because it is the primary key. **Recorded precisely: on the first run
+  the old predicate happened to return the right row, which is luck and
+  not a pass, and saying so is the point of the case.**
+
+**When to revisit, written as a TRIGGER rather than a preference so a
+later reader need not rederive the argument:** the moment fixtures need
+finding as a CLASS rather than being named one at a time, a pinned
+constant becomes two constants pretending to be a pattern, and the
+dedicated column (a `fixture_key` with a partial unique index, one
+migration) is right. **Nothing currently approaches that trigger**: there
+are two named fixtures, the training household already solves this its
+own way, and `is_fixture` remains unsuitable because it selects a class
+of three rather than a row.
 
 ### G-72. A mutation that never lands and a test that cannot fail look identical
 
@@ -4177,6 +4238,30 @@ household-referencing table, require each to be named in the erasure tool
 or excused in writing). It is a guard, guards are proven in both
 directions before they are trusted, and it is its own session.
 
+**A SECOND INSTANCE, same day, written by the session that filed this
+entry.** The G-71 fix switched `partb-rehearsal.spec.ts` to resolve the
+fixture by pinned id, and left its P4 assertion in place:
+`expect(rows[0].id).not.toBe("<a stale literal>")`. The row is now
+SELECTED BY that pin, so its id equals the pin by construction and the
+refusal could only fire if the pin itself were the stale literal. A guard
+that had been meaningful under name resolution became one that cannot
+fail, by a change that had nothing to do with it.
+
+Replaced with the assertion that carries weight under the new scheme,
+that the pin resolves to a row whose NAME and fixture flag are the
+fixture's, which catches the genuinely dangerous mis-pin at a real member
+household; proven red by pointing the constant at Fernbrook Demo.
+
+**Two things worth keeping from the pair.** First, **a guard can be
+made vacuous by a change elsewhere**, without anyone editing it: the
+assertion was correct when written and was hollowed out by the
+resolution strategy moving underneath it. Nothing flags that transition,
+and the guard keeps passing throughout. Second, **both instances were
+caught by a person asking whether the guard could fail**, not by any
+mechanism. That question is cheap, it is the only thing that has worked
+twice, and it belongs in the definition of done for any guard: name the
+mutation that turns it red, and if none exists, the guard is decoration.
+
 **Base rate (G-75), twelfth of twelve:** found because the founder asked a
 question about a green run rather than accepting it. No check produced
 this; a person distrusting a pass did.
@@ -4731,3 +4816,53 @@ of this one.
 **Base rate (G-75), eighteenth of eighteen:** found because a founder
 compared a number on a screen against how it got there. No check compares
 copy to behaviour, and none could.
+
+---
+
+### G-90. A guard that fails for reasons unrelated to what it guards is allowlisted into silence by re-running, with no allowlist involved
+
+Filed 2026-08-27, when the copy census timed out on a real CI gate during
+a comment-only change.
+
+**The failure.** `client-copy.test.ts:384`, "the copy census derives its
+own scope", exceeded vitest's 5000ms default in the `gates` job. Nothing
+it guards had changed; the commit edited one code comment.
+
+**Why it is slow, and why that is correct.** The census DERIVES its scope
+by walking the repository, which is the whole reason it exists: the copy
+sources are computed rather than remembered, so the guard cannot go stale
+the way the hand-maintained list it replaced did. That walk costs about a
+second alone and exceeds five under fourteen parallel test files on a
+loaded runner. The test is not wrong. Its budget was.
+
+**The part worth filing is what nearly happened instead.** It had already
+failed three times locally the same day and was dismissed each time as
+local noise, twice by observing that it passed when run alone, which is
+true and is exactly the reasoning that keeps a flake alive.
+
+> **A guard that fails for reasons unrelated to what it guards trains the
+> person watching to press the button again. A guard everyone re-runs to
+> green has been allowlisted into silence, and no allowlist was edited,
+> nobody decided anything, and nothing in the repository records it.**
+
+That is worse than a written allowlist entry, which at least carries a
+reason and a name. This register already holds the sanctioned-escape-hatch
+rule: the first legitimate exception is a reviewed line, never a
+commented-out guard. Flakiness is the unwritten version of the same
+retreat, and it arrives by attrition rather than by decision.
+
+**Fixed by raising the budget, not by re-running.** 30 seconds, stated as
+a proposal rather than a measurement: about thirty times the observed solo
+cost, chosen so contention cannot reach it rather than to sit just above
+the worst case seen. A census that genuinely takes thirty seconds has a
+real problem and should fail.
+
+**What this does not fix, said plainly.** Nothing detects the next flake.
+A test that fails intermittently is indistinguishable on any single run
+from a test that found something, and the only signal is a person
+noticing the same guard failing for different reasons on different days.
+That noticing is what produced this entry, and it took three dismissals
+first.
+
+**Base rate (G-75), nineteenth of nineteen:** surfaced by a CI gate on an
+unrelated change, after three local instances were explained away.

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import pg from "pg";
+import { SMOKE_TEST_FIXTURE_ID, SMOKE_TEST_FIXTURE_NAME } from "../fixture-ids.mjs";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -25,19 +26,43 @@ let token = "";
 let skipReason = "";
 
 test.beforeAll(async () => {
-  // The Smoke Test Fixture is seeded by ensure-smoke-fixture.mjs, which CI
-  // does not run (ci.yml seeds db:seed only). So this rehearsal SKIPS in
-  // CI with its reason printed, rather than failing there or, worse,
-  // passing vacuously. Seed the fixture and it runs.
+  // The Smoke Test Fixture is seeded by ensure-smoke-fixture.mjs.
+  //
+  // CORRECTED 2026-08-27: this comment read "which CI does not run
+  // (ci.yml seeds db:seed only)", and that has been FALSE since the
+  // airplane job gained the step "Seed the Smoke Test Fixture (the Part B
+  // rehearsal's household)". CI runs the script and this rehearsal RUNS
+  // there; verified in the airplane job's own log, where it is case 26 of
+  // 26 and passes rather than skipping.
+  //
+  // The skip below is still correct and still needed, for any database
+  // where the fixture was not seeded. It prints its reason rather than
+  // failing or, worse, passing vacuously, since a skipped rehearsal and a
+  // passing one look identical on a summary line.
   const { rows } = await pool.query(
-    "SELECT id, name, is_fixture FROM household WHERE name = 'Smoke Test Fixture'");
+    // G-71: the fixture is resolved by identity, from the same constant
+    // ensure-smoke-fixture.mjs creates it with. This file and that script
+    // previously agreed because two people typed the same string.
+    "SELECT id, name, is_fixture FROM household WHERE id = $1", [SMOKE_TEST_FIXTURE_ID]);
   if (rows.length !== 1) {
     skipReason = "no Smoke Test Fixture in this database; run apps/web/scripts/ensure-smoke-fixture.mjs first";
     return;
   }
-  // P4: resolve the fixture id by query, never trust a written value.
+  // P4, RESTATED for the G-71 change. The old assertion read "resolve the
+  // fixture id by query, never trust a written value" and refused one
+  // stale literal. Under identity resolution the written value IS the
+  // source of truth, so that assertion became VACUOUS: the row was
+  // selected BY the pinned id, so its id equals the pin by construction
+  // and the refusal could only fire if the pin itself were the stale
+  // literal. A guard that cannot fail on the thing it names is G-83's
+  // shape, so it is replaced rather than kept for reassurance.
+  //
+  // What is worth asserting now is that the pin points at the RIGHT
+  // household, which is the dangerous mis-pin: an id that resolves to a
+  // real member household would otherwise let this rehearsal write into
+  // one. Name and fixture flag together answer that.
   expect(rows[0].is_fixture).toBe(true);
-  expect(rows[0].id).not.toBe("d05ab5a2-7d9c-4cff-919a-250adafa0355");
+  expect(rows[0].name).toBe(SMOKE_TEST_FIXTURE_NAME);
   fixtureId = rows[0].id;
 
   // P5: the acting identity holds a corporate role ON THE FIXTURE.
