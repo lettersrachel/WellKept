@@ -27,7 +27,7 @@ async function deliverClientReport(householdId: string, payload: { report?: stri
     try {
       await sendMail({
         to: client.email,
-        subject: `This week's visit: ${hh?.name ?? "your household"}`,
+        subject: `This week's visit at ${hh?.name ?? "your household"}`,
         html: `<div style="max-width:560px;margin:0 auto"><h2 style="font-family:Georgia,serif;color:#1c3d2e">This week&rsquo;s visit</h2>${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">${(payload.photoIds ?? []).length} photo(s) attached &middot; photo-supported report &middot; Well Kept</p></div>`,
       });
     } catch (err) {

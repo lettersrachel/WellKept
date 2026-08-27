@@ -219,7 +219,12 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 ## Deploying
 
 Migrations before the web deploy, from the **repo root**, against a named main
-sha confirmed before `db:migrate`. Vercel does not auto-deploy on push. From
+sha confirmed before `db:migrate`. **The named sha must also carry a green
+`ci` run**, checked by the preflight against the runs API and failing closed
+on every unclear answer (no run, still running, any non-success conclusion,
+an unreachable or unparseable response). Being on `origin/main` proves
+provenance and nothing about verification: `main` carries no branch
+protection, so a merge never implied a passing check (G-73). Vercel does not auto-deploy on push. From
 `apps/web`, `--yes` suppresses the only confirmation and silently creates a
 third project. Then work `DEPLOY.md` §4 against the Smoke Test Fixture.
 A docs-only merge still moves the build id, so the skew banner firing after one
