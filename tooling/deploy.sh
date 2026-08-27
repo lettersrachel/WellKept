@@ -59,13 +59,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # NOT about the origin/main gate pin it to HEAD via the selftest-only
   # override, so a dev tree with unpushed commits can still prove them.
   bash "$0" 0000000000000000000000000000000000000000 2>/dev/null && { echo "SELFTEST FAIL: wrong sha accepted"; exit 1; }
-  echo "selftest 1/12: wrong sha refused"
+  echo "selftest 1/14: wrong sha refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_DB_COUNT=999 WK_DEPLOY_TEST_SKIP_MIGRATE=1 bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: count mismatch accepted"; exit 1; }
-  echo "selftest 2/12: migration-count mismatch refused (the assertion itself, migrate skipped)"
+  echo "selftest 2/14: migration-count mismatch refused (the assertion itself, migrate skipped)"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_PROJECT=stray WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: unexpected project accepted"; exit 1; }
-  echo "selftest 3/12: unexpected project refused"
+  echo "selftest 3/14: unexpected project refused"
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_LINK=absent WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$(git rev-parse HEAD)" 2>/dev/null && { echo "SELFTEST FAIL: missing link accepted"; exit 1; }
-  echo "selftest 4/12: absent/wrong project link refused BEFORE deploy"
+  echo "selftest 4/14: absent/wrong project link refused BEFORE deploy"
 
   # Round seven, session T: the class case. A commit that EXISTS locally but
   # is not on origin/main must be refused, however the argument was produced.
@@ -74,7 +74,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   LOCAL_ONLY=$(git commit-tree "HEAD^{tree}" -p HEAD -m "deploy.sh selftest: local-only commit, never pushed")
   WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" "$LOCAL_ONLY" 2>/dev/null \
     && { echo "SELFTEST FAIL: a local-only sha (not on origin/main) was accepted"; exit 1; }
-  echo "selftest 5/12: a sha that exists locally but is not on origin/main refused"
+  echo "selftest 5/14: a sha that exists locally but is not on origin/main refused"
 
   # GREEN PATH (round five, G2). Every case above proves a refusal fires. A
   # guard suite that only tests red passes while refusing everything - which
@@ -82,12 +82,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # the checks ACCEPT what they are supposed to accept.
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: correct sha + real project link REFUSED (green path broken)"; exit 1; }
-  echo "selftest 6/12: correct sha and real project link accepted"
+  echo "selftest 6/14: correct sha and real project link accepted"
 
   GREEN=$(printf '{"id":"%s"}' "$(git rev-parse HEAD)" | extract_build_id)
   [[ "$GREEN" == "$(git rev-parse HEAD)" ]] \
     || { echo "SELFTEST FAIL: build-id extraction returned '$GREEN'"; exit 1; }
-  echo "selftest 7/12: build-id extracted from its JSON body"
+  echo "selftest 7/14: build-id extracted from its JSON body"
 
   # Env presence (2026-07-29): a rm-then-failed-add on WK_KMS_KEY left the
   # project with no key, and a routine deploy would have shipped a build
@@ -96,13 +96,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
     WK_DEPLOY_TEST_ENV_LS=$' AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: a project missing WK_KMS_KEY was accepted"; exit 1; }
-  echo "selftest 8/12: missing required env var refused"
+  echo "selftest 8/14: missing required env var refused"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
     WK_DEPLOY_TEST_ENV_LS=$' WK_KMS_KEY Encrypted Production\n AUTH_SECRET Encrypted Production\n DATABASE_URL Encrypted Production\n REDIS_URL Encrypted Production\n RESEND_API_KEY Encrypted Production' \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
     || { echo "SELFTEST FAIL: a complete env set was refused (green path broken)"; exit 1; }
-  echo "selftest 9/12: complete env set accepted"
+  echo "selftest 9/14: complete env set accepted"
 
   # G-63, proven in both directions with a live sentinel rather than by
   # reading the code: the migrate path must fire in FULL mode and must
@@ -114,19 +114,36 @@ if [[ "${1:-}" == "--selftest" ]]; then
   [[ -e "$SENTINEL" ]] && { echo "SELFTEST FAIL: preflight FIRED the migrate path (G-63 regressed)"; exit 1; }
   printf '%s' "$PF_OUT" | grep -q "PENDING" \
     || { echo "SELFTEST FAIL: preflight did not report the pending migrations"; exit 1; }
-  echo "selftest 10/12: preflight left a pending migration pending, and said so"
+  echo "selftest 10/14: preflight left a pending migration pending, and said so"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_MIGRATE_CMD="touch $SENTINEL" WK_DEPLOY_TEST_DB_COUNT=1 \
     bash "$0" "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: full mode accepted a count mismatch"; exit 1; }
   [[ -e "$SENTINEL" ]] || { echo "SELFTEST FAIL: full mode never fired the migrate path (the write half is broken)"; exit 1; }
   rm -f "$SENTINEL"
-  echo "selftest 11/12: full mode fires the migrate path (then refuses the mismatched count downstream)"
+  echo "selftest 11/14: full mode fires the migrate path (then refuses the mismatched count downstream)"
 
   WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=999 \
     bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
     && { echo "SELFTEST FAIL: preflight accepted a database AHEAD of the tree"; exit 1; }
-  echo "selftest 12/12: preflight refuses a stale tree (database ahead of disk)"
+  echo "selftest 12/14: preflight refuses a stale tree (database ahead of disk)"
+
+  # The CI gate, both directions (2026-08-27). Red first: a sha whose ci
+  # run is absent, or concluded anything but success, must not deploy.
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_CI=none bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: a sha with NO ci run was accepted"; exit 1; }
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_CI=startup_failure bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null 2>&1 \
+    && { echo "SELFTEST FAIL: a sha whose ci run died at startup was accepted"; exit 1; }
+  echo "selftest 13/14: a sha with no ci run, or a startup_failure, refused"
+
+  # Green: the passing direction, because a gate that only ever refuses is
+  # as broken as one that never fires (it just fails safe).
+  WK_DEPLOY_TEST_ORIGIN_MAIN=HEAD WK_DEPLOY_TEST_SKIP_MIGRATE=1 WK_DEPLOY_TEST_DB_COUNT=SKIP \
+    WK_DEPLOY_TEST_CI=success bash "$0" --preflight "$(git rev-parse HEAD)" >/dev/null \
+    || { echo "SELFTEST FAIL: a sha with a successful ci run was REFUSED (green path broken)"; exit 1; }
+  echo "selftest 14/14: a sha with a successful ci run accepted"
 
   echo "selftest PASSED: eight refusals fire, four green paths accepted"
   exit 0
@@ -146,9 +163,17 @@ SHA="${1:-}"
 # origin/main, an external source of truth since branch protection landed.
 # A sha that exists only locally (an unpushed HEAD, $(git rev-parse HEAD)
 # of a stray tree) cannot satisfy it however the argument was produced.
-# Being on origin/main also implies the required checks were green, since
-# branch protection refuses the merge without them: the check-status half
-# of the brief needs no API call and no token.
+# WHAT BEING ON origin/main DOES NOT IMPLY, corrected 2026-08-27. This
+# comment used to read "being on origin/main also implies the required
+# checks were green, since branch protection refuses the merge without
+# them: the check-status half of the brief needs no API call and no
+# token." That was FALSE the whole time it stood here. G-73 read the
+# branch endpoint and the rulesets endpoint on 26 August: `main` carries
+# no protection of any kind and `ci` has never been a required check.
+# Merges were gated by a person reading run results, which is a
+# convention. So this gate proves provenance and nothing about
+# verification, and the CI gate below now does the half this comment
+# claimed was free.
 #
 # WK_DEPLOY_TEST_ORIGIN_MAIN is honored ONLY in selftest mode (both skip
 # hooks set), so selftest cases about OTHER refusals can run on a dev tree
@@ -174,6 +199,45 @@ HEAD_SHA=$(git rev-parse HEAD)
 if [[ -z "$SELFTEST_MODE" ]]; then
   [[ -z "$(git status --porcelain)" ]] || fail "working tree is dirty; the deploy ships the tree, not the sha. Commit or stash first."
 fi
+
+# 2. The CI gate (2026-08-27). On 26 August GitHub Actions stopped twice
+# in one day by two different mechanisms: first disabled outright, so no
+# check suite was created at all, then restricted, so runs were created
+# and died at startup with zero jobs. Both were silent. For ten hours the
+# repository had sixteen guards enforcing nothing and the only signal was
+# a person noticing a run was missing. The cost of a silent stop is not
+# the missing runs; it is that something unverified reaches production,
+# and this is the last gate before that happens.
+#
+# It computes its own input: the sha it asks about is $FULL_SHA, resolved
+# by this script from origin/main above, never a value a caller supplied
+# (the round-seven T lesson, applied to a second gate).
+#
+# No token: the repository is public, so the runs endpoint answers
+# unauthenticated. If that ever stops being true this REFUSES rather than
+# skipping, which is the only safe direction. Every failure mode here is
+# fail-closed: unreachable, non-JSON, no run, still running, or any
+# conclusion other than success.
+if [[ -n "$SELFTEST_MODE" ]]; then
+  CI_CONCLUSION="${WK_DEPLOY_TEST_CI:-success}"
+else
+  ORIGIN_URL=$(git remote get-url origin 2>/dev/null || echo "")
+  SLUG=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+  [[ "$SLUG" == */* ]] || fail "could not derive the GitHub repo from origin ('$ORIGIN_URL'); refusing rather than skipping the CI gate"
+  CI_JSON=$(curl -sS --max-time 20 "https://api.github.com/repos/$SLUG/actions/runs?head_sha=$FULL_SHA&per_page=20" 2>/dev/null) \
+    || fail "could not reach the GitHub runs API to verify CI for $FULL_SHA; refusing rather than deploying an unverified sha"
+  CI_CONCLUSION=$(printf '%s' "$CI_JSON" | node -e '
+    let raw=""; process.stdin.on("data",d=>raw+=d).on("end",()=>{
+      let d; try { d = JSON.parse(raw); } catch { console.log("unparseable"); return; }
+      const runs = (d.workflow_runs || []).filter(r => r.name === "ci");
+      if (!runs.length) { console.log("none"); return; }
+      const r = runs[0];
+      console.log(r.status === "completed" ? String(r.conclusion) : "still-" + r.status);
+    });
+  ' 2>/dev/null || echo "unparseable")
+fi
+[[ "$CI_CONCLUSION" == "success" ]] \
+  || fail "CI for $FULL_SHA reads '$CI_CONCLUSION', not success. 'none' means no ci run exists for this commit at all, which is what a disabled or restricted Actions configuration looks like from here (G-73); 'startup_failure' means the run was created and no job ever ran. Check Settings, Actions, General before deploying."
 
 # The connection comes from the environment or, failing that, from
 # .neon-connection at the repo root - read HERE, after this script's own cd,

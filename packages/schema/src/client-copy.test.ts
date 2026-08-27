@@ -132,6 +132,22 @@ function tsxFiles(dir: string): string[] {
   return out;
 }
 
+// An em dash can reach a reader without ever appearing as U+2014 in the
+// source. This file's own client email already writes &rsquo; and
+// &middot;, so entity encoding is in ACTIVE USE here, and &mdash; would
+// have rendered a dash to a client while a literal-character scan stayed
+// green. Found by the founder's session reading the same block, 27 Aug.
+const EM_DASH_FORMS = [
+  "\u2014",      // the character itself
+  "&mdash;",     // named entity
+  "&#8212;",     // decimal numeric
+  "&#x2014;",    // hex numeric, lower
+  "&#X2014;",    // hex numeric, upper
+];
+function hasEmDash(line: string): boolean {
+  return EM_DASH_FORMS.some((f) => line.includes(f));
+}
+
 function stripComments(src: string): string {
   // Blank out block and line comments, preserving line numbers so the
   // failure message points at the real line.
@@ -154,7 +170,7 @@ test("client-facing pages contain no em dashes outside comments", () => {
       if (allowlisted(PAGE_ALLOWLIST, path.relative(webApp, file))) continue;
       const lines = stripComments(readFileSync(file, "utf8")).split("\n");
       lines.forEach((line, i) => {
-        if (line.includes("—")) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
+        if (hasEmDash(line)) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
       });
     }
   }
@@ -172,7 +188,7 @@ test("templated staff/email copy sources contain no em dashes outside comments",
     const file = path.join(here, rel);
     const lines = stripComments(readFileSync(file, "utf8")).split("\n");
     lines.forEach((line, i) => {
-      if (line.includes("—")) offenders.push(`${path.basename(file)}:${i + 1}`);
+      if (hasEmDash(line)) offenders.push(`${path.basename(file)}:${i + 1}`);
     });
   }
   assert.deepEqual(offenders, [],
@@ -187,7 +203,7 @@ test("legal documents contain no em dashes", () => {
       if (name in DOC_ALLOWLIST) { if (DOC_ALLOWLIST[name]!.trim().length <= 10) throw new Error(`allowlist entry for ${name} needs a real reason`); continue; }
       const file = path.join(here, rel, name);
       readFileSync(file, "utf8").split("\n").forEach((line, i) => {
-        if (line.includes("—")) offenders.push(`${name}:${i + 1}`);
+        if (hasEmDash(line)) offenders.push(`${name}:${i + 1}`);
       });
     }
   }
@@ -200,14 +216,14 @@ test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {
   for (const root of STAFF_ROOTS) {
     for (const file of tsxFiles(path.join(webApp, root))) {
       stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
-        if (line.includes("—")) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
+        if (hasEmDash(line)) offenders.push(`${path.relative(webApp, file)}:${i + 1}`);
       });
     }
   }
   for (const rel of STAFF_EXTRA_FILES) {
     const file = path.join(here, rel);
     stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
-      if (line.includes("—")) offenders.push(`${path.basename(file)}:${i + 1}`);
+      if (hasEmDash(line)) offenders.push(`${path.basename(file)}:${i + 1}`);
     });
   }
   assert.deepEqual(offenders, [],
@@ -301,21 +317,53 @@ const RULE_FLOORS: Record<string, number> = { render: 30, channel: 4, action: 1 
 // The sanctioned escape hatch, used as intended: each entry is a reviewed
 // exception with a written reason, never a silenced rule. Every entry
 // below exists for ONE reason, the pending voice pass: these surfaces
-// carry em dashes today, the rewrite is a voice decision on strings that
-// go out under the founder's name, and it is sequenced as its own session
-// AFTER this census so the strings are guarded before they are rewritten.
-// Removing an entry is how that session proves it finished a surface.
-const CENSUS_EXCUSALS: Record<string, string> = {
-  "apps/web/src/app/mfa/page.tsx":
-    "four rendered sentences on the staff second-factor screen; pending the voice pass sequenced after this census",
-  "apps/web/src/app/mfa/recovery-codes/page.tsx":
-    "two rendered sentences including a button label on the backup-codes screen; pending the same voice pass",
-  "apps/web/src/app/link-device/page.tsx":
-    "one rendered sentence on the device pairing screen; pending the same voice pass",
-  "apps/web/src/app/dev/last-email/page.tsx":
-    "one rendered sentence on the dev-only last-email helper, unreachable in production; pending the same voice pass",
-  "apps/web/src/app/api/visit-commands/route.ts":
-    "the corporate WATCH alert subject and body, staff-facing; its sibling CLIENT report subject on line 30 was fixed on sight 26 Aug, the staff half waits for the voice pass",
+// carry offending marks today, the rewrite is a voice decision on strings
+// that go out under the founder's name, and it is sequenced as its own
+// session AFTER this census so the strings are guarded before they are
+// rewritten. Removing an entry is how that session proves it finished a
+// surface.
+//
+// EXCUSALS ARE FRAGMENT-SCOPED, NOT FILE-SCOPED, and that is the whole
+// design. The first version of this list excused whole FILES, which had a
+// defect found the same night: `visit-commands/route.ts` was excused for
+// its STAFF alert copy, and that excusal also covered line 30, the CLIENT
+// report email's subject line, which had just been fixed. A regression on
+// the one line most worth guarding would have passed CI, inside an
+// exception written for something else entirely. A file-level hatch is
+// always wider than the exception it was opened for.
+//
+// So each entry names the EXACT offending fragments. Every other line in
+// the file stays guarded. Fragments rather than line numbers, because a
+// line number goes stale the moment anything above it moves, and a stale
+// excusal that silently slides onto a different line is the same defect
+// in a new place.
+type Excusal = { reason: string; allow: string[] };
+const CENSUS_EXCUSALS: Record<string, Excusal> = {
+  "apps/web/src/app/mfa/page.tsx": {
+    reason: "four rendered sentences on the staff second-factor screen; pending the voice pass sequenced after this census",
+    allow: [
+      "Codes rotate every 30 seconds",
+      "Staff access needs a second factor",
+      "Out of backup codes",
+      "Time-based, 6 digits, SHA-1",
+    ],
+  },
+  "apps/web/src/app/mfa/recovery-codes/page.tsx": {
+    reason: "two rendered sentences including a button label on the backup-codes screen; pending the same voice pass",
+    allow: ["any one of these codes gets you back in", "I&apos;ve saved these"],
+  },
+  "apps/web/src/app/link-device/page.tsx": {
+    reason: "one rendered sentence on the device pairing screen; pending the same voice pass",
+    allow: ["Keep this code private"],
+  },
+  "apps/web/src/app/dev/last-email/page.tsx": {
+    reason: "one rendered sentence on the dev-only last-email helper, unreachable in production; pending the same voice pass",
+    allow: ["One click per link"],
+  },
+  "apps/web/src/app/api/visit-commands/route.ts": {
+    reason: "the corporate WATCH alert subject and body, STAFF-facing, waiting on the voice pass. Scoped to those two fragments deliberately: the CLIENT report subject in the same file was fixed 26 Aug and must stay guarded, which a file-level excusal would have prevented.",
+    allow: ["Life-change signal flagged this visit", "Visit closed"],
+  },
 };
 
 test("the copy census derives its own scope, and every exception is written down", () => {
@@ -329,8 +377,15 @@ test("the copy census derives its own scope, and every exception is written down
     );
   }
 
-  for (const [key, reason] of Object.entries(CENSUS_EXCUSALS)) {
-    assert.ok(reason.trim().length > 10, `census excusal for ${key} needs a real written reason`);
+  for (const [key, ex] of Object.entries(CENSUS_EXCUSALS)) {
+    assert.ok(ex.reason.trim().length > 10, `census excusal for ${key} needs a real written reason`);
+    assert.ok(ex.allow.length > 0, `census excusal for ${key} must name the fragments it excuses, never the whole file`);
+    // A fragment that no longer appears is a hatch left open over nothing.
+    // Same reasoning as the stale-file check below, one level finer.
+    const src = readFileSync(path.join(REPO, key), "utf8");
+    const gone = ex.allow.filter((f) => !src.includes(f));
+    assert.deepEqual(gone, [],
+      `census excusal for ${key} names fragment(s) no longer in the file; remove them: ${gone.join(" | ")}`);
   }
 
   // An excusal naming a file no rule derives any more is stale
@@ -354,9 +409,13 @@ test("derived copy sources contain no em dashes outside comments", () => {
   const files = [...new Set(Object.values(derivedByRule()).flat())].sort();
   for (const file of files) {
     const key = repoRel(file);
-    if (key in CENSUS_EXCUSALS) continue;
+    const ex = CENSUS_EXCUSALS[key];
     stripComments(readFileSync(file, "utf8")).split("\n").forEach((line, i) => {
-      if (line.includes("\u2014")) offenders.push(`${key}:${i + 1}`);
+      if (!hasEmDash(line)) return;
+      // Fragment-scoped: only a line carrying an excused fragment passes.
+      // Every other line in an excused file is still guarded.
+      if (ex && ex.allow.some((f) => line.includes(f))) return;
+      offenders.push(`${key}:${i + 1}`);
     });
   }
   assert.deepEqual(offenders, [],

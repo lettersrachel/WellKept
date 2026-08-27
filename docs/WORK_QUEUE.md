@@ -492,6 +492,21 @@ five earned live-build passes; see the frozen record. HG will
 correctly flag on the {"gapDays":10} reconciliation knob if no visit
 lands within ten days.
 
+**The deploy order, set by the founder 27 August:** the preflight CI
+check built and merged, then the branch protection rule created, then
+the deploy, then Part B v5 against the new build with the banner
+assertions live. The preflight check is BUILT (`deploy.sh`, the CI
+gate): it asks the runs API whether the named sha carries a green `ci`
+run and fails closed on every unclear answer. It corrects a FALSE
+COMMENT that had stood in the same file since round seven, which read
+that being on `origin/main` "implies the required checks were green,
+since branch protection refuses the merge without them". There is no
+branch protection (G-73), so that was never true, and the gate now does
+the half the comment claimed was free. Selftest is 14 cases; the two
+new ones are proven red twice (`none`, `startup_failure`) and green
+past the gate, and the REAL API path was exercised separately against
+four live shas because a sentinel proves the logic and not the input.
+
 **The pending deploy is NOT docs-only, corrected 27 August.** `main`
 is at `2845202`, four merges ahead of production, and the range
 `577666d..2845202` contains ONE application-code change:
