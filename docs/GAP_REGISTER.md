@@ -2969,6 +2969,54 @@ session does not hold. Left as a known unknown rather than a story.
 
 ---
 
+**SECOND ADDENDUM: Actions stopped a SECOND time, seven hours later, by
+a different mechanism.** Recorded here rather than as its own entry
+because it is the same subject, an Actions configuration silently
+gating every merge, and splitting it would scatter one story across two
+numbers.
+
+Green through `967c8e3` at 17:23 UTC on 26 August. From 00:32 UTC on 27
+August, every run returned **`startup_failure` with ZERO jobs**,
+`created_at` equal to `updated_at`, four runs across three commits.
+**This is a different signature from the first stop:** there, no
+`github-actions` check suite was created at all; here the suite and the
+run are created and the run dies before any job exists.
+
+Established: `ci.yml` byte-identical to the last green run; the branch
+changed one docs file; the workflow reporting `state: "active"`; one
+re-run attempted and refused by GitHub with 403 `Resource not
+accessible by integration`, the token lacking `actions: write`.
+
+The diagnosis offered at the time: `ci.yml` depends on
+`actions/checkout@v5` and `actions/setup-node@v5`, both owned by the
+`actions` org rather than by `lettersrachel`, so an **Actions
+permissions** setting narrower than "Allow all actions and reusable
+workflows" would block them and kill the run at startup with no jobs.
+That is exactly this signature. It was stated as a hypothesis because
+`GET /actions/permissions` is refused to this session by its own agent
+proxy.
+
+**The founder then updated the Actions policy and the setting now reads
+"Allow all actions and reusable workflows."** Two things about that,
+stated carefully:
+
+- **The PRIOR value is not recorded.** The screenshot shows the result
+  and the "Actions policy updated" banner, not what was selected
+  before. So the hypothesis is not confirmed by the change itself.
+- **The recovery is the test, exactly as it was for the first stop.**
+  A settings change does not re-run a failed run, so the next push is
+  what decides it. If `ci` goes green on an unchanged workflow with the
+  policy as the only variable that moved, the diagnosis is a cause. If
+  it fails again, the diagnosis was wrong and this entry says so.
+
+Twice in one day, by two different mechanisms, an Actions setting
+silently stopped every merge gate in the repository, and in neither
+case did anything in the product say so. That is the durable finding,
+and it is the same one the rest of this entry carries: **the absence of
+a control is silent by construction.**
+
+---
+
 ### G-74. A register entry is evidence a control was built, never evidence it is still in place
 
 Filed 2026-08-26 alongside G-73, which is its first confirmed instance
