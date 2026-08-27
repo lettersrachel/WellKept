@@ -12,6 +12,33 @@ WK-DEV-006 section 8, the verdicts are proposed defaults: the founder
 has 48 hours from delivery to redirect any of them, after which they
 stand and the window's migrations proceed in the order at the end.
 
+## Required field for every primitive from here on: PRODUCER
+
+Added 27 August 2026 (G-85). Every primitive entry states, **per column
+it proposes**, what will write it, or records that nothing will yet:
+
+- **Written by:** the surface that writes the column, or
+- **NO PRODUCER YET:** the session that will build that surface.
+
+0058 shipped ten columns with no writer, all NULL on every production
+row, with a shape assertion, four CHECK constraints and a
+granularity-aware render guarding a path no data could reach. Correct,
+inert, and indistinguishable from a working feature on a green CI
+summary. Its migration header did say "what the capture form writes", in
+the future tense, and that read as a design note.
+
+Schema ahead of its writer is a fine thing to do DELIBERATELY. It is not
+a fine thing to do by accident, and after the fact the two look
+identical. "NO PRODUCER YET" needs no defence; an unanswered field is
+what this exists to prevent.
+
+**This cannot become a guard.** A static reader cannot tell which
+columns a runtime-assembled insert touches, so detection would be
+table-scoped, which is the blindness G-83 is about; and "no writer" is a
+valid state, so the guard would fire on every intentional case and be
+allowlisted into silence. It stays a sentence a person writes at the
+only moment the answer is known.
+
 ## 1. Household: EXISTS, the primitive is already the pattern
 
 `household` is the tenant boundary; every scoped table carries
