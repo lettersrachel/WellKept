@@ -2770,6 +2770,21 @@ one duplicate away from the failure. The distance from "no duplicate
 exists" to "a duplicate exists" is one intake with a repeated name, and
 the intake path does not check.
 
+**A SECOND INSTANCE, same day, different domain.** The fixture's
+commercial record carries six membership events all dated
+`2026-07-27`: a start, four tier changes, and a pause. Displayed by
+date, there is no way to tell which is current. That is this entry's
+shape moved from IDENTITY to ORDERING: a record whose meaning depends on
+a field that can tie, with nothing breaking the tie. The register is
+append-only and `created_at` exists, so the data can still answer the
+question even where the display cannot, which makes this a rendering and
+ordering choice rather than a loss. Recorded here rather than as its own
+entry because the generalization is the same: **a value being usually
+distinct is not the same as a value being unique, and code that reads it
+as an identifier or as an order is correct only while the accident
+holds.** Whether the display should order by `created_at` or carry a
+sequence number is a decision and is not made here.
+
 It also sharpens the product question the entry left open. The demo pair
 argues FOR the narrow fix rather than the global one: a partial unique
 index on `name` where `is_fixture` is true would not have touched either
@@ -4189,3 +4204,152 @@ written apart and identical when compressed into one.
 
 **Base rate (G-75), thirteenth of thirteen:** surfaced by a hook firing on
 something unrelated to the work in hand.
+
+---
+
+### G-85. Migration 0058 shipped ten columns with no producer, and every guard around them is correct and inert
+
+Filed 2026-08-27, **HIGH**, from the founder's browser sitting on the
+fourteenth run. Not a navigation problem: a real gap between a migration
+APPLYING and a feature EXISTING.
+
+**The finding.** 0058 added eight columns to `registry_entry`
+(`install_date`, `install_date_granularity`, `serial_verbatim`,
+`derivation_source`, `derived_year`, `install_confidence`,
+`photo_pass_at`, `ask_pass_at`) plus `registry_entry_id` on
+`capture_artifact` and `visit_photo`. **Nothing writes any of them and
+nothing ever has.** Every one is NULL on every row in production.
+
+**No UI path creates a registry entry at all.** Every write to
+`registry_entry` in the repository, searched exhaustively:
+
+| Writer | What it is |
+|---|---|
+| `demo-content.ts:150` | seed script |
+| `provision-hg.ts:212` | seed script |
+| `training-household.ts:169` | seed script |
+| `journeys.spec.ts:587` | test fixture |
+| `erase-household.mjs:305` | erasure; blanks and tombstones only |
+
+Nothing in `apps/web/src` inserts or updates the table: no create route,
+no form, no server action. The two action-layer references to a
+`registryEntryId` READ it, to check the object belongs to the household
+before attaching an observation or a condition flag. The only appearance
+of the new column names anywhere in the app is `data.ts:277-281`, which
+nulls five of them for clients.
+
+**The migration said so, and it was read as a design note.** 0058's own
+header calls `install_date` "what the capture form writes", in the
+FUTURE TENSE. The sentence was accurate. Nobody read it as a statement
+that the producing surface did not exist.
+
+**The consequence, plainly: three mechanisms guard an unreachable path,
+and all three are correct and inert.**
+
+- `assertDeclaredClientKeys` on the registry payload refuses an
+  undeclared key. Every key it governs is NULL, so it has never had a
+  value to protect.
+- The four CHECK constraints, both whole-or-absent pairs included, cannot
+  fire: no INSERT or UPDATE supplies a value that could violate them.
+- `RegistryCard`'s granularity-aware render, which exists precisely so a
+  decoded "2011" is never printed as a specific day, is unreachable.
+  `install_date_granularity` is NULL everywhere, so the branch never
+  runs.
+
+None of that work is wrong or wasted. It is **untested in the only way
+that counts**, and a later reader seeing green guards, applied
+constraints and a merged migration would reasonably conclude the feature
+works.
+
+#### The process observation, which is the transferable part
+
+**Part B exists because applying a migration is not the same as serving
+it.** That question was asked of the deploy and answered: sha current,
+count 58 to 59, build id verified three times. **Nobody asked it of 0058
+itself**, and the answer would have been that it does not serve, because
+nothing writes to it.
+
+> **A migration should not merge without naming its producer, or
+> explicitly recording that it has none yet.** One line in the migration
+> header or the PR body: "written by <surface>", or "NO PRODUCER YET;
+> the capture form is <session>". A schema shipped ahead of its writer is
+> a legitimate thing to do deliberately. It is not a legitimate thing to
+> do by accident, and after the fact the two are indistinguishable.
+
+The same reading runs backwards into the guards. **A guard over a column
+nothing writes cannot fail**, which is G-83's shape reached by a
+different road: G-83 was a guard blind to the question asked of it, this
+is a guard pointed at exactly the right question with no input to answer
+it. Both look identical on a green CI summary.
+
+**NOT BUILT, deliberately.** The capture form is a founder decision about
+scope and sequencing, not an engineering default. What the register
+carries is that the producer is missing and the guards are inert until
+it exists.
+
+**Base rate (G-75), fourteenth of fourteen:** found by the founder
+navigating the product looking for a form. Nothing in CI can notice that
+a column has no writer.
+
+---
+
+### G-86. The smoke checklist manufactures its own duplicate prompts, because the dedup key includes the change instant
+
+Filed 2026-08-27 from the fourteenth-run browser sitting. **Predates
+today by a month and is NOT the fourteenth run's**, recorded against its
+real origin rather than the entry that happened to be open, which is the
+G-84 discipline applied at the moment of filing.
+
+**The observation.** The fixture shows the same meds-day prompt four
+times as due today, plus an identical Sep 25 pair, on the corporate page
+and the HOM projection alike.
+
+**Duplicate ROWS, not one row rendering repeatedly.** `prompt_pack_item`
+carries no unique constraint, only
+`index("prompt_pack_item_household_idx")`. Dedup is entirely the primary
+key, built by `deterministicItemId` (`engine.ts:162`) from
+`householdId | fieldId | changedAt | ruleId | itemText`.
+
+**`changedAt` is in the key.** Each field change is a distinct event, so
+the same rule emitting the same text for the same field on a different
+change yields a different id, a new row, another render.
+`onConflictDoNothing` protects only against redelivery of the SAME
+event, which is exactly what its comment claims and all it claims.
+
+**And the checklist is the producer.** `ensure-smoke-fixture.mjs:92-94`
+re-seeds a pending client edit on the `medication` field every run,
+because "each smoke run's approval consumes it", and the file's own
+comment records that this field "binds the meds-day cascade -> panel
+items". Section 4 check 3 then approves it. So **every smoke sitting
+fires a fresh `medication` change and mints a new set of meds-day
+items.** The count is not a scheduler fault; it is a tally of how many
+times check 3 has run.
+
+**Which build it belongs to.** `deterministicItemId` has carried
+`changedAt` since `engine.ts` first existed, merged 2026-07-28. The
+behavior predates every deploy recorded in the work queue, and the
+duplication has accumulated since the first sitting that ran check 3
+against the fixture. Naming the exact build needs `created_at` on the
+fixture's `prompt_pack_item` rows, a production query not run from here.
+**What IS settled is the negative: it is not the fourteenth run's, and
+no file in `577666d..7bcbb16` touches it.**
+
+**Family, not novelty.** This is the ROUND5 "real object key plus fired
+dedup" item and the W-2/W-9 family, gated together on the first
+calibration read against real data. W-2 already established that repeat
+firings are not deduplicated and that this depresses the displayed rate.
+What this adds is the mechanism and one fact that matters for
+calibration: **the fixture's own maintenance loop is the largest
+generator of duplicates today**, so `informativeRateFloor`, which is
+deliberately unset so it can be set from real numbers, would be set from
+numbers the checklist inflated.
+
+**NOT fixed.** A dedup is a decision about what counts as the same
+prompt (same rule and text within a window? per object? per household?),
+which is a threshold, and thresholds are the founder's. Two notes for
+whoever takes it: the fixture's inflation is separable from real
+households by `is_fixture`, and any dedup keyed on text inherits the
+K-survey string-as-identifier problem.
+
+**Base rate (G-75), fifteenth of fifteen:** found by a person looking at
+a panel and noticing the same sentence four times.
