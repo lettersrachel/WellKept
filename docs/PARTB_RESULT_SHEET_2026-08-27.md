@@ -6,10 +6,13 @@ status: living
 Run against production (`7bcbb16`) on the Smoke Test Fixture,
 `8a4b9786-9698-4200-95b9-91abec7a40ef`.
 
-**Part B is NOT CLOSED by this sheet.** All eight steps pass on the
-screen and the database half is outstanding. The standing constraint is
-that the screen is never the evidence, so everything below the line is a
-render observation until the queries return.
+**PART B IS CLOSED, 27 August 2026.** All eight steps passed on the
+screen, and the database half then passed on every assertion. Both halves
+are recorded below and the screen half is kept as written, because the
+standing constraint is that the screen is never the evidence: those eight
+passes proved a page composed, and only the queries proved rows
+committed. The sheet keeps both so a later reader can see which claim
+rests on which.
 
 ## The screen half: eight of eight
 
@@ -46,37 +49,75 @@ hard-deletes by default. Retirement and resolution are state changes on a
 row that remains readable, which is what makes the retired reason and the
 resolution note worth rendering at all.
 
-## The database half: OUTSTANDING
+## The database half: PASS on every assertion
 
-**This is what closes Part B**, and it has not been run. The queries are
-in `partb-db.sql`.
+Run against production by the founder, 27 August 2026, read-only.
+`tooling/verify/partb-db.sql` is the file; the values below are hers.
 
-Four assertions on each row, plus one precondition the register's own
-doctrine requires:
+**PRECONDITION 0, five CHECK constraints present**, which is what makes
+everything under it mean what it appears to mean:
 
-0. **PRECONDITION: the CHECKs exist in production.** Printed from
-   `pg_constraint` before anything else. G-72: six CHECK refusals once
-   reported a clean REFUSED with Postgres down, and a whole state group
-   proves nothing if the constraint that makes it whole is absent. A
-   passing group and an absent constraint look identical in the data.
-1. **Byte-identical**, not similar on screen. Equality against a
-   dollar-quoted literal, with `length`, `octet_length` and `md5`
-   alongside, so trailing whitespace and encoding differences cannot hide
-   behind a visual match.
-2. **Every member of the state group populated together.** A partial
-   group would mean the CHECK is not doing its job on the serving path,
-   which is the failure this step exists to catch.
-3. **`provenance = 'explicit'` and `confidence IS NULL`** on the
-   preference rule. Anything else is a STOP and its own register entry
-   about who else can write to that table, because the app's action takes
-   no provenance input at all and can only create explicit rows.
-4. **`household_id` is the fixture on both**, and a grouped count proves
-   nothing was written under any other household.
+| Constraint | Enforces |
+|---|---|
+| `preference_rule_confidence_is_whole` | explicit implies confidence NULL |
+| `preference_rule_retirement_is_whole` | retired implies reason, at and by all present |
+| `preference_rule_status_known` | active or retired |
+| `situation_resolution_is_whole` | resolved implies resolution, at and by all present |
+| `situation_status_known` | open or resolved |
 
-**One column-name correction, caught before the queries were written.**
-The preference rule's text column is `rule`, not `rule_text`. The
-screen-half report above uses the phrase "rule text", which is the right
-description and the wrong identifier; the queries use `rule`.
+Five, not fewer. G-72's point exactly: a whole state group and an
+ENFORCED state group are identical in the data, and only this query
+separates them.
+
+**A. `preference_rule`, every assertion true.**
+
+| Assertion | Reading |
+|---|---|
+| A1 rule byte-identical | `PARTB-0057-2026-08-27-do-not-move-the-blue-bin`, 46 chars / 46 bytes, md5 `cfcbca52...` |
+| A1 reason byte-identical | `PARTB-retire-check`, 18 / 18 |
+| A2 retirement group whole | true |
+| A3 provenance explicit, confidence NULL | true |
+| A4 household is the fixture | true |
+
+Created 22:30:19.253, retired 22:31:08.992.
+
+**B. `situation`, every assertion true.**
+
+| Assertion | Reading |
+|---|---|
+| B1 label byte-identical | `PARTB-0056-2026-08-27-front-gate-latch`, 38 / 38, md5 `46a452e5...` |
+| B1 resolution byte-identical | `PARTB-resolve-check`, 19 / 19 |
+| B2 resolution group whole | true |
+| B4 household is the fixture | true |
+
+Created 22:34:19.275, resolved 22:35:13.602.
+
+**4b, household scoping from the other direction.** Exactly one Part B
+row per table, both on the Smoke Test Fixture, no row on any other
+household. A4 and B4 can only speak about a row that was found; this is
+the half that would have shown a write landing on the wrong tenant as an
+extra line rather than as silence.
+
+**Two things the readings say that no single assertion states.**
+
+**Chars equal bytes on every string.** Nothing was mangled in transit:
+the operator's bytes are the stored bytes. That is precisely the claim a
+screen render cannot make, and it is why the length columns ride beside
+each equality rather than the equality standing alone.
+
+**Both lifecycle groups moved WHOLE**, about a minute after creation:
+retired and resolved each arriving with reason, timestamp and actor set
+together. That is the accepting direction of both new CHECKs, proven on
+live production data for the first time. Their refusing direction was
+proven in SQL when 0056 and 0057 landed; this is the other half.
+
+**One citation corrected rather than carried.** The 4b block was
+described in the run report as "the G-23 check". It is not. G-23 is the
+smoke checklist becoming unsafe once demo data is archived
+(`GAP_REGISTER.md:571`), and no register entry covers cross-tenant
+scoping at all. The check is real and unnamed, which is better than
+named wrongly: a wrong pointer survives longer than a missing one,
+because following it costs more than not following it.
 
 ## What this run could NOT close
 
@@ -88,3 +129,14 @@ behaviour, and the distinction is worth keeping: a journey proves the
 code refuses, and only a production run proves the deployed build does.
 
 That follow-up stays OPEN and is not closed by this sheet.
+
+**And the runner was not the one that shipped.** `psql` is not installed
+on the machine holding the production connection, so
+`apps/web/scripts/run-sql-readonly.mjs` was written to remove that
+dependency. It arrived one merge after the founder's pull, so she wrote
+an equivalent to the same contract (strip comments, refuse any
+non-SELECT, execute read-only) and ran the queries through that. The
+results are the file's, unchanged; the shipped runner is on `main` and
+still unexercised by the person it was written for. Recorded because
+"the tool exists" and "the tool was used" are different claims and the
+sheet should not imply the second.
