@@ -4038,3 +4038,132 @@ the first.
 prose written for a different purpose, not by a check. The instructions
 were being written to explain the gate; explaining it is what exposed
 what it did not do.
+
+---
+
+### G-83. A guard can pass for reasons unrelated to the question it appears to answer, and no mutation could have turned it red
+
+Filed 2026-08-27, from the founder's own question after the fourteenth
+deploy: migration 0058 added eight columns and two foreign keys to tables
+the erasure tool already handles, `erasure-coverage.test.ts` passed on the
+merge, so was the treatment covered or did the columns not trigger it?
+
+**Neither. The guard cannot see columns at all.** It reads `tables.ts`,
+splits on `export const \w+ = pgTable("(\w+)"`, and asserts each table
+NAME appears in `erase-household.mjs`. There is no column logic in it.
+`capture_artifact` and `visit_photo` were both already named, so the guard
+returned green **and would have returned green had nobody considered the
+new columns at all.** Its result on this merge carries no information
+about them.
+
+**This is worse than a proof that reports the right answer for the wrong
+reason, and the difference is worth being precise about.** G-72's class
+is a proof whose preconditions were not asserted, so a case passed that
+should have failed. Those are at least falsifiable: mutate the thing and
+the proof goes red. Here **no mutation existed that could have turned this
+guard red**, because the property it checks (is the table named) was
+already true and is independent of the property being asked about (is the
+new column's treatment correct). A guard that cannot fail on a question is
+not weak evidence about that question; it is no evidence, and it reads
+identically to strong evidence on the CI summary.
+
+**Which control actually did the work, since only one of the two will fire
+next time.** The treatment WAS decided, correctly, by a person under the
+same-PR legal-and-erasure rule, and written into the erasure tool's own
+header:
+
+- the eight new `registry_entry` columns are cleared with the entry, and
+  **each whole-or-absent group is cleared AS A GROUP so the CHECKs survive
+  erasure**;
+- `visit_photo.registry_entry_id` and `capture_artifact.registry_entry_id`
+  are KEPT, reasoned: the link is skeleton rather than content and points
+  at a `registry_entry` the same pass tombstones and blanks, so it can only
+  ever resolve to `[erased]`, and `capture_artifact` rows are deleted
+  outright anyway.
+
+**The CHECK-survival detail is the sharp end.** Blanking one half of a
+whole-or-absent pair would leave a row that violates its own constraint,
+which is the identical problem W-6 hit with `revisit_condition` and solved
+the same way, by blanking to a marker rather than to NULL. **Nothing
+automated would have found it.** The erasure guard is table-scoped, the
+legal census is table-scoped, and the CHECKs themselves only fire when the
+erasure runs, which in production means once, on a real household, at the
+worst possible moment to discover it.
+
+So the honest ledger for this merge: **the same-PR rule caught it, the CI
+guard did not and structurally could not.** The rule is memory-held, which
+is what G-62 was filed about, and it has now held twice running.
+
+**The general form, stated so it catches the next one:**
+
+> **A guard's green answers the question the guard asks, which is not
+> always the question you brought to it.** Before reading a pass as
+> coverage, ask what mutation would turn it red. If no mutation of the
+> thing you care about could do so, the guard is silent on your question
+> however loudly it passes. The CLAUDE.md table's "not covered" column
+> exists for exactly this and is only as good as the reader who consults
+> it.
+
+**Not fixed here, and named rather than assumed.** A column-scoped erasure
+census is the obvious candidate (the staff-disclosure and legal-census
+pattern applied one level down: derive the columns of every
+household-referencing table, require each to be named in the erasure tool
+or excused in writing). It is a guard, guards are proven in both
+directions before they are trusted, and it is its own session.
+
+**Base rate (G-75), twelfth of twelve:** found because the founder asked a
+question about a green run rather than accepting it. No check produced
+this; a person distrusting a pass did.
+
+---
+
+### G-84. A difference between two pointers is not a claim about the thing they point at, and this is the third surface today
+
+Filed 2026-08-27, short, because the content is the recurrence rather than
+the incident.
+
+**The incident.** A stop hook reported "1 unpushed commit on branch
+`claude/system-functional-gaps-f91l1k`". Read literally that says work
+exists only locally. It did not: the commit named was `7bcbb16`, the merge
+of PR #206, **already on `origin/main`**. The local feature branch had been
+reset onto main after the merge, so it sat one merge commit ahead of a
+stale remote feature-branch pointer. `git log origin/main..HEAD` was empty
+throughout. Nothing was ever at risk, and the resolution moved a pointer
+rather than shipping anything.
+
+**Why it is filed at all.** The hook's reading was TRUE. Two refs did
+differ. The error available here is supplying a wider conclusion than the
+observation supports: *these pointers differ* became *work is unpushed*,
+and those are different claims. Acting on the wider one would have been
+harmless this time and is not always: the same misreading is how somebody
+force-pushes to "fix" a divergence that was a stale pointer.
+
+**The recurrence, which is the point.** Three times in one day, on three
+unrelated surfaces, a true and narrow reading was available to be read as
+a wider claim:
+
+| Surface | The true, narrow reading | The wider claim it invites |
+|---|---|---|
+| The deploy sha gate (G-82) | this sha is on `origin/main` and is HEAD | this sha is what we want to ship |
+| The branch endpoint (G-79) | classic protection reports nothing here | this branch is unprotected |
+| A stop hook (this entry) | these two refs differ | work exists only locally |
+
+Each observation was correct. Each conclusion was wider than its
+observation. **None of the three would have been caught by checking the
+observation again**, which is the trap: re-reading a true statement
+confirms it, and the error is not in the statement.
+
+**The general form, which subsumes G-79 and G-82 rather than repeating
+them:**
+
+> **Every reading answers a specific question. Before acting, say out loud
+> what question the reading actually answers, and check it is the one you
+> asked.** Where they differ, the gap is where the error lives, and it is
+> invisible precisely because the reading is true.
+
+The practical form is cheap: name the narrow fact and the intended
+conclusion as two separate sentences. They look obviously different once
+written apart and identical when compressed into one.
+
+**Base rate (G-75), thirteenth of thirteen:** surfaced by a hook firing on
+something unrelated to the work in hand.
