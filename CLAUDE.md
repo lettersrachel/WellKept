@@ -115,6 +115,7 @@ row here fails CI, so the table cannot silently go stale.
 | `telemetry-discipline.test.ts` | the Sentry scrubber cuts row-value leak shapes and stays wired in both inits with sendDefaultPii false; no shipped console call interpolates a sensitive-value identifier (CAND-PRIV-01) | free text a developer writes into a message; telemetry channels other than Sentry and console |
 | `legal-census.test.ts` | every household-referencing table, computed from the schema, is named in CHILD_DATA.md or excused with a written reason (the G-62 candidate guard) | the legal/README and privacy-notice prose, which name categories not tables and stay on the same-PR rule; whether a named treatment is correct |
 | `success-visibility.test.ts` | every action that changes stored state confirms it, and every page a confirmation can land on renders the banner bound to the redirect's own param (G-68, refusal-visibility's twin) | whether the confirmation is TRUE: a redirect proves the code path ran, never that the write committed; free text a future author interpolates into a message |
+| `client-payload-shape.test.ts` | every member-reaching payload carries ONLY the keys declared for it, so a column added tomorrow throws instead of publishing; the declared registry list is asserted against the table's own columns, with a written-exclusion hatch (G-78) | **what a permitted key CONTAINS**: a staff-only fact typed into a correctly client-visible column reaches the member, since `playbook_field.value` is gated by ROW sensitivity and an s1 field is client-visible by design, which nothing in this system catches (the copy guard's free-text residue, one layer down); the inside of a jsonb column, which is one permitted key; and whether a value that should be nulled still is, which stays a separate mechanism |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
@@ -170,6 +171,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 - **One migration per session.** If it feels like two, the session is too big.
   Report that instead of proceeding.
+- **Generated migration SQL is READ before it is applied.** `drizzle-kit`
+  emitted 0058's two composite foreign keys BEFORE the unique index they
+  reference; Postgres refused with "there is no unique constraint
+  matching given keys for referenced table" and the file failed halfway,
+  leaving ten columns applied and no journal entry. A generator orders
+  statements by its own model of the diff, not by what Postgres requires
+  at apply time, so the ordering is the reviewer's job. Reorder in the
+  file and leave a note saying why, since regenerating undoes it.
+  **The timing is the reason this matters:** CI runs migrations in the
+  airplane job, so the gate would have caught this only AFTER the merge,
+  and with no branch protection on `main` that means the default branch
+  carries a broken migration until a person reads a log.
 - **Migration numbers and gap register IDs are allocated at write time, never
   reserved in advance.** Read the current maximum first. Two documents both
   claiming the next number will collide.
@@ -221,6 +234,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   production, is the strongest form of the proof.** The KEK validation threw
   on a real malformed key with zero writes the same night it shipped; that
   did more than its round-trip test.
+- **A proof asserts its own preconditions before any case runs.** The
+  preconditions are whatever the conclusion silently rests on, and they
+  are always what nobody thinks to check. Six CHECK-constraint refusals
+  once reported a clean REFUSED with POSTGRES DOWN: no mutation was
+  involved, so the narrower rule below did not catch it, and every case
+  would have read REFUSED with or without a constraint existing.
+  Mutation proof: the patch landed, at the intended site, once.
+  Constraint proof: the database answers AND the constraint is present,
+  printed from `pg_constraint` first. Guard proof: the detection returns
+  a non-trivial input set. Gate proof: the input is real, not a
+  sentinel. Stated at the category level because the narrow form has
+  now been evaded twice by variants that were not mutations (G-72).
 - **Confirm a deliberate break LANDED before reading the result.** A
   mutation that never applied and an assertion that cannot fail produce
   the same green run, and they are opposite conclusions. Print the
@@ -232,6 +257,16 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   matches once and refuses when ambiguous, and use absolute paths in
   proof scripts, because a working directory is state and state that
   survives between commands is state that will eventually be wrong.
+- **A cast from `timestamptz` to `date` pins UTC explicitly, or it writes
+  the timezone bug into the data.** `installed_at::date` uses the SESSION
+  TimeZone, not UTC: the same row reads `2018-10-01` from a UTC session
+  and `2018-09-30` from Eastern or Pacific, proven three ways on seeded
+  values. A migration written with a bare cast and run from a non-UTC
+  session shifts every date back one day, and unlike the G-61 RENDER bug
+  this one is **not recoverable**, because the original timestamp is gone
+  once the column is converted. Always
+  `USING (col AT TIME ZONE 'UTC')::date`. The same caution applies to any
+  read that compares or groups a date-only fact.
 - **A recovery path is only real if it can be reached from the state it
   exists to recover from.** Backup codes were intact and unreachable,
   because the code opened the TOTP secret before falling back to them

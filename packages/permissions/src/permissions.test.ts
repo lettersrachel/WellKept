@@ -8,7 +8,8 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import {
   ROLES, SENSITIVITIES, readDecision, filterFields, filterFieldsForRole,
-  revealS3, assertClientPayloadSafe,
+  revealS3, assertClientPayloadSafe, assertDeclaredClientKeys,
+  CLIENT_PLAYBOOK_FIELD_KEYS, CLIENT_REGISTRY_ENTRY_KEYS,
   type FieldRecord, type Decision,
 } from "./index";
 
@@ -193,4 +194,55 @@ test("integration: the real 258-field seed filters correctly for every role", as
   assert.equal(hmView.filter((f) => f.vault).length, s3Count);
   assert.equal(corpView.length, seed.fields.length);
   assert.ok(corpView.every((f) => f.value !== null || f.sensitivity !== "s3" || f.value === ""));
+});
+
+/**
+ * G-78 (corrected): the shape assertion's own unit cases. The guard test
+ * that derives the registry key set from the schema lives in
+ * packages/schema (which is where the table is); these are the branch
+ * cases, kept here because this package holds the function and enforces
+ * its own coverage.
+ *
+ * permissions.verified.mjs is DELIBERATELY untouched, and so is its
+ * mirror suite. That artifact implements the WK-APP-003 Section 2
+ * visibility matrix, which is policy requiring founder sign-off; a
+ * payload SHAPE assertion decides nothing about who may read what, so
+ * the two-suites-assert-the-same-behaviors contract does not reach it.
+ * Said here rather than left as a silent omission.
+ */
+test("assertDeclaredClientKeys accepts a payload carrying only declared keys", () => {
+  const rows = [{ id: "f1", section: 2, name: "Trash day", value: "Tuesday", flag: null, sensitivity: "s1" }];
+  assert.equal(assertDeclaredClientKeys(rows, CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"), true);
+  // A projection may DROP a declared key; absence is the safe direction.
+  assert.equal(assertDeclaredClientKeys([{ id: "f1" }], CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"), true);
+  assert.equal(assertDeclaredClientKeys([], CLIENT_REGISTRY_ENTRY_KEYS, "registry entries"), true);
+});
+
+test("assertDeclaredClientKeys throws on an undeclared key, naming it and the remedy", () => {
+  assert.throws(
+    () => assertDeclaredClientKeys(
+      [{ id: "f1", sensitivity: "s1", installerPhoneNumber: "555-0100" }],
+      CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"),
+    /SEVERE: undeclared key "installerPhoneNumber" reached a client payload at playbook fields\[0\]/,
+  );
+});
+
+test("assertDeclaredClientKeys asserts its own preconditions before reading a row", () => {
+  // An empty declared list would accept an empty payload and read as a
+  // passing guard; that is the vacuous-coverage shape, refused.
+  assert.throws(() => assertDeclaredClientKeys([], [], "no list"), /declared key list is empty/);
+  assert.throws(
+    () => assertDeclaredClientKeys([], undefined as unknown as string[], "no list"),
+    /declared key list is empty/);
+  assert.throws(
+    () => assertDeclaredClientKeys({} as unknown as unknown[], CLIENT_PLAYBOOK_FIELD_KEYS, "bad payload"),
+    /must be an array of rows/);
+});
+
+test("assertDeclaredClientKeys refuses a row that is not an object rather than skipping it", () => {
+  for (const bad of [null, "a string", ["nested", "array"]]) {
+    assert.throws(
+      () => assertDeclaredClientKeys([bad], CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"),
+      /playbook fields\[0\]: payload row is not an object/);
+  }
 });

@@ -28,7 +28,10 @@ export default function PrivacyPage() {
         quality; practical data (important dates, vendors,
         appliances, subscriptions, and the condition of items we care for, observed over
         time, including conditions we flag to revisit and research we do toward household
-        decisions, paused with a plan to return to it) to anticipate needs; service time and costs (time spent
+        decisions, paused with a plan to return to it, and for equipment we care for the
+        serial number as printed, the install date with a note of how precisely we know it,
+        and photographs of a unit linked to that unit so a home with two of something has a
+        record that says which is which) to anticipate needs; service time and costs (time spent
         serving your household by activity, including the phases of a visit derived
         automatically from visit events, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);

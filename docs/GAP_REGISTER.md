@@ -2789,6 +2789,39 @@ assertion, not whether the mutation reached the code. A green run after
 an intended break is ambiguous between "the assertion is decorative"
 and "the break never happened", and those are opposite conclusions.
 
+**WIDENED 2026-08-27, after the same failure arrived in a second
+costume.** As first written this entry said: confirm the mutation
+landed before reading the result. That is the narrow form, and the
+narrow form is what the next variant walks straight past.
+
+While proving migration 0058's CHECK constraints, six refusal cases
+reported a clean REFUSED **while Postgres was down**. Nothing had been
+mutated and nothing needed to be: every case would have read REFUSED
+with or without a constraint existing, because the connection failed
+before the statement ran. The proof asserted the right answer for a
+reason that had nothing to do with the thing under test.
+
+No mutation was involved, so the narrow rule did not apply. The general
+one does:
+
+> **A proof asserts its own preconditions before any case runs.**
+
+The preconditions are whatever the proof's conclusion silently depends
+on, and they are always the things nobody thinks to check:
+
+- **Mutation proof:** the patch landed, at the intended site, once.
+- **Constraint proof:** the database is reachable AND the constraint
+  exists. Print the constraint names from `pg_constraint` first.
+- **Guard proof:** the guard file is the one being run, and its
+  detection returns a non-trivial input set (the floors doctrine).
+- **Gate proof:** the input is real, not a sentinel (the four-live-sha
+  rule below).
+
+Stated at this level because the narrow version has now been evaded
+twice by variants that were not mutations at all. A third costume is
+likelier than not; the rule has to be about the CATEGORY, which is a
+proof resting on an unstated assumption, rather than about patches.
+
 **The rule, adopted and added to CLAUDE.md's verification section:**
 
 - **Confirm the mutation landed before reading the result.** Print the
@@ -2807,6 +2840,39 @@ and "the break never happened", and those are opposite conclusions.
 nothing in the Part B record rests on the failed attempts. This entry
 exists because the failure mode is silent and would have produced a
 confident false claim, which is the class this register was created for.
+
+---
+
+**OBSERVATION, 2026-08-27, on where this rule fails to get applied.**
+Not a fifth variant. The variants above are about kinds of proof; this
+is about the moment the rule is not reached for at all.
+
+Sixty seconds after committing the widened rule, a `pnpm test` run
+exited 1 and was pushed anyway. It was diagnosed a minute later as
+Postgres having died, `ECONNREFUSED`, so the diff was fine and nothing
+was harmed. **The benign outcome was luck, not judgment**, and the two
+are indistinguishable at the moment of pushing: a failing suite means
+either "your change is broken" or "a precondition of the run was not
+met", and pushing before separating them is the same act either way.
+
+**The rule is hardest to apply to a run you are not thinking of as a
+proof.** A CHECK-constraint case is obviously a proof and gets the
+scrutiny. A test suite is infrastructure you run at the end, so its
+result gets read as a verdict rather than as a claim with preconditions
+of its own. `pnpm test` asserts nothing about whether the database it
+needs is up; it just fails, in the same shape as a real regression.
+
+Third instance this week of the input to a proof being the wrong thing,
+and the second to land on the person who had just written the rule
+about it. Proximity to the lesson does not prevent it, which is the same
+finding the withdrawn stray-project incident records. What that
+suggests is that the rule cannot live only as a rule: the runs whose
+preconditions matter most are the routine ones, and routine is exactly
+where a written rule stops being consulted. A mechanical check that
+refuses to report a suite result while the database is unreachable
+would cost little and is worth considering on its own merits; it is
+named here, not proposed, because this entry is a record and not a
+design.
 
 ---
 
@@ -3321,3 +3387,273 @@ and guards get proven in both directions before they are trusted.
 **Base-rate note (G-75):** this one also surfaced as a side effect,
 while reading the schema for an unrelated systems-import question.
 Nobody re-read the survey. Sixth of six.
+
+---
+
+### G-78. The client projection is default-open at the column level: every new column reaches the member unless someone remembers to filter it
+
+**CORRECTED THE SAME DAY IT WAS FILED, 27 August 2026. The measurement
+below is wrong and the fix it recommends is withdrawn.** The original
+text is left standing rather than rewritten clean, the way the withdrawn
+stray-project incident is kept: how the claim came to be written down is
+the part worth having. Read the correction at the end of this entry
+before acting on anything above it.
+
+Filed 2026-08-27, found while adding columns in migration 0058. Caught
+that time because the new columns were obviously internal. The next set
+may not be.
+
+**The mechanism.** `getRegistries` reads with a bare `db.select()`,
+which takes every column of `registry_entry`, then filters with
+`readDecision(role, r.sensitivity)`. That filter drops ROWS whose
+sensitivity the role may not read. It does nothing about columns. So
+adding a column to a table a client can read publishes it, and the
+publishing is the default rather than the decision.
+
+**Three mechanisms exist and none of them sees a new column.**
+
+| Mechanism | What it actually does | New column? |
+|---|---|---|
+| `readDecision(role, sensitivity)` | drops rows by row sensitivity | invisible |
+| `filterFields(role, fields)` | drops rows by row sensitivity (`continue`) | invisible |
+| `assertClientPayloadSafe` | rejects KNOWN staff-only signatures | invisible |
+
+The payload guard is the closest thing and it asks a different
+question: it knows the shapes that must never appear, so it catches a
+`recordedBy` or a `decidedBy`, and a column invented tomorrow matches
+nothing it knows.
+
+**The size, measured rather than estimated.** The client playbook reads
+through six functions. Three take every column
+(`getRegistries`, `getFields`, `getPendingEdits`) and three do not.
+**Two of the six already use explicit column lists**
+(`getStewardship`, `getClientDeferrals`), so the correct pattern is
+already in the codebase and the outliers are the exception rather than
+the rule.
+
+**Why this is the wrong direction for a household record.** Everything
+else here fails closed: a blank sensitivity fails closed in
+`readDecision`, the vault refuses without an audit row, the erasure
+tool refuses on an open incident. A projection that publishes by
+default is the one surface where forgetting has a permissive outcome.
+It is also the same shape as an access register that records who holds
+a key and has no revocation trigger: the additive act is easy and the
+subtractive one depends on somebody remembering.
+
+**Cheapest fix, reported and NOT built.**
+
+1. **Bring the three outliers into line with their two siblings**:
+   explicit column lists at the three client-reaching reads. This flips
+   the direction at the earliest possible point, because a new column
+   then requires an affirmative act to reach a member. Three functions,
+   no new machinery, no new concept, and the pattern is already here to
+   copy.
+2. **To make it STAY flipped, a guard**: no client-reaching read uses a
+   bare `.select()`. The "client-reaching" set is derivable, unusually
+   for this codebase, because the client route group is a directory:
+   walk `(client)`, collect what it imports from `data.ts`, assert each
+   uses an explicit column list or is excused in writing. That is the
+   census shape and it is cheap here precisely because the input is a
+   directory rather than a judgment.
+
+Step 1 alone is worth more than step 2 and should not wait for it. Step
+2 without step 1 protects nothing.
+
+**Not built, deliberately.** Step 1 touches three client-facing reads
+and would need the payload guard exercised against each; that is its
+own session with its own proofs, not a rider on a migration that is
+already doing four things.
+
+**Base rate (G-75), seventh of seven:** found as a side effect of adding
+columns, not by anybody auditing projections.
+
+#### Correction, 27 August 2026: the measurement, and the fix it recommended
+
+**What the entry claimed**, kept visible above in its own words: "The
+client playbook reads through six functions. Three take every column
+(`getRegistries`, `getFields`, `getPendingEdits`) and three do not. Two
+of the six already use explicit column lists (`getStewardship`,
+`getClientDeferrals`), so the correct pattern is already in the codebase
+and the outliers are the exception rather than the rule." And its step
+1: "Bring the three outliers into line with their two siblings: explicit
+column lists at the three client-reaching reads."
+
+**What is actually true, read from the tree rather than from the query
+layer alone.**
+
+| Read | Query | Does every column reach the member? |
+|---|---|---|
+| `getFields` | bare `select()` | **No.** The playbook projects at the call site to six named fields, then runs three live assertions over the projected array |
+| `getPendingEdits` | bare `select()` | **No.** The result is reduced to a `Set` of `fieldId` before anything renders |
+| `getRegistries` | bare `select()` | **Yes, it was.** Passed whole into `<RegistryCard entries={...}>`. Already closed by 0058, which nulls the six assessment and capture-pass columns when `role === "client"` |
+
+So the three was a count of BARE QUERIES. The thing at risk is payloads
+that reach a member, and there was exactly one, which the migration this
+entry was filed beside had already closed.
+
+**The "correct pattern already in the codebase" half does not survive
+either.** `getStewardship` and `getClientDeferrals` have one caller
+each, the client playbook. `getFields` has six callers, `getRegistries`
+five, `getPendingEdits` two. Those two are not a pattern the others fail
+to follow; they are single-purpose client reads, which is exactly why an
+explicit column list fits them and says nothing about a read five staff
+surfaces share. There was no outlier to conform.
+
+**The founder's ruling, which replaces the recommended fix.** The
+invariant is **projection at the boundary, not explicit column lists at
+the query.** `getFields` and `getRegistries` are both already correct
+under it, and shared reads are not to be narrowed. Narrowing a read that
+six surfaces use, five of them staff, to fit the one client surface,
+moves the constraint away from where the risk lives and buries a client
+rule inside a staff query.
+
+**The corrected finding, which is narrower and harder than the one
+filed.** One default-open read existed and is closed. What remains is
+that **nothing enforces projection before a shared read crosses to a
+member.** The projection on the playbook is a thing a person wrote and
+the next person can forget, and `assertClientPayloadSafe` cannot cover
+for that, because it is a known-bad-signature check: it knows the shapes
+that must never appear, so a column invented tomorrow passes it
+unnoticed. The guard shape is proposed separately and is deliberately
+not built here.
+
+#### The unit error, recorded rather than absorbed
+
+**I counted queries and reported exposure.** Different units, and the
+conversion between them is the call site, which is precisely where the
+answer was. **Filed one day after G-77**, which is an entry about this
+exact mechanism, written by the same session, and the rule it added to
+CLAUDE.md ("state the unit, and check that the unit you counted is the
+unit at risk") did not fire on the next survey I wrote. So the honest
+reading is that writing a rule down is weaker evidence of having learned
+it than it feels at the moment of writing.
+
+**Second instance in two days**, and the two point in OPPOSITE
+directions, which is worth stating precisely because it was put to me as
+though they matched:
+
+| Entry | Counted | Reported | Direction |
+|---|---|---|---|
+| G-77 | render sites | columns at risk | UNDERCOUNT. Made the system look safer than it was, inside a document whose job was completeness |
+| G-78 | bare queries | payloads reaching a member | OVERCOUNT. Three claimed, one real |
+
+**Reported and not reconciled**, per the standing doctrine: the founder's
+instruction for this correction characterized both instances as
+inflating the problem. G-77 as written says the opposite of that in its
+own heading ("wrong in the reassuring direction") and in its body ("made
+the system look safer than it was"). Both are recorded here as they
+stand rather than one being edited to agree with the other.
+
+The generalization that does hold across both is not the direction, it
+is that **a hidden unit conversion inside a number carries no marker at
+all.** Undercounting closes a question that should stay open;
+overcounting sends work at a problem that is not there. Neither reads as
+uncertain on the page, and that is the shared failure.
+
+**And this one propagated rather than sitting inert.** The recommended
+fix was endorsed downstream on the strength of the unmeasured claim, and
+came back as an instruction to bring three client-reaching reads into
+line. Had the diff been produced on the order rather than the
+measurement being checked first, two shared staff reads would have been
+narrowed to satisfy a count. A wrong number in a register entry is not a
+private error: this register is read as premise.
+
+**Base rate (G-75), eighth of eight:** the correction itself surfaced as
+a side effect of being ordered to implement the fix, not from anybody
+re-reading the entry. Same shape as G-77's own base-rate note, one day
+later.
+
+#### Precision on the correction, same day, before it was acted on
+
+Two claims in the correction above did not survive the read that the
+guard proposal required. Left standing and corrected here, same
+discipline as the correction itself.
+
+**1. The wrong function was named.** The correction says
+`assertClientPayloadSafe` is "a known-bad-signature check". It is not.
+Read at `packages/permissions/src/index.ts:143`, it asserts that every
+row in the payload carries a KNOWN sensitivity and that the sensitivity
+is `s1`. It inspects one key per row and nothing else. The
+known-bad-signature checks are its two neighbours,
+`assertNoProvisionRows` and `assertNoAnticipationRows`, which recognize
+provision ids and anticipation column pairs however deeply nested. The
+conclusion is unchanged and is if anything firmer: **none of the three
+sees a new column**, the first because it reads only `sensitivity`, the
+other two because a column invented tomorrow matches no signature they
+know.
+
+**2. "Yes, it was" overstated the registry exposure.** The correction's
+table says every column of `registry_entry` reached the member through
+`getRegistries`. What is actually true: the rows are passed whole into
+`<RegistryCard entries={...}>`, and **RegistryCard is a server
+component** (no `"use client"`, imports one type, renders no nested
+component) inside a server-component page. It renders none of the eight
+columns 0058 added. So those columns were composed into a payload object
+that never left the machine. The accurate statement is that
+`getRegistries` was default-open **at the payload**, and the last mile
+that turns a payload into exposure, a render or a `"use client"` prop
+crossing, did not exist for those columns.
+
+**This does not change 0058 and does not reopen the ruling.** Nulling
+the six working-note columns for `role === "client"` is still right and
+is still what was ruled on. What changes is the justification: it is
+defense in depth at the boundary, not the closing of a live leak. Saying
+so matters because "a live leak was closed" and "a latent one was made
+structural" carry different urgency for everything queued behind them.
+
+**Third instance in three days, same shape.** G-77 counted render sites
+and reported columns. G-78 counted bare queries and reported payloads
+reaching a member. This one counted payload composition and reported
+exposure, when the unit at risk is what a member can actually receive,
+which on a server-rendered page is the HTML and nothing else. Each time
+the reported unit sat one conversion away from the unit that mattered,
+and each time the conversion was invisible on the page. **The one
+difference worth keeping:** this one was caught by checking a premise
+before writing the next thing on top of it, rather than by being ordered
+to implement it. That is the cheapest place any of the three was ever
+going to be caught, and it is the only one of the three that cost
+nothing downstream.
+
+#### FIXED, 27 August 2026: the shape assertion ships as the seventeenth guard
+
+`assertDeclaredClientKeys` (packages/permissions) plus
+`client-payload-shape.test.ts` (packages/schema). A member-reaching
+payload may carry only the keys declared for it; anything else throws.
+The declared registry list is asserted against `registry_entry`'s own
+columns with a written-exclusion hatch, empty today, so a migration that
+adds a column fails CI until somebody decides whether a member may see
+it. Both blessed projections pass unchanged: the allow-list literal and
+the spread-with-deny-list.
+
+**Proven in four directions, preconditions first** (the assertion is
+exported, the column derivation clears a floor of 20, and no database is
+involved, said plainly so a green run here is not read as evidence about
+one):
+
+1. A simulated migration 0059 column added to `tables.ts` turned the
+   census red AND made the runtime assertion fire through the
+   schema-derived payload, which is the real input rather than a fixture.
+2. The assertion call deleted from the page turned the wiring test red.
+3. **The live data path, which is the strongest of the four:** with the
+   undeclared key added to `getRegistries`, the running dev server threw
+   `undeclared key "installerPhoneNumber" reached a client payload at
+   registry entries[0]` and the client playbook refused to render rather
+   than publishing it. Restored, and the journey passes again.
+4. Green on the unmutated tree throughout, and the full suite plus 26
+   e2e journeys.
+
+**One asymmetry worth recording, because it bounds the guard's value.**
+The guard bites on the SPREAD projection and is redundant on the
+allow-list literal, which cannot grow a key on its own whatever the
+declared list says. So the protection is concentrated entirely on the
+deny-list shape, which is also the shape that produced the finding. It
+is wired on both so neither payload depends on a reader knowing which
+syntax is at which call site.
+
+**The residue is recorded at the guard**, in the function's own comment,
+the test header, and the CLAUDE.md table's not-covered column, rather
+than here where it would be read separately from the thing it qualifies.
+The short form: this checks which keys may be PRESENT, never what a
+permitted key CONTAINS. A staff-only fact typed into a correctly
+client-visible column reaches the member and nothing in this system
+catches it.
