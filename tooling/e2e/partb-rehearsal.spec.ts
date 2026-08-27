@@ -26,10 +26,19 @@ let token = "";
 let skipReason = "";
 
 test.beforeAll(async () => {
-  // The Smoke Test Fixture is seeded by ensure-smoke-fixture.mjs, which CI
-  // does not run (ci.yml seeds db:seed only). So this rehearsal SKIPS in
-  // CI with its reason printed, rather than failing there or, worse,
-  // passing vacuously. Seed the fixture and it runs.
+  // The Smoke Test Fixture is seeded by ensure-smoke-fixture.mjs.
+  //
+  // CORRECTED 2026-08-27: this comment read "which CI does not run
+  // (ci.yml seeds db:seed only)", and that has been FALSE since the
+  // airplane job gained the step "Seed the Smoke Test Fixture (the Part B
+  // rehearsal's household)". CI runs the script and this rehearsal RUNS
+  // there; verified in the airplane job's own log, where it is case 26 of
+  // 26 and passes rather than skipping.
+  //
+  // The skip below is still correct and still needed, for any database
+  // where the fixture was not seeded. It prints its reason rather than
+  // failing or, worse, passing vacuously, since a skipped rehearsal and a
+  // passing one look identical on a summary line.
   const { rows } = await pool.query(
     // G-71: the fixture is resolved by identity, from the same constant
     // ensure-smoke-fixture.mjs creates it with. This file and that script
