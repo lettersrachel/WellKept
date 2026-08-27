@@ -2843,6 +2843,39 @@ confident false claim, which is the class this register was created for.
 
 ---
 
+**OBSERVATION, 2026-08-27, on where this rule fails to get applied.**
+Not a fifth variant. The variants above are about kinds of proof; this
+is about the moment the rule is not reached for at all.
+
+Sixty seconds after committing the widened rule, a `pnpm test` run
+exited 1 and was pushed anyway. It was diagnosed a minute later as
+Postgres having died, `ECONNREFUSED`, so the diff was fine and nothing
+was harmed. **The benign outcome was luck, not judgment**, and the two
+are indistinguishable at the moment of pushing: a failing suite means
+either "your change is broken" or "a precondition of the run was not
+met", and pushing before separating them is the same act either way.
+
+**The rule is hardest to apply to a run you are not thinking of as a
+proof.** A CHECK-constraint case is obviously a proof and gets the
+scrutiny. A test suite is infrastructure you run at the end, so its
+result gets read as a verdict rather than as a claim with preconditions
+of its own. `pnpm test` asserts nothing about whether the database it
+needs is up; it just fails, in the same shape as a real regression.
+
+Third instance this week of the input to a proof being the wrong thing,
+and the second to land on the person who had just written the rule
+about it. Proximity to the lesson does not prevent it, which is the same
+finding the withdrawn stray-project incident records. What that
+suggests is that the rule cannot live only as a rule: the runs whose
+preconditions matter most are the routine ones, and routine is exactly
+where a written rule stops being consulted. A mechanical check that
+refuses to report a suite result while the database is unreachable
+would cost little and is worth considering on its own merits; it is
+named here, not proposed, because this entry is a record and not a
+design.
+
+---
+
 ### G-73. `main` has no branch protection, so CI green has never been a platform gate; a standing document says it is
 
 Filed 2026-08-26, from the investigation into why PR #195 produced no
