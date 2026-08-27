@@ -691,6 +691,39 @@ would be "the client surface is verified", and only the first was
 tested. A later reader who compresses those two into one will assume
 more than happened.
 
+**THE FOURTEENTH RUN'S OWED CHECKS ARE ALL CLOSED, 27 August 2026.**
+
+**Client report email: PASS, the first production run of the projection
+and escaping path.** Subject `This week's visit at Smoke Test Fixture`;
+three sentences present, in order, as typed; photo count rendered;
+separators middots; no em dash; **no HTML entities visible**, which is
+the escaping working rather than over-firing (the subject is plain text
+and deliberately unescaped, so an entity there would have been the
+regression). Describes `7bcbb16`.
+
+**Visit close: PASS.** One applied visit, last applied 2026-08-27, zero
+conflicts, two photos in the record, queue drained with zero commands
+remaining. The second factor was cleared first, so G-88 did not bite.
+
+**Sign-in email recipient line: PASS**, G-70's first render in
+production. **Recorded against `747a98c..577666d`, not this run**, per
+the ledger's own rule: the debt was created by G-70's two sign-in files
+in that range, and this result describes `7bcbb16` because that is what
+production serves.
+
+**A correction that is the founder's own, recorded because of WHEN it
+happened.** The Gmail LIST PREVIEW was first read as the subject line,
+and the household name reported missing; the preview shows the body's
+opening heading, not the subject. Corrected on opening the message.
+That is the same narrow-fact-versus-wider-claim class the register
+catalogued all day (G-84, G-88): a true reading of one thing taken as a
+reading of another. **It was made on the last check of the sitting, by
+the person who had filed four entries about the pattern that day**,
+which is the part worth keeping. Fatigue at the end of a long
+verification is exactly when the compressed reading wins, and no rule
+written earlier in the day prevented it. The remedy that worked was the
+cheap one: open the actual artifact rather than its summary.
+
 **Baseline reading, same sitting: the board's exception queue is EMPTY**,
 which is the correct pre-visit state. No send has been suppressed
 because no visit has been closed. Recorded as the baseline the

@@ -4368,6 +4368,26 @@ what this entry adds is the mechanism, the producer, and the reason the
 calibration is not merely delayed but would be actively wrong if run
 against today's rows.
 
+**CONFIRMED WITH A USER-FACING CONSEQUENCE, 27 August 2026, on the live
+`/visit` surface.** Four identical meds-day prompts rendered, **each with
+its own Acted and Dismiss controls**. One was answered; three remained.
+After the visit closed, all four scheduled rows persisted on the
+corporate record.
+
+So the HOM's position is a choice between two wrong things: **answer the
+same instruction four times**, which makes the outcome record claim four
+separate acts of noticing that never happened, or **answer once and leave
+three looking outstanding**, which makes the panel and the corporate
+record both read as ignored work. There is no third option on the screen,
+and neither branch is the HOM's fault.
+
+This also lands on the anticipation metrics rather than only on the
+display. `prompt_outcome` rows are per item, so the first branch inflates
+the answered count and the second inflates the ignored count, and W-2
+already established that an ignored prompt is itself the signal. The
+duplication therefore corrupts the same numbers the calibration below
+depends on, from the other end.
+
 **And "due today" is a BUCKET, not a date, which is why they look
 identical.** `visit/page.tsx:127-129` computes
 `endOfToday = new Date()` with `setHours(23,59,59,999)` and splits pack
@@ -4581,3 +4601,71 @@ G-65's resolution rule is unchanged and still the founder's.
 **Base rate (G-75), seventeenth of seventeen:** found while writing
 instructions for a check, not by running one. Third time this week that
 explaining a mechanism exposed what it did not do.
+
+---
+
+### G-89. "Delivery hours record themselves" describes bookkeeping, and is read as measurement
+
+Filed 2026-08-27 from the fourteenth-run sitting, where the founder
+noticed that the fixture's 4.0h had been typed rather than computed.
+
+**The question was whether self-recording exists and is being overridden,
+or whether the copy describes something unbuilt. Neither, exactly, and
+the third answer is the useful one.**
+
+**Self-recording exists and is not overridden.** `visit-command-store.ts:207-218`
+inserts a `time_entry` on every applied `visit.submit`, in the visit's own
+transaction, `category: "delivery"`, `source: "visit_close"`, carrying
+`visitCommandId` and computing `minutes` from the interval. It is
+idempotent with the command, so it survives offline sync. That half works
+and ran correctly in production today.
+
+**What records itself is the ENTRY, not the HOURS.**
+`VisitWizard.tsx:398-399` is two `datetime-local` inputs, both
+initialised to `""`. There is no arrival tap, no departure tap, no clock,
+no geofence. The HOM types both timestamps, and `minutes` is arithmetic
+over what they typed: `Math.round((+end - +start) / 60_000)`.
+
+So the sentence is TRUE about filing and FALSE about measuring, and a
+reader hears the second. "Your visit's delivery hours record themselves
+when you close" means "you do not file a separate timesheet". It is heard
+as "the system knows when you arrived and left". The founder's 4.0h was
+typed exactly as designed, and the copy is what made that surprising.
+
+**Same class as 0058's header, and a distinct sub-case.** 0058 described
+a capture form in the FUTURE tense and was read as present. This is
+PRESENT-tense copy for a feature that genuinely exists and means less
+than it sounds like. The first is a tense problem; this is a scope
+problem, and the second is harder to catch because nothing in the
+sentence is wrong.
+
+**Two riders found in the same read, both sharper than the copy itself.**
+
+1. **The reassurance describes a mechanism that does not exist.** The
+   Hours card carries "Suggestion only; nothing bills from a geofence
+   alone." There is no geofence anywhere in the codebase. A note
+   reassuring the reader about a constraint on location capture actively
+   implies location capture is happening. That is worse than the headline
+   copy: it answers a question nobody could have had unless they believed
+   the feature was there.
+2. **The codebase and the register both call these values "taps".**
+   `visit-command-store.ts:220` says "the applied visit's hours ARE the
+   arrival and departure taps"; WORK_QUEUE's 0054 entry says "an applied
+   visit's taps become its active segment". A tap is a gesture at a
+   moment. These are two typed datetimes. The word has been carrying an
+   implication through the code, the comments and the record for a month,
+   and `time_segment`'s whole no-manual-timing posture rests on the
+   derivation being from taps. **The derivation is honest; the noun is
+   not.** Worth stating because 0054's guarantee reads stronger than it
+   is: manual per-segment timing is unrepresentable, but the visit
+   interval every segment derives FROM is manual.
+
+**Nothing changed.** The copy is the founder's, the geofence note is a
+founder call, and whether hours should be tapped rather than typed is a
+product decision with a device dependency behind it. What is recorded is
+that all three sentences are currently truer of an intended system than
+of this one.
+
+**Base rate (G-75), eighteenth of eighteen:** found because a founder
+compared a number on a screen against how it got there. No check compares
+copy to behaviour, and none could.
