@@ -149,7 +149,14 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   stated from the case numbering. **If a count must appear in prose
   because nothing can compute it, say so at the point of writing** ("as
   of <date>, counted by hand"), so the next reader knows it is a claim
-  rather than a fact.
+  rather than a fact. **And state the UNIT: check that the unit you
+  counted is the unit at risk.** The 25 August G-61 survey enumerated
+  render SITES and reported a count of COLUMNS, which can only
+  undercount, because one site carries many columns and none carries
+  fewer than one. It made the system look safer than it was, inside a
+  document whose job was to establish that nothing had been missed
+  (G-77). "Ten renders, therefore two members" is a claim with a hidden
+  conversion in it, and the conversion is where the error lives.
 - Plain prose, no AI jargon. WRI-style plain language in client-facing copy.
 - Money in integer cents. Store UTC.
 - Section numbers in the standards library are a public API. Do not renumber,
