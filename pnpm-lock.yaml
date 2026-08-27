@@ -336,6 +336,16 @@ importers:
       pg:
         specifier: 8.22.0
         version: 8.22.0
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      '@types/pg':
+        specifier: 8.20.0
+        version: 8.20.0
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
 
   tooling/export:
     dependencies:

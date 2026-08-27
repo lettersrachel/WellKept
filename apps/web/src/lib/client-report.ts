@@ -26,29 +26,40 @@ export const CLIENT_REPORT_KEYS = ["report", "photoCount"] as const;
 export type ClientReportProjection = { report: string[]; photoCount: number };
 
 /**
+ * Pure result. The projector decides and logs; the CALLER does the I/O,
+ * so the decision stays synchronous and testable without a database and
+ * the refusal reason is available to whoever must record it.
+ */
+export type ClientReportDecision =
+  | { ok: true; projection: ClientReportProjection }
+  | { ok: false; why: string };
+
+/**
  * Refuse-and-log, deliberately not throwing. Returns null when the payload
  * cannot be sent safely.
  *
- * The log line is the ONLY place a suppressed send currently surfaces,
- * which is a known gap rather than a design: no operator surface shows
- * it. The candidate is the corporate board's exception queue at
- * /oversight/board, which already renders open `attention_record` rows
- * with household, age and seen/unseen, and the notification firewall
- * already carries a `corporate_queue` destination for exactly this class.
- * Writing one from here is a founder ruling, not an engineering default
- * (the capture-router posture), so it is named and not built.
+ * The log alone was G-81: a refusal nobody could see, on a member-facing
+ * thing that did not happen, which a member cannot distinguish from a
+ * quiet week. FOUNDER RULING, 27 August 2026: wire it, narrowly. The
+ * caller raises an `attention_record` for the corporate queue.
+ *
+ * NARROW MEANS NARROW. One trigger condition: a client-facing send THIS
+ * SYSTEM REFUSED TO MAKE. Not delivery failures, not bounces, not vendor
+ * errors, and no adjacent event class merely because it fits the same
+ * plumbing. A broader capture-router ruling does not exist yet, and this
+ * does not stand in for one.
  */
 export function projectClientReport(
   householdId: string,
   payload: { report?: string[]; photoIds?: string[] },
-): ClientReportProjection | null {
-  const refuse = (why: string) => {
+): ClientReportDecision {
+  const refuse = (why: string): ClientReportDecision => {
     console.error(
       `[visit-report] SEND SUPPRESSED for household ${householdId}: ${why}. ` +
       "The visit stands and the record is unaffected; no client email was sent. " +
-      "Nothing surfaces this to an operator today (G-81).",
+      "The caller routes this to the corporate queue (G-81).",
     );
-    return null;
+    return { ok: false, why };
   };
 
   const report = payload.report;
@@ -69,5 +80,5 @@ export function projectClientReport(
   } catch (err) {
     return refuse(err instanceof Error ? err.message : String(err));
   }
-  return projection;
+  return { ok: true, projection };
 }

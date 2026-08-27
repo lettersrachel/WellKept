@@ -37,16 +37,17 @@ test("preconditions: the projector, the assertion, and a non-empty declared list
 
 test("GREEN: a well-formed close projects to exactly the declared keys", () => {
   const out = projectClientReport(HH, { report: THREE, photoIds: ["a", "b"] });
-  expect(out).not.toBeNull();
-  expect(Object.keys(out!).sort()).toEqual([...CLIENT_REPORT_KEYS].sort());
-  expect(out!.report).toEqual(THREE);
-  expect(out!.photoCount).toBe(2);
+  expect(out.ok).toBe(true);
+  if (!out.ok) throw new Error("unreachable");
+  expect(Object.keys(out.projection).sort()).toEqual([...CLIENT_REPORT_KEYS].sort());
+  expect(out.projection.report).toEqual(THREE);
+  expect(out.projection.photoCount).toBe(2);
   expect(errors).toEqual([]);
 });
 
 test("GREEN: a missing photoIds is an honest zero, not a refusal", () => {
   const out = projectClientReport(HH, { report: THREE });
-  expect(out?.photoCount).toBe(0);
+  expect(out.ok && out.projection.photoCount).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -59,16 +60,17 @@ test("the projection carries ONLY the declared keys, so payload columns cannot r
     ...({ timeEntries: [{ minutes: 90 }], costs: [{ cents: 4200 }], submittedBy: "u1",
           lifeChangeSignal: true, gestures: ["x"] } as object),
   });
-  expect(Object.keys(out!)).not.toContain("timeEntries");
-  expect(Object.keys(out!)).not.toContain("submittedBy");
-  expect(Object.keys(out!)).not.toContain("lifeChangeSignal");
-  expect(() => assertDeclaredClientKeys([out], CLIENT_REPORT_KEYS, "client visit report")).not.toThrow();
+  if (!out.ok) throw new Error("unreachable");
+  expect(Object.keys(out.projection)).not.toContain("timeEntries");
+  expect(Object.keys(out.projection)).not.toContain("submittedBy");
+  expect(Object.keys(out.projection)).not.toContain("lifeChangeSignal");
+  expect(() => assertDeclaredClientKeys([out.projection], CLIENT_REPORT_KEYS, "client visit report")).not.toThrow();
 });
 
 test("RED: the wrong number of sentences refuses the send and says so loudly", () => {
   for (const bad of [[], ["one"], ["one", "two"], [...THREE, "four"]]) {
     errors = [];
-    expect(projectClientReport(HH, { report: bad })).toBeNull();
+    expect(projectClientReport(HH, { report: bad }).ok).toBe(false);
     expect(errors.join(" ")).toContain("SEND SUPPRESSED");
     expect(errors.join(" ")).toContain(`carries ${bad.length} sentences`);
     expect(errors.join(" ")).toContain("the close-flow contract is exactly 3");
@@ -78,7 +80,7 @@ test("RED: the wrong number of sentences refuses the send and says so loudly", (
 test("RED: a blank or non-string sentence refuses", () => {
   for (const bad of [["a", "   ", "c"], ["a", "", "c"], ["a", null, "c"], ["a", 7, "c"]]) {
     errors = [];
-    expect(projectClientReport(HH, { report: bad as string[] })).toBeNull();
+    expect(projectClientReport(HH, { report: bad as string[] }).ok).toBe(false);
     expect(errors.join(" ")).toContain("empty or not a string");
   }
 });
@@ -86,7 +88,7 @@ test("RED: a blank or non-string sentence refuses", () => {
 test("RED: a missing or non-array report refuses rather than sending an empty email", () => {
   for (const bad of [undefined, null, "three sentences", { 0: "a" }]) {
     errors = [];
-    expect(projectClientReport(HH, { report: bad as unknown as string[] })).toBeNull();
+    expect(projectClientReport(HH, { report: bad as unknown as string[] }).ok).toBe(false);
     expect(errors.join(" ")).toContain("report is not an array");
   }
 });
@@ -106,10 +108,40 @@ test("the route sends from the PROJECTION and never from the raw payload", async
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
   const route = readFileSync(path.join(here, "../app/api/visit-commands/route.ts"), "utf8");
-  expect(route).toContain("const projected = projectClientReport(householdId, payload);");
-  expect(route).toContain("if (!projected) return;");
+  expect(route).toContain("const decision = projectClientReport(householdId, payload);");
+  expect(route).toContain("const projected = decision.projection;");
   expect(route).toContain("projected.report.map(");
   expect(route).toContain("${projected.photoCount} photo(s) attached");
   // The raw payload must not reach the client composer any more.
   expect(route).not.toContain("(payload.report ?? []).map((s) => `<p style=\"font-family:Georgia,serif;font-size:16px");
+});
+
+test("G-81: a refusal carries the reason out, so the caller can record it", () => {
+  const out = projectClientReport(HH, { report: ["one"] });
+  expect(out.ok).toBe(false);
+  if (out.ok) throw new Error("unreachable");
+  expect(out.why).toContain("carries 1 sentences");
+});
+
+test("G-81: the route routes a refusal to the corporate queue and still returns", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const route = readFileSync(path.join(here, "../app/api/visit-commands/route.ts"), "utf8");
+  expect(route).toContain("await raiseSuppressedSendNotice(householdId, decision.why);");
+
+  // The notice raiser stays NARROW, asserted rather than trusted to the
+  // comment: one audience, and the destination comes from the firewall
+  // policy rather than a literal, so corporate_queue is never hardcoded
+  // at a call site.
+  const notice = readFileSync(path.join(here, "client-report-notice.ts"), "utf8");
+  expect(notice).toContain('destinationFor({ audience: "corporate" })');
+  expect(notice).not.toContain('destination: "corporate_queue"');
+  expect(notice).toContain('sourceKind: "system"');
+  // The reason is structural and never carries a member sentence.
+  expect(notice).toContain("Client visit report not sent: ${why}");
+  expect(notice).not.toContain("report.join");
+  // Best-effort: a failure to record must not throw out of the handler.
+  expect(notice).toMatch(/catch \(err\)[\s\S]*console\.error/);
 });

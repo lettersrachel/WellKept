@@ -3769,14 +3769,37 @@ entirely local, in running per-package filters instead of the root task.
 `pnpm --filter <pkg> typecheck`.** A filter encodes a guess about which
 packages a change touched, and that guess is exactly what was wrong.
 
-**One real gap found while confirming it, reported not fixed.** Three
-workspace packages carry NO `typecheck` script at all, so nothing
-typechecks them anywhere: `@wellkept/e2e`, `@wellkept/export`, and
-`@wellkept/security-tooling`. `@wellkept/e2e` is the Playwright journeys,
-which are TypeScript, so a type error in a journey spec is invisible
-until the journey runs. Whether they should have one is a decision (the
-e2e package in particular may be deliberate, since its specs run under
-Playwright's own transpile), so it is named here rather than added.
+**One real gap found while confirming it. RESOLVED 27 August, founder
+ruling.** Three workspace packages carried NO `typecheck` script, so
+nothing typechecked them anywhere: `@wellkept/e2e`, `@wellkept/export`,
+and `@wellkept/security-tooling`.
+
+`@wellkept/e2e` now has one, and the root fan-out is twelve rather than
+eleven. **This is the same shape as vitest not typechecking, one layer
+out:** the journeys are TypeScript and ran under Playwright's own
+transpile, so a type error in a spec was invisible until that spec ran,
+and the journeys could rot silently between runs.
+
+**What its first run found, reported exactly:** 16 errors across 5 files
+(`airplane`, `floor-bypass`, `journeys`, `partb-rehearsal`,
+`playwright.config`), and **every one was a missing type declaration
+rather than a defect in the spec logic**: `process`, `Buffer` and
+`node:crypto` unresolved, and `pg` implicitly `any`. Fixed by adding
+`@types/node`, `@types/pg` and `typescript` as devDependencies at the
+versions the rest of the workspace already pins, plus a `tsconfig.json`
+extending the base. No new library enters the project and no spec was
+edited. Zero errors after.
+
+`@wellkept/export` and `@wellkept/security-tooling` are **NOT given
+one**, and the reason is that a `tsc --noEmit` there would check
+nothing. Each is a single plain-JavaScript `.mjs` file
+(`wk_playbook_export.mjs`, `authz-probe.mjs`), run by hand through its
+own `pnpm` script, imported by nothing anywhere in the tree (verified by
+search). A typecheck script over them would pass vacuously, which is the
+guard-that-checks-nothing shape the census floors exist to prevent.
+Type-checking them at all would mean `allowJs` plus `checkJs`, a
+different and larger decision about whether the operator scripts should
+be TypeScript, and it is not made here.
 
 Fixed at `f5ab83d`; both jobs green; merged as `324b2931` through the
 verify-then-merge script, which bound the sha it verified to the sha it
@@ -3821,14 +3844,48 @@ mail path would put a suppressed send in front of the one person who
 should see it, using machinery that already exists and needs no
 migration.
 
-It is not built because **which events justify corporate attention is a
-founder rule set, not an engineering default** (the capture-router
-posture, the firewall's own v1 policy, and the reason nothing routes to
-`immediate_interrupt` today). Naming the surface and leaving the ruling
-open is the same discipline those took.
+**RULED AND WIRED, 27 August 2026, narrowly.** A client-facing send that
+the system itself refused now raises an `attention_record` with
+`audience: corporate`, routed by `destinationFor` (never a literal) to
+`corporate_queue`, where the board's exception queue already renders it
+with household, age and seen/unseen. No migration: `source_kind`
+`system` with a null `source_id` is already in the CHECK's vocabulary,
+and nulls never collide in the `(source_kind, source_id)` unique index,
+so each suppressed send is its own row, which is right because each one
+is a separate thing a member did not receive. The reason is STRUCTURAL
+and never carries a report sentence: the sentences are the member's own
+content, and a message names what happened, never a value (G-68's rule).
+Recording is best-effort like the send it reports on, since
+`applyVisitCommand` has already committed.
 
-**Until it is ruled on, the honest statement is:** the send is refused
-correctly, the visit is unaffected correctly, and no person is told.
+**This is a SCOPED EXCEPTION to the standing posture, not a precedent
+for routing decisions being made in engineering.** The posture is
+unchanged and still governs: it is why the capture router does no
+keyword or severity routing, why nothing reaches `immediate_interrupt`,
+and why the firewall shipped a deliberately conservative v1. The
+exception was granted for one stated reason, and the reason does not
+generalize: **the failure is invisible by construction.** A member who
+receives nothing cannot distinguish a suppressed send from a quiet week,
+and neither can anyone else, so no rule set can ever be written about an
+event nobody can observe. Where a founder rule set CAN be written later,
+the posture applies unchanged.
+
+**The boundary, written where it can be enforced rather than remembered
+(the module's own header, and asserted in tests):** one trigger, a send
+this system decided not to make. NOT delivery failures, NOT bounces, NOT
+vendor or provider errors, which are things that happened TO a send we
+chose to make and already surface as thrown errors at the mail seam. No
+adjacent event class joins because it fits the same plumbing. When a
+broader capture-router ruling exists, this folds into it; it does not
+stand in for one.
+
+**Proven both directions.** Green against a real database, with the
+liveness precondition asserted first: the row lands open, audience
+corporate, destination corporate_queue, source id null, reason
+structural, and its `attention_record.opened` event carries ids only.
+Red twice: routing to the HOM brief instead failed both the integration
+assertion and the narrowness assertion, and making the recorder throw
+instead of logging failed the best-effort case with a real FK refusal.
 
 **Base rate (G-75), tenth of ten:** surfaced by building the assertion,
 not by anybody asking what happens when a guard refuses.

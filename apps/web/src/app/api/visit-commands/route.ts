@@ -6,6 +6,7 @@ import { getPrincipal } from "@/lib/session";
 import { applyVisitCommand, type ApplyInput } from "@/lib/visit-command-store";
 import { sendMail, escapeHtml } from "@/lib/mail";
 import { projectClientReport } from "@/lib/client-report";
+import { raiseSuppressedSendNotice } from "@/lib/client-report-notice";
 
 /**
  * REQ-061: on an applied visit.submit, the client receives the report —
@@ -14,8 +15,16 @@ import { projectClientReport } from "@/lib/client-report";
  * the record); it logs and moves on.
  */
 async function deliverClientReport(householdId: string, payload: { report?: string[]; photoIds?: string[] }) {
-  const projected = projectClientReport(householdId, payload);
-  if (!projected) return;
+  const decision = projectClientReport(householdId, payload);
+  if (!decision.ok) {
+    // G-81 (founder ruling, 27 Aug 2026): a send THIS SYSTEM REFUSED goes
+    // to the corporate queue, because a member receiving nothing cannot
+    // tell a suppressed send from a quiet week and neither can anyone
+    // else. Best-effort like the send itself: the visit stands either way.
+    await raiseSuppressedSendNotice(householdId, decision.why);
+    return;
+  }
+  const projected = decision.projection;
   const [hh] = await db.select().from(household).where(eq(household.id, householdId));
   const clients = await db
     .select({ email: authUser.email, name: authUser.name })
