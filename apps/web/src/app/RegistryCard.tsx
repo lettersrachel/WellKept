@@ -48,8 +48,18 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
 }) {
   if (entries.length === 0) return null;
   const kinds = [...new Set(entries.map((e) => e.kind))];
+  // G-61: key_date, installed_at and last_serviced_at are DATE-ONLY FACTS
+  // held in timestamp columns. A date-only value stored at UTC midnight
+  // cannot survive display in a west-of-UTC zone, so an Eastern pin here
+  // printed every one of them a day early. Not latent and not waiting on
+  // a capture form: the seed already writes installed_at and
+  // last_serviced_at at 00:00 (key_date alone gets noon, which is why the
+  // 25 August survey saw nothing), so 2018-10-01 rendered as Sep 30, 2018
+  // on the corporate drill-in. UTC shows the stored date as written, the
+  // same fix the consent card and the two incident renders took on
+  // 2026-08-24. The column-type fix stays queued for the Temporal Layer.
   const fmt = (d: Date) =>
-    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
   return (
     <div className="card">
       <h2>Registries</h2>
