@@ -135,6 +135,21 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   and every string, staff-facing and client-facing alike. The rule exists to
   keep copy sounding human, so read for voice, not only for punctuation.
   `client-copy.test.ts` enforces a subset; the rest is on you.
+- **No count is written where it can be computed.** Three confirmations,
+  all the same shape: W-10 closed claiming six copy sources when the list
+  held fifteen; the copy guard's own scope comment described a reach it
+  had outgrown; and `deploy.sh`'s selftest tally read "eight refusals,
+  four green paths", a total of twelve, an hour after the thirteenth and
+  fourteenth cases were added, written by the session that had just filed
+  two entries about exactly that failure. Every one was a hand-maintained
+  number sitting next to the thing it counted. Every one drifted
+  silently, because a wrong count produces no error and reads as
+  authoritative. Every one was fixed by deriving it: the census computes
+  the file set, the scope comment states no number at all, the tally is
+  stated from the case numbering. **If a count must appear in prose
+  because nothing can compute it, say so at the point of writing** ("as
+  of <date>, counted by hand"), so the next reader knows it is a claim
+  rather than a fact.
 - Plain prose, no AI jargon. WRI-style plain language in client-facing copy.
 - Money in integer cents. Store UTC.
 - Section numbers in the standards library are a public API. Do not renumber,
