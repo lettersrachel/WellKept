@@ -4,9 +4,11 @@ status: living
 
 # Incident, 26 August 2026: production credentials in a second Vercel project
 
-**Status: OPEN. Contained, not closed.** One fact is still missing and it
-sets the blast radius; it is marked BLANK below and nothing downstream
-should be decided until it is filled.
+**Status: OPEN. NOT CONTAINED.** An earlier version of this line read
+"Contained, not closed"; the stray project built again on 27 August at
+00:31 UTC and that claim is corrected below. One fact is also still
+missing and it sets the blast radius; it is marked BLANK below and
+nothing downstream should be decided until it is filled.
 
 This document exists because G-35 was carried as a register line for
 weeks on the premise that the project was dormant. The premise was
@@ -48,8 +50,10 @@ that it reads AFTER Vercel could have rewritten the file. Selftest cases
 deploy cannot land on the stray.
 
 **The stray was not dormant.** It rebuilt this branch five times on 26
-August, at 15:39, 15:47, 15:58, 16:07 and 16:57 UTC, each producing a
-publicly addressable preview URL. **Its configuration changed between
+August, at 15:39, 15:47, 15:58, 16:07 and 16:57 UTC, and a sixth time
+at 00:31 on 27 August AFTER its Git integration was reported
+disconnected (see the containment section), each producing a publicly
+addressable preview URL. **Its configuration changed between
 the 15:39 and 15:47 builds**: the Vercel payload gained
 `"rootDirectory":"apps/web"`, which was absent from the earlier one. Who
 or what changed it is not established.
@@ -66,18 +70,57 @@ the stray rather than at production.
 
 ---
 
-## Containment done
+## Containment: ATTEMPTED, AND IT DID NOT HOLD
 
-**26 August, after 17:10 UTC: the founder disconnected the Git
-integration on `well-kept-web`.** This stops new deployments from being
-minted with those credentials. It is safe against the deploy path
-because production deploys are driven by `tooling/deploy.sh`, never by
-push.
+**This section said "Containment done" for about two hours and that was
+false. Corrected in place rather than rewritten, because the way it came
+to be written is the same failure the rest of this document is about.**
 
-**It does not close the exposure.** The three variables are still in the
-project and still valid. Deleting them and rotating them are separate
-acts and both are needed: deleting stops future exposure, rotating
-invalidates whatever may already have been read.
+What was recorded: on 26 August after 17:10 UTC the founder reported
+disconnecting the Git integration on `well-kept-web`, and this document
+recorded containment on the strength of that report.
+
+**What the evidence says: the project built again.** At 00:31:44 UTC on
+27 August, a push to this branch (commit `a130750`, PR #197, a
+docs-only commit) created a `vercel` check suite, and the Vercel bot
+posted deployment `2oejkmbUqKpofphrkGPdBfG1X3r9` as Ready with a fresh
+public preview URL. Project id `prj_p3iZRCqRnw81gpwW3PaMw5ZIAecw`, team
+`team_XaVg0eFgp7o1vcakrmKMO5CX`. Same stray, six hours after the
+disconnection was reported, on a new commit.
+
+**So the stray is still connected and still building, and the count of
+its 26-27 August rebuilds is six, not five.**
+
+Why it did not hold is NOT established, and three shapes are open:
+
+1. The disconnect was made but did not save.
+2. The disconnect was made on the project, and the Vercel GitHub App
+   remains installed at the repository level, re-attaching the project
+   or building it through a route the project-level setting does not
+   govern.
+3. The founder's message reporting it was four words, and this
+   document's author read them as "step 1, on the web project". That
+   reading may simply be wrong.
+
+**The third possibility is the author's own, and it is written down
+because a containment claim built on an interpretation of a terse
+message is exactly the kind of premise this document exists to stop
+being believed.** Nothing here should be read as saying the founder did
+not do what she said. It says the project is still building, which is a
+fact, and that the record claimed otherwise, which is a defect in the
+record.
+
+**Nothing is contained.** The three variables are still in the project,
+still valid, and the project is still producing deployments. Deleting
+the variables and rotating them remain separate acts and both are still
+needed.
+
+**The verification that would settle it**, and it needs no dashboard:
+push any commit to any branch and watch whether a `vercel` check suite
+naming `prj_p3iZ...` appears. It appeared on this one. It is a
+falsifiable, repeatable check that does not depend on anybody's report,
+and it should be the test used from here rather than a screenshot of a
+settings page.
 
 ---
 
