@@ -42,7 +42,17 @@
  *
  * A flag is not an annotation on a fact. It is a claim that a HOM should
  * hold this in mind BEFORE walking in, and its cost is paid by every other
- * flag on the panel. Six are added here, each earning it:
+ * flag on the panel. A handful are added here on top of the ones db:demo
+ * keeps, each earning it against one test: something a person needs to
+ * know BEFORE entering the house.
+ *
+ * NO COUNT IS WRITTEN HERE. The first version of this paragraph said
+ * "six", then said "six added, eleven total", and both were wrong within
+ * one edit of each other because moving one marker changes both numbers.
+ * The script PRINTS the flag count from the database at the end of every
+ * run, which is the only version that cannot drift. Read that.
+ *
+ * The ones that earn it:
  *   gas shutoff (life safety), no-photo zones (a standing constraint on
  *   every visit), the sump pump with no battery backup (the one actionable
  *   defect in the house), laundry scope (the boundary most easily crossed),
@@ -172,7 +182,11 @@ const FILL: [string, string, Flag, Prov][] = [
   // ---- 13. Materials and care ----------------------------------------
   F("Cultural cookware on the never-soap list", "The cast iron skillet and the carbon steel wok: hot water, brush, dried on the flame. Lisa will notice immediately if either is washed with soap."),
   F("Scent policy: loved, tolerated, banned", "Loved: the peonies in season, and clean laundry with nothing added. Tolerated: mild citrus. Banned: plug-in air fresheners and anything labelled fresh linen. Lisa gets headaches from them."),
-  F("The do-not-use list AND WHY", "No bleach on the coloured grout, it has already lightened once. No Magic Eraser on painted walls, it burnishes. No polish on the study ceramics, dry brush only and never moved."),
+  // Carries the CAUTION for this subject rather than "Products by
+  // surface", which says the same thing without the reason. The panel's
+  // job is to put the most useful row in front of someone before they
+  // walk in, and a row that explains WHY outranks one that only lists.
+  F("The do-not-use list AND WHY", "No bleach on the coloured grout, it has already lightened once. No Magic Eraser on painted walls, it burnishes. No polish on the study ceramics, dry brush only and never moved.", "CAUTION"),
 
   // ---- 14. Laundry ---------------------------------------------------
   F("Laundry scope: whose clothes are IN", "In: household linens, towels, and the children's everyday clothes. NEVER: anything of David's or Lisa's. That boundary was set at intake and has not moved.", "CAUTION"),
@@ -349,5 +363,14 @@ const after = await pool.query(
 const a = after.rows[0];
 console.log(`\nwritten this run: ${written}`);
 console.log(`playbook now: ${a.carries} of ${a.total} carry a value (${a.total - a.carries} blank, of which ${a.blank_s3} are s3 under the vault guardrail)`);
+
+// The flags-first panel, counted rather than remembered. This is the
+// number that goes wrong quietly (G-100): every individual flag can be
+// defensible while the panel they aggregate into stops discriminating.
+const flags = await pool.query(
+  `SELECT flag, count(*)::int AS n FROM playbook_field
+    WHERE household_id = $1 AND flag <> 'none' GROUP BY flag ORDER BY n DESC`, [householdId]);
+const total = flags.rows.reduce((t, r) => t + r.n, 0);
+console.log(`flags-first panel: ${total} (${flags.rows.map((r) => `${r.n} ${r.flag}`).join(", ")})`);
 await pool.end();
 if (missing.length || ambiguous.length) process.exit(1);
