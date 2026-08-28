@@ -403,7 +403,9 @@ const CENSUS_EXCUSALS: Record<string, Excusal> = {
  * above the worst case seen. A census that genuinely takes 30s has a real
  * problem worth failing on.
  */
-test("the copy census derives its own scope, and every exception is written down", { timeout: 30_000 }, () => {
+// Timeout now comes from vitest.config.ts, which covers every walker in
+// this package rather than this one test (see G-90 and its follow-on).
+test("the copy census derives its own scope, and every exception is written down", () => {
   const derived = derivedByRule();
 
   for (const [rule, files] of Object.entries(derived)) {
