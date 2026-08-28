@@ -1881,8 +1881,14 @@ derived from that row's own table.
   has never been written** (G-110): what exists is
   `WK-TRN-009a_Onboarding_Checklist_DRAFT`, marked UNPLACED and disclaiming the
   number. Neither would have surfaced during implementation. **Row 12's blocker
-  is a document, not a feature**, and R22 stands and is better supported: with
-  no checklist written there is nothing for software to enforce.
+  is a document, not a feature.** On R22, CORRECTED the same evening: its
+  SEQUENCING of the D6 trainee role is unaffected and better supported, but its
+  ACCEPTANCE of the interim control is not. That interim as written is two
+  things, a readiness checklist as a controlled document AND the CEO enforcing
+  the gate manually, and the first does not exist. **So the interim is running
+  at half strength today**: a manual gate with no controlled document behind
+  it, which is weaker than what the ruling accepted, and nothing said so until
+  the correction.
 - **Three SOPs assert the software is the system of record for something it
   does not fully hold**: WK-SOP-017 on time, WK-SOP-012 on access, WK-SOP-019
   on capture. That is a distinct class from a missing feature, because a person
