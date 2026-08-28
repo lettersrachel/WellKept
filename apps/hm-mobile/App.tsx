@@ -454,11 +454,19 @@ function CloseFlowScreen({
 
             <View style={s.card}>
               <Text style={s.h2}>Hours</Text>
+              {/* G-104, and worse here than on the web: this chip said
+                  "geofence suggestion" over hours that are FABRICATED, a fixed
+                  three-hour window ending now, entered by nobody. Those minutes
+                  would become the time_entry and the covenant events' interval.
+                  The label now says what the value is. This app is not in a
+                  HOM's hands (Apple Developer enrollment is still open), and
+                  the real fix is the same two typed fields the web surface
+                  has; that is its own session, named rather than done here. */}
               <Pressable
                 style={s.chip}
                 onPress={() => run((f) => f.captureHours({ startedAt: new Date(Date.now() - 3 * 3600_000).toISOString(), endedAt: new Date().toISOString() }))}
               >
-                <Text style={s.chipText}>{state.hours ? "Hours confirmed" : "Confirm hours (geofence suggestion)"}</Text>
+                <Text style={s.chipText}>{state.hours ? "Hours recorded" : "Record hours (last 3 hours, placeholder)"}</Text>
               </Pressable>
             </View>
 

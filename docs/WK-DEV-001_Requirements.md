@@ -3,7 +3,13 @@ status: living
 ---
 
 # WK-DEV-001: Requirements
-Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = launch-blocking, P1 = fast follow, P2 = later
+Version 1.1 | July 2026, amended in place through 28 August 2026 | Scope contract for the Year 2 build | Priority: P0 = launch-blocking, P1 = fast follow, P2 = later
+
+*The version moved from 1.0 to 1.1 on 28 August 2026 by founder ruling. It had
+read 1.0 through seven in-place amendments, so a reader checking the version to
+decide whether a copy was current got the same answer from an amended copy and
+an unamended one. The library copy needs the same bump under its own
+change-control path.*
 
 > **READ THIS BEFORE QUOTING THIS DOCUMENT ELSEWHERE.** This copy carries
 > in-place dated amendments made AFTER the version line above, and the version
@@ -12,10 +18,12 @@ Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = l
 > snapshot's contents as current is a mistake that has already been made once
 > (28 August 2026; see `DOCUMENT_AUTHORITY_2026-08-28.md`).
 >
-> The amendments this copy carries, each annotated at its own line: REQ-076
-> withdrawn and REQ-077 added (1 August); section I appended with REQ-078..082
-> (5 August); section J appended with REQ-083..085, REQ-074 promoted to WCAG
-> 2.2 AA, and REQ-075's parenthetical corrected (24 August). Section J's
+> The seven amendments this copy carries, each annotated at its own line:
+> REQ-076 withdrawn and REQ-077 added (1 August); section I appended with
+> REQ-078..082 (5 August); section J appended with REQ-083..085, REQ-074
+> promoted to WCAG 2.2 AA, and REQ-075's parenthetical corrected (24 August);
+> REQ-031's hours clause amended from auto-capture to HOM-entered times, with
+> REQ-036 annotated as the unchanged target (28 August). Section J's
 > canonicity note at the end of this document records which copy won which
 > divergence.
 >
@@ -52,12 +60,12 @@ Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = l
 
 ## D. House Manager portal (mobile-first, offline-first)
 - REQ-030 (P0) Pre-visit briefing auto-generated per WK-APP-001 S2.1: flags first, deltas since last visit, today's sequence specials, occasion radar (14 days), open dots, planned gesture, proposal window (suppressed under LIFE-EVENT).
-- REQ-031 (P0) Enforced close flow per WK-APP-001 S2.2: tasks confirm, hours auto-capture, photos, changes-noticed (required, "none" allowed), dots quick-capture, life-change signal screen (yes routes to corporate same day), zone drift one-tap + photo, then the 3-sentence report drafts last. Report cannot submit with required steps empty.
+- REQ-031 (P0) Enforced close flow per WK-APP-001 S2.2: tasks confirm, HOM-ENTERED START AND END TIMES, photos, changes-noticed (required, "none" allowed), dots quick-capture, life-change signal screen (yes routes to corporate same day), zone drift one-tap + photo, then the 3-sentence report drafts last. Report cannot submit with required steps empty. AMENDED 28 August 2026 (founder ruling, K-OPS-002 re-point trace): was "hours auto-capture", which nothing has ever done; the close flow takes two typed times and always has. **Interim control: the HOM enters start and end herself, and those times are the hours of record for payroll and for the REQ-083 covenant events.** The geofenced arrive/leave suggestion with manual override remains the TARGET state and stays at P1 under REQ-036, unpromoted; this amendment describes what is, and REQ-036 describes what is wanted. Recorded because a P0 that reads as met and is not is worse than an absent one (GAP_REGISTER G-103, G-104).
 - REQ-032 (P0) Offline-first: briefing caches on open; all close-flow capture queues locally and syncs on reconnect; last-write-wins with conflict flag to corporate.
 - REQ-033 (P0) Stranger mode: amplified first-visit runbook for backup coverage; friction notes route to primary HM and log as a Stranger Test record.
 - REQ-034 (P0) S3 reveal in context (alarm code on the alarm step, at the door), logged per REQ-005.
 - REQ-035 (P1) Service intelligence quick-log per visit (emotional read, client-effort events, anticipation hit/miss, strain), three taps max, never client-visible.
-- REQ-036 (P1) Timer-free hours: geofenced arrive/leave suggestion with manual override (never auto-bill from geofence alone).
+- REQ-036 (P1) Timer-free hours: geofenced arrive/leave suggestion with manual override (never auto-bill from geofence alone). ANNOTATED 28 August 2026: unchanged and deliberately still P1. This is the target state; REQ-031's amendment of the same date records the interim, which is HOM-entered times. Nothing in the product implements any part of this requirement, and its language must not appear on a surface until it does (G-104).
 
 ## E. Corporate portal
 - REQ-040 (P0) Household list with status tags, relationship-health panel (rating trend, days-since-delight, thank-you log, open recoveries), compliance panel (unconfirmed count, staleness, Stranger Test date, media release, access log), economics panel (hours vs model, supplies, drive time, non-billable split).

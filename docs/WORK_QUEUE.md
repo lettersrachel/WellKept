@@ -1655,6 +1655,64 @@ the identical slash-only test and is REPORTED, not changed, since it is
 outside this session's scope; it fails closed there too, and for the same
 misleading reason.
 
+**Same day, the K-OPS-002 re-point trace: OPENED AND BLOCKED, with the four
+ruled rows recorded** (`K-OPS-002_TRACE_2026-08-28.md`). K-OPS-002 is not in
+this repository and neither is anything naming its rows: zero matches for the
+document id, for `09_Operations`, for `OPS_ORG`, for ruling A228, or for
+PAPER-PARITY. **The fourteen original rows and the seven v1.1 parity
+additions cannot be traced without the row list**, and reconstructing them
+would produce a document that reads as twenty-one verified rows and is a
+guess with citations attached. Subject and expectation per row is enough to
+unblock it; the full SOP text is not needed. The four ruled rows are recorded
+as given (ACH auto-pay no, encrypted secure fields partial, geofenced
+clock-in partial, training checklists no), the empty trace table carries the
+rules for filling it, and the PAPER-PARITY test is flagged as asking one of
+two opposite questions depending on its text.
+
+**The three amendments landed, with one correction.** REQ-031 is amended in
+place: HOM-entered start and end times, the interim control named in the
+requirement itself, dated 28 August; REQ-036 is annotated as unchanged and
+deliberately still P1, the target state, pointing back at REQ-031 so the pair
+reads as one decision from either side. **The version line moved 1.0 to 1.1**
+(it had read 1.0 through seven amendments) and the banner's count moved six
+to seven; the library copy needs the same bump. G-104's copy is fixed on both
+surfaces.
+
+**The covenant correction went to the wrong document, and the handoff needs
+no change.** Handoff 24.3 already reads "generates from these events", which
+is REQ-083's own wording, and "pure function of events" appears NOWHERE in
+the handoff. It appears once in the tree, at
+`WK-DEV-006_Execution_Directive.md:30`. Since the directive is adopted under
+the two-key authorization, the line is **raised as a section 8 defect (G-105)
+rather than edited**; the correction is one line when the second key turns.
+The reason is unchanged by which document carries it: per-HOM utilization
+cannot be a pure function of the outbox while the covenant events carry no
+person, and adding one runs at Ruling 1 and the G-13 disclosure.
+
+**And fixing the copy found something that was not copy (G-104 addendum).**
+The native app's hours chip said "geofence suggestion" over a value NOBODY
+ENTERED: a fixed three-hour window ending at the tap, which would have become
+the `time_entry` row and the covenant interval. Not shipped, and that is luck
+rather than control (the Apple Developer enrollment is the only thing keeping
+the app off a phone). Label corrected; the real fix is the two typed fields
+the web has, named as its own session.
+
+**Schema RFC question, reported: TWO RFCS ARE NAMED AND ONLY ONE EXISTS.**
+Gate 2's item 2 (handoff line 266) wants provenance, source-vs-derived,
+derivation expression, confidence, materiality, consequence class and
+lifecycle defined ONCE in a field-attribute schema RFC; the repository holds
+exactly one RFC, `RFC-PRIM-01`, which is the domain-primitives RFC written to
+handoff section 5 and is not that document. **Gate 2's item 2 does not
+exist.** Whether K-OPS-002's September RFC is the same document cannot be
+answered from here, but there is room for exactly one field-attribute RFC and
+it is unwritten, so if K-OPS-002's names field attributes they are one
+document. The subject is not hypothetical: FIVE independent ad-hoc answers to
+"where did this column come from and how much do we trust it" already exist
+(server-side provenance stamping, `preference_rule`'s provenance vocabulary
+and uninvented confidence scale, `time_segment`'s `derived_from`,
+`estimate_snapshot`'s NULL-is-unknown). That is R9 happening rather than
+being prevented.
+
 ---
 
 ## Closed
