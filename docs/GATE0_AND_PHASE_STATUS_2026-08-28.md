@@ -14,7 +14,10 @@ lands on.
 > read that THREE documents were not in the repository: WK-SEC-001, WK-QA-004
 > and WK-SPEC-002. WK-SEC-001 IS in the repository**, at
 > `docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`, listed in
-> `LIBRARY_INDEX.md` and carrying all eight test areas and the pass criteria.
+> `docs/library/`, carrying all eight test areas and the pass criteria. (A
+> further correction, G-107: this line first said the file was "listed in
+> `LIBRARY_INDEX.md`". It is not. The index names eight files and ten are on
+> disk.)
 > The absence claim came from a search that structurally could not find it
 > (`ls docs` and a grep over `docs/*.md`, neither of which reaches a `.docx`
 > one directory down). Filed as G-106. **WK-QA-004 and WK-SPEC-002 are
