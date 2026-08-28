@@ -5,36 +5,35 @@ import { db } from "./db";
 const sqlCount = () => sql<number>`count(*)::int`;
 
 /**
- * DO NOT CALL THIS. It has no callers today and it must not gain one as
- * written. G-95.
+ * Does ANY household exist? A BOOLEAN, deliberately, and that is the whole
+ * fix (G-95).
  *
- * `.limit(1)` with no ORDER BY returns whatever row Postgres hands back
- * first, which carries no guarantee whatsoever. In a multi-tenant table
- * that means it returns AN ARBITRARY HOUSEHOLD, and the name reads as
- * though it returns THE household. `demo-content.ts` shipped the same
- * shape and would have written one demo household's content onto a
- * different tenant; against production the row it returns is not the one
- * anybody had in mind.
+ * This was `getHousehold()`, returning a row via `.limit(1)` with no
+ * ORDER BY, which in a multi-tenant table is AN ARBITRARY TENANT while the
+ * name reads as THE household. Its two callers only ever asked whether the
+ * result was null, to tell "no household seeded" apart from "not signed
+ * in", so the row itself was never rendered and nothing leaked. It was
+ * safe by the discipline of every caller rather than by construction.
  *
- * The hazard is that this is dead code, so nothing fails and nothing
- * warns. Whoever finds it will reasonably assume a function called
- * `getHousehold` works, and it does, in a development database with one
- * household in it, which is exactly where it will be tested.
+ * Returning a boolean makes the hazard UNREPRESENTABLE instead of
+ * forbidden: a future caller cannot render a household name off this,
+ * because there is no household name to render. That is the same move as
+ * refusing zero at the CHECK rather than in the form.
  *
- * WHAT TO USE INSTEAD: `getHouseholdAndPrincipal()` resolves through the
- * signed-in user's own assignment, `getHouseholdAndPrincipalById()` takes
- * an explicit id, and a script that needs a known fixture pins it from
- * `tooling/fixture-ids.mjs` and REFUSES when the id finds nothing rather
- * than falling back.
+ * A comment saying "do not call this" was the first attempt and was the
+ * wrong instrument, by G-95's own thesis: prose does not discharge a
+ * hazard. Neither did deleting it, which was tried and reverted, because
+ * the function is not dead.
  *
- * It stays here rather than being deleted in this change because deleting
- * it is a separate decision from marking it; the register entry names
- * that. If you are reading this because you were about to call it, the
- * answer is no.
+ * If you need an actual household: `getHouseholdAndPrincipal()` resolves
+ * through the signed-in user's own assignment,
+ * `getHouseholdAndPrincipalById()` takes an explicit id, and a script pins
+ * a known fixture from `tooling/fixture-ids.mjs` and refuses when the id
+ * finds nothing rather than falling back.
  */
-export async function getHousehold() {
-  const rows = await db.select().from(household).limit(1);
-  return rows[0] ?? null;
+export async function anyHouseholdExists() {
+  const rows = await db.select({ id: household.id }).from(household).limit(1);
+  return rows.length > 0;
 }
 
 /** Households the signed-in user is assigned to (REQ-001: no wildcard grants). */
@@ -60,10 +59,11 @@ export async function getHouseholdAndPrincipal() {
   const hh = assigned[0]?.hh ?? null;
   if (!hh) {
     // Distinguish "no household seeded" from "not signed in" for the pages.
-    const seeded = await getHousehold();
-    return { hh: seeded, principal: null } as const;
+    // The boolean is all this branch ever needed; see anyHouseholdExists.
+    const seeded = await anyHouseholdExists();
+    return { hh: null, principal: null, seeded } as const;
   }
-  return { hh, principal: await getPrincipal(hh.id) } as const;
+  return { hh, principal: await getPrincipal(hh.id), seeded: true } as const;
 }
 
 /** The HM field surface (/visit) resolves the user's first FIELD-role
@@ -77,10 +77,10 @@ export async function getFieldHouseholdAndPrincipal() {
   const field = assigned.find((a) => a.role === "house_manager" || a.role === "backup_hm");
   const hh = field?.hh ?? assigned[0]?.hh ?? null;
   if (!hh) {
-    const seeded = await getHousehold();
-    return { hh: seeded, principal: null } as const;
+    const seeded = await anyHouseholdExists();
+    return { hh: null, principal: null, seeded } as const;
   }
-  return { hh, principal: await getPrincipal(hh.id) } as const;
+  return { hh, principal: await getPrincipal(hh.id), seeded: true } as const;
 }
 
 /** Corporate drill-in: a specific household, principal resolved for IT. */

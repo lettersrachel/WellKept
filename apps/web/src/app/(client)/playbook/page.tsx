@@ -138,9 +138,13 @@ export default async function ClientPlaybook({
   searchParams: Promise<{ q?: string; recorded?: string }>;
 }) {
   const { q, recorded } = await searchParams;
-  const { hh, principal } = await getHouseholdAndPrincipal();
-  if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
-  if (!principal) redirect("/signin");
+  const { hh, principal, seeded } = await getHouseholdAndPrincipal();
+  // G-95: `seeded` distinguishes "the database has no households at all"
+  // (a development state, worth saying) from "you are signed in with no
+  // assignment" (which belongs at sign-in). This used to be told apart by
+  // an ARBITRARY household row standing in as a truthy value.
+  if (!hh && !seeded) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
+  if (!hh || !principal) redirect("/signin");
   if (principal.role !== "client") redirect("/");
 
   const all = await getFields(hh.id);

@@ -66,9 +66,13 @@ export default async function VisitPage({ searchParams }: {
   searchParams: Promise<{ recorded?: string; refused?: string; r?: string }>;
 }) {
   const { recorded, refused, r } = await searchParams;
-  const { hh, principal } = await getFieldHouseholdAndPrincipal();
-  if (!hh) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
-  if (!principal) redirect("/signin");
+  const { hh, principal, seeded } = await getFieldHouseholdAndPrincipal();
+  // G-95: `seeded` distinguishes "the database has no households at all"
+  // (a development state, worth saying) from "you are signed in with no
+  // assignment" (which belongs at sign-in). This used to be told apart by
+  // an ARBITRARY household row standing in as a truthy value.
+  if (!hh && !seeded) return <div className="card">No household seeded. Run `pnpm db:seed`.</div>;
+  if (!hh || !principal) redirect("/signin");
   if (!FIELD_ROLES.has(principal.role)) redirect("/");
 
   // Cockpit unification, step 1: the web brief now composes through the

@@ -5164,13 +5164,42 @@ naming the missing id and writes nothing.
 
 **The class, swept.** Four other sites take an unordered household
 `LIMIT 1`. `apps/web/src/lib/data.ts`'s `getHousehold()` is SHIPPED APP
-CODE with **no callers**: dead, therefore harmless today, and a loaded
-gun for the next author who reaches for a household. **It now carries a
-DO NOT CALL THIS block at the function itself**, naming the hazard, the
-reason it will pass a casual test (a development database has one
-household in it), and what to use instead. A register entry is not where
-someone about to call a function is looking. Deleting it is a separate
-decision from marking it and is not taken here. `dump-seed.ts` and
+CODE, and what this entry first said about it was WRONG TWICE. **Both
+corrections are kept, because the way each was wrong is the entry's own
+subject.**
+
+**Wrong claim 1: "no callers, dead code."** It had two, inside its own
+file. The grep behind the claim excluded `data.ts` in order to filter out
+the DEFINITION, and thereby excluded its CALLERS too. "No callers outside
+the defining file" is not "no callers", and the command that produced the
+narrower fact was written to answer the wider question. Caught by
+`tsc` when the deletion was attempted, not by the reading.
+
+**Wrong remedy 1: a DO NOT CALL THIS comment.** Written into the same
+change whose thesis is that prose does not discharge a hazard. A comment
+is memory with better formatting, and this one was also false, since it
+said the function had no callers.
+
+**Wrong remedy 2: deletion.** Attempted, and reverted within a minute: the
+function is load-bearing, not dead.
+
+**What it actually was, and the real fix.** Both callers used the result
+ONLY as a truthiness signal, to tell "no household seeded" apart from "not
+signed in". No tenant row ever reached a screen, because every consumer
+also gates on `principal`, which is null on that path by construction. So
+it was safe BY THE DISCIPLINE OF EVERY CALLER rather than by construction,
+which is the condition this register exists to convert.
+
+It is now `anyHouseholdExists(): Promise<boolean>`. **A future caller
+cannot render a household name off a boolean**, so the hazard is
+unrepresentable rather than forbidden. The three pages that branched on
+`!hh` now read a `seeded` flag, so the development message ("no household
+seeded") and the sign-in redirect are told apart by a fact rather than by
+an arbitrary row standing in as a truthy value.
+
+**The general form, which is the fourth instance today:** a narrow true
+reading answering a wider question. Here the narrowing was performed by
+the very flag added to make the search cleaner. `dump-seed.ts` and
 `services/worker/src/fire-test-event.ts` are dev tools where the wrong
 household means a wrong dump or a wrong test event. The two e2e specs use
 `ORDER BY created_at`, which is at least deterministic. None of these is
