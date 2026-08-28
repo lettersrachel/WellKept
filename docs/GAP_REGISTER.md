@@ -5114,6 +5114,23 @@ write a value that would have rendered correctly.
 **Filed 28 August 2026. Found by the founder, refusing to run an
 instruction I gave her.** Not by a guard, not by a test, and not by me.
 
+> **WRITING A HAZARD DOWN FELT LIKE HANDLING IT.**
+
+That is the entry, and everything below is the instance. The defect was
+DOCUMENTED, in a file header, by the author who then put the vulnerable
+command at the top of the run instructions, twice, in two messages. It is
+not carelessness. It is the specific illusion that recording a risk
+discharges it, and the recording is what makes it feel discharged: the
+thought has been had, the sentence exists, the file is honest, and none of
+that changed a line of the vulnerable code. **A hazard named in one file
+is documentation of a hazard in another file, and documentation is not a
+remedy.** The instructions were then passed on a second time without
+checking, so the illusion held for two readers, not one.
+
+Read this before the query shape. The query shape is one instance; this
+recurs anywhere a comment, a register entry, or a PR body describes
+something that is still true of the code.
+
 `demo-content.ts` resolved its household with
 `SELECT id FROM household LIMIT 1`. An unordered `LIMIT 1` returns
 whatever row Postgres hands back first, which carries no guarantee at
@@ -5148,7 +5165,12 @@ naming the missing id and writes nothing.
 **The class, swept.** Four other sites take an unordered household
 `LIMIT 1`. `apps/web/src/lib/data.ts`'s `getHousehold()` is SHIPPED APP
 CODE with **no callers**: dead, therefore harmless today, and a loaded
-gun for the next author who reaches for a household. `dump-seed.ts` and
+gun for the next author who reaches for a household. **It now carries a
+DO NOT CALL THIS block at the function itself**, naming the hazard, the
+reason it will pass a casual test (a development database has one
+household in it), and what to use instead. A register entry is not where
+someone about to call a function is looking. Deleting it is a separate
+decision from marking it and is not taken here. `dump-seed.ts` and
 `services/worker/src/fire-test-event.ts` are dev tools where the wrong
 household means a wrong dump or a wrong test event. The two e2e specs use
 `ORDER BY created_at`, which is at least deterministic. None of these is

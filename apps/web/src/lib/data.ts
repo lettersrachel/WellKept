@@ -4,6 +4,34 @@ import { db } from "./db";
 
 const sqlCount = () => sql<number>`count(*)::int`;
 
+/**
+ * DO NOT CALL THIS. It has no callers today and it must not gain one as
+ * written. G-95.
+ *
+ * `.limit(1)` with no ORDER BY returns whatever row Postgres hands back
+ * first, which carries no guarantee whatsoever. In a multi-tenant table
+ * that means it returns AN ARBITRARY HOUSEHOLD, and the name reads as
+ * though it returns THE household. `demo-content.ts` shipped the same
+ * shape and would have written one demo household's content onto a
+ * different tenant; against production the row it returns is not the one
+ * anybody had in mind.
+ *
+ * The hazard is that this is dead code, so nothing fails and nothing
+ * warns. Whoever finds it will reasonably assume a function called
+ * `getHousehold` works, and it does, in a development database with one
+ * household in it, which is exactly where it will be tested.
+ *
+ * WHAT TO USE INSTEAD: `getHouseholdAndPrincipal()` resolves through the
+ * signed-in user's own assignment, `getHouseholdAndPrincipalById()` takes
+ * an explicit id, and a script that needs a known fixture pins it from
+ * `tooling/fixture-ids.mjs` and REFUSES when the id finds nothing rather
+ * than falling back.
+ *
+ * It stays here rather than being deleted in this change because deleting
+ * it is a separate decision from marking it; the register entry names
+ * that. If you are reading this because you were about to call it, the
+ * answer is no.
+ */
 export async function getHousehold() {
   const rows = await db.select().from(household).limit(1);
   return rows[0] ?? null;
