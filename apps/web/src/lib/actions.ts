@@ -709,7 +709,17 @@ export async function recordPromptOutcome(formData: FormData) {
   const wasNews = outcome === "acted" && (wasNewsRaw === "true" || wasNewsRaw === "false")
     ? wasNewsRaw === "true" : null;
   const dismissReasonRaw = String(formData.get("dismissReason") ?? "");
-  const dismissReason = outcome === "dismissed" && ["wrong", "bad_timing"].includes(dismissReasonRaw)
+  const dismissReasonOk = ["wrong", "bad_timing"].includes(dismissReasonRaw);
+  // The founder's ruling, 27 August 2026: answering RETIRES the prompt, so
+  // Dismiss is the destructive half of the pair and is the half that needs
+  // the record. Acted is self-explaining; a dismissal with no reason
+  // produces a retired prompt nobody can account for later. Same argument
+  // as requiring a reason on revocation. REFUSED rather than coerced to
+  // null, because a silent null is exactly the unaccountable row this
+  // rules out. The shipped buttons both carry a reason, so this changes
+  // no legitimate path and closes the hand-made one.
+  if (outcome === "dismissed" && !dismissReasonOk) refuseTo("/visit", "bad-input");
+  const dismissReason = outcome === "dismissed" && dismissReasonOk
     ? (dismissReasonRaw as "wrong" | "bad_timing") : null;
   // lead_days: answered_at to the prompt's own target (A2 finding 8 — null
   // for event-driven prompts, and rule health states the sample size).
@@ -735,9 +745,29 @@ export async function recordPromptOutcome(formData: FormData) {
     wasNews,
     dismissReason,
   }).onConflictDoNothing({ target: [promptOutcome.promptId, promptOutcome.userId] });
+  // ANSWERING RETIRES THE PROMPT, and nothing else does (founder ruling,
+  // 27 August 2026). Surfacing must not retire, because a prompt a HOM saw
+  // and did not act on is exactly the thing that should still be there
+  // next visit; and nothing ages out, because a prompt going quiet on its
+  // own is the silent-failure shape. Before this, NOTHING wrote this
+  // column at all, so every prompt ever scheduled stayed open forever and
+  // the field panel accumulated a backlog it then labelled "due today".
+  //
+  // TWO COLUMNS SHARE THIS NAME AND THEY ARE NOT THE SAME COLUMN.
+  //   promptOutcome.firedAt  (set above) records WHEN THE PROMPT SURFACED,
+  //                          copied off the item; it is history on the
+  //                          answer row and says nothing about closure.
+  //   promptPackItem.firedAt (set here)   is the CLOSURE marker: non-null
+  //                          means this prompt no longer surfaces.
+  // The table is named on both sides of this write for that reason. A
+  // later reader who reads one for the other gets the wrong answer about
+  // what closed the prompt.
+  await db.update(promptPackItem)
+    .set({ firedAt: answeredAt })
+    .where(eq(promptPackItem.id, item.id));
   revalidatePath("/visit");
   revalidatePath("/oversight/triggers");
-  recordedTo("/visit", "prompt outcome recorded");
+  recordedTo("/visit", "prompt answered and closed");
 }
 
 /**

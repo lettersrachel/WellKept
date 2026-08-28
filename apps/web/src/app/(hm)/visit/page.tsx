@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { filterFields } from "@wellkept/permissions";
 import { bindProvisions, readFeatureFlags, shadowLog } from "@wellkept/schema";
-import { surfacesBeyondShadow, type ShadowSignal } from "@wellkept/trigger-engine";
+import { surfacesBeyondShadow, partitionPrompts, promptTiming, type ShadowSignal } from "@wellkept/trigger-engine";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getPromptOutcomes, getOpenConditionFlags, getRegistries, getDeferrals, getPausedDecisions } from "@/lib/data";
@@ -123,10 +123,15 @@ export default async function VisitPage({ searchParams }: {
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
   const stranger = principal.role === "backup_hm"; // REQ-033: amplified first-visit mode
   const radarAll = packItems.filter((i) => !i.suppressedByTag);
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  const specials = radarAll.filter((i) => i.fireAt <= endOfToday);
-  const radar = radarAll.filter((i) => i.fireAt > endOfToday);
+  // The label is COMPUTED per item and the two lists are capped
+  // SEPARATELY, so a past-due backlog can no longer starve the forward
+  // panel (the founder's ruling, 27 August 2026). `specials` keeps its
+  // name because it is the same panel; what changed is that "due today"
+  // is now true when it is rendered.
+  const now = new Date();
+  const parts = partitionPrompts(radarAll, now);
+  const specials = parts.now;
+  const radar = parts.upcoming;
   // A2/REQ-055: this user's answers on the surfaced prompts. Answering never
   // gates anything; an ignored prompt is itself the signal.
   const outcomes = await getPromptOutcomes(specials.map((i) => i.id), principal.userId);
@@ -383,12 +388,12 @@ export default async function VisitPage({ searchParams }: {
       {lifeEvent ? (
         <div className="note">Held with the rest of the prompts (LIFE-EVENT).</div>
       ) : specials.length === 0 ? (
-        <div className="note">Nothing due today.</div>
+        <div className="note">Nothing due or overdue.</div>
       ) : (
         specials.map((i) => (
           <div key={i.id} className="card" style={{ background: "var(--sage)", marginBottom: 8 }}>
             <div style={{ fontSize: 15, color: "var(--green)" }}>{i.itemText}</div>
-            <div className="prov">{i.packName} · due today</div>
+            <div className="prov">{i.packName} · {promptTiming(i.fireAt, now).label}</div>
             {outcomes.has(i.id) ? (
               <div className="prov">Answered: {outcomeLabel(outcomes.get(i.id)!)}</div>
             ) : (
@@ -415,6 +420,13 @@ export default async function VisitPage({ searchParams }: {
           </div>
         ))
       )}
+
+      {parts.nowHidden > 0 ? (
+        <div className="note">
+          Showing the {specials.length} oldest of {parts.nowTotal}. {parts.nowHidden} more are
+          open and not shown here; the drill-in has the full list.
+        </div>
+      ) : null}
 
       <div className="eyebrow">Coming up; the anticipation engine</div>
       {lifeEvent ? (

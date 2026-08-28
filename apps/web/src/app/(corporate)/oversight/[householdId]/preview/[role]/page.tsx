@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { filterFields, assertClientPayloadSafe, type FieldRecord } from "@wellkept/permissions";
 import { SECTION_NAMES, bindProvisions, assertNoProvisionRows, assertNoAnticipationRows } from "@wellkept/schema";
+import { partitionPrompts, promptTiming } from "@wellkept/trigger-engine";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
 import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getRegistries } from "@/lib/data";
@@ -148,11 +149,14 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
     bindProvisions(f["governingProvisions"] as string[] | null, provisions, "hm", seedReviewed);
   const flaggedHm = fields.filter((f) => f.flag && f.flag !== "none");
   const lifeEvent = hh.statusTag === "LIFE-EVENT";
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
+  const now = new Date();
   const radarAll = packItems.filter((i) => !i.suppressedByTag);
-  const specials = radarAll.filter((i) => i.fireAt <= endOfToday);
-  const radar = radarAll.filter((i) => i.fireAt > endOfToday);
+  // Same partition as the field surface, so the preview cannot drift from
+  // what a HOM actually reads (the 27 August ruling: computed label, caps
+  // separate so a backlog cannot starve the forward panel).
+  const parts = partitionPrompts(radarAll, now);
+  const specials = parts.now;
+  const radar = parts.upcoming;
   const deltasRaw = await getDeltasSince(hh.id, lastVisit ? lastVisit.receivedAt : null);
   const visibleIds = new Set(fields.map((f) => String(f.id)));
   const deltas = deltasRaw.filter((d) => visibleIds.has(d.id) && d.value).slice(-6);
@@ -192,15 +196,22 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
       {lifeEvent ? (
         <div className="note">Held with the rest of the prompts (LIFE-EVENT).</div>
       ) : specials.length === 0 ? (
-        <div className="note">Nothing due today.</div>
+        <div className="note">Nothing due or overdue.</div>
       ) : (
         specials.map((i) => (
           <div key={i.id} className="card" style={{ background: "var(--sage)", marginBottom: 8 }}>
             <div style={{ fontSize: 15, color: "var(--green)" }}>{i.itemText}</div>
-            <div className="prov">{i.packName} · due today · answer buttons exist only in the field app</div>
+            <div className="prov">{i.packName} · {promptTiming(i.fireAt, now).label} · answer buttons exist only in the field app</div>
           </div>
         ))
       )}
+      {parts.nowHidden > 0 ? (
+        <div className="note">
+          Showing the {specials.length} oldest of {parts.nowTotal}. {parts.nowHidden} more are
+          open and not shown here.
+        </div>
+      ) : null}
+
       <div className="eyebrow">Coming up; the anticipation engine</div>
       {lifeEvent ? (
         <div className="note">Held. LIFE-EVENT pauses every prompt; nothing is deleted.</div>

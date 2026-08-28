@@ -7,6 +7,7 @@ import { getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeason
 import { provisionsById, standardsSeedReviewed } from "./standards";
 import { latestAppliedVisit } from "./visit-command-store";
 import { recordBriefSnapshot } from "./brief-snapshot";
+import { partitionPrompts, promptTiming } from "@wellkept/trigger-engine";
 
 /**
  * The Cockpit unification pass, step 1 (WK-DEV-007 section 2; the item
@@ -67,11 +68,19 @@ export async function composeFieldBrief(
       provisions: provisionsFor(fieldById.get(d.id) ?? {}),
     }));
 
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  const radarAll = lifeEvent ? [] : packItems.filter((i) => !i.suppressedByTag);
-  const specials = radarAll.filter((i) => i.fireAt <= endOfToday).map((i) => ({ text: i.itemText, packName: i.packName }));
-  const radar = radarAll.filter((i) => i.fireAt > endOfToday).map((i) => ({ text: i.itemText, packName: i.packName, fireAt: i.fireAt }));
+  // The composed brief carries the SAME partition and the SAME computed
+  // label as the two rendered surfaces, because a brief that disagrees
+  // with the screen it was composed for is worse than no brief. `timing`
+  // rides in the payload so the snapshot records what the HOM was told,
+  // not just which bucket the item fell in.
+  const now = new Date();
+  const parts = partitionPrompts(lifeEvent ? [] : packItems.filter((i) => !i.suppressedByTag), now);
+  const specials = parts.now.map((i) => ({
+    text: i.itemText, packName: i.packName, timing: promptTiming(i.fireAt, now).label,
+  }));
+  const radar = parts.upcoming.map((i) => ({ text: i.itemText, packName: i.packName, fireAt: i.fireAt }));
+  const specialsHidden = parts.nowHidden;
+  const specialsTotal = parts.nowTotal;
 
   const openDots = dots.map((d) => ({ verbatim: d.verbatim, heardAt: d.heardAt }));
 
@@ -142,6 +151,8 @@ export async function composeFieldBrief(
     overduePausedDecisions,
     changed,
     specials,
+    specialsHidden,
+    specialsTotal,
     radar,
     lastYear,
     dots: openDots,

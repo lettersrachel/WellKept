@@ -161,7 +161,27 @@ export async function getOpenDots(householdId: string) {
 }
 
 /** Unfired pack items, soonest first — the anticipation surface (REQ-052). */
-export async function getUpcomingPackItems(householdId: string, limit = 8) {
+/**
+ * Every prompt this household has open, oldest first. `fired_at` is set
+ * when a HOM ANSWERS the prompt and by nothing else, so an unanswered
+ * prompt stays open however old it is (the founder's ruling, 27 August
+ * 2026: surfacing must not retire, because a prompt a HOM saw and did not
+ * act on is exactly the thing that should still be there next visit, and
+ * nothing ages out, because a prompt going quiet on its own is the
+ * silent-failure shape).
+ *
+ * NO PANEL LIMIT HERE, deliberately. This used to slice to eight ordered
+ * oldest-first, which is a single pool: a backlog of past-due items
+ * consumed every slot and nothing with a future date was ever fetched, so
+ * the forward-looking panel read "Nothing scheduled in the window" while
+ * eight stale prompts filled the view. The caps belong to the PARTITION
+ * (partitionPrompts), which caps overdue and upcoming separately, so one
+ * can no longer starve the other. The bound below is a safety rail
+ * against an unbounded read, not a display decision, and is far above any
+ * real household's open count; if it is ever reached, the partition's
+ * hidden counts are the thing that says so.
+ */
+export async function getUpcomingPackItems(householdId: string, limit = 200) {
   const { promptPackItem } = await import("@wellkept/schema");
   const { isNull, and } = await import("drizzle-orm");
   const rows = await db.select().from(promptPackItem)
