@@ -5941,7 +5941,8 @@ repository**: the Gate 0 status report's preamble and its Phase 1 table, and
 G-102's third item. All three are wrong.
 
 **It is at `docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`**,
-listed in `LIBRARY_INDEX.md`, carrying all eight test areas, the threat model,
+NOT listed in `LIBRARY_INDEX.md` (see G-107, filed against this very
+sentence), carrying all eight test areas, the threat model,
 the deliverables and the pass criteria.
 
 **The search that produced the false claim was `ls docs | grep WK-SEC` and a
@@ -5979,3 +5980,65 @@ the mistaken sentence.
 **WK-QA-004 and WK-SPEC-002 are genuinely absent**, and this time that is
 confirmed against the full `docs/library/` listing rather than against a
 pattern.
+
+---
+
+### G-107. The correction for G-106 repeated G-106, one day later, inside the entry recording it
+
+**Filed 28 August 2026. Found by the founder asking for a full directory
+listing rather than accepting a sentence about one.**
+
+G-106 recorded that WK-SEC-001 had been wrongly reported absent, because the
+search that produced the claim could not have found a `.docx` one directory
+down. Its correction read:
+
+> It is at `docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`,
+> **listed in `LIBRARY_INDEX.md`**, carrying all eight test areas...
+
+**The first half is true. The second half is false.** `LIBRARY_INDEX.md`
+contains zero occurrences of `WK-SEC-001`. It names **eight** files; **ten**
+are on disk. The two it omits are WK-SEC-001 and the Workload Forecasting
+brief, both added on 24 August after the index was written, neither ever added
+to it.
+
+The false half was then repeated in three documents and twice in conversation,
+all within a day of filing the entry about exactly this.
+
+**The mechanism, which is not the same as G-106's and is why this is a
+separate entry.** G-106 was trusting a search that could not see. This was
+**trusting a document that describes a directory, without checking it against
+the directory**. Having just been burned by a query's reach, the reflex was to
+reach for an authority instead of an artifact, and an index is not an
+artifact: it is a hand-maintained claim about one.
+
+> **An index is a count of a thing that can be listed.** The conventions
+> already name that shape as the one that drifts silently: no error, reads as
+> authoritative, wrong. Prefer the artifact. Where a directory can be listed,
+> list it, and quote the index only for what it says rather than for what is
+> in it.
+
+**Corrected in place** in `GAP_REGISTER.md` (G-106's own text),
+`GATE0_AND_PHASE_STATUS_2026-08-28.md`, and
+`K-OPS-002_TRACE_2026-08-28.md`. `DOCUMENT_AUTHORITY_2026-08-28.md` needs no
+change: it quotes `LIBRARY_INDEX.md:8` for the sentence it actually contains,
+which is the correct use of it.
+
+**The census that settles the underlying question is
+`LIBRARY_SLICE_CENSUS_2026-08-28.md`**, and it is stated with its four search
+methods so the next reader can see the reach rather than trust the result.
+Its finding: the library is a ten-file slice, not a mirror, and none of the
+nine documents in question is present, so the three-SOP pull and the A213
+request both stand.
+
+**The fix that would hold, not built here** (this was a read-and-report task):
+a guard asserting `LIBRARY_INDEX.md` names every file in `docs/library/`,
+computed from the directory with a count floor, in the pattern of the erasure,
+legal, disclosure and copy censuses. It is the standing preferred fix for
+something held by memory, and this index has now been wrong for four days
+without anything noticing.
+
+**Base rate note.** Three entries in two days about which document says what
+(G-103's stale status rows, G-106's unreachable search, this). The common
+element is not carelessness about facts; each individual reading was made
+carefully. It is that **a statement about where information lives is itself
+information, and it goes stale exactly like the status rows G-103 is about.**

@@ -1796,6 +1796,35 @@ eleventh mechanism appearing.
 with the file and line, so the second key turns on one line rather than a
 discussion.
 
+**And the library slice is censused, which corrected the correction (G-107).**
+`docs/library/` holds **ten files, all `.docx`, no subdirectories**, and it is
+a SLICE rather than a mirror, which `LIBRARY_INDEX.md:8` has said since 5
+August. **None of WK-SOP-029, -005, -015, -016, -018, -019, WK-FIN-005,
+WK-OPS-002 or ruling A213 is in the repository**, checked four ways
+(filenames across the whole tree; inside every XML part of all ten `.docx`;
+every tracked `.md`/`.html`/`.csv`; and the standards store, which holds
+STD-000 to STD-023 and no SOP or FIN provisions). Those identifiers are CITED
+in one to fourteen files each, and a citation is not a document. **So the
+three-SOP pull and the A213 request both stand**, and row 4 still needs a
+device. One informative hit: **WK-SEC-001 names WK-SOP-019 in its
+provided-to-the-engineer list**, confirming that document exists and is not
+here.
+
+**The question did surface a real defect, and it was mine.** G-106's
+correction said WK-SEC-001 was "listed in `LIBRARY_INDEX.md`". It is not: the
+index contains zero occurrences of it, names eight files, and ten are on disk.
+The two omissions arrived 24 August after the index was written. **That is
+G-106's own error class committed inside the entry recording it**, repeated in
+three documents and twice in conversation, and it is filed as **G-107** and
+corrected in all three. The mechanism is distinct from G-106's: not a search
+that could not see, but **an index trusted without being checked against the
+directory it describes**. An index is a hand-maintained count of a thing that
+can be listed, which is the drift shape the conventions already name.
+The census is `LIBRARY_SLICE_CENSUS_2026-08-28.md`, stated with its four
+methods. The fix that would hold, named and not built: a guard asserting the
+index names every file in `docs/library/`, computed with a count floor, in the
+pattern of the four existing censuses.
+
 ---
 
 ## Closed
