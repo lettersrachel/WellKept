@@ -5048,6 +5048,31 @@ to use the thing, after two reports had described it as available.
 
 ---
 
+**ADDENDUM, 28 August 2026: a runnable-looking block is a claim about
+availability.** Second instance of this entry's shape, with the artifact
+present rather than absent. Two seed scripts were reported with their
+commands in a fenced block, under a sentence saying "once it lands". They
+were on a branch, in an open PR, and not on `main`. The founder pulled,
+found neither, and read it as the same failure as the original.
+
+The sentence was accurate. It did not survive contact with the block:
+
+> **A reader takes the artifact and skips the prose. A command in a fenced
+> block reads as available regardless of what the surrounding text says,
+> so any qualification has to be INSIDE the block or it does not survive.**
+
+The remedy is mechanical and costs nothing: name the sha the file is on,
+or put the condition in the block itself
+(`# after PR #235 merges` on its own line). Both survive being skimmed,
+which is the only test that matters, because the reader who skims is not
+being careless: they are doing the normal thing with a code block.
+
+Same root as the original entry. There, detail read as evidence of
+existence; here, format reads as evidence of availability. In both, the
+report's FORM made a claim its author had not checked.
+
+---
+
 ### G-93. A citation that does not survive being followed costs more than a missing one
 
 **Filed 27 August 2026, from the Part B close.** The verification's
@@ -5460,3 +5485,58 @@ itself.
 **Base rate (G-75), twenty-eighth of twenty-eight:** noticed by the
 founder while reading a state panel, and filed before the change that
 caused it was made rather than after.
+
+---
+
+### G-100. A marker whose value is its scarcity, destroyed by locally correct additions
+
+**Filed 28 August 2026. Found by the founder reading an aggregate count in
+a state panel.** A different failure from every other entry filed today,
+and the difference is the point: **nothing was wrong at the row level, so
+nothing at the row level could have caught it.**
+
+The Fernbrook playbook fill attached a flag to 29 fields. Each attachment
+was defensible on its own field: the gas shutoff IS safety, the never-soap
+cookware IS a caution, the arrival standard IS a delight. Twenty-nine
+correct local judgments.
+
+`/visit` renders "Flags first" as EVERY flagged field. The panel went from
+6 to 35, and the demo spec says of that panel, in as many words, "Leave as
+is. Six flags, and the mix is right."
+
+> **A flag is not an annotation on a fact. It is a claim that a person
+> should hold this in mind BEFORE the work starts, and its cost is paid by
+> every other flag on the same surface. Scarcity IS the mechanism, so a
+> locally correct addition can still be a net subtraction.**
+
+**The general form, which reaches past flags.** Any per-item marker whose
+value depends on being rare has this property: CRITICAL rows, pinned
+items, starred records, priority levels, notification-worthy events, an
+alert threshold. Add enough correct ones and the surface stops
+discriminating, which is the only thing it was for. The additions do not
+look like a defect at any point, because each one is individually right.
+
+**Where the check has to live: THE RENDER, NOT THE ROW.** No review of a
+single field would have caught this, and no reviewer reading the diff row
+by row would either, because the diff is 29 reasonable decisions. The only
+place the damage exists is the count, which is why a person reading a
+state panel found it and nothing else did.
+
+**Fixed by scarcity rather than by rule.** Six flags kept, each meeting a
+stated test: something a person needs to know before entering the house.
+Gas shutoff, no-photo zones, the sump pump with no battery backup, laundry
+scope, the never-do list, the signature ritual. Twelve total now, 5
+CRITICAL, 4 CAUTION, 3 DELIGHT. The other 23 fields keep every word of
+their content and lose only the marker, which is the correct shape: the
+facts were never the problem.
+
+**No guard is proposed, and the reason is specific rather than lazy.** A
+threshold ("no more than N flags") would be a number nobody can justify,
+and the honest count varies by household: a home with a pool, a firearm
+and a medically complex child SHOULD carry more than Fernbrook. What is
+checkable is the intent, and intent is not in the schema. This stays a
+question asked at the render.
+
+**Base rate (G-75), twenty-ninth of twenty-nine:** found by a person
+reading a count in a state panel and asking whether it was intended, which
+is the only instrument that sees an aggregate.
