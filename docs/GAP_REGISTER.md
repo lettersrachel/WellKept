@@ -5602,5 +5602,35 @@ display-name/key split. Until it does, its labels cannot be edited for
 voice at all. That is the session F3 asked for in 2026-07 and it now has a
 second table asking for it.
 
+**A SECOND DEFECT IN THE FIX ITSELF, found before the founder ran it.**
+The first version of the cleanup tool checked no foreign keys and used no
+transaction. Four tables reference `registry_entry`: `condition_flag`,
+`object_observation`, `visit_photo`, `capture_artifact`. A referenced row
+would have thrown on the DELETE **after its audit row had committed**,
+leaving the trail asserting a deletion that never happened, with earlier
+rows already gone.
+
+> **An audit-row-then-act tool without a transaction does not fail safe,
+> it fails LOUD AND FALSE. The failure is recorded as a success.**
+
+Fixed two ways. A reference pre-flight refuses the WHOLE run if any
+candidate is referenced, because a partial dedupe leaves a state neither
+the tool nor a reader can describe. And each audit-plus-delete pair is now
+one transaction.
+
+**The transaction is worth distinguishing from the vault rule it appears
+to contradict.** CLAUDE.md says log-before-do must NOT become a shared
+transaction, because a rollback there would erase the record of a reveal
+that had already handed a value to a person. Here nothing escapes the
+database, so rolling the pair back leaves the world exactly as it was.
+Same two operations, opposite correct answer, and the question that
+separates them is whether anything OUTSIDE the transaction saw the result.
+
+Proven on the reproduced state, both directions: with a `condition_flag`
+attached to one candidate, the run refused and left 24 rows and ZERO audit
+rows; with it removed, 10 deleted with 10 audit rows and 14 left, and
+`db:demo` then reported `0 entries added`, which is the line proving the
+seed recognises every remaining row.
+
 **Base rate (G-75), thirtieth of thirty:** found by counting rows after a
 script said "idempotent", which is the word that stops people counting.
