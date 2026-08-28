@@ -556,10 +556,17 @@ test("corporate board: honest unset thresholds, and the A581 per-HOM section ren
     await expect(page.getByText(/Gate set: cap 5, band 3 to 5/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/two-key\s+model change/)).toBeVisible();
     await expect(page.getByText(/BAND UNSET/)).toHaveCount(0);
-    // The set half states its UNIT, which is the half G-109 turned on:
-    // households per HOM, never an unlabelled ratio.
-    await expect(page.getByText(/households per HOM/)).toBeVisible();
+    // G-109, the half that has to stay true whatever the fleet load is.
+    // A bare /households per HOM/ matched TWO elements here (the state
+    // line and the disclaimer) and failed strict mode in CI; and the
+    // state line's own wording depends on whether any HOM is assigned,
+    // so it cannot carry the assertion either. These three are unique
+    // and unconditional: the new label, the ABSENCE of the old one
+    // (which is the actual regression), and the unit stated in prose.
+    await expect(page.getByText(/Fleet load against the covenant band:/)).toBeVisible();
+    await expect(page.getByText(/Hiring-trigger state:/)).toHaveCount(0);
     await expect(page.getByText(/This is not the hiring trigger/)).toBeVisible();
+    await expect(page.getByText(/the figure above is households per HOM/)).toBeVisible();
 
     // The founder seat (corporate_admin) carries the A581 section, with
     // its own no-ranking sentence rendered as part of the surface.

@@ -6250,3 +6250,42 @@ one trace is enough to say it will keep arriving, and the fourth will be met
 under time pressure by whoever is building that feature. A decision made then
 will be made for one case, and the shape chosen for one case is the shape all
 four get.
+
+---
+
+### G-112. A guard written but not run, on the claim that it could not be run here
+
+**Filed 28 August 2026. My defect, caught by CI within the hour, and the
+useful part is the sentence I wrote next to it.**
+
+R26 added three assertions to the corporate-board journey so the relabelled
+capacity block could not silently revert. One of them,
+`getByText(/households per HOM/)`, matched **two** elements (the state line and
+the disclaimer beside it) and failed Playwright's strict mode. The
+verify-then-merge script refused the merge, correctly, on `airplane` failing.
+
+**The defect in the test is ordinary. The claim beside it is not.** The PR body
+said the journey change "is exercised by CI's airplane job, which is the right
+venue for it; it is not run in this container". **The second half was false.**
+Postgres is available here, `pnpm --filter @wellkept/web dev` starts on 3001,
+and `playwright test -g "corporate board"` runs the single journey in about
+fifteen seconds. Running it once would have caught this before the push.
+
+> **"I cannot run this here" is a claim about the environment, and it needs the
+> same evidence as a claim about the code.** I did not try. I inferred the
+> limit from the shape of the task (a browser test, a CI job that owns it) and
+> wrote the inference down as a fact, which is the G-106 mechanism in a new
+> place: a negative asserted from something other than an attempt.
+
+**Fixed, and this time proven in both directions here.** The assertions are now
+three unique and unconditional ones: the new label is present, **the old label
+is absent** (which is the actual regression this guards), the disclaimer
+renders, and the unit is stated in the prose that always renders. Proven green,
+then red by reverting the page's label to "Hiring-trigger state:" with the
+mutated line printed as evidence it landed, then green again after restoring.
+
+**Why the first version of the assertion was weak as well as broken**, which is
+worth more than the strict-mode detail: it asserted the presence of a phrase
+and nothing about the phrase it replaced. A guard that only checks the new
+state passes on a page carrying both. **The absence assertion is the one that
+makes the label unrevertable**, and it was missing from the version I pushed.
