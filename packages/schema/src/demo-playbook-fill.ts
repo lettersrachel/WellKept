@@ -31,6 +31,27 @@
  *
  * Idempotent: values are set, not appended, so a re-run restores the same
  * state.
+ *
+ * FLAGS ARE DELIBERATELY SCARCE, and the first version of this file got it
+ * wrong. Flags were attached field by field wherever one seemed apt, which
+ * is defensible per row and wrong in aggregate: `/visit` renders "Flags
+ * first" as EVERY flagged field, so 29 additions took that panel from 6 to
+ * 35 and turned the household's most important surface into a list. The
+ * demo spec says of that panel, in as many words, "Leave as is. Six flags,
+ * and the mix is right."
+ *
+ * A flag is not an annotation on a fact. It is a claim that a HOM should
+ * hold this in mind BEFORE walking in, and its cost is paid by every other
+ * flag on the panel. Six are added here, each earning it:
+ *   gas shutoff (life safety), no-photo zones (a standing constraint on
+ *   every visit), the sump pump with no battery backup (the one actionable
+ *   defect in the house), laundry scope (the boundary most easily crossed),
+ *   the never-do list, and the signature ritual.
+ * Everything else keeps its content and loses its marker.
+ *
+ * The general shape, worth stating because it will recur: a per-item
+ * judgment that is correct one row at a time can still be wrong at the
+ * surface those rows aggregate into, and nothing in the row shows it.
  */
 import pg from "pg";
 import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
@@ -51,7 +72,7 @@ const F = (pattern: string, value: string, flag: Flag = "none", provenance: Prov
 const FILL: [string, string, Flag, Prov][] = [
   // ---- 1. Safety and legal flags -------------------------------------
   F("Gift-flagging protocol", "Nothing in this category so far. If a gift arrives that is unusual in value or comes from outside the family's known circle, Jordan photographs it, leaves it unopened on the entry table, and tells Lisa the same day."),
-  F("Medications and controlled substances", "Nothing controlled in the house. Everyday medicine lives in the hall-closet first-aid bin, above child height. Mia's EpiPens are the exception and are deliberately reachable.", "CAUTION"),
+  F("Medications and controlled substances", "Nothing controlled in the house. Everyday medicine lives in the hall-closet first-aid bin, above child height. Mia's EpiPens are the exception and are deliberately reachable."),
   F("Security or legal flags", "None. No NDA, no custody arrangement, no restraining order, no do-not-admit list. Asked directly at intake and re-asked at the six-month review."),
 
   // ---- 2. Adults and contact ----------------------------------------
@@ -67,7 +88,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Other adults in residence", "None. Two adults, two children, one dog."),
 
   // ---- 3. Children ---------------------------------------------------
-  F("Discipline / redirection method", "Redirect and offer a choice; the parents do not want raised voices and Jordan does not discipline. The firm boundary: never send a child to their room, that is a parent's call only.", "CAUTION"),
+  F("Discipline / redirection method", "Redirect and offer a choice; the parents do not want raised voices and Jordan does not discipline. The firm boundary: never send a child to their room, that is a parent's call only."),
   F("House rules the HM must never undermine", "Screens off before school and until homework is done. Beds are the children's own job and stay their job even when they do them badly. Owen clears his plate; Mia loads it."),
 
   // ---- 4. Pets --------------------------------------------------------
@@ -78,7 +99,7 @@ const FILL: [string, string, Flag, Prov][] = [
   // ---- 5. The household map ------------------------------------------
   F("Each: coordination route", "Rosa: through Lisa, never directed by Jordan. Ben: direct, he prefers it. The lawn service: through David. The window company: Jordan books it and tells David after."),
   F("Each: scope, and the boundary with HM scope", "Rosa cleans; Jordan does not clean behind her and does not re-do her work. Ben walks; Jordan feeds. The overlap is the mudroom floor on Mondays, and Rosa owns it."),
-  F("REGULAR VISITOR ROSTER", "Mia's friends Priya and Elle, both after school on Tuesdays. Priya has no allergies; Elle's mother confirmed none. Owen has no regular visitors yet.", "CAUTION"),
+  F("REGULAR VISITOR ROSTER", "Mia's friends Priya and Elle, both after school on Tuesdays. Priya has no allergies; Elle's mother confirmed none. Owen has no regular visitors yet."),
 
   // ---- 6. Property and neighbourhood ---------------------------------
   F("Exterior zones", "Garden shed at the rear fence, unlocked. The play structure is Owen's and gets a look each visit for loose bolts. No pool, no hot tub."),
@@ -99,9 +120,9 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Keys: every key that exists", "Four keys exist. David, Lisa, Rosa, and Gram Ruth. Jordan uses the keypad and holds no key. Logged at intake under WK-SOP-015 and re-counted in July."),
 
   // ---- 8. Cameras and privacy ----------------------------------------
-  F("Cameras: every location", "Doorbell camera at the front, always recording. One camera over the driveway. Nothing indoors, and the family has said plainly they do not want indoor cameras.", "CAUTION"),
+  F("Cameras: every location", "Doorbell camera at the front, always recording. One camera over the driveway. Nothing indoors, and the family has said plainly they do not want indoor cameras."),
   F("No-photo zones and topics", "Media release declined. No photograph of either child leaves the household record, and none is used anywhere. Visit photos are rooms and objects only.", "CRITICAL"),
-  F("Rooms or subjects the client marks private", "David's study desk surface: dust around it, never move or square the papers. The bedroom closet is not part of any visit.", "CAUTION"),
+  F("Rooms or subjects the client marks private", "David's study desk surface: dust around it, never move or square the papers. The bedroom closet is not part of any visit."),
 
   // ---- 9. Utilities and emergencies ----------------------------------
   F("Backup communication if cell service", "No landline. Marisol next door is the fallback and has both mobiles. Gram Ruth is the second call."),
@@ -109,7 +130,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Electrical panel: location, labeled", "Basement, north wall beside the stairs. Labelled and accurate, which is unusual and worth saying. The garage freezer shares a circuit with the workbench outlets and trips if both run.", "none", "verified_by_touch"),
   F("Evacuation notes and utility emergency", "Out the front, or the mudroom door if the front is blocked. Gas: Washington Gas emergency line. Water: county 24-hour line. Both numbers are on the inside of the basement door."),
   F("Extinguishers, smoke/CO detectors", "Extinguisher under the kitchen sink and one in the garage, both inspected March 2026. Smoke and CO units on all three floors, batteries changed each October with the clocks.", "none", "verified_by_touch"),
-  F("First aid and medical devices", "Hall-closet bin: plasters, antiseptic, Owen's inhaler and a spare spacer. EpiPens are NOT here; they are the kitchen drawer and Mia's bag, per the section 1 CRITICAL row.", "CRITICAL", "verified_by_touch"),
+  F("First aid and medical devices", "Hall-closet bin: plasters, antiseptic, Owen's inhaler and a spare spacer. EpiPens are NOT here; they are the kitchen drawer and Mia's bag, per the section 1 CRITICAL row.", "none", "verified_by_touch"),
   F("Food safety during an extended outage", "Fridge holds about four hours closed, the freezer about a day. The garage freezer holds the bulk meat and is the one to save. Bagged ice from the Ridge Road station."),
   F("Gas shutoff and smell-gas protocol", "Meter is on the east wall outside, quarter-turn valve, wrench hanging beside it. If gas is smelled: everyone out first, call from outside, never a light switch.", "CRITICAL", "verified_by_touch"),
   F("Hazardous chemical storage", "Garden shed: half a bag of lawn fertiliser. Garage: paint, thinner and a propane tank for the grill, on the shelf above child height. No pool chemicals and no pesticide."),
@@ -123,7 +144,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Household digital stack", "Shared Google calendar for the family. Lisa keeps the lists in Apple Notes and shares the grocery one with Jordan. The Maple Grove school app goes to Lisa only."),
   F("Internet: provider, router location", "Verizon Fios, router in the basement utility cupboard. The restart ritual is unplug, count to thirty, plug back, and wait two minutes before testing. Network names in the app."),
   F("STORED VALUE REGISTRY", "Two EZ-Pass transponders, one per vehicle, autoloading from David's card. A standing Maple Grove lunch balance for Mia that Lisa tops up each term. No gift cards held."),
-  F("Smart home: platform, devices", "Nest thermostats and the doorbell, on David's account. Two smart plugs on the lamps. Jordan uses the lamps and nothing else; the thermostats are not to be touched.", "CAUTION"),
+  F("Smart home: platform, devices", "Nest thermostats and the doorbell, on David's account. Two smart plugs on the lamps. Jordan uses the lamps and nothing else; the thermostats are not to be touched."),
   F("Subscriptions and memberships inventory", "Costco, renews February. Amazon Prime, renews June. Two streaming services. A meal kit that has been paused since May and that Lisa keeps meaning to cancel."),
   F("Water heater: type, location", "Gas tank unit in the basement utility room, installed June 2019. Anode checked July 2023 and due again on a three-year cycle. The pilot has never gone out."),
 
@@ -131,7 +152,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Basic tool inventory", "Six-foot ladder and a taller one in the garage rafters. Drill and a decent hand-tool set on the workbench. Everything works; nothing here is precious."),
   F("Equipment used in service", "Client-owned Miele upright, bags are type GN. Spray mop with washable pads, four in rotation. Jordan brings nothing of their own except cloths."),
   F("Filters registry", "HVAC 20x25x1 upstairs and 16x20x1 down, six-monthly. Fridge water filter every six months, last done April. Vacuum bag GN, box of six on the laundry shelf. Range hood filters wash in the dishwasher."),
-  F("High-value items registry", "The ceramics on the study shelves, which are Lisa's grandmother's and are dry-brush only. Two framed prints in the dining room. Nothing is separately insured or catalogued.", "CAUTION"),
+  F("High-value items registry", "The ceramics on the study shelves, which are Lisa's grandmother's and are dry-brush only. Two framed prints in the dining room. Nothing is separately insured or catalogued."),
   F("Kitchen appliances: each nameplate", "Bosch dishwasher, Samsung fridge, a gas range that runs hot by about fifteen degrees, and a stand mixer that lives out on the counter because it earns its place. Nameplates photographed March 2026."),
   F("LIFECYCLE DATES", "Water heater 2019. Roof 2016, architectural shingle. HVAC 2014 and the older of the two systems. Washer and dryer 2021. Smoke units 2022. Nameplate photographs on file."),
   F("Laundry: washer/dryer models", "LG front loader and matching dryer, 2021. Normal cycle with an extra rinse is what works; the sanitise cycle takes two hours and nobody uses it. Lint trap every load, no exceptions."),
@@ -142,26 +163,26 @@ const FILL: [string, string, Flag, Prov][] = [
   // ---- 12. Food and provisioning -------------------------------------
   F("Auxiliary freezer or bulk food", "Chest freezer in the garage: bulk chicken and beef from Costco, a bag of Owen's waffles, and Lisa's soup stock in labelled quart tubs. First in first out; Jordan rotates it monthly."),
   F("Delivery and meal services in use", "Maple Grove grocery delivery on Tuesdays, fridge items straight in. The meal kit is paused. Takeaway on Fridays and it is not something to plan around."),
-  F("Dietary: allergies", "Mia: tree nuts, severe, and nothing containing them enters the house. Owen: none. David: penicillin, which is medical rather than dietary. Lisa avoids shellfish by choice.", "CRITICAL"),
+  F("Dietary: allergies", "Mia: tree nuts, severe, and nothing containing them enters the house. Owen: none. David: penicillin, which is medical rather than dietary. Lisa avoids shellfish by choice."),
   F("Meal rhythms: who cooks", "Lisa cooks weeknights, David at weekends. Jordan preps: vegetables washed and cut, the slow cooker loaded when it is asked for. Jordan does not cook a family meal and has not been asked to."),
   F("Pantry and fridge logic", "Pantry by zone: baking left, tins centre, children's snacks on the low shelf where Owen can reach. Leftovers in glass, dated, and anything past four days goes without asking."),
   F("Preferred retailers by category", "Children's clothes: Target and Old Navy. Home goods: Costco. Pharmacy: the Ridge Road CVS. Hardware: the independent on Fernbrook, not the big box, and David is particular about that."),
   F("Staples list", "Non-negotiable brands: Folgers Classic Roast, Tide Free and Clear, Cascade pods, Charmin. Flexible on everything else. Reorder coffee at half a can, which is the standing order in section 12."),
 
   // ---- 13. Materials and care ----------------------------------------
-  F("Cultural cookware on the never-soap list", "The cast iron skillet and the carbon steel wok: hot water, brush, dried on the flame. Lisa will notice immediately if either is washed with soap.", "CAUTION"),
-  F("Scent policy: loved, tolerated, banned", "Loved: the peonies in season, and clean laundry with nothing added. Tolerated: mild citrus. Banned: plug-in air fresheners and anything labelled fresh linen. Lisa gets headaches from them.", "CAUTION"),
-  F("The do-not-use list AND WHY", "No bleach on the coloured grout, it has already lightened once. No Magic Eraser on painted walls, it burnishes. No polish on the study ceramics, dry brush only and never moved.", "CAUTION"),
+  F("Cultural cookware on the never-soap list", "The cast iron skillet and the carbon steel wok: hot water, brush, dried on the flame. Lisa will notice immediately if either is washed with soap."),
+  F("Scent policy: loved, tolerated, banned", "Loved: the peonies in season, and clean laundry with nothing added. Tolerated: mild citrus. Banned: plug-in air fresheners and anything labelled fresh linen. Lisa gets headaches from them."),
+  F("The do-not-use list AND WHY", "No bleach on the coloured grout, it has already lightened once. No Magic Eraser on painted walls, it burnishes. No polish on the study ceramics, dry brush only and never moved."),
 
   // ---- 14. Laundry ---------------------------------------------------
   F("Laundry scope: whose clothes are IN", "In: household linens, towels, and the children's everyday clothes. NEVER: anything of David's or Lisa's. That boundary was set at intake and has not moved.", "CAUTION"),
   F("Linen rotation: sets per bed", "Two sets per bed, changed weekly on the Thursday visit. Spares on the upstairs hall shelf, folded by bed size with the fitted sheet inside the pillowcase."),
   F("Products, temperatures, air-dry list", "Tide Free and Clear, warm for towels, cold for everything else. Air dry: Mia's leggings and anything with a print. Towels folded in thirds, the children's clothes folded flat rather than rolled."),
-  F("Special care: the items that have a story", "The quilt on Mia's bed was Gram Ruth's mother's. It is washed once a year, cold, by Lisa, and never by anyone else. Owen's dinosaur Rex is spot cleaned only and never goes in a machine.", "CAUTION"),
+  F("Special care: the items that have a story", "The quilt on Mia's bed was Gram Ruth's mother's. It is washed once a year, cold, by Lisa, and never by anyone else. Owen's dinosaur Rex is spot cleaned only and never goes in a machine."),
 
   // ---- 15. Organisation ----------------------------------------------
   F("Container and label system in place", "Clear bins with printed labels in the basement and garage, put in during the March onboarding. The children's zones use picture labels so Owen can read them."),
-  F("Donation/discard authority", "Nothing is discarded without written approval. The donate bin in the garage is a staging area, not a decision; Lisa clears it herself every few weeks.", "CAUTION"),
+  F("Donation/discard authority", "Nothing is discarded without written approval. The donate bin in the garage is a staging area, not a decision; Lisa clears it herself every few weeks."),
   F("GEAR ZONES", "Golf bag and the cooler in the garage on the left wall. Mia's art supplies in the dining room sideboard. Owen's outdoor toys in the deck box. The tailgate rig is David's and lives untouched."),
   F("Homeless-item protocol", "Anything without a home goes in the basket on the basement stairs, and Lisa sorts it at the weekend. Nothing in that basket is ever thrown away."),
   F("The home's logic: what lives where", "Ground floor is shared and stays clear. Upstairs is private. The basement is the children's and holds what does not need to be seen. The garage is David's and is organised to his logic, not to anyone else's."),
@@ -171,12 +192,12 @@ const FILL: [string, string, Flag, Prov][] = [
   F("EVERY room, one row each", "Ten rooms on file, each with owner, standard and quirks. Off-limits: the bedroom closet, and David's desk surface. Everything else is in scope on a normal visit."),
   F("Garage / basement / attic / closets", "Garage and basement are in scope and get a look each visit. The attic is unfinished, accessed by a pull-down ladder, and is not entered. Coat and linen closets in scope; the bedroom closet is not."),
   F("ROOMS-SERVE-PURSUITS MAP", "The study is David's, and it is where he reads rather than works. The dining room table is Mia's art surface more often than a dining table. The basement is where the children actually live."),
-  F("SENSORY ARRIVAL STANDARD", "What Lisa wants on walking in: the kitchen island clear, the entry lamp on, no smell of anything, and the sound of nothing running. She has said the last one twice.", "DELIGHT"),
+  F("SENSORY ARRIVAL STANDARD", "What Lisa wants on walking in: the kitchen island clear, the entry lamp on, no smell of anything, and the sound of nothing running. She has said the last one twice."),
 
   // ---- 17. The visit ---------------------------------------------------
   F("(Built from all sections) Visit sequence draft", "Arrive through the mudroom, disarm, greet Biscuit and let him out. Kitchen and island first, then the ground floor, then laundry, then the children's rooms. Sentinel sweep last, lamp on, gate checked, out by 2."),
   F("SENTINEL SWEEP", "Every visit, in the final walk: under both sinks and the toilet bases for damp, the basement corner by the sump, the mudroom threshold tile, and the rear gate latch. Four minutes and it has caught two things so far."),
-  F("THE ENGINEERED HOMECOMING", "Island clear and wiped, entry lamp on, the day's post squared on the hall table, Biscuit fed and settled, and the coffee tin visibly full. That set is what Lisa reads as the house being handled.", "DELIGHT"),
+  F("THE ENGINEERED HOMECOMING", "Island clear and wiped, entry lamp on, the day's post squared on the hall table, Biscuit fed and settled, and the coffee tin visibly full. That set is what Lisa reads as the house being handled."),
 
   // ---- 18. Signals and observations ------------------------------------
   F("Consumption reality", "Coffee runs out faster than the list predicts, roughly every ten days rather than two weeks. Kitchen roll and Owen's waffles likewise. The staples list understates all three."),
@@ -192,7 +213,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("AWAY-MODE PROTOCOL", "Thermostats to 62 winter or 78 summer, water main left on, two lamps on timers, post held at the office, and Marisol told. Biscuit goes to Gram Ruth. Jordan keeps the normal Thursday visit."),
   F("COMMITMENTS LEDGER", "Thanksgiving hosting, 26 November, 25 people, said yes in September as they do every year. Mia's class presentation 18 September. The Ridge Association potluck in October, declined last year and likely again."),
   F("Catalog booking windows", "Autumn opens 1 September and the family has never used it. January resets are the more likely moment, because Lisa does her thinking about the house in the first week of the year."),
-  F("DECISION HORIZON REGISTRY", "Whether Owen stays at Maple Grove or moves to the language immersion programme for first grade. Being discussed, not decided, and not to be raised by Jordan.", "CAUTION"),
+  F("DECISION HORIZON REGISTRY", "Whether Owen stays at Maple Grove or moves to the language immersion programme for first grade. Being discussed, not decided, and not to be raised by Jordan."),
   F("EVENT CALENDAR LAYER", "Maple Grove term dates are on the shared calendar. Mia's swim season runs January to March. Nothing here has a presale or an on-sale date."),
   F("Emergency kit's seasonal layer", "Winter: the car kit goes in the SUV in November, blanket, torch, and a shovel. Summer: the cooler and water move to the garage shelf. Swapped at the clock changes with the smoke alarm batteries."),
   F("FREQUENT-TRAVELER PACK", "Not a rhythm for this household. David travels perhaps four times a year and packs himself; there is no go-bag and none is wanted."),
@@ -207,7 +228,7 @@ const FILL: [string, string, Flag, Prov][] = [
   // ---- 20. Vendors ----------------------------------------------------
   F("Every vendor, one row each", "Rosa, housekeeping, Mondays 9 to 1. Ben, dog walking, weekdays at noon. Ridgeline Heating, HVAC, annual spring. Fernbrook Lawn, fortnightly April to October. Maple Grove Animal Hospital for Biscuit."),
   F("Payment handling per vendor", "Rosa and Ben are paid directly by Lisa. Ridgeline and the lawn service invoice David. Jordan authorises nothing and pays nobody; anything new goes to David first."),
-  F("Quality notes", "Ridgeline are trusted and David will wait for them. The lawn service is tolerated and would be replaced if a better option appeared. The plumber from the 2024 leak was not good and is not to be called again.", "CAUTION"),
+  F("Quality notes", "Ridgeline are trusted and David will wait for them. The lawn service is tolerated and would be replaced if a better option appeared. The plumber from the 2024 leak was not good and is not to be called again."),
   F("Vendor access arrangement", "Rosa has her own key, verified. Ben has the side gate code, verified. Ridgeline are let in by David, who takes the morning. Nobody else gets in without a household adult present.", "none", "verified_by_touch"),
 
   // ---- 21. Occasions and people ----------------------------------------
@@ -221,7 +242,7 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Observance calendar", "Thanksgiving, Christmas at home, birthdays, and the anniversary. Not a religious household and nothing here is observed for form's sake."),
   F("PERSON REGISTRY", "Eleven people on file across family, neighbours and the school circle, each with how they connect to the household and whether they hold access. Gram Ruth is the only one outside the family with a key."),
   F("POST-EVENT CHECKLIST", "After Thanksgiving: tables back to the basement, the good linens laundered and put away rather than left, chairs returned to Marisol, and the leftovers divided before anyone leaves."),
-  F("Personal touches inventory", "The coffee never running out. Peonies in season on the island. Mia's art left exactly as she ordered it. Rex on the left pillow. Small, and the four things this household actually notices.", "DELIGHT"),
+  F("Personal touches inventory", "The coffee never running out. Peonies in season on the island. Mia's art left exactly as she ordered it. Rex on the left pillow. Small, and the four things this household actually notices."),
   F("Reciprocity log", "Marisol brought soup when Owen was ill in February. The Alders left a card at Christmas. Both noted so a thank-you is not missed and not repeated."),
   F("Recurring-guests registry", "Gram Ruth, in the basement room, and she likes the small lamp on and the extra blanket. David's brother once a year, same room, no preferences expressed."),
   F("SIGNATURE RITUAL", "The coffee tin visibly full and the entry lamp on. Never skipped, not even on the shortest visit, and it is the thing Lisa has named twice without being asked.", "DELIGHT"),
@@ -230,7 +251,7 @@ const FILL: [string, string, Flag, Prov][] = [
 
   // ---- 22. Working agreement ------------------------------------------
   F("DELEGATION LADDER", "Vendors: Jordan schedules, David approves anything new. Children's logistics: Lisa only. Gestures: Jordan decides within the micro-budget. Purchasing: Jordan up to sixty dollars, Lisa above."),
-  F("Escalation thresholds: call now vs note", "Call now: water, gas, smoke, anything about a child, anyone at the door who should not be. Note in the report: everything else, including things that look urgent and are not.", "CAUTION"),
+  F("Escalation thresholds: call now vs note", "Call now: water, gas, smoke, anything about a child, anyone at the door who should not be. Note in the report: everything else, including things that look urgent and are not."),
   F("Expense & receipt mechanic", "Company card only. Jordan never uses personal money, which is a rule for Jordan's protection as much as the client's. Receipt photographed at the point of sale, before leaving the shop."),
   F("Expense mechanics: company payment method", "Same rule stated on the operations side: company payment method, receipt at point of purchase, nothing reimbursed that was paid personally. Recorded twice in the template deliberately and answered consistently."),
   F("Gesture micro-budget", "Twenty-five dollars a month, standing, unprompted. Peonies most months. Unused months do not roll forward, and nobody is asked to justify a gesture inside the limit."),
@@ -269,10 +290,10 @@ const FILL: [string, string, Flag, Prov][] = [
   F("Crawl space, where present", "None. The house sits on a full finished basement, so there is no crawl space and no entry question to answer."),
   F("EV charger, home battery, or solar", "None of the three. Two petrol vehicles and no panels. David has mentioned solar twice in passing, which is a horizon rather than a plan."),
   F("Sacred objects & spaces protocol", "None. Not a religious household and nothing in the house is treated as sacred. The study ceramics are the only objects handled differently, and that is sentiment rather than observance."),
-  F("Workshop or power-equipment safety boundary", "David's workbench in the garage: a drill, a sander and a circular saw on the shelf above. Jordan does not use any of it and does not tidy that bench. No kiln, no welding, no soldering.", "CAUTION"),
+  F("Workshop or power-equipment safety boundary", "David's workbench in the garage: a drill, a sander and a circular saw on the shelf above. Jordan does not use any of it and does not tidy that bench. No kiln, no welding, no soldering."),
   F("Household goods provenance", "Everything in the house is the family's own. Nothing employer provided, nothing on loan, no temporary housing inventory. Recorded because a later move or claim turns on it."),
-  F("Transportation safety protocol", "Jordan does not transport either child, in any vehicle, for any reason. Not a rule about driving standards; the household simply does not want it and the boundary is cleaner stated than assumed.", "CAUTION"),
-  F("COLLECTION REGISTRY", "Lisa's grandmother's ceramics on the study shelves, six pieces, dry brush only and never moved. Two framed prints in the dining room. No watches, no instruments, no cellar. Nothing separately insured.", "CAUTION"),
+  F("Transportation safety protocol", "Jordan does not transport either child, in any vehicle, for any reason. Not a rule about driving standards; the household simply does not want it and the boundary is cleaner stated than assumed."),
+  F("COLLECTION REGISTRY", "Lisa's grandmother's ceramics on the study shelves, six pieces, dry brush only and never moved. Two framed prints in the dining room. No watches, no instruments, no cellar. Nothing separately insured."),
   F("FANDOM & HOBBY REGISTRY", "Not a fandom household. No teams followed, no colours that matter, no seasons to plan around. Recorded as an answer rather than left blank, because absent and unasked look identical otherwise."),
   F("GESTURE LOG", "Two so far, both from dots. The returns run, which Lisa called weirdly life-changing in May and again in August. The coffee reorder at half a can, which came from a passing remark in April. Neither has been repeated as a surprise."),
   F("STANDING COMMITMENTS REGISTRY", "No religious or spiritual observance to work around. The standing commitments are Mia's swim season January to March and the Ridge Association meetings, which the family attends about half the time."),
