@@ -74,6 +74,35 @@ product-specific sentence.
 > scope of the March 2026 requirement to label e-commerce purchases with
 > PURCHASE in the Company Entry Description.
 
+## Added 28 August 2026 by R24: the return-code question
+
+Row 6's dunning sequence branches on ACH return codes, and the founder's R24
+ruling reclassified that branching from a failing interim control into **a
+requirement on the processor integration**. Criterion 3 already covers whether
+returns and failures arrive as webhooks. It does not cover **which codes a
+vendor exposes and how it classifies them**, and the Day 0 branch depends on
+exactly that.
+
+Append this to both messages, unchanged between them:
+
+> One further question, which is about the shape of the data rather than the
+> service. Our dunning sequence needs to branch on the reason a debit failed:
+> insufficient funds retries once after three banking days, while a closed or
+> invalid account skips retry entirely. **Do your return and failure webhooks
+> carry the underlying ACH return code (R01, R02, R03 and so on), or a
+> normalized status of your own?** If normalized, we need the mapping, because
+> two of our branches are the same to a status field and opposite to a return
+> code.
+
+**Why it is one question and not a criterion.** The shortlist stands as
+delivered with its four criteria; adding a fifth after the fact would restate
+the comparison and restart the clock. This is a question whose answer shapes
+the integration, not one that decides the selection.
+
+**A note on the branch that is void.** The SOP's sequence moves an account to
+CARD after a second insufficient-funds return. R19 and D5 prohibit that, so it
+is not being asked about and must not be implemented if a vendor offers it.
+
 ## Reading the answers
 
 Three shapes, and only one of them settles criterion 2.

@@ -541,8 +541,11 @@ test("corporate board: honest unset thresholds, and the A581 per-HOM section ren
     await expect(page.getByRole("heading", { name: "Coverage" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Exception queue" })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Capacity against the gates/ })).toBeVisible();
-    // The gate ships unset and says so; no invented threshold.
-    await expect(page.getByText(/GATE UNSET/)).toBeVisible();
+    // The band ships unset and says so; no invented threshold.
+    await expect(page.getByText(/BAND UNSET/)).toBeVisible();
+    // G-109: the board must DISCLAIM the hiring trigger, in both knob
+    // states, because the label was the defect rather than the figure.
+    await expect(page.getByText(/This is not the hiring trigger/)).toBeVisible();
 
     // 0055, the set half: with the ruling's figures loaded the board
     // reads the knob and evaluates the aggregate state.
@@ -552,7 +555,11 @@ test("corporate board: honest unset thresholds, and the A581 per-HOM section ren
     await page.reload();
     await expect(page.getByText(/Gate set: cap 5, band 3 to 5/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/two-key\s+model change/)).toBeVisible();
-    await expect(page.getByText(/GATE UNSET/)).toHaveCount(0);
+    await expect(page.getByText(/BAND UNSET/)).toHaveCount(0);
+    // The set half states its UNIT, which is the half G-109 turned on:
+    // households per HOM, never an unlabelled ratio.
+    await expect(page.getByText(/households per HOM/)).toBeVisible();
+    await expect(page.getByText(/This is not the hiring trigger/)).toBeVisible();
 
     // The founder seat (corporate_admin) carries the A581 section, with
     // its own no-ranking sentence rendered as part of the surface.

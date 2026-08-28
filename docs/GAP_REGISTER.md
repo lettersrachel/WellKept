@@ -6123,11 +6123,30 @@ weeks above 85% precisely so a transient does not open a requisition. A gate
 that can trip on a single week's reading and a gate that requires a month of
 evidence are different safeguards even where they happen to agree on a day.
 
-**Not resolved.** The cap is covenant-relevant and a cap change is a two-key
-model change before it is a config change, so nothing here is adjusted by an
-engineering judgment. What is recorded is that the board's hiring-trigger
-sentence and WK-SOP-014's hiring trigger are different claims, and that the
-board's is the one a founder currently sees.
+**RULED the same day (founder, R26): the SOP wins.** WK-SOP-014's rule,
+utilization above 85 percent for four consecutive weeks, is the adopted hiring
+trigger, and the board should eventually compute it. **Until it does, the board
+says what it actually measures**, which is the half that landed in code:
+
+- the block is labelled "Fleet load against the covenant band", not
+  "Hiring-trigger state";
+- every state string carries its UNIT, `households per HOM`, never a bare
+  ratio;
+- the unset case reads BAND UNSET;
+- a standing line disclaims the trigger in both knob states;
+- the board journey asserts the disclaimer in both states and asserts the unit
+  renders, so the label cannot silently revert.
+
+**Deliberately not done: computing the SOP's rule.** It needs a utilization
+denominator this system does not hold (available hours per HOM), and inventing
+one would be choosing a threshold's inputs. Its own session, with founder
+input.
+
+**The general shape, worth keeping beside the count rule.** A threshold stated
+in two places drifts, and **the one on a screen wins by default**, because it
+is the one somebody reads without going looking. The remedy was not picking a
+winner in code; it was making the visible number state its own unit and
+disclaim what it is not.
 
 ---
 
@@ -6167,3 +6186,67 @@ have surfaced during implementation: row 8 would have been built against a
 plausible substitution, and row 12 would have been built against whatever the
 implementer imagined a certification checklist contains. **A trace that checks
 its own citations is doing something a backlog cannot do later.**
+
+---
+
+### G-111. Three staff-facing obligations have met the same NOT NULL column, and the fourth should not be an accident
+
+**Filed 28 August 2026 by the founder, from the completed WK-OPS-002 trace.
+Recorded as an OPEN DECISION, not a finding with a fix.**
+
+Three separate rows of the trace failed for one reason, and the reason is a
+column constraint rather than a missing feature:
+
+- **Row 11, staff product friction.** `capture_artifact.household_id` is NOT
+  NULL and foreign-keyed to `household`. A HOM reporting that the photo upload
+  fails has nowhere to put it that is not attached to a member's record, which
+  would pollute that record and make staff product friction subject to
+  household erasure.
+- **Row 1, non-household paid time.** `time_entry.household_id` is NOT NULL.
+  Team meetings, training, Playbook maintenance across a route, and
+  home-to-first-stop travel are all real paid time with no household to attach
+  to, so WK-SOP-017 items 2, 3, 4 and 6 share one cause rather than being four
+  gaps.
+- **Row 3, an access register.** A key is held by a PERSON and travels between
+  people. A household-scoped register can say which household a key opens; it
+  cannot say where the key is or who has it, which is the SOP's own governing
+  sentence.
+
+**The constraint is correct and should not be casually relaxed.** Household
+scoping is what makes tenant isolation checkable, what makes the erasure tool
+complete, and what the payload guards and the four census guards all key on.
+It is the single most load-bearing invariant in the schema for member data.
+
+**And it has now been met three times at a boundary it was not designed for.**
+Every one of those three is a record about a PERSON (a HOM) or about THE
+COMPANY (its software), not about a household. That is a different tenancy,
+not an exception to this one.
+
+> **The decision is not "should household_id be nullable".** That framing is
+> the trap: it would weaken the invariant everywhere to serve three cases that
+> are not household data at all. The question is what the record for
+> person-scoped and company-scoped facts IS, and where it lives.
+
+**Shapes available, listed so the decision is a choice among known options
+rather than a design session. None is chosen here.**
+
+1. **Separate tables per concern**, each with its own tenancy (a staff feedback
+   table keyed to `auth_user`, a non-household time table, an access-item
+   register keyed to the item). Most work, cleanest boundaries, no risk to the
+   household invariant.
+2. **A company-scoped sentinel household.** Cheapest, and the one to be most
+   careful about: it makes every household-scoped guard, census and erasure
+   path silently include a row that is not a household.
+3. **A second tenancy dimension** on the existing tables (a nullable
+   `subject_kind` plus the right nullable key, with a CHECK that exactly one
+   is set). Middle cost, and it changes the shape every existing guard reads.
+4. **Keep them out of the system**, deliberately, and record that staff
+   feedback, non-household time and key custody are paper or third-party. A
+   real answer, and the current de facto one, which nobody has actually
+   decided.
+
+**Why it is filed now rather than when the fourth arrives.** Three instances in
+one trace is enough to say it will keep arriving, and the fourth will be met
+under time pressure by whoever is building that feature. A decision made then
+will be made for one case, and the shape chosen for one case is the shape all
+four get.
