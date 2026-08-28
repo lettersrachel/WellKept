@@ -5632,5 +5632,27 @@ rows; with it removed, 10 deleted with 10 audit rows and 14 left, and
 `db:demo` then reported `0 entries added`, which is the line proving the
 seed recognises every remaining row.
 
+**A THIRD, in the same tool: the DRY RUN did not run the safety check.**
+The reference pre-flight was placed after the `--commit` gate, so a dry
+run printed a plan and said nothing about whether that plan was safe. The
+founder read a summary that included the pre-flight line, and was one
+command from committing on the belief that the check had already passed.
+
+> **A preview that omits the safety check under-reports the risk of the
+> thing it is previewing, and an operator reads a clean preview as
+> clearance. A dry run must run every read-only check the real run does,
+> or it is not a preview of the real run.**
+
+Moved above the dry-run exit. The check is read-only and costs nothing, so
+there was never a reason for it to run in only one mode. Proven: with a
+`condition_flag` attached, the DRY RUN now refuses and prints no plan at
+all; with it removed, the pre-flight line appears before the plan.
+
+Three defects in one small tool, each found before it touched production,
+and each in the part meant to make the previous one safe. Worth noticing
+as a pattern rather than three incidents: **a tool built to clean up a
+mistake gets the same care as the mistake did**, and the care has to be
+applied to the cleanup as deliberately as to the thing being cleaned.
+
 **Base rate (G-75), thirtieth of thirty:** found by counting rows after a
 script said "idempotent", which is the word that stops people counting.

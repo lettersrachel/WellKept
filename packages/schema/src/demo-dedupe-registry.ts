@@ -79,15 +79,15 @@ if (orphans.length) {
   await pool.end(); process.exit(2);
 }
 
-if (!COMMIT) {
-  console.log(`\nDRY RUN. ${dupes.rowCount} row(s) would be deleted, leaving ${total.rows[0].n - dupes.rowCount}.`);
-  console.log("Re-run with --commit --by <corporate admin email> to apply.");
-  await pool.end(); process.exit(0);
-}
-
-if (!BY) { console.error("\n--commit requires --by <email>; a deletion with no actor is what the audit rule forbids."); await pool.end(); process.exit(1); }
-
-// REFERENCE PRE-FLIGHT. Four tables carry a foreign key into
+// REFERENCE PRE-FLIGHT, AND IT RUNS BEFORE THE DRY-RUN EXIT.
+//
+// The first version ran it only under --commit, so a dry run printed a
+// plan and said nothing about whether that plan was safe. A preview that
+// omits the safety check under-reports the risk of the thing it is
+// previewing, and the operator reads it as clearance. The check is cheap
+// and read-only; there is no reason it should not run in both modes.
+//
+// Four tables carry a foreign key into
 // registry_entry: condition_flag, object_observation, visit_photo and
 // capture_artifact. A referenced row cannot be deleted, and finding that
 // out from Postgres MID-LOOP is the worst version: the audit row for that
@@ -115,6 +115,15 @@ if (refs.rowCount) {
   await pool.end(); process.exit(2);
 }
 console.log("\nreference pre-flight: no condition flag, observation, photo or capture points at these rows.");
+
+if (!COMMIT) {
+  console.log(`\nDRY RUN. ${dupes.rowCount} row(s) would be deleted, leaving ${total.rows[0].n - dupes.rowCount}.`);
+  console.log("Re-run with --commit --by <corporate admin email> to apply.");
+  await pool.end(); process.exit(0);
+}
+
+if (!BY) { console.error("\n--commit requires --by <email>; a deletion with no actor is what the audit rule forbids."); await pool.end(); process.exit(1); }
+
 const actor = await pool.query(
   `SELECT u.id FROM auth_user u JOIN household_role_assignment a ON a.user_id = u.id
     WHERE u.email = $1 AND a.household_id = $2 AND a.role = 'corporate_admin'`,
