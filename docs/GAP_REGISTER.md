@@ -6170,11 +6170,31 @@ subject and can substitute. Row 12 points at nothing, so a reader who goes
 looking finds a draft that says it is not the thing being cited. **G-108 costs
 a substitution; this costs the search.**
 
-**What it does NOT change: R22 stands and is better supported.** The ruling
-made the manual CEO gate the interim control and sequenced D6's trainee role.
-With no certification document written, there is nothing for software to
-enforce, and a role built to gate against an unwritten checklist would be
-gating against nothing.
+**What it changes about R22, corrected 28 August 2026 the same evening.** This
+entry first said "R22 stands and is better supported". **That is only half
+true, and the false half is the operational one.**
+
+R22 accepted the row's interim control AS WRITTEN, and as written that interim
+is two things: **the readiness checklist as a controlled document**, and **the
+CEO enforcing the scheduling gate manually**. The entry recorded only the
+second. With WK-TRN-009 unwritten, **the first clause does not exist**, so what
+is in force is a CEO enforcing a gate from her own judgment with no controlled
+document behind it. That is a weaker control than the one the ruling accepted,
+and nothing said so until now.
+
+- **R22's sequencing of D6's trainee role: unaffected, and better supported.**
+  With no certification document there is nothing for software to enforce, and
+  a role built to gate against an unwritten checklist would be gating against
+  nothing.
+- **R22's acceptance of the interim control: NOT unaffected.** One of its two
+  clauses is missing, and the missing one is the document that would make the
+  manual gate reviewable rather than personal.
+
+**The error is today's own catalogued shape, committed inside this entry.**
+"Interim control accepted as written" was read as "the manual CEO gate is
+accepted", and the dropped clause turned out to be the one that fails. **A
+two-part control summarized to one part reads as intact, because the summary
+carries no trace of what it left out** (G-112's line, in a new place).
 
 > **Row 12's blocker is a document rather than a feature**, which is a
 > different kind of item and should not sit in a software backlog. It cannot
@@ -6250,6 +6270,84 @@ one trace is enough to say it will keep arriving, and the fourth will be met
 under time pressure by whoever is building that feature. A decision made then
 will be made for one case, and the shape chosen for one case is the shape all
 four get.
+
+---
+
+#### Reconciliation with the founder's independent analysis, 28 August 2026
+
+The founder drafted her own answer without reading the four shapes above,
+deliberately, so the two could be reconciled rather than one agreeing with the
+other. **They agree on the framing and differ usefully on the answer.**
+
+**Agreed, and independently reached:** the obvious framing is a trap. Making
+`household_id` nullable weakens the invariant on every table carrying it,
+forever, to serve three cases that are not household data. Her closing line is
+the test: all three of her answers avoid it, which she reads as evidence the
+constraint is right and the question was about **missing objects** rather than
+a wrong column.
+
+**Three things her analysis has that the four shapes above do not.**
+
+1. **It is three decisions, not one.** The shapes above are written as a menu
+   for a single answer, and that framing is wrong. Product friction is
+   COMPANY-scoped, non-household paid time is PERSON-scoped, and access custody
+   is person-scoped with household-scoped events. A single mechanism serving
+   all three would have to be loose enough to stop being a constraint.
+2. **The discriminator is erasure, which is what makes the split
+   non-arbitrary.** Each case answers "must this survive household erasure"
+   differently: friction must (it is about the software), paid time must (wage
+   records, four-year retention), and access splits (household events erase,
+   the person's custody chain does not, because SOP-012 requires the log be
+   producible to police under the intrusion protocol). Erasure behaviour is a
+   sharper test than scope, because it cannot be answered by preference.
+3. **The general form.** "The system models households well and models the
+   company and its people barely at all, and every obligation that belongs to a
+   person or to the company hits the same wall because there is nothing on the
+   other side of it." That is a better statement of the entry's subject than
+   the one it was filed with.
+
+**Mapping her answers onto the shapes above**, so the reconciliation is
+checkable rather than asserted:
+
+| Case | Her answer | Shape above |
+|---|---|---|
+| Product friction | Out of the system for now, with a stated trigger (a second HOM whose friction is not heard in person); a user-scoped table with NO household column when built | Shape 4 now, shape 1 later. **Her addition is the trigger**, which shape 4 lacked and which is what stops "deliberately out" decaying into "forgotten" |
+| Non-household paid time | A category plus a NULLABLE household subject on `time_entry`, which is already a payroll record rather than a household record, with a CHECK expressing the whole-or-absent pair | **A narrowed shape 3.** The objection recorded above ("it changes the shape every existing guard reads") applies to doing this broadly; confined to one table that is already payroll, it does not. Her version is better than the shape as written |
+| Access custody | Split the object: a grant scoped to PERSON plus ITEM, its events scoped to the grant and referencing a household where one applies | Shape 1, with a decomposition the shape did not carry. **The four revocation triggers are the argument**: two are household events and two are person events, so a household-scoped table cannot represent half of its own lifecycle |
+
+**Her flag on the erasure tool, answered with the code.** She asked whether
+time entries are cleared with the household, noting that if so it is already a
+wage-records problem predating this question.
+
+- **The default is correct.** `erase-household.mjs:334` runs
+  `UPDATE time_entry SET note=NULL ... WHERE household_id=$1`: rows KEPT, free
+  text blanked. The header at `:48` states the reason, employer and business
+  records outliving the household data they served.
+- **The exposure is the counsel-directed flag.** `:328` runs
+  `DELETE FROM time_entry WHERE household_id=$1` under
+  `--erase-time-and-costs`. That can delete a wage record inside its four-year
+  retention window, which is the tension already recorded against WK-SOP-017
+  item 7.
+- **And one small point in her proposal's favour, found while checking:** that
+  DELETE is keyed `WHERE household_id=$1`. A non-household time row carrying a
+  NULL household would be **unreachable by it**, which means her shape protects
+  exactly the rows the retention rule cares most about, by construction rather
+  than by care.
+
+**One engineering consequence to check before her time_entry change, reported
+not solved.** Four census guards compute their input from tables carrying
+`household_id` (erasure coverage, legal census, staff disclosure, payload
+shape). Making that column nullable on `time_entry` does not remove the column,
+so the censuses should still find the table, but each keys on it slightly
+differently and all four need re-reading against the change rather than
+assumed. That is a session's first step, not an objection.
+
+**Status, stated plainly rather than assumed.** Her three answers are written
+as "what I would rule", which is a recommendation. **They are recorded here as
+hers and not as adopted**, and one word turns each into a ruling. Flagging the
+one with a clock on it: the non-household paid time answer is the difference
+between compliant and non-compliant wage records, and the first payroll run is
+February 2027.
 
 ---
 
