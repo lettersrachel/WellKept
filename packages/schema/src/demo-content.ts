@@ -46,7 +46,12 @@ const CONTENT: [string, string, Flag, Prov][] = [
   F("Returns protocol%", "Returns pile lives on the garage shelf marked RETURNS; HM initiates drop-offs on Wednesday errands. Solved 5-28: 'weirdly life-changing.'", "DELIGHT", "observed"),
   F("Regular deliveries and services%", "Groceries Tuesday (fridge items straight in). Dry cleaning Friday hooks by the mudroom. Water softener salt monthly — bags to the basement landing, HM pours."),
   F("Every regular presence%", "Rosa — housekeeper, Mondays 9-1 (her own key, her own rhythm; HM coordinates, never directs). Ben — dog walker, weekdays at noon."),
-  F("Products by surface%", "No bleach on the colored grout. No Magic Eraser on painted walls. The ceramics on the study shelves: dry brush only, never moved.", "CAUTION"),
+  // Flag deliberately NOT here: db:playbook-fill writes "The do-not-use
+  // list AND WHY", which covers the same ground explicitly and names the
+  // reason, and that is the row worth putting on the flags-first panel.
+  // Two flags on one subject is the G-100 shape; the marker goes to the
+  // better row rather than to whichever row existed first.
+  F("Products by surface%", "No bleach on the colored grout. No Magic Eraser on painted walls. The ceramics on the study shelves: dry brush only, never moved."),
   F("The small standing orders%", "Folgers Classic Roast is David's coffee: NEVER let it run out. Reorder at half-can. Lisa's peonies when in season, one bunch, kitchen island."),
   F("School communication channels%", "Everything arrives through the Maple Grove app to Lisa's email; supply lists get printed to the kitchen corkboard."),
   F("Sizes registry per child%", "Owen: 4T, shoe 11T. Mia: girls 10, shoe 4. Updated at seasonal changeover; outgrown clothes to the donate bin in the garage."),
