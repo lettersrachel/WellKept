@@ -1713,6 +1713,89 @@ and uninvented confidence scale, `time_segment`'s `derived_from`,
 `estimate_snapshot`'s NULL-is-unknown). That is R9 happening rather than
 being prevented.
 
+**28 August 2026, the trace RUNS.** The founder supplied the twenty-one rows
+verbatim from the library archive, and `K-OPS-002_TRACE_2026-08-28.md` now
+carries the run rather than the blocker. Four rows recorded as ruled (R19-R22),
+ten verified against the code with file and symbol, seven additions reported
+separately.
+
+**The ten rows are not "unbuilt".** Six of the ten have a working mechanism
+with one specific clause missing, and in four of those the missing clause is
+the one a member or an operator would notice: **no client notification when a
+backup HOM substitutes** (row 9), **`resume` is a second manual event and
+nothing fires on the pause's effective date** (row 10), the client report
+carries a photo COUNT and not the photos or the checklist or the exceptions
+(row 8), and the emergency contact is playbook DATA with no affordance
+anywhere (row 14). Each is small; none is blocked by a boundary or a ruling.
+
+**Rows needing a document, named so one pull covers them:** WK-SOP-005 for
+row 8's QA five dimensions, WK-SOP-018 or -019 for what row 11 means by
+"feedback module" as distinct from a complaint, and WK-SOP-015/016/WK-FIN-005
+for whether row 5's purchase limit is a system field or a household fact.
+**Row 4 needs a device, not a document**: whether photo capture bypasses the
+camera roll is an OS behaviour, the native surface opens the camera directly
+while the web's `capture` attribute is only a hint, and neither can be settled
+from source.
+
+**Of the seven v1.1 additions, TWO ARE RECOVERED and five need A213.** The
+restricted-access class (do-not-admit, child-pickup, welfare notes, enforced
+server-side with visit-sheet-only visibility and access logging) and
+consents-arming (consents as switches arming capabilities, verified
+server-side) are both defined verbatim in WK-SEC-001, test areas 3 and 4.
+Decision-Rights is named twice in repo documents and DEFINED in neither, so it
+still needs A213 or INSTRUCTION_UPDATES v2. Member channels has a plausible
+match in REQ-078 that is deliberately NOT treated as a recovery, since
+matching a subject line to a requirement by topic is the inference the trace
+exists to avoid.
+
+**And the reason those two were recoverable is a correction: WK-SEC-001 IS in
+this repository** (`docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`),
+and three documents written earlier the same day said it was not. **G-106**:
+the absence was reported from `ls docs` plus a grep over `docs/*.md`, neither
+of which can see a `.docx` one directory down, so the negative result was the
+shape of the query rather than evidence. Corrected in place in all three; the
+substantive findings (audit not run, staging absent) are unchanged.
+WK-QA-004 and WK-SPEC-002 are genuinely absent, this time confirmed against
+the full `docs/library/` listing.
+
+**PAPER-PARITY's text is not in the repository** (zero matches for the test,
+for "paper parity", or for A228, including `docs/library/`), and the flag is
+now sharper: with the trace run, seven of the fourteen original rows resolve
+to paper or manual controls, so the test's direction decides roughly half the
+document rather than four rows.
+
+**The native app's hours capture is FIXED, not relabelled** (founder ruling;
+G-104 addendum). The chip that wrote a fabricated three-hour window is gone;
+two typed fields matching the web replace it, with `captureHours` refusing a
+non-positive interval. **The framing is the finding: not shipped, and not
+prevented either.** Nothing in the code path stopped those minutes reaching
+payroll and the covenant interval; the Apple Developer enrollment did, and an
+enrollment is an administrative event rather than a control. The fix landed
+before the enrollment, which is the only ordering that makes the distinction
+mean anything.
+
+**RFC-ATTR-01 is WRITTEN** (`docs/rfc/RFC-ATTR-01_Field_Attributes.md`), the
+Gate 2 item 2 field-attribute RFC, serving WK-OPS-002 v1.1's September
+reconciliation event as the same document by circumstance. Proposed defaults
+under the RFC-PRIM-01 posture, 48 hours to redirect. **The survey corrected
+its own premise: it is TEN provenance-shaped mechanisms and FOUR confidence
+mechanisms in three incompatible types, not five** (the figure of five was
+quoted twice this week, including by the session that wrote the RFC, and was a
+remembered count sitting next to the thing it counted). Confidence exists as a
+two-value categorical, an integer percentage, and two free texts one of which
+has no scale at all. **Two of the ten deliberately do NOT migrate**
+(`work_item.source` and `event_outbox.provenance` answer a different question
+under the same word), which name-matching would have got wrong. **Materiality
+and consequence class are held as FOUNDER TAXONOMY** and are not proposed; a
+consequence vocabulary is a safety taxonomy, the capture-router precedent.
+Step 1 of the order is the vocabulary module and its guard, no migration, and
+it is worth doing even if every other step defers, because it is what stops an
+eleventh mechanism appearing.
+
+**G-105 now carries the exact edit** for `WK-DEV-006:30`, FROM and TO strings
+with the file and line, so the second key turns on one line rather than a
+discussion.
+
 ---
 
 ## Closed

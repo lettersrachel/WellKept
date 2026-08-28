@@ -5705,8 +5705,14 @@ first. Corrected by delivering the shortlist:
 **3. The S3 vault recommendation was solving a problem WK-SEC-001 already
 gates.** Withdrawn. The recommendation is not restated here, because
 restating a withdrawn recommendation is how it gets re-adopted by a reader
-who skims. WK-SEC-001 is not in this repository, so the gate it applies
-cannot be quoted from here.
+who skims. WK-SEC-001 was described here as not being in this repository;
+**that was wrong and is corrected by G-106 below.** It is at
+`docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`, and the gate
+it applies is quotable: its test area 8 covers "secrets handling in repo and
+deploy pipeline, backup encryption, and tamper-evident audit logs", and its
+pass criteria bar any unresolved critical or high finding touching the photo
+layer or the restricted-access class. The withdrawal of the recommendation
+stands on the founder's ruling and does not depend on the mistaken sentence.
 
 **The pattern across all three, and the reason they are one entry rather than
 three:** each was a ruling made against a document the ruler was not holding
@@ -5841,12 +5847,23 @@ Not shipped, and that is luck rather than control: the app is not in a HOM's
 hands only because the Apple Developer enrollment is still an open founder
 item. Nothing in the code path would have stopped it.
 
-**Fixed today: the label only.** It now says
-`Record hours (last 3 hours, placeholder)`, which is what that button actually
-does. The real fix is the two typed fields the web surface has, and it is
-named as its own session rather than done here, because a capture surface on a
-platform nobody can install is not the thing to build in the middle of a
-documentation trace.
+**Fixed in two steps the same day.** First the label, which said what the
+button actually did. Then, on the founder's ruling that this is a defect and
+not a label, **the mechanism**: the chip is gone and the native surface now
+carries two typed fields matching the web exactly, with `captureHours`
+refusing a non-positive interval (close-flow `index.ts:183`) so a typo lands
+as a visible error rather than as minutes. No default is prefilled, because an
+empty field is a HOM who has not entered her hours and the close flow already
+refuses to submit without them.
+
+**The founder's framing, recorded because the distinction IS the finding: not
+shipped, and not prevented either.** The fabricated hours never reached a HOM.
+Nothing in the code path stopped them; the Apple Developer enrollment did.
+**An enrollment is an administrative event, not a control**, and the two are
+easy to confuse in exactly this situation because the outcome so far is
+identical. Had the enrollment completed a week earlier, this ships. The fix
+therefore landed BEFORE the enrollment rather than after, which is the only
+ordering under which the distinction means anything.
 
 **The general form, and it is not the same as G-104's original one.** G-104
 was about requirement prose becoming an assertion when it moves into a UI. This
@@ -5887,9 +5904,19 @@ the report "generates from these events, not from spreadsheets". Handoff 24.3
 says "The monthly covenant report generates from these events". Neither asks
 for purity. **The phrase appears exactly once in the tree.**
 
-Correction, whenever the second key turns: Phase 2's acceptance reads "the
-monthly covenant report generates from these events and matches a hand
-computation".
+**The correction, stated as an exact edit so the second key turns on one line
+rather than on a discussion** (confirmed complete 28 August 2026):
+
+- **File:** `docs/WK-DEV-006_Execution_Directive.md`, line 30, the Phase 2
+  acceptance sentence.
+- **FROM:** `the monthly covenant report generates as a pure function of events and matches a hand computation`
+- **TO:** `the monthly covenant report generates from these events and matches a hand computation`
+- **Nothing else on the line changes.** The phrase occurs exactly once in the
+  file and exactly once in the tree, so the replacement is unambiguous.
+- **Authority for the wording:** REQ-083 ("generates from these events, not
+  from spreadsheets") and handoff 24.3 ("The monthly covenant report generates
+  from these events"), which already agree with each other and with the TO
+  string.
 
 **Recorded with one correction to how it was reported to me**, because the
 misattribution is the interesting part rather than an embarrassment. The
@@ -5901,3 +5928,54 @@ line). **Four errors, all in the same week, all of the form "which document
 says the wrong thing".** The fix that keeps working is the cheap one: search
 the tree for the exact phrase before deciding which file carries the defect.
 `grep` settles in one second what memory gets wrong half the time.
+
+---
+
+### G-106. An absence reported from a search that could not have found it
+
+**Filed 28 August 2026. My defect, and it stood in three documents for most of
+a day.**
+
+Three documents produced this session state that **WK-SEC-001 is not in this
+repository**: the Gate 0 status report's preamble and its Phase 1 table, and
+G-102's third item. All three are wrong.
+
+**It is at `docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`**,
+listed in `LIBRARY_INDEX.md`, carrying all eight test areas, the threat model,
+the deliverables and the pass criteria.
+
+**The search that produced the false claim was `ls docs | grep WK-SEC` and a
+grep over `docs/*.md`.** Neither can see a `.docx` one directory down.
+`docs/*.md` does not match `docs/library/*.docx` on either the extension or
+the path, so the search was incapable of returning the file regardless of
+whether it existed. **The negative result was not evidence; it was the shape
+of the query.**
+
+> **An absence claim is only as wide as the search that produced it, and a
+> search's blind spots are invisible in its output.** A grep that finds
+> nothing looks identical whether the thing is missing or merely out of
+> scope. Every "X is not in the repository" needs the search that would have
+> found it stated beside it, so a reader can see what was actually looked at.
+
+**What it cost, which is the part that makes it worth an entry rather than a
+silent fix.** Two of the seven WK-OPS-002 v1.1 additions were reported as
+needing ruling A213 when their expectations were readable the whole time:
+the restricted-access class is defined in test area 3, and consents-arming in
+test area 4, both verbatim and both traceable. A request would have gone to
+the founder for a document that was already on disk.
+
+**And it compounded**, which is the mechanism worth noticing. Once written, the
+claim was quoted forward: the Phase 1 report said the audit's scope "cannot be
+enumerated here either", the staging report reasoned from it, and G-102 leaned
+on it to explain why a withdrawn recommendation could not be quoted. **One bad
+search, four downstream statements**, none of which re-checked, because each
+was reading a sentence rather than a directory.
+
+**Corrected in place in all three, with dated notes.** The substantive
+findings are unchanged: the audit has still not run, staging still does not
+exist, and the ruling in G-102 stands on the founder's decision rather than on
+the mistaken sentence.
+
+**WK-QA-004 and WK-SPEC-002 are genuinely absent**, and this time that is
+confirmed against the full `docs/library/` listing rather than against a
+pattern.

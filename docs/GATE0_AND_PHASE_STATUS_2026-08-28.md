@@ -8,10 +8,19 @@ decides anything; where a question is a founder ruling it is left open and
 said to be open.
 
 Everything below is read from this repository at the commit this document
-lands on. **Three documents the tasks reference are not in the repository:
-WK-SEC-001, WK-QA-004 and WK-SPEC-002.** Nothing here is reported against
-them, and the places where that limits an answer say so rather than
-inferring around it.
+lands on.
+
+> **CORRECTED 28 August 2026, later the same day. This paragraph originally
+> read that THREE documents were not in the repository: WK-SEC-001, WK-QA-004
+> and WK-SPEC-002. WK-SEC-001 IS in the repository**, at
+> `docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`, listed in
+> `LIBRARY_INDEX.md` and carrying all eight test areas and the pass criteria.
+> The absence claim came from a search that structurally could not find it
+> (`ls docs` and a grep over `docs/*.md`, neither of which reaches a `.docx`
+> one directory down). Filed as G-106. **WK-QA-004 and WK-SPEC-002 are
+> genuinely absent**, confirmed against the full `docs/library/` listing.
+> Section 3's WK-SEC-001 row is corrected in place below; the audit is still
+> NOT RUN, which was the substantive finding and is unchanged.
 
 ---
 
@@ -266,7 +275,7 @@ destination she chooses.
 
 | Phase 1 deliverable | Status |
 |---|---|
-| WK-SEC-001 white-box audit on staging with synthetic data, remediations filed | NOT RUN. WK-SEC-001 is not in the repository, so its scope cannot be enumerated here either |
+| WK-SEC-001 white-box audit on staging with synthetic data, remediations filed | NOT RUN. **Corrected 28 August: the scope document IS in the repository** (`docs/library/WK-SEC-001_Application_Security_Audit_Scope.docx`, G-106), so its eight test areas and its pass criteria are readable. The pass criterion is zero unresolved critical or high findings touching tenant isolation, authentication and authorization, the photo layer, or the restricted-access class, plus the four named debt items fixed or formally risk-accepted, plus a retest |
 | LLC ownership on GitHub org, hosting, database, object store, every billing account (24.8) | NOT CONFIRMED; and see 3.1 |
 | Passkey MFA live for privileged accounts (D3) | NOT BUILT. Zero WebAuthn, passkey or FIDO references in application code; the only hit in the tree is a comment at `provision-hg.ts:15`. TOTP is what is live |
 | Tested backup restore | NOT PERFORMED. Named as owed in `LAUNCH.md:37` and in `CUSTODY_SITTING.md:21` |

@@ -281,6 +281,8 @@ function CloseFlowScreen({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [changes, setChanges] = useState("");
+  const [hoursStart, setHoursStart] = useState("");
+  const [hoursEnd, setHoursEnd] = useState("");
   const [dotText, setDotText] = useState("");
   const [zone, setZone] = useState("none");
   const [lifeChange, setLifeChange] = useState(false);
@@ -454,20 +456,51 @@ function CloseFlowScreen({
 
             <View style={s.card}>
               <Text style={s.h2}>Hours</Text>
-              {/* G-104, and worse here than on the web: this chip said
-                  "geofence suggestion" over hours that are FABRICATED, a fixed
-                  three-hour window ending now, entered by nobody. Those minutes
-                  would become the time_entry and the covenant events' interval.
-                  The label now says what the value is. This app is not in a
-                  HOM's hands (Apple Developer enrollment is still open), and
-                  the real fix is the same two typed fields the web surface
-                  has; that is its own session, named rather than done here. */}
+              {/* G-104 addendum. This was ONE chip, labelled "Confirm hours
+                  (geofence suggestion)", whose handler wrote a fixed
+                  three-hour window ending at the tap: a number entered by
+                  nobody, which would have become the time_entry row and the
+                  interval the REQ-083 covenant events carry. A fabricated
+                  value reaching payroll and a lender report.
+
+                  Now two typed fields, matching the web surface
+                  (VisitWizard.tsx) exactly: the HOM enters start and end, and
+                  those are the hours of record. REQ-031 as amended 28 August
+                  2026 names this as the interim control; REQ-036's geofenced
+                  suggestion stays the P1 target and must not be described on
+                  any surface until it exists.
+
+                  captureHours refuses a non-positive interval (close-flow
+                  index.ts:183), so a typo lands as a visible error rather
+                  than as minutes. No default is prefilled: an empty field is
+                  a HOM who has not entered her hours, and the close flow
+                  already refuses to submit without them. */}
+              <Text style={s.note}>Enter your start and end times. These are the hours of record for this visit.</Text>
+              <TextInput
+                style={s.input}
+                value={hoursStart}
+                onChangeText={setHoursStart}
+                placeholder="Start, as 2026-08-28T09:00"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TextInput
+                style={s.input}
+                value={hoursEnd}
+                onChangeText={setHoursEnd}
+                placeholder="End, as 2026-08-28T11:30"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
               <Pressable
                 style={s.chip}
-                onPress={() => run((f) => f.captureHours({ startedAt: new Date(Date.now() - 3 * 3600_000).toISOString(), endedAt: new Date().toISOString() }))}
+                onPress={() => run((f) => f.captureHours({ startedAt: hoursStart, endedAt: hoursEnd }))}
               >
-                <Text style={s.chipText}>{state.hours ? "Hours recorded" : "Record hours (last 3 hours, placeholder)"}</Text>
+                <Text style={s.chipText}>Save hours</Text>
               </Pressable>
+              {state.hours && (
+                <Text style={s.note}>Saved: {state.hours.startedAt} to {state.hours.endedAt}</Text>
+              )}
             </View>
 
             <View style={s.card}>
