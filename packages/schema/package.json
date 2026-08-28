@@ -24,7 +24,8 @@
     "db:demo-hom": "node src/demo-hom-view.ts",
     "db:playbook-fill": "node src/demo-playbook-fill.ts",
     "db:demo-history": "node src/demo-history.ts",
-    "db:demo-dedupe": "node src/demo-dedupe-registry.ts"
+    "db:demo-dedupe": "node src/demo-dedupe-registry.ts",
+    "db:demo-primitives": "node src/demo-primitives.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
