@@ -6085,3 +6085,85 @@ whoever built it and incomplete to whoever reads the SOP.
 WK-SOP-005 Level 2, or whether a five-dimension review exists in a document
 neither of us has read, is a library-side question. The trace records the
 substitution it made so that a later reader can see it was a substitution.
+
+---
+
+### G-109. Two different measurements are both called the hiring trigger, and one is live
+
+**Filed 28 August 2026, found while re-tracing WK-OPS-002 row 9 against
+WK-SOP-014.**
+
+The corporate board renders a hiring-gate state today
+(`oversight/board/page.tsx:114-119`), computed from the versioned
+`capacity_gate` knob. WK-SOP-014 states the hiring trigger as part of its
+capacity rule. **They are not the same rule and they cannot be converted into
+each other.**
+
+| | The board | WK-SOP-014 |
+|---|---|---|
+| Metric | `households / HOMs` | a utilization percentage |
+| Unit | households per HOM | percent |
+| Threshold | `cap = 5`, band `3..5` | 85% |
+| Window | **none: a single reading trips it** | **four consecutive weeks** |
+
+Converting between them requires a stated assumption about hours per household
+and available hours per HOM. **No such assumption is written anywhere**, so
+neither figure implies the other, and there is no arithmetic that makes them
+agree or disagree.
+
+**This is worse than the shape it first looks like.** "Two thresholds for one
+decision" would be a reconciliation problem: pick one, retire the other. This
+is **two different measurements sharing one name**, which means a reader who
+knows one of them and meets the other will not notice, because both are
+plausible answers to "are we at capacity".
+
+**The window is the sharper half.** The board's gate has no time dimension at
+all: one reading of one ratio trips it. The SOP requires four consecutive
+weeks above 85% precisely so a transient does not open a requisition. A gate
+that can trip on a single week's reading and a gate that requires a month of
+evidence are different safeguards even where they happen to agree on a day.
+
+**Not resolved.** The cap is covenant-relevant and a cap change is a two-key
+model change before it is a config change, so nothing here is adjusted by an
+engineering judgment. What is recorded is that the board's hiring-trigger
+sentence and WK-SOP-014's hiring trigger are different claims, and that the
+board's is the one a founder currently sees.
+
+---
+
+### G-110. A row cites a document that has never been written
+
+**Filed 28 August 2026 by the founder, from the library. The trace's second
+citation defect, and worse than the first.**
+
+WK-OPS-002 row 12 sources its requirement to WK-SOP-000 and **WK-TRN-009**.
+There is no WK-TRN-009. What exists is
+`WK-TRN-009a_Onboarding_Checklist_DRAFT`, marked **UNPLACED, code to be
+confirmed, Draft v0.1, July 2026**, effective on counsel sign-off of the
+WK-SOP-011 screening questions.
+
+**The draft that carries the number disclaims the number**, and the number has
+been referenced across the library index since v3.1.
+
+**Why it is worse than G-108.** Row 8 points at a real document with a phrase
+that does not appear in it, so a reader who opens the document finds the
+subject and can substitute. Row 12 points at nothing, so a reader who goes
+looking finds a draft that says it is not the thing being cited. **G-108 costs
+a substitution; this costs the search.**
+
+**What it does NOT change: R22 stands and is better supported.** The ruling
+made the manual CEO gate the interim control and sequenced D6's trainee role.
+With no certification document written, there is nothing for software to
+enforce, and a role built to gate against an unwritten checklist would be
+gating against nothing.
+
+> **Row 12's blocker is a document rather than a feature**, which is a
+> different kind of item and should not sit in a software backlog. It cannot
+> be estimated, assigned to a build session, or closed by writing code.
+
+**The pattern across both defects, worth having now that there are two.** Both
+were found by reading the cited source, not by working the row. Neither would
+have surfaced during implementation: row 8 would have been built against a
+plausible substitution, and row 12 would have been built against whatever the
+implementer imagined a certification checklist contains. **A trace that checks
+its own citations is doing something a backlog cannot do later.**
