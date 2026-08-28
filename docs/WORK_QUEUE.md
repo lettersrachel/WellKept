@@ -1622,6 +1622,39 @@ systems capture form specified earlier on 28 August.
   needs. The valuable staging run is the airplane e2e against a real
   deployment.
 
+**And the staging ruling lands the same day (founder, 28 August): BUILD IT
+NOW, under contractor-held accounts.** Two accounts added to the eventual
+transfer is cheaper than holding all seven Phase 1 deliverables behind LLC
+formation, and Phase 1 gates real household data. **S3 and KMS are the named
+exception and open clean in the entity's name at formation**, since a photo
+written to a contractor bucket is a photo to move and the KEK is the vault's
+root of trust. The ruling is recorded at the top of `STAGING_RUNBOOK.md`,
+where it governs the six steps rather than sitting in a report about them.
+
+The runbook's two errors are corrected in place with dated notes: step 2 no
+longer offers the deleted `well-kept-web` project for repurposing (G-35 was
+answered 26 August and the founder deleted the project the same day), and
+step 3's Resend key is no longer presented as an open choice, since the 24
+August staging ruling already requires a separate key with a hard internal
+allowlist, which is stricter than either option the step offered.
+
+**And `tooling/verify-merge.sh` is IN THE REPOSITORY**, which CLAUDE.md's
+Merging section already claimed. It derives the slug from `origin` rather
+than hardcoding an owner (the transfer question answers itself, and a
+hardcoded owner would keep WORKING through GitHub's redirect while naming a
+repo that no longer holds the code), refuses without `GITHUB_TOKEN`, and
+carries a `--dry-run` that cannot merge by control flow rather than by
+intention (G-63's lesson applied at birth). Proven in both directions before
+it was trusted: seven refusals and one green path, the green path being a
+dry run that passed all three checks on a real PR and merged nothing.
+**The proof found a real defect in the version it was proving**: a slug test
+that only looked for a slash accepted a gitlab origin, built a nonsense API
+base, and refused three checks later with "could not resolve a head sha",
+blaming the PR for a defect in the remote. `tooling/deploy.sh:342` carries
+the identical slash-only test and is REPORTED, not changed, since it is
+outside this session's scope; it fails closed there too, and for the same
+misleading reason.
+
 ---
 
 ## Closed

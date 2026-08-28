@@ -400,6 +400,16 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   is the defect class of G-53 rather than a safeguard against it.
 - Do not run the full turbo suite while a dev server is up. It produces phantom
   typecheck failures.
+- **Never point the test suite at staging, or at any database you are not
+  willing to lose.** The suite is hermetic by design: the integration tests
+  write, mutate and TRUNCATE, and CI runs them against service containers it
+  starts and throws away. Running them against staging would destroy the
+  seeded synthetic fixture set, which is the venue and the data the WK-SEC-001
+  Phase 1 audit depends on (ADR-007). "Run the suite in staging" in the Phase 0
+  acceptance line does not mean this; it means the deployed staging system
+  passes its checks, and the run worth having there is the airplane e2e against
+  a real deployment. Set `DATABASE_URL` deliberately, and read it before you
+  run.
 
 ## Merging
 
@@ -408,7 +418,9 @@ replaces the other:
 
 - **Branch protection refuses the merge.** Structural, applies to
   everyone and every path, cannot be forgotten.
-- **The verify-then-merge script refuses to attempt one.** It reads the
+- **The verify-then-merge script refuses to attempt one** (`tooling/verify-merge.sh`;
+  `<PR> --dry-run` verifies without merging, and cannot merge, by control
+  flow). It reads the
   head from the PR, demands the `github-actions` suite exist AND carry
   more than zero runs (a zero-run suite is the `startup_failure` shape,
   which looks present and ran nothing), demands `gates` and `airplane`
