@@ -40,7 +40,7 @@ await c.connect();
 
 const vaultRows = (await c.query("SELECT id, key_ref, ciphertext FROM vault_item")).rows;
 const totpRows = (await c.query("SELECT user_id, wrapped_key, secret_box FROM user_totp")).rows;
-console.log(`\n${COMMIT ? "ROTATING" : "DRILL (dry run, no changes)"} — ${vaultRows.length} vault key(s), ${totpRows.length} TOTP key(s)\n`);
+console.log(`\n${COMMIT ? "ROTATING" : "DRILL (dry run, no changes)"}: ${vaultRows.length} vault key(s), ${totpRows.length} TOTP key(s)\n`);
 
 // Phase 1 (both modes): every stored key must unwrap under OLD, and its
 // sealed value must decrypt under the unwrapped data key — proving the
@@ -66,7 +66,7 @@ for (const r of totpRows) {
   totpNext.push({ userId: r.user_id, next });
   checked += 1;
 }
-console.log(`  ${checked} key(s) unwrap under OLD and their values decrypt — old custody intact.`);
+console.log(`  ${checked} key(s) unwrap under OLD and their values decrypt; old custody intact.`);
 
 // Phase 2 (both modes): the new wraps must unwrap under NEW to the same
 // data keys. Round-trip proven before any write.
@@ -74,7 +74,7 @@ for (const v of vaultNext) {
   const orig = oldKms.unwrap(JSON.parse(vaultRows.find((r) => r.id === v.id)!.key_ref));
   if (!newKms.unwrap(JSON.parse(v.next) as SealedBox).equals(orig)) throw new Error(`round-trip mismatch on vault_item ${v.id}`);
 }
-console.log(`  re-wrapped keys round-trip under NEW — rotation is sound.`);
+console.log(`  re-wrapped keys round-trip under NEW; rotation is sound.`);
 
 if (!COMMIT) {
   console.log("\nDrill complete; nothing changed. Re-run with --commit (against a throwaway branch first) to rotate.\n");
@@ -95,7 +95,7 @@ try {
   await c.query("COMMIT");
 } catch (err) {
   await c.query("ROLLBACK");
-  console.error("\nFAILED — rolled back, old KEK still rules:", err instanceof Error ? err.message : err);
+  console.error("\nFAILED, rolled back, old KEK still rules:", err instanceof Error ? err.message : err);
   await c.end();
   process.exit(1);
 }

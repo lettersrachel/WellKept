@@ -3,7 +3,7 @@
  * entirely fictional pilot data (pnpm db:demo). Idempotent updates by
  * field-name pattern. s3 stays empty (vault-pending, ADR-001 guardrail 2);
  * s2 values exist so the HM/corporate views differ visibly from the
- * client's — the payload gates keep proving they never leak.
+ * client's; the payload gates keep proving they never leak.
  */
 import { randomUUID } from "node:crypto";
 import pg from "pg";
@@ -27,25 +27,25 @@ const F = (pattern: string, value: string, flag: Flag = "none", provenance: Prov
 const CONTENT: [string, string, Flag, Prov][] = [
   F("Household summary paragraph%", "The Fernbrook household runs on calm mornings and a full kitchen. David and Lisa both work demanding schedules; Owen (4) and Mia (9) anchor the family rhythm, and Biscuit the golden retriever supervises everything. The house rewards quiet consistency: things returned to their places, the coffee never running out, and small kindnesses noticed without being announced."),
   F("Medical alerts and devices%", "EpiPens: kitchen drawer left of the range, and in Mia's school bag. Owen's inhaler lives in the hall-closet first-aid bin. Expiration check first visit of each month.", "CRITICAL", "verified_by_touch"),
-  F("Adult 1: full name%", "David Fernbrook. Goes by David — never Dave, never Mr. F."),
+  F("Adult 1: full name%", "David Fernbrook. Goes by David, never Dave, never Mr. F."),
   F("Adult 1: contact hours%", "Texts any time, reads them at lunch and after 6. A call means it's urgent."),
   F("Adult 2: same four rows", "Lisa Fernbrook (she/her). Reachable by text 9-3 on weekdays; do not call during school pickup (2:45-3:30)."),
   F("Decision-maker map%", "Household operations: Lisa decides. Vehicles and exterior: David. Anything touching the children: both, together, never one relayed through the other."),
   F("Important-dates registry%", "Mia's birthday August 2; wedding anniversary September 14; Grandma Ruth's birthday October 3.", "none", "client_written"),
   F("Names: correct pronunciation%", "Fernbrook as written. Mia is MEE-ah. Grandma Ruth is 'Gram' to the children."),
-  F("Each child: name, age, school%", "Owen, 4 — Hillside Cooperative Preschool, T/Th mornings. Mia, 9 — Maple Grove Elementary, grade 4, bus at 8:05."),
+  F("Each child: name, age, school%", "Owen, 4: Hillside Cooperative Preschool, T/Th mornings. Mia, 9: Maple Grove Elementary, grade 4, bus at 8:05."),
   F("Each child: what they notice%", "Owen: Rex the dinosaur lives on the LEFT pillow. Always. He checks. Mia: notices when her art on the fridge changes order; she curates it herself.", "DELIGHT", "observed"),
-  F("Each child: room rules%", "Owen's room: enter freely before 3pm (nap until 3, no upstairs vacuum before then — through summer 2027 only). Mia's room: knock, always; she answers."),
+  F("Each child: room rules%", "Owen's room: enter freely before 3pm (nap until 3, no upstairs vacuum before then, through summer 2027 only). Mia's room: knock, always; she answers."),
   F("Child-related rules: screens%", "No screens before school. Snack drawer is self-serve after 3. Homework before any playdate; the HM never negotiates exceptions."),
-  F("Each pet: species%", "Biscuit — golden retriever, 6, greets everyone like family. No fear of strangers; excessive love of delivery drivers."),
+  F("Each pet: species%", "Biscuit, golden retriever, 6, greets everyone like family. No fear of strangers; excessive love of delivery drivers."),
   F("Feeding: what, when%", "Biscuit: one cup at 7am, one at 5pm, from the bin in the mudroom. Treats: two max, after walks. Heartgard the 1st of the month.", "none", "verified_by_touch"),
-  F("Door, gate, and room rules; escape%", "Rear gate must latch fully — Biscuit can push an unlatched gate open. Check on every exit.", "CRITICAL", "verified_by_touch"),
+  F("Door, gate, and room rules; escape%", "Rear gate must latch fully. Biscuit can push an unlatched gate open. Check on every exit.", "CRITICAL", "verified_by_touch"),
   F("Waste: trash%", "Trash Thursday, recycling alternate Thursdays, compost Monday. Bins out the night before, back in by evening; HOA fines after 24 hours."),
   F("Shoes-off household%", "Shoes off at the mudroom bench. HM keeps dedicated indoor shoes on the second shelf."),
   F("Mail and packages protocol%", "Packages to the mudroom bench. Nothing gets opened. Anything from a pharmacy goes straight to the entry-hall table, visible."),
   F("Returns protocol%", "Returns pile lives on the garage shelf marked RETURNS; HM initiates drop-offs on Wednesday errands. Solved 5-28: 'weirdly life-changing.'", "DELIGHT", "observed"),
-  F("Regular deliveries and services%", "Groceries Tuesday (fridge items straight in). Dry cleaning Friday hooks by the mudroom. Water softener salt monthly — bags to the basement landing, HM pours."),
-  F("Every regular presence%", "Rosa — housekeeper, Mondays 9-1 (her own key, her own rhythm; HM coordinates, never directs). Ben — dog walker, weekdays at noon."),
+  F("Regular deliveries and services%", "Groceries Tuesday (fridge items straight in). Dry cleaning Friday hooks by the mudroom. Water softener salt monthly; bags to the basement landing, HM pours."),
+  F("Every regular presence%", "Rosa, housekeeper, Mondays 9-1 (her own key, her own rhythm; HM coordinates, never directs). Ben, dog walker, weekdays at noon."),
   // Flag deliberately NOT here: db:playbook-fill writes "The do-not-use
   // list AND WHY", which covers the same ground explicitly and names the
   // reason, and that is the row worth putting on the flags-first panel.
@@ -55,11 +55,11 @@ const CONTENT: [string, string, Flag, Prov][] = [
   F("The small standing orders%", "Folgers Classic Roast is David's coffee: NEVER let it run out. Reorder at half-can. Lisa's peonies when in season, one bunch, kitchen island."),
   F("School communication channels%", "Everything arrives through the Maple Grove app to Lisa's email; supply lists get printed to the kitchen corkboard."),
   F("Sizes registry per child%", "Owen: 4T, shoe 11T. Mia: girls 10, shoe 4. Updated at seasonal changeover; outgrown clothes to the donate bin in the garage."),
-  F("The household year%", "Hosts Thanksgiving (25+ people). Beach house last two weeks of July. School year ends mid-June — teacher gifts are a standing item."),
+  F("The household year%", "Hosts Thanksgiving (25+ people). Beach house last two weeks of July. School year ends mid-June, and teacher gifts are a standing item."),
   F("Vehicles: count%", "Two: the gray SUV (Lisa, school runs) and David's sedan. Detailing quarterly; the SUV always has the parking garage card in the visor."),
   F("Parking: where HM parks%", "HM parks in the driveway's left lane, never blocking the garage. Vendors at the curb, never the driveway on Mondays (Rosa)."),
   // s2 content: visible to HM/corporate, structurally absent from the client payload.
-  F("Allergies: every person%", "Mia: tree nuts, SEVERE — EpiPen protocol. Owen: none known. David: penicillin. Biscuit: chicken (itching).", "CRITICAL"),
+  F("Allergies: every person%", "Mia: tree nuts, SEVERE. EpiPen protocol. Owen: none known. David: penicillin. Biscuit: chicken (itching).", "CRITICAL"),
   F("Vet: practice%", "Maple Grove Animal Hospital; emergencies to Northside 24hr. Biscuit on monthly heartworm; insurance through Trupanion."),
   F("Information boundaries%", "Tooth fairy is ACTIVE for Owen. Mia knows and is a proud co-conspirator; she leaves the coins. Nothing said in front of Owen."),
   F("CADENCE REGISTRY, children%", "Well-child visits birthday-adjacent (Aug/Oct). Dental both kids in February and August. Mia vision recheck in January."),
@@ -153,20 +153,20 @@ const { registryEntry } = await import("./tables.ts");
 const R = (kind: string, label: string, detail: object, keyDate: string | null, cadence: string | null, sensitivity = "s1") =>
   ({ kind, label, detail, keyDate, cadence, sensitivity });
 const REGISTRIES = [
-  R("dates", "Mia — birthday", { person: "Mia", occasion: "birthday" }, "2026-08-02", "annual"),
+  R("dates", "Mia's birthday", { person: "Mia", occasion: "birthday" }, "2026-08-02", "annual"),
   R("dates", "Wedding anniversary", { person: "David & Lisa", occasion: "anniversary" }, "2026-09-14", "annual"),
-  R("dates", "Gram Ruth — birthday", { person: "Grandma Ruth", occasion: "birthday" }, "2026-10-03", "annual"),
-  R("sizes", "Owen — clothing", { person: "Owen", item: "clothing", size: "4T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Owen — shoes", { person: "Owen", item: "shoes", size: "11T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Mia — clothing", { person: "Mia", item: "clothing", size: "girls 10", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Mia — shoes", { person: "Mia", item: "shoes", size: "4", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("dates", "Gram Ruth's birthday", { person: "Grandma Ruth", occasion: "birthday" }, "2026-10-03", "annual"),
+  R("sizes", "Owen's clothing", { person: "Owen", item: "clothing", size: "4T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Owen's shoes", { person: "Owen", item: "shoes", size: "11T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Mia's clothing", { person: "Mia", item: "clothing", size: "girls 10", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Mia's shoes", { person: "Mia", item: "shoes", size: "4", updated: "2026-06" }, null, "seasonal changeover", "s2"),
   R("appliance", "Water heater", { location: "basement", installYear: 2019 }, "2019-06-01", "anode check every 3 yr"),
   R("appliance", "HVAC filter", { location: "hall return", filterSize: "20x25x1" }, null, "replace every 6 mo"),
-  R("vendor", "Rosa — housekeeper", { service: "housekeeping", rhythm: "Mondays 9-1" }, null, "weekly", "s2"),
-  R("vendor", "Ben — dog walker", { service: "dog walking", rhythm: "weekdays noon" }, null, "weekdays"),
-  R("subscription", "Trupanion — Biscuit", { provider: "Trupanion", what: "pet insurance" }, "2027-01-15", "annual renewal", "s2"),
+  R("vendor", "Rosa, housekeeper", { service: "housekeeping", rhythm: "Mondays 9-1" }, null, "weekly", "s2"),
+  R("vendor", "Ben, dog walker", { service: "dog walking", rhythm: "weekdays noon" }, null, "weekdays"),
+  R("subscription", "Trupanion for Biscuit", { provider: "Trupanion", what: "pet insurance" }, "2027-01-15", "annual renewal", "s2"),
   R("commitment", "Thanksgiving hosting", { what: "Hosts Thanksgiving, 25+ people", prep: "T-14 planning, T-3 shop" }, "2026-11-26", "annual"),
-  R("horizon", "Owen — kindergarten", { transition: "Owen starts kindergarten", window: "fall 2026" }, "2026-09-01", null),
+  R("horizon", "Owen starts kindergarten", { transition: "Owen starts kindergarten", window: "fall 2026" }, "2026-09-01", null),
 ];
 let rset = 0;
 for (const r of REGISTRIES) {
