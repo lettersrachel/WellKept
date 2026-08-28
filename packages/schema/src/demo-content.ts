@@ -10,6 +10,7 @@ import pg from "pg";
 import { ilike, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { household, playbookField, dot, authUser, visitCommand } from "./tables.ts";
+import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
 
 const pool = new pg.Pool({
   connectionString:
@@ -59,8 +60,31 @@ const CONTENT: [string, string, Flag, Prov][] = [
   F("CADENCE REGISTRY, children%", "Well-child visits birthday-adjacent (Aug/Oct). Dental both kids in February and August. Mia vision recheck in January."),
 ];
 
-const { rows: [hhRow] } = await pool.query("SELECT id FROM household LIMIT 1");
+// FERNBROOK IS RESOLVED BY PINNED ID, and this script REFUSES rather than
+// guessing. It previously read `SELECT id FROM household LIMIT 1`, an
+// UNORDERED limit: Postgres returns whatever row it hands back first, and
+// against production that is Chen-Williams Demo, not Fernbrook. So this
+// script would have loaded Fernbrook's demo content, its dots, its
+// registries and its visit report onto a different household.
+//
+// It was never a hypothetical. `demo-hom-view.ts` named this exact line in
+// its own header as "the shape that put a capture on the wrong tenant once
+// already" and pinned its own id, and this one was left as it was. Knowing
+// about a defect and fixing it are different acts.
+//
+// The refusal matters as much as the pin. A script that cannot find its
+// household must stop, not fall back: falling back to "some household" is
+// how a demo seed becomes a write to a real tenant.
+const { rows: [hhRow] } = await pool.query(
+  "SELECT id, name FROM household WHERE id = $1", [FERNBROOK_DEMO_ID]);
+if (!hhRow) {
+  console.error(`No household at the pinned Fernbrook id ${FERNBROOK_DEMO_ID}.`);
+  console.error("This script writes demo content and will not guess which household to write to.");
+  console.error("If Fernbrook was recreated, re-pin tooling/fixture-ids.mjs from the real row.");
+  process.exit(1);
+}
 const householdId: string = hhRow.id;
+console.log(`Fernbrook resolved by pinned id: ${hhRow.name}`);
 
 let set = 0;
 for (const [pattern, value, flag, provenance] of CONTENT) {
