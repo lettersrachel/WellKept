@@ -394,7 +394,14 @@ export function VisitWizard({ householdId }: { householdId: string }) {
 
           <div className="card">
             <h2>Hours</h2>
-            <div className="note">Suggestion only; nothing bills from a geofence alone.</div>
+            {/* G-104: this read "Suggestion only; nothing bills from a geofence
+                alone", which is REQ-036's language for a feature that does not
+                exist. Nothing suggests these times; the HOM types them. The
+                copy now describes the interim control REQ-031 names as of its
+                28 August 2026 amendment. Copy is a proposal (the AG
+                precedent); the rule that is not a proposal is that a surface
+                never describes a mechanism the product does not have. */}
+            <div className="note">Enter your start and end times. These are the hours of record for this visit.</div>
             <label>Start <input type="datetime-local" value={hoursStart} onChange={(e) => setHoursStart(e.target.value)} /></label>
             <label>End <input type="datetime-local" value={hoursEnd} onChange={(e) => setHoursEnd(e.target.value)} /></label>
             <p><button className="act subtle" type="button" onClick={() => run((f) => f.captureHours({ startedAt: hoursStart, endedAt: hoursEnd }))}>Save hours</button></p>

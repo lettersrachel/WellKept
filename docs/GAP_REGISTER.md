@@ -5816,3 +5816,88 @@ census reads it as prose without an identifier in it, the client-copy guard
 does not reach staff-surface truth, and no guard anywhere checks whether a
 sentence describes a mechanism that exists. That check has no mechanical
 form, which is the honest reason this is filed rather than fixed by a guard.
+
+---
+
+### G-104 addendum, 28 August 2026: the same copy was worse on the native app, and it was not copy
+
+The web surface said a geofence suggested hours the HOM typed. The native app
+said the same thing over hours **nobody entered at all**.
+
+`apps/hm-mobile/App.tsx` carried one chip, labelled
+`Confirm hours (geofence suggestion)`, whose press handler wrote
+`startedAt: now - 3 hours, endedAt: now`. A fixed three-hour window ending at
+the moment of the tap. Those minutes would have become the `time_entry` row
+and the interval the covenant events carry.
+
+**So on the web it was a false description of a real value, and on the native
+app it was a plausible label over a fabricated one.** The first is a copy
+defect. The second is a data defect wearing a copy defect's clothes, and it
+was found by fixing the copy, which is the part worth keeping: the wrong
+sentence was pointing at the wrong number, and only reading the handler beside
+the label showed it.
+
+Not shipped, and that is luck rather than control: the app is not in a HOM's
+hands only because the Apple Developer enrollment is still an open founder
+item. Nothing in the code path would have stopped it.
+
+**Fixed today: the label only.** It now says
+`Record hours (last 3 hours, placeholder)`, which is what that button actually
+does. The real fix is the two typed fields the web surface has, and it is
+named as its own session rather than done here, because a capture surface on a
+platform nobody can install is not the thing to build in the middle of a
+documentation trace.
+
+**The general form, and it is not the same as G-104's original one.** G-104
+was about requirement prose becoming an assertion when it moves into a UI. This
+is about a label being read as evidence of its own value: "geofence suggestion"
+made a fabricated number look sourced, and a reviewer checking whether the
+copy was accurate would have been checking the wrong half. **When a label
+describes where a value came from, the label and the value have to be read
+together, because a wrong provenance claim is invisible from either side
+alone.**
+
+---
+
+### G-105. The Phase 2 covenant acceptance criterion is a defect in the directive, not in the build
+
+**Filed 28 August 2026, raised under WK-DEV-006 section 8** ("anything that is
+not [answered here] is a defect in this directive, raised through the
+escalation path in section 8"). Reported and not amended, because the
+directive is adopted under the two-key software-updating authorization of 24
+August (register A567) and its acceptance criteria are part of what was
+authorized.
+
+`WK-DEV-006_Execution_Directive.md:30` sets Phase 2's acceptance as "the
+monthly covenant report generates as a **pure function of events** and matches
+a hand computation".
+
+**That criterion cannot be met while the covenant events are correct.**
+Utilization minutes and churn-with-cause are pure functions of the outbox
+today. Per-HOM utilization is not and cannot be: the visit events carry no
+person by construction (`visit-command-store.ts:231,237`, actor deliberately
+null), and attribution joins through `time_entry`. Meeting the criterion as
+written means putting a person in the payload, which runs straight at Ruling 1
+and at the G-13 disclosure, and that is the wrong trade to make in order to
+satisfy a sentence.
+
+**The other two documents already say the right thing**, which is what makes
+this a defect in one line rather than a disagreement about design. REQ-083 says
+the report "generates from these events, not from spreadsheets". Handoff 24.3
+says "The monthly covenant report generates from these events". Neither asks
+for purity. **The phrase appears exactly once in the tree.**
+
+Correction, whenever the second key turns: Phase 2's acceptance reads "the
+monthly covenant report generates from these events and matches a hand
+computation".
+
+**Recorded with one correction to how it was reported to me**, because the
+misattribution is the interesting part rather than an embarrassment. The
+ruling that produced this entry named the HANDOFF as the document to correct.
+The handoff is already right. Two documents in this set have now been believed
+stale when they were current (REQ-074, and the handoff here) and two have been
+believed current when they were stale (handoff line 182, WK-DEV-006's Phase 0
+line). **Four errors, all in the same week, all of the form "which document
+says the wrong thing".** The fix that keeps working is the cheap one: search
+the tree for the exact phrase before deciding which file carries the defect.
+`grep` settles in one second what memory gets wrong half the time.

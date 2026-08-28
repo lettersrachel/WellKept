@@ -9,7 +9,7 @@ import { getAssignedHouseholds } from "@/lib/data";
 /**
  * REQ-044: exhibit-pack feed. CSV in the WK_SBA exhibit shape: one row per
  * household the caller is corporately assigned to. Hours come from applied
- * visit payloads (captured, HM-confirmed — never geofence-only, REQ-036).
+ * visit payloads (captured, entered by the HOM; never geofence-only, REQ-036).
  */
 export async function GET() {
   const assigned = await getAssignedHouseholds();
