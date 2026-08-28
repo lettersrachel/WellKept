@@ -73,6 +73,26 @@ if (offending) {
   process.exit(2);
 }
 
+/**
+ * Render a value for reading. TIMESTAMPS PRINT IN UTC, always.
+ *
+ * `String(someDate)` uses the machine's local zone, so a value stored as
+ * 2026-07-28T00:00:00Z prints as "Mon Jul 27 2026 20:00:00 GMT-0400" on a
+ * US East machine: THE DATE READS ONE DAY EARLY. That is exactly the G-61
+ * bug, and it arrived here in the tool built to CHECK the system, where a
+ * wrong date is worse than on a page: a verification read is what someone
+ * trusts when a page looks wrong.
+ *
+ * ISO with the Z suffix, so the zone is visible rather than assumed. A
+ * reader who wants local time can convert; a reader who is handed local
+ * time with no marker cannot tell that anything happened.
+ */
+function fmt(v) {
+  if (v === null || v === undefined) return "NULL";
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+}
+
 const client = new pg.Client({ connectionString: url });
 await client.connect();
 try {
@@ -94,7 +114,7 @@ try {
     r.rows.forEach((row, i) => {
       console.log(`--- row ${i + 1} ---`);
       for (const [k, v] of Object.entries(row)) {
-        console.log(`${k.padEnd(34)} | ${v === null ? "NULL" : String(v)}`);
+        console.log(`${k.padEnd(34)} | ${fmt(v)}`);
       }
     });
   }
