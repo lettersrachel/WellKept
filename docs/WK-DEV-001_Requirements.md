@@ -5,6 +5,26 @@ status: living
 # WK-DEV-001: Requirements
 Version 1.0 | July 2026 | Scope contract for the Year 2 build | Priority: P0 = launch-blocking, P1 = fast follow, P2 = later
 
+> **READ THIS BEFORE QUOTING THIS DOCUMENT ELSEWHERE.** This copy carries
+> in-place dated amendments made AFTER the version line above, and the version
+> line is not bumped when one lands. **A dated snapshot of this document taken
+> on any given day is not a statement of current state**, and reporting a
+> snapshot's contents as current is a mistake that has already been made once
+> (28 August 2026; see `DOCUMENT_AUTHORITY_2026-08-28.md`).
+>
+> The amendments this copy carries, each annotated at its own line: REQ-076
+> withdrawn and REQ-077 added (1 August); section I appended with REQ-078..082
+> (5 August); section J appended with REQ-083..085, REQ-074 promoted to WCAG
+> 2.2 AA, and REQ-075's parenthetical corrected (24 August). Section J's
+> canonicity note at the end of this document records which copy won which
+> divergence.
+>
+> **This is a mirror, not the system of record.** The library under WK-SOP-000
+> and WK-SOP-029 is the system of record (`LIBRARY_INDEX.md`). Where this copy
+> and the library disagree, report the disagreement; do not reconcile it here.
+> Content-wise this copy is currently the superset, which is a fact about
+> content and not a claim of authority.
+
 ## A. Platform, auth & tenancy
 - REQ-001 (P0) Multi-tenant single organization: one Well Kept instance holding many households; every record scoped to a household except fleet-level corporate data.
 - REQ-002 (P0) Roles: client, house_manager, backup_hm, corporate_ops, corporate_admin (founder), cfo_readonly. One user may hold different roles per household (an HM is backup elsewhere).
