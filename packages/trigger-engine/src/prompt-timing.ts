@@ -48,17 +48,30 @@ export type PromptTiming = {
 };
 
 /**
- * Days are exact up to 45. Past that a HOM wants the scale, not the
- * arithmetic: "overdue by 67 days" is a number to convert in your head
- * and "overdue by 2 months" is a fact you can act on. 30-day months,
- * stated rather than implied, because this is a description and not a
- * calculation anything depends on.
+ * Days are exact under 60. At 60 and past it a HOM wants the scale, not
+ * the arithmetic: "overdue by 67 days" is a number to convert in your
+ * head and "overdue by 2 months" is a fact you can act on.
+ *
+ * MONTHS ARE FLOORED, NOT ROUNDED, and the switch is at 60 days rather
+ * than 45. Both corrections came from the same defect. The first version
+ * rounded at 45, so 46 days announced "overdue by 2 months" when barely
+ * six weeks had passed, and 75 days (two months and two weeks) announced
+ * three. That is a label OVERSTATING lateness, which is a different
+ * failure from understating it and is still a label that is not true.
+ *
+ * People floor elapsed time. "Overdue by two months" means at least two
+ * months have passed, so two months covers 60 through 89 days and three
+ * begins at 90. Under 60 the exact day count is more useful than a
+ * fraction of a month and is never wrong.
+ *
+ * 30-day months, stated rather than implied, because this is a
+ * description and not a calculation anything depends on.
  */
 export function overdueLabel(days: number): string {
   if (days <= 0) return "due today";
   if (days === 1) return "overdue by 1 day";
-  if (days <= 45) return `overdue by ${days} days`;
-  const months = Math.round(days / 30);
+  if (days < 60) return `overdue by ${days} days`;
+  const months = Math.floor(days / 30);
   return months === 1 ? "overdue by 1 month" : `overdue by ${months} months`;
 }
 

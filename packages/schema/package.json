@@ -20,7 +20,8 @@
     "db:tasks": "node src/seed-tasks.ts",
     "db:capacity": "node src/set-capacity.ts",
     "db:grant": "node src/grant-corporate.ts",
-    "db:export-floors": "node src/export-floors.ts"
+    "db:export-floors": "node src/export-floors.ts",
+    "db:demo-hom": "node src/demo-hom-view.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

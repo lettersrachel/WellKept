@@ -17,14 +17,7 @@ describe("promptTiming: the label is COMPUTED, never a bucket's name", () => {
     // one of these read "due today" because it sat in a <= bucket.
     expect(promptTiming(at("2026-09-02T09:00:00Z"), NOW).label).toBe("overdue by 1 day");
     expect(promptTiming(at("2026-08-18T09:00:00Z"), NOW).label).toBe("overdue by 16 days");
-    expect(promptTiming(at("2026-07-19T09:00:00Z"), NOW).label).toBe("overdue by 2 months");
-  });
-
-  it("the spec's water heater line is sayable", () => {
-    // "Water heater anode check is now overdue by two months."
-    const t = promptTiming(at("2026-07-04T12:00:00Z"), NOW);
-    expect(t.state).toBe("overdue");
-    expect(t.label).toBe("overdue by 2 months");
+    expect(promptTiming(at("2026-07-19T09:00:00Z"), NOW).label).toBe("overdue by 46 days");
   });
 
   it("upcoming carries NO label, because the surface renders the date", () => {
@@ -38,13 +31,58 @@ describe("promptTiming: the label is COMPUTED, never a bucket's name", () => {
     expect(promptTiming(at("2026-12-01T00:00:00Z"), NOW).overdueDays).toBe(0);
   });
 
-  it("switches from exact days to months past 45, singular at each end", () => {
-    expect(overdueLabel(1)).toBe("overdue by 1 day");
-    expect(overdueLabel(45)).toBe("overdue by 45 days");
-    expect(overdueLabel(46)).toBe("overdue by 2 months");
-    expect(overdueLabel(30)).toBe("overdue by 30 days");
-    expect(overdueLabel(60)).toBe("overdue by 2 months");
+  it("switches from exact days to months at 60, singular at each end", () => {
     expect(overdueLabel(0)).toBe("due today");
+    expect(overdueLabel(1)).toBe("overdue by 1 day");
+    expect(overdueLabel(30)).toBe("overdue by 30 days");
+    expect(overdueLabel(59)).toBe("overdue by 59 days");
+    expect(overdueLabel(60)).toBe("overdue by 2 months");
+  });
+
+  // The rule is FLOOR, not round. "Overdue by two months" means at least
+  // two months have passed. Rounding overstated in both places it could:
+  // it announced two months at 46 days, and three months at 75 (which is
+  // two months and two weeks). A label that overstates lateness is a
+  // different failure from one that understates it and is still untrue.
+  //
+  // These are properties of the RULE and name no household and no date on
+  // purpose. Written as "Fernbrook renders overdue by two months" the test
+  // would pass because the seed matches rather than because the rule is
+  // right, and it would go stale the moment the demo clock moved.
+  // ONE BOUNDARY PER CASE, deliberately. Grouped in a single `it` these
+  // short-circuit at the first failure, so a mutation that breaks 75 and
+  // 89 alike only ever proves 75: the later assertion never runs and is
+  // covered by assumption rather than by a test.
+  it("floors at the bottom of the month band: 60 days is two months", () => {
+    expect(overdueLabel(60)).toBe("overdue by 2 months");
+  });
+
+  it("floors in the middle: 75 days is two months, where rounding said three", () => {
+    expect(overdueLabel(75)).toBe("overdue by 2 months");
+  });
+
+  it("89 days is still two months, and must not read three", () => {
+    expect(overdueLabel(89)).toBe("overdue by 2 months");
+  });
+
+  it("90 days crosses into three months", () => {
+    expect(overdueLabel(90)).toBe("overdue by 3 months");
+  });
+
+  it("46 days stays in days, where rounding announced two months", () => {
+    expect(overdueLabel(46)).toBe("overdue by 46 days");
+  });
+
+  it("59 days stays in days, the last day before the switch", () => {
+    expect(overdueLabel(59)).toBe("overdue by 59 days");
+  });
+
+  it("says 1 month only from 30 days, which the 60-day switch makes unreachable", () => {
+    // Documenting the consequence rather than hiding it: the singular
+    // branch exists for correctness and no input reaches it, because the
+    // day form covers everything below 60. If the switch ever moves down,
+    // this is the line that says the branch was already there.
+    expect(overdueLabel(59)).toBe("overdue by 59 days");
   });
 
   it("compares CALENDAR days, so time of day cannot shift the answer", () => {

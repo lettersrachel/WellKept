@@ -5015,3 +5015,48 @@ delta.
 
 **Base rate (G-75), twenty-second of twenty-two:** found by following the
 citation, which took one grep and is the entire discipline.
+
+---
+
+### G-94. Overdue-ness comes only from prompt age, never from occurrence age
+
+**Filed 28 August 2026. A property, not a defect.** Recorded because a
+later reader will assume the opposite, and the assumption is the sort that
+survives a long time because nothing contradicts it.
+
+`nextIntervalOccurrence` (`registry-sweep.ts`) advances `k` until
+`lastServiced + k * interval` is on or after now. **It can never return a
+date in the past.** A missed maintenance cycle is skipped rather than
+reported: a water heater serviced in July 2023 on a 36-month interval,
+read today, yields July 2029, not the July 2026 date nobody acted on.
+
+**Rolling forward is CORRECT and is not being changed.** The next service
+is the one that can still be done, and a scheduler that returned dates
+already gone would be proposing work in the past.
+
+**The consequence is the part worth writing down:**
+
+> **A maintenance item cannot be overdue on its own. Overdue-ness in this
+> system comes only from PROMPT AGE.**
+
+What produces a sentence like "overdue by two months" is a prompt RAISED
+ON TIME when its window opened at T-14 and then never answered.
+`prompt_pack_item` rows stay open until a HOM answers them (the 27 August
+ruling: answering retires, surfacing does not, nothing ages out), so the
+row ages while the schedule moves on beneath it.
+
+**Why this misleads.** Someone debugging a late maintenance prompt will
+look for a past occurrence to explain it, find only a future one, and
+conclude the data is wrong or the sweep is broken. Both readings are
+false. The absence of a past occurrence is by design, and the explanation
+lives in a different table entirely.
+
+**How it surfaced:** by trying to construct a demonstration honestly.
+Asked for a line that reads "overdue by two months", the tempting move was
+to pick a `fire_at` that renders the sentence. Deriving it instead forced
+the question of what the sweep actually produces, and the answer was that
+the sweep cannot produce it at all. **A shortcut would not have found
+this**, because the shortcut's output looks identical on screen.
+
+**Base rate (G-75), twenty-third of twenty-three:** found by refusing to
+write a value that would have rendered correctly.
