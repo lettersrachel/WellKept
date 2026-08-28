@@ -5215,3 +5215,96 @@ records how it was noticed.
 
 **Base rate (G-75), twenty-fourth of twenty-four:** found by a person
 refusing to run a command until she understood what it would touch.
+
+---
+
+### G-96. A query made cleaner, and thereby made blind, by the same edit
+
+**Filed 28 August 2026. A new mechanism, not another instance of the
+narrow-reading class**, and the difference is what makes it worth its own
+number.
+
+The other cases this session were queries that COULD NOT SEE what they
+were looking for: `git log -S` counting occurrences and missing an edit
+that preserved the phrase; a filter matching statuses and missing an
+absent suite. Those are blind spots present from the start.
+
+This one is different. The search worked, and then a REFINEMENT made it
+blind:
+
+```
+grep -rn "getHousehold\b" ... | grep -v "^./apps/web/src/lib/data.ts"
+```
+
+The exclusion was added FOR A GOOD REASON: to filter out the definition,
+so the output would show callers rather than the function itself. It did
+that. It also excluded the two callers that live in the same file, and the
+result was an empty list, which reads as a clean answer to "does anything
+call this".
+
+> **Nothing in the output distinguishes a clean answer from a narrowed
+> one. An empty result set looks identical whether the thing is absent or
+> merely out of scope, and the scope was narrowed by the tidying step
+> itself.**
+
+**Why it is more dangerous than the plain blind spot.** A blind spot is
+usually a shortcut, and shortcuts feel like shortcuts. This felt like
+CARE: the raw grep was noisy, the noise was the definition, removing it
+made the output readable. Every step was an improvement, and the
+conclusion drawn from the improved output was false.
+
+**What it cost:** "dead code, no callers" was reported to the founder,
+written into a code comment as fact, and acted on with a deletion. The
+deletion is what surfaced it, via `tsc`, one minute later. The reading
+never would have.
+
+**The practical form, since a rule against `grep -v` would be absurd:**
+when an exclusion is added to make a search readable, ask what the
+exclusion could be hiding that the search was FOR. Here the excluded file
+was the single most likely place for a caller to live, which is exactly
+why it held the definition. **The thing you filter out to find the answer
+is often where the answer is.**
+
+**Base rate (G-75), twenty-fifth of twenty-five:** found by a compiler,
+after a person acted on the false reading.
+
+---
+
+### G-97. A type that stays satisfied while the meaning underneath it inverts
+
+**Filed 28 August 2026. A class, recorded on its first clear instance.**
+
+`getHouseholdAndPrincipal()` returned `{ hh, principal }` where `hh` on
+the fallback path was AN ARBITRARY HOUSEHOLD ROW. Replacing that with
+`hh: null` is a change of MEANING and not of TYPE: the declared shape was
+already nullable, so `tsc` passed 12/12 with nothing to say.
+
+Three pages branch on `!hh` and each printed a development message,
+"No household seeded. Run `pnpm db:seed`", on that branch. Before the
+change `!hh` was false there, because an arbitrary row is truthy, so a
+signed-in user with no assignment fell through to the sign-in redirect.
+After it, the same user would have been shown a message telling them to
+run a database seed.
+
+> **A green typecheck is a claim about SHAPES. It is not a claim about
+> what a value MEANS, and a value can invert its meaning without changing
+> its type. Where the meaning is carried by truthiness rather than by the
+> type, nothing in the toolchain is watching.**
+
+**The specific carrier is worth naming: truthiness.** `hh` was doing two
+jobs, "which household" and "does one exist", and only the first was in
+the type. Splitting them (`anyHouseholdExists(): Promise<boolean>` plus an
+explicit `seeded` flag) is what makes the second job visible to a reader
+and to the compiler.
+
+**What actually caught it:** reading all three call sites by hand,
+BECAUSE the typecheck passed rather than in spite of it. The green run is
+what made the manual read necessary, and a less suspicious session would
+have taken the green run as the verification.
+
+**Related and not the same:** G-83's dead-guard shape is a check that
+cannot fail. This is a check that passes correctly while answering a
+different question than the one that matters.
+
+**Base rate (G-75), twenty-sixth of twenty-six:** found by distrusting a
+passing check, in a session that had already been taught to.
