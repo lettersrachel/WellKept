@@ -5063,6 +5063,30 @@ citation, which took one grep and is the entire discipline.
 
 ---
 
+**ADDENDUM, 28 August 2026: the ADJACENT citation, which is the harder
+case.** A later message cited G-75 for the refusing-to-pick-a-value
+finding, which is G-94. G-75 is the base-rate meta-entry that G-94 cites
+at its own foot, so the wrong pointer was not a random miss: it was
+SITTING INSIDE THE RIGHT ENTRY.
+
+> **A citation adjacent to the correct one reads as confirmation rather
+> than as a pointer. Following it lands somewhere plausible, related, and
+> wrong, and the plausibility is what stops the reader checking.**
+
+That is worse than the flatly-wrong pointer this entry was filed for. A
+citation to something unrelated fails loudly on the first follow; a
+citation to the neighbour fails silently, because the neighbour is
+genuinely about the same subject and the reader concludes they have
+arrived.
+
+Committed by the founder in a message discussing G-93, which is the
+pattern this register keeps recording: knowing a rule is not applying it,
+and the moment of greatest exposure is while writing about it. Corrected
+on the same exchange by the only method available, which is following the
+citation rather than recognising it.
+
+---
+
 ### G-94. Overdue-ness comes only from prompt age, never from occurrence age
 
 **Filed 28 August 2026. A property, not a defect.** Recorded because a
