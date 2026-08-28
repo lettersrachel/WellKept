@@ -152,21 +152,39 @@ console.log("status tag -> STEADY, holds released");
 const { registryEntry } = await import("./tables.ts");
 const R = (kind: string, label: string, detail: object, keyDate: string | null, cadence: string | null, sensitivity = "s1") =>
   ({ kind, label, detail, keyDate, cadence, sensitivity });
+// REGISTRY LABELS ARE IDENTIFIERS, NOT COPY, AND KEEP THEIR ORIGINAL
+// WORDING. This block was rewritten once to strip em dashes and had to be
+// reverted: the seeding below is idempotent BY LABEL, so changing a label
+// does not rename an entry, it INSERTS A SECOND ONE beside the first.
+// Fernbrook ended with both spellings of all ten, twenty-four rows where
+// fourteen belong, and duplicate entries feed duplicate prompt candidates
+// through the sweep.
+//
+// This is the F3 finding in a new table: "packName is an IDENTIFIER, not
+// display-only", fixed for prompt packs by the pack_key / pack_name split
+// in 0028 and never done for registry_entry. Ruling 3's own sweep says
+// every keyed identifier is untouched per that lesson, and these are
+// keyed identifiers.
+//
+// So the em dashes here are a REAL residue on a rendered surface, and the
+// fix is the display/key split rather than a rewrite. Excused by FRAGMENT
+// in the copy census with that reason, and its own session with a
+// migration.
 const REGISTRIES = [
-  R("dates", "Mia's birthday", { person: "Mia", occasion: "birthday" }, "2026-08-02", "annual"),
+  R("dates", "Mia — birthday", { person: "Mia", occasion: "birthday" }, "2026-08-02", "annual"),
   R("dates", "Wedding anniversary", { person: "David & Lisa", occasion: "anniversary" }, "2026-09-14", "annual"),
-  R("dates", "Gram Ruth's birthday", { person: "Grandma Ruth", occasion: "birthday" }, "2026-10-03", "annual"),
-  R("sizes", "Owen's clothing", { person: "Owen", item: "clothing", size: "4T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Owen's shoes", { person: "Owen", item: "shoes", size: "11T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Mia's clothing", { person: "Mia", item: "clothing", size: "girls 10", updated: "2026-06" }, null, "seasonal changeover", "s2"),
-  R("sizes", "Mia's shoes", { person: "Mia", item: "shoes", size: "4", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("dates", "Gram Ruth — birthday", { person: "Grandma Ruth", occasion: "birthday" }, "2026-10-03", "annual"),
+  R("sizes", "Owen — clothing", { person: "Owen", item: "clothing", size: "4T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Owen — shoes", { person: "Owen", item: "shoes", size: "11T", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Mia — clothing", { person: "Mia", item: "clothing", size: "girls 10", updated: "2026-06" }, null, "seasonal changeover", "s2"),
+  R("sizes", "Mia — shoes", { person: "Mia", item: "shoes", size: "4", updated: "2026-06" }, null, "seasonal changeover", "s2"),
   R("appliance", "Water heater", { location: "basement", installYear: 2019 }, "2019-06-01", "anode check every 3 yr"),
   R("appliance", "HVAC filter", { location: "hall return", filterSize: "20x25x1" }, null, "replace every 6 mo"),
-  R("vendor", "Rosa, housekeeper", { service: "housekeeping", rhythm: "Mondays 9-1" }, null, "weekly", "s2"),
-  R("vendor", "Ben, dog walker", { service: "dog walking", rhythm: "weekdays noon" }, null, "weekdays"),
-  R("subscription", "Trupanion for Biscuit", { provider: "Trupanion", what: "pet insurance" }, "2027-01-15", "annual renewal", "s2"),
+  R("vendor", "Rosa — housekeeper", { service: "housekeeping", rhythm: "Mondays 9-1" }, null, "weekly", "s2"),
+  R("vendor", "Ben — dog walker", { service: "dog walking", rhythm: "weekdays noon" }, null, "weekdays"),
+  R("subscription", "Trupanion — Biscuit", { provider: "Trupanion", what: "pet insurance" }, "2027-01-15", "annual renewal", "s2"),
   R("commitment", "Thanksgiving hosting", { what: "Hosts Thanksgiving, 25+ people", prep: "T-14 planning, T-3 shop" }, "2026-11-26", "annual"),
-  R("horizon", "Owen starts kindergarten", { transition: "Owen starts kindergarten", window: "fall 2026" }, "2026-09-01", null),
+  R("horizon", "Owen — kindergarten", { transition: "Owen starts kindergarten", window: "fall 2026" }, "2026-09-01", null),
 ];
 let rset = 0;
 for (const r of REGISTRIES) {

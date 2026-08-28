@@ -5540,3 +5540,67 @@ question asked at the render.
 **Base rate (G-75), twenty-ninth of twenty-nine:** found by a person
 reading a count in a state panel and asking whether it was intended, which
 is the only instrument that sees an aggregate.
+
+---
+
+### G-101. A rename of an idempotency key inserts instead of renaming, and "idempotent" is what makes it silent
+
+**Filed 28 August 2026. Found by the founder, counting registry rows after
+a seed run that reported success.** My defect, and the lesson for it was
+already written in this repository.
+
+`db:demo` seeds registry entries idempotently BY LABEL. A copy pass
+rewrote ten labels to strip em dashes. The seed no longer recognised the
+existing rows, so it INSERTED TEN MORE beside them and reported
+`10 entries added (idempotent)`. Fernbrook went from fourteen registry
+entries to twenty-four, both spellings live, and duplicate entries feed
+duplicate prompt candidates through the sweep.
+
+> **Renaming a value that serves as an idempotency key does not rename the
+> record. It creates a second one, and the word "idempotent" in the
+> script's own output is what makes it read as safe.**
+
+**THE PRECEDENT EXISTED AND I WALKED PAST IT.** F3 recorded it for prompt
+packs: "packName is an IDENTIFIER, not display-only... a rename changes
+which exclusions fire." M closed it in 0028 with the `pack_key` /
+`pack_name` split. Ruling 3's own terminology sweep says every keyed
+identifier is untouched *per the pack_key lesson*. `registry_entry.label`
+is the same shape and never got the split, so it is still both things at
+once, and I treated it as copy.
+
+**Three failures compounded, and only the middle one is about code.**
+
+1. The rewrite treated an identifier as display text.
+2. The seed's idempotency key is a mutable display string, which is the
+   design gap F3 named.
+3. **The guard was green and the data was wrong.** `client-copy.test.ts`
+   scans source files and cannot see a database, so "the em dashes are
+   fixed" was true of the repository and false of production. That is not
+   a flaw in the guard; it is the boundary of what a source scan can
+   assert, and it is worth writing down because a green guard reads as a
+   statement about the system rather than about the source.
+
+**Fixed by reverting, not by rewriting.** The ten labels keep their
+original wording, which is what Ruling 3 says to do with keyed
+identifiers. The em dashes there are a REAL residue on a rendered surface,
+excused BY FRAGMENT in the copy census with that reason, and the excusal
+comes out when the display/key split lands for `registry_entry`. Naming a
+known residue beats hiding it, and the excusal was proven fragment-scoped:
+the ten labels pass, a value with an em dash on line 42 still fails.
+
+**The duplicate rows are cleaned by an audited tool, not a DELETE.**
+`db:demo-dedupe` is dry-run by default; `--commit` requires `--by` an
+email resolving to a corporate_admin, and each deletion writes its
+audit_event FIRST, because `registry_entry` is not one of the nine
+documented DELETE exceptions. Proven on a locally reproduced copy of
+production's exact state: 24 rows in, three refusals leaving 24 untouched,
+then 10 deleted with 10 audit rows and 14 left, and a second commit run
+finding nothing.
+
+**Still open, and named rather than fixed here:** `registry_entry` has no
+display-name/key split. Until it does, its labels cannot be edited for
+voice at all. That is the session F3 asked for in 2026-07 and it now has a
+second table asking for it.
+
+**Base rate (G-75), thirtieth of thirty:** found by counting rows after a
+script said "idempotent", which is the word that stops people counting.
