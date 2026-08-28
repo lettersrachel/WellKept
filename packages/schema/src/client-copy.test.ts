@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -321,13 +321,48 @@ function deriveActionRule(): string[] {
   return out;
 }
 
+/**
+ * The SEED rule, added 28 August 2026.
+ *
+ * Every file a `db:` script points at writes CONTENT INTO THE DATABASE
+ * that a surface then renders: playbook field values, registry entry
+ * labels, prompt item text. That content is copy by any reading of the
+ * standing rule, and none of it was scanned: `demo-content.ts` carried
+ * nineteen em dashes into Fernbrook, two of them on CRITICAL rows at the
+ * top of the flags-first panel, which is the most-read surface in the
+ * app. The founder found them by looking at the panel.
+ *
+ * Derived from `package.json` rather than listed, so a new seed script is
+ * covered the moment it is wired up rather than when somebody remembers.
+ * That is the same reasoning as the render and channel rules: the scope
+ * is computed, so it cannot go stale.
+ */
+function deriveSeedRule(): string[] {
+  const pkg = JSON.parse(readFileSync(path.join(here, "../package.json"), "utf8")) as
+    { scripts?: Record<string, string> };
+  const out = new Set<string>();
+  for (const [name, cmd] of Object.entries(pkg.scripts ?? {})) {
+    if (!name.startsWith("db:")) continue;
+    const m = /node\s+(src\/[\w.-]+\.ts)/.exec(cmd);
+    if (!m) continue;
+    const abs = path.resolve(here, "..", m[1]!);
+    if (existsSync(abs)) out.add(abs);
+  }
+  return [...out];
+}
+
 function derivedByRule(): Record<string, string[]> {
-  return { render: deriveRenderRule(), channel: deriveChannelRule(), action: deriveActionRule() };
+  return {
+    render: deriveRenderRule(),
+    channel: deriveChannelRule(),
+    action: deriveActionRule(),
+    seed: deriveSeedRule(),
+  };
 }
 
 // Floors set BELOW today's counts, not at them, so ordinary growth does
 // not trip them and a broken detector still does.
-const RULE_FLOORS: Record<string, number> = { render: 30, channel: 4, action: 1 };
+const RULE_FLOORS: Record<string, number> = { render: 30, channel: 4, action: 1, seed: 5 };
 
 // The sanctioned escape hatch, used as intended: each entry is a reviewed
 // exception with a written reason, never a silenced rule. Every entry
