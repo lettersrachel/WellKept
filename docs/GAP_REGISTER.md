@@ -4885,6 +4885,29 @@ unrelated change, after three local instances were explained away.
 
 ---
 
+**ADDENDUM, 28 August 2026: the fix went to the instance, not the class.**
+The raise above was applied to the census test alone. This package holds
+SEVEN repository-walking tests, across `client-copy.test.ts` and
+`frozen-records.test.ts`, and exactly one carried it. Under a full
+ten-package parallel run, two of the other six failed together: the census
+again and the frozen-records status walk.
+
+> **A timeout is a property of the KIND of test, not of the test that
+> happened to fail first. Fixing the one that failed leaves every sibling
+> to rediscover the same thing, one CI run at a time.**
+
+Both passed when re-run in isolation, which is precisely the reasoning
+this entry says not to accept, so the isolated pass was treated as a
+symptom rather than as a result: the two failures are both WALKERS, and
+that is the shared property worth acting on.
+
+Moved to `packages/schema/vitest.config.ts` as a package-wide
+`testTimeout`, which covers every walker including ones not written yet.
+The per-test raise is removed, with a comment pointing at the config so
+the next author does not re-add it locally.
+
+---
+
 ### G-91. A wait loop matched the states it expected and read an unexpected state as done
 
 **Filed 27 August 2026. Throwaway code, real mechanism, no damage.** The
@@ -5378,3 +5401,62 @@ rather than merely correct in the one that was reported.
 **Base rate (G-75), twenty-seventh of twenty-seven:** found by a person
 comparing a tool's output against the value she already knew, which is the
 only check that catches a tool telling a consistent lie.
+
+---
+
+### G-99. The NO-CONSENT branch is now unexercised everywhere, by choice
+
+**Filed 28 August 2026. Not a defect. A deliberate trade, recorded because
+the cost is real and would otherwise be invisible.**
+
+The consent card renders a red banner when `consent_signed_at` is null.
+That path had exactly two possible surfaces, and both have now closed:
+
+- **The Smoke Test Fixture** stopped being one on 25 August, when consent
+  was recorded there during the section 4 sitting. Correct at the time,
+  and nobody noticed it removed a test surface.
+- **Fernbrook Demo** was the last one, and this session set its consent to
+  12 March 2026 for the demo.
+
+> **The red NO-CONSENT branch now renders nowhere. It is not broken and
+> not removed; it is simply unreachable on every household that exists.**
+
+**Why the trade was made, so it does not read as an oversight.** A COO
+opening a household served weekly since March and finding a red consent
+banner draws the worst available conclusion, and draws it about the
+company rather than about the demo. That is a worse outcome than an
+unexercised code path. The founder ruled it explicitly.
+
+**What it costs.** The branch is proven by journey tests and has never
+been seen on a live build. Check 6 in the DEPLOY.md section 4 list is
+about exactly this card, and its red half is now unverifiable in
+production: the check can confirm the GREEN state renders and nothing
+more. That is a narrower check than the one the list describes, and the
+narrowing happened by data changing rather than by anyone editing the
+check, which is the way this kind of coverage usually disappears.
+
+**What would restore it**, so the answer exists before somebody needs it:
+
+1. A household provisioned and deliberately left without consent, which
+   is what a Training Household row is for and costs nothing.
+2. A throwaway Neon branch with consent nulled, read once, discarded.
+3. Recording consent LAST during a real onboarding, so the red state is
+   observed on the way past rather than manufactured.
+
+Option 1 is the only one that survives as a standing surface; the other
+two are one-time reads.
+
+**The general form, which is why this is filed rather than noted:**
+
+> **Coverage can be lost by a DATA change with no code change and no
+> failing test. Nothing goes red, no guard fires, and the check keeps
+> passing on the half that still renders.**
+
+That is the same shape as the two vacuously-satisfied section 32 risks
+already recorded, arriving from the opposite direction: those were never
+reachable, this one stopped being reachable, and neither state announces
+itself.
+
+**Base rate (G-75), twenty-eighth of twenty-eight:** noticed by the
+founder while reading a state panel, and filed before the change that
+caused it was made rather than after.
