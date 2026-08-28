@@ -6042,3 +6042,46 @@ without anything noticing.
 element is not carelessness about facts; each individual reading was made
 carefully. It is that **a statement about where information lives is itself
 information, and it goes stale exactly like the status rows G-103 is about.**
+
+---
+
+### G-108. An acceptance criterion that names a review which does not exist under that name
+
+**Filed 28 August 2026 by the founder, from reading the SOP the criterion
+cites.** A library-side instance of G-93's shape, and it is recorded rather
+than resolved.
+
+WK-OPS-002 row 8 requires that the client-facing visit report "meets the QA
+five-dimension review". **The founder searched WK-SOP-005 and WK-QA-000 and
+the phrase appears in neither.** WK-SOP-005 has THREE verification levels: an
+end-of-visit HOM self-check, a same-day CEO review of every report, and a
+quarterly formal review with the client. There is no five-dimension review
+anywhere in the cited sources.
+
+**The most likely referent is Level 2's five required elements** (task
+completion checklist, one photo per room in scope, expenses and receipts, any
+flags or follow-up items, Playbook update notes). Five, and they are the
+client-facing report's contents, which is exactly what row 8 is about. The
+trace runs against those, with the substitution stated in the open.
+
+**Why this is a defect and not a typo.** The reference is genuinely about the
+right subject, sounds specific enough to be checkable, and does not resolve.
+That combination is the worst case: a vague pointer gets questioned, and a
+precise-sounding wrong one gets trusted. G-93 recorded the same shape in the
+repository (a citation that names a register entry it does not belong to);
+this is the library's version.
+
+> **A row whose acceptance criterion cannot be located is a row nobody can
+> close.** It can be worked on indefinitely and never finished, because there
+> is no text to hold the result against, and the person working it will
+> reasonably substitute their own reading, as this trace has just done.
+
+**That matters more than usual right now**, because the trace is about to be
+re-run as the SOP-to-software backlog. A criterion that cannot be located does
+not fail loudly at that point; it produces an item that looks complete to
+whoever built it and incomplete to whoever reads the SOP.
+
+**Not resolved here.** Whether row 8's criterion should be re-pointed at
+WK-SOP-005 Level 2, or whether a five-dimension review exists in a document
+neither of us has read, is a library-side question. The trace records the
+substitution it made so that a later reader can see it was a substitution.
