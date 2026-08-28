@@ -112,12 +112,23 @@ export default async function CorporateBoard() {
   ));
   const homs = homCount?.n ?? 0;
   const load = homs > 0 ? Math.round((homes.length / homs) * 10) / 10 : null;
+  // G-109 (founder ruling, 28 August 2026): THIS IS NOT THE HIRING TRIGGER.
+  // The adopted hiring trigger is WK-SOP-014's, utilization above 85% for
+  // four consecutive weeks, and the SOP wins. What this block computes is
+  // households per HOM against the covenant-relevant cap and band: a
+  // different metric, a different unit, and no time window at all, so a
+  // single reading moves it where the SOP requires a month of evidence.
+  //
+  // Calling it the hiring gate was two measurements sharing one name, and
+  // the one on screen wins by default. The strings below now say what they
+  // measure. Computing the SOP's rule needs a utilization denominator this
+  // system does not hold (available hours per HOM) and is its own session.
   const gateState = !gateSet ? null
-    : homs === 0 ? "no HOM roles assigned; the gate has nothing to evaluate"
-    : load! > gate!.cap! ? `OVER CAP: fleet load ${load} exceeds the covenant-relevant cap of ${gate!.cap}; the hiring gate is tripped`
-    : load! === gate!.cap! ? `AT CAP: fleet load ${load} sits on the cap of ${gate!.cap}`
-    : load! >= gate!.bandMin! ? `WITHIN BAND: fleet load ${load} inside ${gate!.bandMin}..${gate!.bandMax}`
-    : `BELOW BAND: fleet load ${load} under the band floor of ${gate!.bandMin}`;
+    : homs === 0 ? "no HOM roles assigned; there is nothing to evaluate"
+    : load! > gate!.cap! ? `OVER CAP: fleet load ${load} households per HOM exceeds the covenant-relevant cap of ${gate!.cap}`
+    : load! === gate!.cap! ? `AT CAP: fleet load ${load} households per HOM sits on the cap of ${gate!.cap}`
+    : load! >= gate!.bandMin! ? `WITHIN BAND: fleet load ${load} households per HOM, inside ${gate!.bandMin}..${gate!.bandMax}`
+    : `BELOW BAND: fleet load ${load} households per HOM, under the band floor of ${gate!.bandMin}`;
 
   // Churn: household-level cause codes, never the reason text (s2 stays
   // on the membership row).
@@ -219,9 +230,16 @@ export default async function CorporateBoard() {
           {homes.length} active household{homes.length === 1 ? "" : "s"}
         </div>
         <div className="prov">
-          Hiring-trigger state: {!gateSet
-            ? "GATE UNSET. The capacity_gate knob ships null and nothing triggers until db:capacity loads the ruling's figures (the flag_promotion posture)."
+          Fleet load against the covenant band: {!gateSet
+            ? "BAND UNSET. The capacity_gate knob ships null and nothing evaluates until db:capacity loads the ruling's figures (the flag_promotion posture)."
             : gateState}
+        </div>
+        <div className="prov">
+          This is not the hiring trigger. The adopted trigger is WK-SOP-014&apos;s,
+          utilization above 85 percent for four consecutive weeks, and this board
+          does not compute it: the figure above is households per HOM against the
+          covenant cap, on a single reading with no time window. Founder ruling of
+          28 August 2026 (GAP_REGISTER G-109).
         </div>
         {gateSet && (
           <div className="prov">

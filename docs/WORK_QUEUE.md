@@ -1934,6 +1934,63 @@ path) and 6 (consent scope, ephemeral option, clearance mode, absolute
 no-capture zones) are code reads, and item 6 is WK-SEC-001 test area 4, which is
 one of the two additions already recovered.
 
+**28 August 2026, the four rulings on what the trace surfaced (R23 to R26,
+trace section 13).**
+
+- **R23, R21 amended.** Row 1 traces as seven sub-requirements with separate
+  verdicts. Items 1, 2 and 3 keep the typed-fields interim. **Items 4, 5 and 7
+  LEAVE THE SOFTWARE TRACE** and go to Kelly as wage compliance obligations,
+  because the interim control for an FLSA rule is a payroll process rather than
+  a field. Item 6 (clocked unpaid meal breaks) is HELD as a founder decision,
+  since it adds a second interval type to a capture that holds one. The reason
+  the split matters: a compliance obligation parked in a build backlog is an
+  obligation nobody owns, because the backlog's owner cannot discharge it.
+- **R24, row 6 gets its own interim under R19.** The CFO-owned dunning calendar
+  runs the Day 0, 3 and 7 contacts MANUALLY against the paper mandate, with
+  **no automatic retry and no card fallback at any stage**. The SOP's
+  return-code branching is reclassified from a failing interim control into a
+  REQUIREMENT ON THE PROCESSOR INTEGRATION, and the question is appended to
+  `D5_PROCESSOR_QUESTIONS_2026-08-28.md` rather than re-opening the shortlist:
+  criterion 3 covers whether returns arrive as webhooks, not which codes a
+  vendor exposes or how it classifies them.
+- **R25, row 13: the freeze holds and WK-SOP-016 is amended.** The monthly
+  itemized statement satisfies the transparency commitment for the launch
+  cohort. **The reason is doctrine, not cost**, and is recorded as such so it is
+  not re-litigated as a budget question: an always-available billing history is
+  a client surface that invites checking, and the client-side position is that a
+  member should not have to check. The amendment text is ready in trace section
+  13 and is LIBRARY-SIDE, since WK-SOP-016 is not in this repository. The D7
+  note travels with it: D7 bars time quantities and money is not one, so this is
+  a freeze question rather than a prohibition.
+- **R26, G-109: the SOP wins**, and the board now says what it measures. Landed
+  in code: the block reads "Fleet load against the covenant band", every state
+  string carries the unit `households per HOM`, the unset case reads BAND UNSET,
+  and a standing line disclaims the hiring trigger in both knob states. The
+  board journey asserts the disclaimer in both states and asserts the unit
+  renders, so the label cannot silently revert. **Computing WK-SOP-014's actual
+  rule is deliberately not done**: it needs a utilization denominator the system
+  does not hold, and inventing one would be choosing a threshold's inputs.
+  Worth keeping beside the count rule: a threshold stated in two places drifts,
+  and **the one on a screen wins by default**.
+
+**And the schema question is filed as an OPEN DECISION (G-111), not answered.**
+Three trace rows failed for one reason: `capture_artifact`, `time_entry` and a
+would-be access register are all household-scoped, and staff product friction,
+non-household paid time and a key held by a person are records about a PERSON
+or about THE COMPANY. The constraint is correct and load-bearing (tenant
+isolation, the erasure tool, the payload guards, all four census guards key on
+it) and should not be casually relaxed; **the question is not whether
+`household_id` should be nullable but what the record for person-scoped and
+company-scoped facts is, and where it lives.** Four shapes are listed in the
+entry, including "keep them out of the system deliberately", which is a real
+answer and the current de facto one that nobody has decided. Filed now because
+the fourth instance will otherwise be met under time pressure by whoever is
+building that feature, and the shape chosen for one case is the shape all four
+get.
+
+**Founder-side and named:** the WK-TRN-009 certification checklist is the
+founder's to write and is a good first COO assignment once there is one.
+
 ---
 
 ## Closed
