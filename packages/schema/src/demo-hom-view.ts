@@ -35,6 +35,40 @@ const pool = new pg.Pool({
     process.env.DATABASE_URL ?? "postgresql://wellkept:wellkept_dev@localhost:5432/wellkept",
 });
 
+// ---------------------------------------------------------------------
+// The demo clock.
+// ---------------------------------------------------------------------
+// The spec sets it at Thursday 3 September 2026, and that is the default,
+// so running this with no arguments reproduces the spec exactly. But a
+// demo happening on a different day would show a thinner "now" panel,
+// because prompts dated for 3 September have not fired yet and the fix
+// (correctly) refuses to call them due.
+//
+// So the fire dates are OFFSETS from the demo clock rather than absolute.
+// Pass the day the room actually happens:
+//
+//   pnpm db:demo-hom --as-of 2026-08-31
+//
+// WHAT DOES NOT MOVE: the item TEXT and the target dates. Those name real
+// household facts (the anniversary is 14 September, Gram Ruth's birthday
+// is 3 October, Thanksgiving is 26 November), and a household fact does
+// not shift because a meeting did. Only when the prompt FIRES moves.
+//
+// The anode item does not move either, and for a stronger reason: its
+// date is derived from the water heater's own service history through the
+// sweep. Re-dating it would be writing the sentence instead of deriving
+// it, which is the whole thing this script exists not to do.
+const asOfArg = process.argv.indexOf("--as-of");
+const asOfRaw = asOfArg > -1 ? process.argv[asOfArg + 1] : "2026-09-03";
+if (!asOfRaw || !/^\d{4}-\d{2}-\d{2}$/.test(asOfRaw)) {
+  console.error(`--as-of takes a YYYY-MM-DD date; got ${asOfRaw ?? "nothing"}.`);
+  process.exit(1);
+}
+const AS_OF = new Date(`${asOfRaw}T13:00:00Z`);
+if (Number.isNaN(AS_OF.getTime())) { console.error(`Not a real date: ${asOfRaw}`); process.exit(1); }
+const dayOffset = (days: number) => new Date(AS_OF.getTime() + days * 24 * 60 * 60 * 1000);
+console.log(`demo clock: ${asOfRaw}${asOfArg > -1 ? "" : " (the spec's default)"}`);
+
 const hh = await pool.query("SELECT id, name FROM household WHERE id = $1", [FERNBROOK_DEMO_ID]);
 if (!hh.rowCount) {
   console.error(`No household at the pinned Fernbrook id ${FERNBROOK_DEMO_ID}.`);
@@ -105,17 +139,25 @@ if (anodeDrafts.length !== 1) {
 // Dates are absolute rather than relative to today, because a demo run on
 // two different days must show the same household. The labels move with
 // the clock, which is the point: they are computed, not stored.
+// `days` is relative to the demo clock. At the default these resolve to
+// exactly the dates the spec lists.
 const NOW_ITEMS = [
-  { key: "kindergarten-readiness", text: "First full school week. Confirm the morning rhythm is holding and note anything that is not.", fire: "2026-09-03T13:00:00Z", target: "2026-09-03" },
-  { key: "dates-radar", text: "Anniversary is 14 September. Is a gesture planned?", fire: "2026-08-31T13:00:00Z", target: "2026-09-14" },
+  { key: "kindergarten-readiness", text: "First full school week. Confirm the morning rhythm is holding and note anything that is not.", days: 0, target: "2026-09-03" },
+  { key: "dates-radar", text: "Anniversary is 14 September. Is a gesture planned?", days: -3, target: "2026-09-14" },
 ];
 const UPCOMING = [
-  { key: "dates-radar", text: "Anniversary, 14 September. Gesture gate opens 7 September.", fire: "2026-09-07T13:00:00Z", target: "2026-09-14" },
-  { key: "dates-radar", text: "Mia's class presentation, 18 September. Morning quiet requested.", fire: "2026-09-16T13:00:00Z", target: "2026-09-18" },
-  { key: "dates-radar", text: "Gram Ruth's birthday, 3 October. Card and call, per the household's own pattern.", fire: "2026-09-26T13:00:00Z", target: "2026-10-03" },
-  { key: "appliance-radar", text: "Gutter cleaning, October window. Book before the leaf rush.", fire: "2026-09-30T13:00:00Z", target: "2026-10-15" },
-  { key: "commitment-radar", text: "Thanksgiving hosting, 26 November, 25 people. Runway opens.", fire: "2026-10-08T13:00:00Z", target: "2026-11-26" },
-  { key: "appliance-radar", text: "HVAC filter due 12 February. Ordered in pairs; check stock at the October visit.", fire: "2026-10-15T13:00:00Z", target: "2027-02-12" },
+  // NOTE, honestly: this line names its own fire date ("gate opens 7
+  // September"), which is true at the default clock and drifts if
+  // --as-of moves. It is the only seeded item whose TEXT refers to when
+  // it fires rather than to a household fact, and the offset approach
+  // cannot fix that without rewriting copy. At a moved clock, either
+  // accept the small incoherence or edit this one string.
+  { key: "dates-radar", text: "Anniversary, 14 September. Gesture gate opens 7 September.", days: 4, target: "2026-09-14" },
+  { key: "dates-radar", text: "Mia's class presentation, 18 September. Morning quiet requested.", days: 13, target: "2026-09-18" },
+  { key: "dates-radar", text: "Gram Ruth's birthday, 3 October. Card and call, per the household's own pattern.", days: 23, target: "2026-10-03" },
+  { key: "appliance-radar", text: "Gutter cleaning, October window. Book before the leaf rush.", days: 27, target: "2026-10-15" },
+  { key: "commitment-radar", text: "Thanksgiving hosting, 26 November, 25 people. Runway opens.", days: 35, target: "2026-11-26" },
+  { key: "appliance-radar", text: "HVAC filter due 12 February. Ordered in pairs; check stock at the October visit.", days: 42, target: "2027-02-12" },
 ];
 const RULE_IDS: Record<string, string> = {
   "kindergarten-readiness": "01980000-0000-7000-8000-000000000d07",
@@ -149,7 +191,7 @@ console.log(`  raised ${anode.fireAt.toISOString().slice(0, 10)} at T-14, occurr
 
 let added = 0;
 for (const p of [...NOW_ITEMS, ...UPCOMING]) {
-  if (await upsertPrompt(randomUUID(), p.key, p.text, new Date(p.fire), p.target)) added += 1;
+  if (await upsertPrompt(randomUUID(), p.key, p.text, dayOffset(p.days), p.target)) added += 1;
 }
 console.log(`prompts: ${added} added, ${NOW_ITEMS.length + UPCOMING.length + 1 - added} already present and refreshed`);
 
