@@ -1571,6 +1571,57 @@ The headlines, so this file states them rather than pointing at a document:
 **Not in launch scope under 24.2, named so it does not drift back in:** the
 systems capture form specified earlier on 28 August.
 
+**Same day, the five follow-ups.** All report-only except the CAND column.
+
+- **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
+  under `LIBRARY_INDEX.md:8`, and the repo copy of WK-DEV-001 is currently the
+  CONTENT superset. Both are true and should not be collapsed: a mirror can be
+  more current than its source when the amendment lands on the mirror first.
+  The action is that the library copy takes the two amendments, founder-side.
+  The repo copy is now **marked on its face** with its six dated in-place
+  amendments and the sentence that a dated snapshot is not a statement of
+  current state. **The version line still reads `Version 1.0 | July 2026`
+  after six amendments**, which is the mechanism that made the snapshot look
+  current. The handoff's line 182 and WK-DEV-006's Phase 0 line are ONE error,
+  not two: the directive transcribes the handoff's open-items table, so
+  correcting only the handoff would leave the half a build session reads.
+  A wider staleness audit of both documents is named as its own session, with
+  the rule for it: design decisions age well, STATUS rows are photographs.
+- **`CUSTODY_TRANSFER_CHECKLIST_2026-08-28.md`**: the GitHub org transfer is
+  **SEQUENCED, not outstanding**, blocked on LLC formation which follows the
+  founder agreements. **Trigger: transfer when the entity exists and its
+  accounts are open.** The checklist covers what breaks silently (the ruleset,
+  read back from BOTH endpoints since neither answers alone; org-level Actions
+  policy; the Railway git integration, whose failure looks like a healthy
+  worker running old code) and what does not (CI uses no repository secrets at
+  all). On the other 24.8 accounts: **open S3/KMS and every billing
+  relationship clean in the entity's name at formation**; transfer GitHub,
+  Vercel and Neon; and **do the Neon restore drill before touching the
+  database account**. Found on the way and reported not fixed: the
+  verify-then-merge script is NOT in the repository, only in a session
+  scratchpad, while CLAUDE.md describes it as a control that is kept.
+- **CAND ledger, 24.7's fourth attribute**: the `Promotes into` column exists
+  on both open tables. All 24 rows read UNRESOLVED, because no row's own text
+  names a destination and a guessed register is a wrong pointer (G-93). The
+  five destinations that actually exist are listed so the founder pass is a
+  choice among known options; "closed, no promotion" is one of them and is a
+  real answer, not a blank.
+- **`D5_PROCESSOR_QUESTIONS_2026-08-28.md`**: one paragraph each for Stripe
+  and GoCardless, differing only in the vendor name and one product sentence
+  so the answers are comparable. Three answer shapes, and only "yes, in
+  writing" settles criterion 2; both vendors giving the third shape is a real
+  outcome that makes the monitoring a scoped build item.
+- **`STAGING_STATUS_2026-08-28.md`**: nothing is stood up, four days after
+  ADR-007. **The whole of Phase 1 is behind six dashboard operations**, since
+  ADR-007 makes staging the WK-SEC-001 audit's only venue. Two corrections to
+  the runbook as written: the dormant `well-kept-web` project it offers for
+  repurposing was deleted 26 August, and the staging Resend key is already
+  ruled (separate key, hard internal allowlist), which is stricter than either
+  option it lists. And the hermetic suite must NOT be pointed at staging's
+  database: it truncates, and it would destroy the fixture set the audit
+  needs. The valuable staging run is the airplane e2e against a real
+  deployment.
+
 ---
 
 ## Closed
