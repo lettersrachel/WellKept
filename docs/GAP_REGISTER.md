@@ -6289,3 +6289,30 @@ worth more than the strict-mode detail: it asserted the presence of a phrase
 and nothing about the phrase it replaced. A guard that only checks the new
 state passes on a page carrying both. **The absence assertion is the one that
 makes the label unrevertable**, and it was missing from the version I pushed.
+
+**And it was endorsed as durable without being read** (founder, same evening).
+The claim that "asserting the disclaimer is what makes it durable" was
+accepted on the strength of its description, and the description was accurate:
+the assertion did assert the disclaimer. It was still the wrong assertion. The
+founder notes this is the second such endorsement, the first being the flags
+panel of G-100, where a change was called correct on what it was said to do.
+
+> **An assertion described accurately can still be the wrong assertion, and
+> the description is what gets reviewed.** Nothing in a summary of a guard
+> reveals what the guard omits, because an omission has no words in it. The
+> only reading that catches it is the guard's own text against the state it is
+> supposed to make impossible.
+
+**A third instance, in the same exchange and pointing the other way.** The
+founder replied to "#253 is merging on green" as though a merge had happened.
+It had not; CI had already failed. **That is the same compression applied to a
+sentence about the future**, and it is worth recording beside the other two
+because it shows the mechanism is not about carelessness with facts. A stated
+intention and a reported outcome look alike once they are a clause in a
+summary, and the summary is what gets read.
+
+**The cost profile is what separates this entry from G-106.** G-106's search
+ran and returned the wrong thing, which at least looks like evidence. Here the
+check was one command, on a machine where every dependency was already
+running, and it was skipped in favour of an inference. **Zero cost to verify,
+and the verification was not attempted.**
