@@ -1867,6 +1867,73 @@ Rows 15, 17, 19 and 21 are single words, and inventing expectations for them
 would produce four verdicts that read exactly like the seventeen real ones and
 rest on nothing.
 
+**28 August 2026, later: the SOP re-trace COMPLETES all fourteen original
+rows** (`K-OPS-002_TRACE_2026-08-28.md` sections 8, 10 and 11). Every row is
+now traced against its SOP rather than against its one-line expectation. No
+total is written; the per-row sub-requirement counts are in section 12, each
+derived from that row's own table.
+
+**Four things the completed trace says that the row-by-row verdicts do not.**
+
+- **Two citation defects, both found by reading the source rather than by
+  working the row.** Row 8 cites a "QA five-dimension review" that does not
+  appear in WK-SOP-005 or WK-QA-000 (G-108). **Row 12 cites WK-TRN-009, which
+  has never been written** (G-110): what exists is
+  `WK-TRN-009a_Onboarding_Checklist_DRAFT`, marked UNPLACED and disclaiming the
+  number. Neither would have surfaced during implementation. **Row 12's blocker
+  is a document, not a feature**, and R22 stands and is better supported: with
+  no checklist written there is nothing for software to enforce.
+- **Three SOPs assert the software is the system of record for something it
+  does not fully hold**: WK-SOP-017 on time, WK-SOP-012 on access, WK-SOP-019
+  on capture. That is a distinct class from a missing feature, because a person
+  acting on the claim looks in the app and finds part of an answer.
+- **Two rows collide with adopted decisions rather than being merely unbuilt.**
+  Row 6's dunning sequence falls back to CARD on a second insufficient-funds
+  return, which R19 and D5 prohibit, so that row needs its own interim under
+  R19 rather than inheriting the CFO calendar. Row 13's always-available
+  billing history (which WK-SOP-016 calls a product feature) sits against the
+  client surface frozen at the digest. Both reported, neither resolved; the
+  stricter reading holds meanwhile. **D7 does not bar row 13**: it bars time
+  quantities, and money is not one.
+- **One structural cause appears three times.** A NOT NULL `household_id` is
+  why row 11's staff feedback has nowhere to go, why row 1's non-household paid
+  time (team meetings, training, home-to-first-stop travel) cannot be recorded,
+  and why an access register would be household-scoped when a key is held by a
+  person. Correct as a default and load-bearing for member data; now met three
+  times at the boundary with staff-facing obligations, which is worth deciding
+  as a decision rather than a fourth time by accident.
+
+**G-109, a live one.** The corporate board renders a hiring-gate state from
+`capacity_gate` (households per HOM, cap 5, band 3..5, **no time window**).
+WK-SOP-014 sets the trigger at **85% for four weeks**. Different metric,
+different unit, different window, and no written assumption converts one into
+the other. **Not two thresholds for one decision but two measurements sharing
+one name**, and the board's is the one a founder currently sees.
+
+**Row 1 is the outlier and should leave the software trace in part.** WK-SOP-017
+is a wage compliance document citing the FLSA and Virginia wage law, and three
+of its seven items (paid-category coding, the CEO-approved missed-punch
+correction, four-year retention with employee self-access) are compliance
+obligations whose interim control is a payroll process rather than a field.
+**The founder's recommendation to amend R21 accordingly is recorded in the
+trace and NOT applied**, since amending a ruling is hers. Item 6, clocked
+unpaid meal breaks, needs a founder decision first: it adds a second interval
+type to a capture that holds one.
+
+**And a retention tension worth knowing before it is exercised:** WK-SOP-017
+requires four-year retention of wage records, `erase-household.mjs` keeps
+`time_entry` rows by default for exactly that reason, and
+`--erase-time-and-costs` deletes them if counsel directs. The default is right;
+whoever authorizes the flag should know it can delete a wage record inside its
+retention window.
+
+**Row 4 is no longer blocked on a device except in one item.** The phone
+settles item 1 (camera-roll bypass). Items 3 (a required review step with a
+retake prompt), 5 (photo consent captured at onboarding and read by the capture
+path) and 6 (consent scope, ephemeral option, clearance mode, absolute
+no-capture zones) are code reads, and item 6 is WK-SEC-001 test area 4, which is
+one of the two additions already recovered.
+
 ---
 
 ## Closed
