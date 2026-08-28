@@ -5105,3 +5105,62 @@ this**, because the shortcut's output looks identical on screen.
 
 **Base rate (G-75), twenty-third of twenty-three:** found by refusing to
 write a value that would have rendered correctly.
+
+
+---
+
+### G-95. A demo seed resolved its target with an unordered LIMIT 1, and would have written Fernbrook's content onto another household
+
+**Filed 28 August 2026. Found by the founder, refusing to run an
+instruction I gave her.** Not by a guard, not by a test, and not by me.
+
+`demo-content.ts` resolved its household with
+`SELECT id FROM household LIMIT 1`. An unordered `LIMIT 1` returns
+whatever row Postgres hands back first, which carries no guarantee at
+all. **Against production that row is Chen-Williams Demo, not
+Fernbrook.** So `pnpm db:demo` would have written Fernbrook's fields,
+dots, registries and visit report onto a different household.
+
+**The part that makes this worse than an ordinary bug.** It was already
+written down. `demo-hom-view.ts`, authored hours earlier in this same
+session, names this exact line in its own header as "the shape that put a
+capture on the wrong tenant once already", pins `FERNBROOK_DEMO_ID` for
+itself, and leaves the older script untouched. The pinned id has existed
+in `tooling/fixture-ids.mjs` since R17.
+
+> **Knowing about a defect and fixing it are different acts, and a
+> comment describing a hazard in another file is documentation, not a
+> remedy. Worse, writing it down FEELS like handling it.**
+
+And then, having written that sentence, I put `pnpm db:demo` at the top of
+the run instructions. The founder stopped, read the resolution, and
+queried production for what `LIMIT 1` actually returns rather than
+accepting the instruction.
+
+**Fixed:** the pin, and a REFUSAL. The refusal matters as much as the pin.
+A script that cannot find its household must stop, because falling back
+to "some household" is precisely how a demo seed becomes a write to a real
+tenant. Proven both directions with the database confirmed up first (the
+first attempt died at the connection layer and would have read as either
+answer): green resolves Fernbrook by name and fills 32 fields, red exits 1
+naming the missing id and writes nothing.
+
+**The class, swept.** Four other sites take an unordered household
+`LIMIT 1`. `apps/web/src/lib/data.ts`'s `getHousehold()` is SHIPPED APP
+CODE with **no callers**: dead, therefore harmless today, and a loaded
+gun for the next author who reaches for a household. `dump-seed.ts` and
+`services/worker/src/fire-test-event.ts` are dev tools where the wrong
+household means a wrong dump or a wrong test event. The two e2e specs use
+`ORDER BY created_at`, which is at least deterministic. None of these is
+fixed here; they are named so the next reader inherits a list rather than
+a search.
+
+**Why no guard is proposed.** A static rule against `LIMIT 1` would fire
+on every legitimate single-row read in the repository and be allowlisted
+into silence within a week. The distinguishing feature is not the query
+shape, it is whether the row identifies a TENANT, and no static reader
+knows that. This stays a thing a person notices, which is why the entry
+records how it was noticed.
+
+**Base rate (G-75), twenty-fourth of twenty-four:** found by a person
+refusing to run a command until she understood what it would touch.
