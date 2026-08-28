@@ -1825,6 +1825,48 @@ methods. The fix that would hold, named and not built: a guard asserting the
 index names every file in `docs/library/`, computed with a count floor, in the
 pattern of the four existing censuses.
 
+**And rows 8, 11 and 5 are RE-TRACED against the SOPs (trace section 8), which
+changed their size rather than their verdicts.** Each turned out to be several
+requirements wearing one number: row 8 is seven testable requirements and the
+software meets one, row 11 is three modules with three different audiences and
+one is built, row 5 is four and none is built. **That is the argument for
+pulling the SOPs BEFORE the trace becomes a backlog**, since a row costed from
+its one-line expectation is costed against roughly a fifth of what it asks.
+
+Three findings from the re-trace worth having outside the document:
+
+- **G-108, a citation defect in the library.** Row 8's acceptance criterion
+  names a "QA five-dimension review" that does not exist under that name in
+  WK-SOP-005 or WK-QA-000. The trace runs against WK-SOP-005 Level 2's five
+  required elements, which are the report's contents and so the right subject,
+  with the substitution stated in the open. **A row whose acceptance criterion
+  cannot be located is a row nobody can close**, and the failure is silent:
+  it looks complete to whoever built it and incomplete to whoever reads the
+  SOP.
+- **Row 8's five elements share ONE gap, not five.** Every element is captured,
+  four of them well; the projection is the wall (`CLIENT_REPORT_KEYS` is two
+  keys, and G-78 makes adding one a deliberate declared act). The exception is
+  per-room photos, which are **unrepresentable**: a `visit_photo` carries no
+  room and no scope. Also absent: any submission-timing rule, and client push
+  of any kind (push exists and is staff-only, keyed to `auth_user` from the
+  HOM surface).
+- **Tell Well Kept CANNOT serve row 11's feedback module**, and the reason is
+  structural rather than a matter of priority: `capture_artifact.household_id`
+  is NOT NULL and foreign-keyed to `household`, so every capture is about a
+  household. A HOM reporting that the photo upload fails has nowhere to put it
+  that is not attached to a member's record, which would pollute that record
+  and make staff product friction subject to household erasure. The nearest
+  existing mechanism is a different mechanism that happens to look like one.
+
+**A213 is a RULING, not a document** (founder), most likely in WK-QA-018, which
+the authority page says is current through A552 **on paper**. If it is
+paper-only, the five remaining additions cannot be traced from any digital
+source, and that is the finding rather than a blocker. Two of the seven are
+already recovered from WK-SEC-001, so the paper dependency is five rows.
+Rows 15, 17, 19 and 21 are single words, and inventing expectations for them
+would produce four verdicts that read exactly like the seventeen real ones and
+rest on nothing.
+
 ---
 
 ## Closed
