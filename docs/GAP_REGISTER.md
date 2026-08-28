@@ -4932,6 +4932,51 @@ said. Read rather than trusted.
 
 ---
 
+**ADDENDUM, same day, and it is the sharper half of the entry.** The fix
+above widened the alternation to
+`queued|in_progress|pending|requested|waiting`, which is the COMPLETE
+list of check-suite statuses. It is not the complete list of STATES. The
+loop refused again, on `REFUSED: no github-actions suite`, because the
+state that precedes every one of those is the suite NOT EXISTING YET, and
+that state has no status to match.
+
+> **Enumerating a field's values is not the same as handling its absence.
+> A filter that is complete over the values is still incomplete over the
+> states.**
+
+**Written by the person who had just filed this entry**, about this
+mechanism, one hour earlier. The first fix asked what values the field
+can take and never asked whether the field is there. That is one layer
+past where the rule was applied, which is where these always are, and it
+is why the entry gets an addendum rather than a second number: it is not
+a new mechanism, it is the same one surviving its own correction.
+
+**What did NOT go wrong is the load-bearing part.** `verify-merge.sh`
+REFUSED rather than merging a head whose `ci` run did not yet exist. That
+is the zero-run shape the script exists for. The control behaved
+correctly; only the thing polling it gave up early, which is the same
+division as the first instance.
+
+**And the cause was checked before it was acted on.** "No suite" and
+"Actions disabled" produce an IDENTICAL refusal, and Actions disablement
+was a real incident on this repository on 26 August (see the branch
+protection item in WORK_QUEUE). Reading the runs API showed a `ci` run for
+the head created at 00:54:28Z and `in_progress`, which settles it as a
+race between the push and suite creation rather than a repeat. Assuming
+the benign reading would have been RIGHT this time and would have
+provided no way to know that. That is the discipline rather than the luck,
+and it is the only reason this addendum can state a cause at all.
+
+**A third instance, same day, through the shell rather than through
+anything anyone would call a check.** Reading back the demo seed's dates,
+`node seed.ts | head -2` closed the pipe and killed the seed mid-run. The
+query then showed one row where nine were expected, and the seed was one
+sentence away from being reported as broken. **A partial state, one
+command from being read as a result.** The instrument that truncated the
+output also truncated the work, and nothing in the output said so.
+
+---
+
 ### G-92. A deliverable referenced by bare filename in a committed document, while existing only outside the repository
 
 **Filed 27 August 2026. Reporting, not code.** The Part B verification
