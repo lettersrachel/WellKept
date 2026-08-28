@@ -5332,3 +5332,49 @@ different question than the one that matters.
 
 **Base rate (G-75), twenty-sixth of twenty-six:** found by distrusting a
 passing check, in a session that had already been taught to.
+
+---
+
+### G-98. The G-61 date bug reappeared in the tool built to verify the system
+
+**Filed 28 August 2026. Found by the founder, reading a verification
+output against the value she knew was stored.**
+
+`run-sql-readonly.mjs` printed values with `String(v)`. On a `Date` that
+uses the MACHINE'S LOCAL ZONE, so a row stored as `2026-07-28T00:00:00Z`
+printed as `Mon Jul 27 2026 20:00:00 GMT-0400` on a US East machine. **The
+date reads one day early**, which is G-61 exactly, in a file written five
+hours after G-61 was cited approvingly in three separate commit messages.
+
+**The surface is what makes this worth its own entry rather than a line on
+G-61.** A wrong date on a page is bad. A wrong date in the VERIFICATION
+READ is worse, because a verification read is the instrument someone
+reaches for when a page looks wrong. It is the thing that settles
+arguments, and it was quietly losing a day on every timestamp it printed:
+`most_recent`, `earliest`, `latest`, `consent_signed_at`, every one of
+them.
+
+> **A tool built to check the system inherits none of the system's fixes.
+> It is new code, and new code gets the default behaviour, which is
+> exactly the behaviour the fix existed to prevent.**
+
+That is the general form. The fix lived in the app's render path; the
+runner has its own, wrote it fresh, and `String(aDate)` is the obvious
+thing to write.
+
+**Fixed:** timestamps print ISO with the `Z` suffix, so the zone is
+VISIBLE rather than assumed. A reader who wants local time can convert; a
+reader handed local time with no marker cannot tell anything happened,
+which is the whole failure.
+
+**Proven both directions, with the mutation confirmed landed by printing
+the changed line.** Red: reverting to `String(v)` under
+`TZ=America/New_York` reproduces the founder's exact reading,
+`Mon Jul 27 2026 20:00:00 GMT-0400`. Green: the same value prints
+`2026-07-28T00:00:00.000Z` under both `America/New_York` and
+`Australia/Sydney`, so the render is zone-independent in both directions
+rather than merely correct in the one that was reported.
+
+**Base rate (G-75), twenty-seventh of twenty-seven:** found by a person
+comparing a tool's output against the value she already knew, which is the
+only check that catches a tool telling a consistent lie.
