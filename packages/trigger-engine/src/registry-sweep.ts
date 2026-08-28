@@ -92,9 +92,25 @@ export function addMonthsUTC(d: Date, months: number): Date {
   return new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(d.getUTCDate(), daysInMonth), 13, 0, 0));
 }
 
-/** Next service-due date on/after now: lastServiced + k·interval, smallest k ≥ 1.
- * Recurring by nature — an unserviced appliance re-prompts every cycle;
- * recording a service (updating last_serviced_at) moves the whole series. */
+/** Next service-due date on/after now: lastServiced + k·interval, smallest k >= 1.
+ * Recurring by nature: an unserviced appliance re-prompts every cycle, and
+ * recording a service (updating last_serviced_at) moves the whole series.
+ *
+ * IT CAN NEVER RETURN A DATE IN THE PAST. The loop advances k until the
+ * due date is on or after now, so a missed cycle is skipped rather than
+ * reported. That is CORRECT for scheduling (the next service is the one
+ * you can still do), and it has a consequence a later reader will get
+ * backwards:
+ *
+ *   OVERDUE-NESS IN THIS SYSTEM COMES ONLY FROM PROMPT AGE, NEVER FROM
+ *   OCCURRENCE AGE. A maintenance item cannot be overdue on its own.
+ *
+ * What produces "overdue by two months" is a prompt RAISED ON TIME when
+ * its window opened at T-14 and then never answered: prompt_pack_item
+ * rows stay open until a HOM answers them, so the row ages while the
+ * schedule moves on. If you go looking for a past occurrence to explain a
+ * late prompt, you will not find one, and the absence is by design rather
+ * than a gap. See prompt-timing.ts for the label this feeds. */
 export function nextIntervalOccurrence(lastServiced: Date, intervalMonths: number, now: Date): Date {
   let k = 1;
   let due = addMonthsUTC(lastServiced, intervalMonths);
