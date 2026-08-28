@@ -389,6 +389,39 @@ const RULE_FLOORS: Record<string, number> = { render: 30, channel: 4, action: 1,
 // in a new place.
 type Excusal = { reason: string; allow: string[] };
 const CENSUS_EXCUSALS: Record<string, Excusal> = {
+  // The ONLY entry here that is not waiting on the voice pass. These ten
+  // fragments are registry_entry LABELS, and the label is db:demo's
+  // idempotency key: seeding matches on it, so rewriting one does not
+  // rename an entry, it inserts a second one beside the first. Proven the
+  // hard way on 28 August, when a rewrite of exactly these ten took
+  // Fernbrook from fourteen registry rows to twenty-four, both spellings
+  // live, feeding duplicate prompt candidates through the sweep.
+  //
+  // F3 called this out for prompt packs ("packName is an IDENTIFIER, not
+  // display-only") and M fixed it with the pack_key / pack_name split in
+  // 0028. registry_entry never got that split, so its label is still both
+  // things at once. Ruling 3's sweep left every keyed identifier alone for
+  // this reason and these are keyed identifiers.
+  //
+  // This excusal comes out when the display/key split lands for
+  // registry_entry, which is its own session with a migration. Until then
+  // the em dashes are a KNOWN residue on a rendered surface, and that is a
+  // worse thing to hide than to name.
+  "packages/schema/src/demo-content.ts": {
+    reason: "registry_entry labels are the seed's idempotency key; rewriting one inserts a duplicate rather than renaming (F3 in a new table). Pending the display-name/key split that 0028 gave prompt packs.",
+    allow: [
+      "Mia — birthday",
+      "Gram Ruth — birthday",
+      "Owen — clothing",
+      "Owen — shoes",
+      "Mia — clothing",
+      "Mia — shoes",
+      "Rosa — housekeeper",
+      "Ben — dog walker",
+      "Trupanion — Biscuit",
+      "Owen — kindergarten",
+    ],
+  },
   "apps/web/src/app/mfa/page.tsx": {
     reason: "four rendered sentences on the staff second-factor screen; pending the voice pass sequenced after this census",
     allow: [
