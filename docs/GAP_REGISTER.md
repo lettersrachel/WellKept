@@ -5656,3 +5656,163 @@ applied to the cleanup as deliberately as to the thing being cleaned.
 
 **Base rate (G-75), thirtieth of thirty:** found by counting rows after a
 script said "idempotent", which is the word that stops people counting.
+
+---
+
+### G-102. Three rulings withdrawn against adopted decisions, kept visible rather than deleted
+
+**Filed 28 August 2026 by the founder, correcting her own rulings of 27 and
+28 August after reading WK-DEV-006, the Implementation Handoff section 24,
+WK-SEC-001, the current authority page, WK-QA-004 and WK-SPEC-002.** The
+roadmap this session was working from earlier the same day is withdrawn;
+WK-DEV-006's four phases govern. A reconciliation document is founder-side.
+
+The three are recorded here rather than edited away, because a ruling that
+vanishes leaves the next reader unable to tell whether it was wrong or
+merely never made.
+
+**1. The accessibility deferral is VOID.** The 27 August ruling gave
+accessibility two triggers, neither inheriting the other: the staff surface
+revisiting at the first HOM who is not the founder or Lauren, the client
+surface at the client side unfreezing. **D2 had already promoted REQ-074 to
+WCAG 2.2 AA as the ENGINEERING BASELINE across critical client, HOM and
+corporate workflows, on 24 August, under the two-key authorization (register
+A567).** A baseline is not a thing a later ruling defers by surface. The
+deferral is void from its filing, not from today.
+
+The mechanism the founder named for how it happened was that WK-DEV-001's
+REQ-074 text was stale at 2.1 AA, which would have made the ruling
+defensible against what a developer reads. **That mechanism does not hold in
+this repository.** `WK-DEV-001_Requirements.md:71` already carries the 2.2 AA
+promotion with D2's language, the date, the A567 citation and the superseded
+text quoted. If the library copy still reads 2.1 AA, the two copies disagree
+and the repo copy is the correct one. Recorded because the correction of a
+correction is exactly where an unchecked premise survives: the void ruling is
+right, and the reason given for it was checkable and did not check out.
+
+What is now owed and was not before: an accessibility baseline with nothing
+enforcing it. There is no axe, no a11y assertion and no keyboard path
+anywhere in the repository, verified by search on 27 August and unchanged.
+D2 says the baseline is "enforced through the shared component library's
+accessibility contract", and no such contract exists.
+
+**2. The payments sequence was inverted.** D5 makes the two-option shortlist
+the developer's deliverable and the founder's selection the gated step, with
+a 48-hour clock running from delivery. The earlier ordering had the selection
+first. Corrected by delivering the shortlist:
+`docs/D5_PAYMENTS_SHORTLIST_2026-08-28.md`, whose merge starts the clock.
+
+**3. The S3 vault recommendation was solving a problem WK-SEC-001 already
+gates.** Withdrawn. The recommendation is not restated here, because
+restating a withdrawn recommendation is how it gets re-adopted by a reader
+who skims. WK-SEC-001 is not in this repository, so the gate it applies
+cannot be quoted from here.
+
+**The pattern across all three, and the reason they are one entry rather than
+three:** each was a ruling made against a document the ruler was not holding
+at the time. Two of the three would have been caught by opening the adopted
+decision before ruling on its subject; the third by noticing that a scope
+document existed. Nothing about the rulings was careless in the moment. They
+were made at the speed the day demanded, which is the condition under which
+the check gets skipped, and the check is cheap only when you already know
+which document to open.
+
+---
+
+### G-103. Three requirements describe one mechanism at two priorities, and none matches the build
+
+**Filed 28 August 2026 by the founder, from a read of the specification layer
+rather than the code.** Reported, not resolved: the priority is a founder
+ruling.
+
+- `REQ-031 (P0)`, requirements line 35, puts "hours auto-capture" inside the
+  enforced close flow.
+- `REQ-036 (P1)`, line 40, is timer-free hours: a geofenced arrive and leave
+  suggestion with manual override, never auto-billing from geofence alone.
+- `REQ-083 (P0)`, line 97, adopted 24 August, derives the monthly lender
+  covenant report from visit arrival and departure events.
+
+**A P0 depends on capture another requirement places at P1, and the P0 that
+says auto-capture is not met**, because the implementation is two
+`datetime-local` fields the HOM types (`VisitWizard.tsx:398-399`). This is a
+specification defect before it is a build gap, and the fix is a ruling about
+priority, not a change to code.
+
+The collision propagates into Phase 2's acceptance criterion, which is
+treated in full in `GATE0_AND_PHASE_STATUS_2026-08-28.md` section 1.4. The
+short form: utilization minutes and churn-with-cause ARE pure functions of
+the outbox today, and per-HOM utilization is not and cannot be while the
+covenant events carry no person, which is itself a deliberate posture resting
+on Ruling 1 and the G-13 disclosure. "Generates from these events" and "pure
+function of events" are not the same acceptance test, and the difference is
+invisible until someone tries to write the report.
+
+**Two further items from the same read, recorded so they are not lost:**
+
+- **Four adopted decisions carry no requirement number**: D3 passkey MFA
+  (which will contradict REQ-003's mandatory TOTP the moment it ships,
+  though the two agree today), D5 ACH mandate capture, D6 the trainee role,
+  D7 the client duration prohibition. Confirmed by search: the requirements
+  document contains no instance of ACH, mandate, NACHA, trainee, passkey,
+  WebAuthn, FIDO or a duration prohibition. Proposed homes are in the status
+  report section 6.5; no ids are proposed, since requirement numbers are
+  allocated at write time.
+- **REQ-016's P1 against Phase 2's launch-committed importer**, the same
+  collision shape. With a wrinkle that should not be smoothed: REQ-016 names
+  the WK_PLAY_002 intake workbook and Phase 2 names
+  HZ_Live_Household_Record_Master. If those are different imports, REQ-016 is
+  not the requirement Phase 2 waits on, and the launch-committed importer has
+  no requirement number at all. Neither workbook is in this repository, so it
+  cannot be settled here.
+
+**And one premise from the same read that did not survive checking, recorded
+beside the ones that did:** REQ-078 through 082 are reported as not appended,
+by the handoff at line 182 and by WK-DEV-006's Phase 0 line that inherits it.
+**They were appended on 5 August**, at requirements lines 79 to 83, and the
+document carries its own canonicity note saying the repo copy won a verbatim
+divergence against INSTRUCTION_UPDATES v2 by the 24 August rulings. Appending
+from the v2 source now would UNDO a resolved divergence. Both stale sentences
+are in controlled documents, so the correction is founder-side.
+
+Worth keeping as the shape rather than the instance: **a housekeeping item
+written down as outstanding stays outstanding in every document that
+inherits it, long after the work is done.** Two documents and a phase
+definition all carry a task that was finished nineteen days before they were
+written. The count discipline in CLAUDE.md exists for numbers; this is the
+same failure for a status.
+
+---
+
+### G-104. A live staff surface tells the HOM a geofence suggested a value she typed
+
+**Filed 28 August 2026, found while establishing what writes the arrival and
+departure events.** Reported, not changed.
+
+`apps/web/src/app/(hm)/visit/VisitWizard.tsx:397` renders, immediately above
+the two hour inputs:
+
+> Suggestion only; nothing bills from a geofence alone.
+
+`apps/hm-mobile/App.tsx:461` labels the chip "Confirm hours (geofence
+suggestion)".
+
+**There is no geofence.** The hours are two `datetime-local` fields the HOM
+fills in by hand (`:398-399`). The sentence is REQ-036's own language, shipped
+into the interface ahead of the feature it describes, where it reads to a HOM
+as a statement about what just happened rather than as a policy about what
+will never happen.
+
+Not a client-facing claim and not a safety issue, which is why it is filed at
+this size. What makes it worth a register entry is the class: **requirement
+prose carried into UI copy becomes an assertion about the system, and the
+requirement's tense is lost in the move.** "Never auto-bill from geofence
+alone" is a constraint on a future feature; on the screen it reads as a
+description of a present one. A HOM could reasonably conclude the start time
+was suggested and she confirmed it, when she typed it.
+
+It also sat undetected because it is TRUE. Nothing does bill from a geofence
+alone. Every guard in this repository would pass it, and did. The copy
+census reads it as prose without an identifier in it, the client-copy guard
+does not reach staff-surface truth, and no guard anywhere checks whether a
+sentence describes a mechanism that exists. That check has no mechanical
+form, which is the honest reason this is filed rather than fixed by a guard.

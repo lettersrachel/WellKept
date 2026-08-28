@@ -651,6 +651,28 @@ produced the vacuous ticks below; the correction came from checking the
 ruling against what the repository CONTAINS rather than against what the
 spec describes.
 
+**THAT RULING IS VOID, 28 August 2026 (founder, correcting her own; see
+GAP_REGISTER G-102).** The two triggers are withdrawn in full. WK-DEV-006
+D2 had already promoted REQ-074 to WCAG 2.2 AA as the ENGINEERING BASELINE
+across critical client, HOM and corporate workflows, on 24 August under the
+two-key authorization (register A567), and a baseline is not something a
+later ruling defers by surface. The paragraph above is left standing as the
+dated record of what was ruled; it is not the rule.
+
+What that leaves open, stated plainly because it is now larger than it was:
+the accessibility baseline is adopted law with NOTHING enforcing it. D2 says
+it is "enforced through the shared component library's accessibility
+contract" and no such contract exists. The total gap named two paragraphs
+above is unchanged, and it no longer has a trigger to wait for.
+
+**A premise correction that belongs beside it.** The mechanism given for how
+the void ruling came to be made was that WK-DEV-001's REQ-074 read a stale
+2.1 AA. In THIS repository it does not: `WK-DEV-001_Requirements.md:71`
+carries the 2.2 AA promotion with D2's language, the date, the A567
+citation, and the superseded text quoted as the record. If the library copy
+still reads 2.1 AA, the two copies disagree, and the repo copy is the one
+carrying the promotion.
+
 Two risks are vacuously satisfied and **will silently stop being so**
 (the ease baseline and the no-diagnosis gate). Those re-check on a
 calendar, not on a change, because no change to this repository will
@@ -1505,6 +1527,49 @@ household (the training households, or the "first household") is genuinely
 closed, not deferred. Dated records below keep the "pilot" wording they were
 written with; open gates now carry the plan of record's launch and training
 language per Ruling 3.
+
+**28 August 2026: WK-DEV-006's four phases govern, and the day's roadmap is
+withdrawn** (founder, after reading WK-DEV-006, the Implementation Handoff
+including section 24, WK-SEC-001, the current authority page, WK-QA-004 and
+WK-SPEC-002). Three of that day's rulings are corrected in the register
+(G-102): the accessibility deferral is VOID against D2, the payments
+sequence was inverted, and the S3 vault recommendation was solving a problem
+WK-SEC-001 already gates.
+
+Two deliverables landed the same day, both report-only except the shortlist.
+**`GATE0_AND_PHASE_STATUS_2026-08-28.md`** carries Gate 0 item by item, Phase
+1 readiness, Phase 2 status against 24.2's pinned four, and the requirements
+housekeeping report. **`D5_PAYMENTS_SHORTLIST_2026-08-28.md`** is the D5
+two-option shortlist; **the founder's 48-hour selection clock runs from its
+merge.**
+
+The headlines, so this file states them rather than pointing at a document:
+
+- **No monthly covenant report exists**, and Phase 2's acceptance criterion
+  (a pure function of events matching a hand computation) is **not currently
+  satisfiable as written**: utilization minutes and churn-with-cause are pure
+  functions of the outbox today, but per-HOM utilization is not and cannot be
+  while the covenant events deliberately carry no person. Reported as a
+  specification question, not resolved. G-103.
+- **REQ-078..082 were already appended on 5 August.** The handoff's line 182
+  and WK-DEV-006's Phase 0 line both say otherwise and are stale; appending
+  from the v2 source now would undo a resolved divergence. Founder-side to
+  correct in the controlled copies.
+- **Four adopted decisions carry no requirement number**: D3, D5, D6, D7.
+- **24.8's "GitHub organization" is currently false**: the repository is
+  under a User account, not an organization, established during the G-73
+  diagnosis. A personal account cannot hold the ownership 24.8 describes.
+- Gate 0's suite acceptance line PASSES, read today, uncached
+  (`pnpm test --force`, 11 turbo tasks, 0 cached, exit 0). Its staging half
+  does not: staging is not stood up.
+- **Phase 2's one done item is the weekly digest.** The importer parses a
+  different workbook than Phase 2 names and writes seed JSON rather than
+  ingesting; payments are entirely absent; the trainee role (D6) is absent.
+- **G-104**: a live HOM surface tells the operator a geofence suggested hours
+  she typed. Requirement prose carried into UI copy ahead of its feature.
+
+**Not in launch scope under 24.2, named so it does not drift back in:** the
+systems capture form specified earlier on 28 August.
 
 ---
 
