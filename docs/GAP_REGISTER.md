@@ -4929,3 +4929,89 @@ by definition the places nobody is looking.
 **Base rate (G-75), twentieth of twenty:** found because a background
 task reported success and the output did not say what success would have
 said. Read rather than trusted.
+
+---
+
+### G-92. A deliverable referenced by bare filename in a committed document, while existing only outside the repository
+
+**Filed 27 August 2026. Reporting, not code.** The Part B verification
+queries were written and delivered out of band, then referred to in a
+COMMITTED document as `partb-db.sql`, a bare filename that reads as a
+repository path. It was not one. The founder went looking for it twice,
+under two different paths, and found nothing both times.
+
+**A correction to the finding as first stated, because an entry has to be
+right about its own facts.** The report that opened this said the file
+was "never written or committed". Half of that is wrong: it WAS written,
+to a scratchpad, and delivered, and it still exists there at 3183 bytes.
+What never happened is the commit. So the defect is narrower and more
+interesting than a file that does not exist:
+
+> **A deliverable that exists somewhere unreachable is indistinguishable,
+> from the reader's side, from one that does not exist at all. Delivery
+> out of band is not delivery to a path.**
+
+**The compounding part is that a committed document cited it.** The
+result sheet said "the queries are in `partb-db.sql`", which is exactly
+the shape of a repo reference and carries none of the qualification that
+"I sent you a file" would have carried. A document in the tree makes
+claims that are read as claims about the tree.
+
+**The general form the founder asked for, which survives the correction
+above and is the reason to file at all:**
+
+> **A description detailed enough to review reads as evidence the thing
+> exists. Detail is not existence.**
+
+The file was specified precisely enough to be argued with, precondition
+block and column corrections and all, and every one of those details was
+accurate. None of them bore on whether it was reachable, and nothing in
+the report separated the two. It was then passed on twice as an
+instruction to run something.
+
+**How it was actually found:** by the founder attempting to run it, twice,
+which is the only check that ever distinguishes these. **The remedy is
+not a rule about honesty**; the description was honest. It is that a
+deliverable is finished when it is at a path in the tree, and until then
+it is a draft regardless of how completely it has been described.
+
+**Base rate (G-75), twenty-first of twenty-one:** found by a person trying
+to use the thing, after two reports had described it as available.
+
+---
+
+### G-93. A citation that does not survive being followed costs more than a missing one
+
+**Filed 27 August 2026, from the Part B close.** The verification's
+household-scoping block was described in the run report as "the G-23
+check". G-23 is the smoke checklist becoming unsafe once demo data is
+archived (this file, the entry above). No register entry covers
+cross-tenant scoping at all; the search was run before this was written.
+
+The check itself is real and correct. Only the pointer was wrong.
+
+> **A wrong pointer outlives a missing one, because following it costs
+> the reader more than not following it, and because a citation that
+> fails once teaches the reader that citations here are unreliable.**
+
+That second cost is the one that matters in a repository whose whole
+method is that claims carry their evidence. A missing citation is
+visibly missing and the reader supplies their own; a wrong citation
+spends someone's time and then damages every correct citation near it.
+
+**So the check was recorded by NAME and with no G-number**, in the Part B
+result sheet: "the check is real and unnamed, which is better than named
+wrongly". Unnamed is an honest gap. Named wrongly is a false claim with a
+footnote's authority.
+
+**The general form, which applies past register ids** to file paths, line
+numbers, commit shas, section numbers and document names: **a reference
+is part of the claim, not decoration on it.** If the reference cannot be
+checked at the moment of writing, say so, or leave it out and describe
+the thing instead. This session already carried two instances of the same
+class before this one, in the PR body whose shas were written from memory
+and were wrong, and in the section 4 re-flags whose causes named no
+delta.
+
+**Base rate (G-75), twenty-second of twenty-two:** found by following the
+citation, which took one grep and is the entire discipline.

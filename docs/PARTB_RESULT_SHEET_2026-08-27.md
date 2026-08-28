@@ -140,3 +140,12 @@ results are the file's, unchanged; the shipped runner is on `main` and
 still unexercised by the person it was written for. Recorded because
 "the tool exists" and "the tool was used" are different claims and the
 sheet should not imply the second.
+
+**So the runner remains UNPROVEN BY USE.** It was proven red and green in
+a container (green on the real file, refused on a plain INSERT, and
+refused by Postgres itself on a write assembled at runtime that its regex
+could not see), which tests its logic and not its use. The first real
+exercise by the person it was written for is what closes that, and until
+then "the tool exists" is the only claim available about it. The standing
+lesson applies to it unchanged: a control proven in a container is worth
+less than one that refuses something real.
