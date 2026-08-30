@@ -603,7 +603,7 @@ export default async function VisitPage({ searchParams }: {
       <div className="note">
         Team meetings, required training, onboarding and shadow visits, and playbook
         upkeep are paid time about you, not about a household. They go on your own
-        record with no household attached.
+        record with no household attached. <a href="/my-time">See your full time record</a>.
       </div>
       <form action={createCompanyTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
         <input type="hidden" name="returnTo" value="/visit" />

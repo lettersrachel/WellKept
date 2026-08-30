@@ -6708,3 +6708,57 @@ tester rule is a taxonomy call.
 
 **Still open behind G-111, now one item:** the WK-SOP-017 employee
 self-access view, its own session.
+
+### G-114. The outbox drain's batch window can be permanently occupied by kinds nothing consumes
+
+**Filed 30 August 2026, found by a dirty database rather than by a test
+design, during the self-access session. Reported, not fixed.**
+
+The full local suite went red on the drain-order test with an EMPTY
+consume, and the drain's own log line said why: `100 row(s) of kinds with
+no registered consumer left waiting`. The local dev database had
+accumulated 104 unprocessed rows of journey and demo residue (102
+`attention_record.opened`, plus one covenant pair), all older than the
+test's two rows.
+
+**The mechanism, from `packages/trigger-engine/src/run.ts`
+(`drainEventOutbox`):** the batch selects the oldest `batch` (default 100)
+rows where `processed_at IS NULL AND attempts < maxAttempts`, then walks
+them; a kind with no registered consumer is counted and LEFT UNTOUCHED,
+attempts unspent, by design. The design intent, stated in the function's
+own docstring, is right: a primitive may emit events before its consumer
+ships without being dead-lettered. The oversight is that waiting rows
+still OCCUPY the batch window. They never leave it, so once the waiting
+set reaches the batch size and is older than any consumable row, no
+consumable row ever enters the batch again. Permanent starvation, reached
+locally at 104 rows, and the drain's result reads healthy while it
+happens ("not an error").
+
+**The live exposure is real and unverifiable from this container.**
+Exactly ONE consumer is registered (`field.changed`, which runs the
+trigger pass); every s4-envelope kind the event law now emits on every
+action waits. Production therefore accumulates waiting rows by design,
+and once its waiting set crosses 100, `field.changed` events silently
+stop being consumed. Whether production has crossed the threshold is one
+founder-side query:
+`SELECT kind, count(*) FROM event_outbox WHERE processed_at IS NULL GROUP BY kind;`
+with the total compared against 100.
+
+**Candidate fix, named and not built:** the batch selection excludes
+kinds without a registered consumer (a `kind IN (...)` on the registered
+set, or a registry-aware WHERE), so waiting rows keep their
+left-waiting semantics and stop occupying the window. One clause, but it
+is a change to the shipped drain, and the drain's ordering semantics are
+ALREADY an open founder question (the A2 total-order ruling in the 30
+August handoff); one session changing drain semantics by reflex while a
+ruling is pending is how semantics drift. The fix and the A2 answer
+should land as one deliberate change, proven in both directions: a
+starved batch drains after it, and waiting rows still wait.
+
+**The suite reading, stated so it is not misread:** the test failure was
+ENVIRONMENTAL (the hermetic suite met a dirty dev database; CI's fresh
+database cannot reach the state), and the local red was the instrument
+that surfaced the live defect. The residue was deleted and the suite runs
+11/11 uncached green. A guard cannot hold this: the condition lives in
+accumulated production data, which is exactly what the founder query
+reads.

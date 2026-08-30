@@ -1833,6 +1833,45 @@ production exercise: the form offers only the five valid categories by
 design, and the forged-POST wall is journey-proven in CI with the forgery
 confirmed landed.
 
+**Same day, the WK-SOP-017 employee self-access view is BUILT
+(migration-free), closing G-111's last open item.** `/my-time`, in the
+(hm) group so the staff second factor gates it: a staff member reads
+their OWN wage-time record, every `time_entry` row where `user_id` is
+theirs, household and person-scoped alike, with derived per-category
+totals and the entries count computed at render. The WHERE clause is the
+wall: the page takes no person parameter at all, so it can only ever show
+its reader themselves, which is why it is WK-SOP-017 self-access and not
+per-person analytics (Ruling 1 bars comparative display; a page that
+compares nobody displays nothing to rank). Timestamps render pinned UTC
+and the page says so (the G-61 class, stated). Corrections copy states
+the append-only posture: an entry that looks wrong goes to a manager and
+becomes a new entry, never an edit. Linked from /visit's company-time
+form and the fleet board's Company time card. The twenty-fourth journey
+proves three walls: own rows render in both shapes with the count
+matching the database's own count, ANOTHER person's marker row planted in
+the database never appears (the failing-direction probe), and a client
+session never reaches the page. Twenty-three e2e green, suite 11/11
+uncached. **Everything behind G-111 is now built: the schema (0059), the
+producer, and the self-access view.**
+
+**And the same session's full-suite run surfaced G-114, reported not
+fixed: the outbox drain's batch window can be permanently occupied by
+kinds nothing consumes.** The local suite went red because 104
+accumulated consumer-less rows (journey and demo residue) filled the
+drain's 100-row oldest-first batch, and the drain leaves such rows
+waiting IN the window by design, so the test's own consumable rows never
+entered it. The failure was environmental (CI's fresh database cannot
+reach the state; the residue was deleted and the suite is green), but the
+mechanism is live: production emits s4-envelope kinds on every action
+while exactly ONE consumer is registered (`field.changed`), so once
+production's waiting set crosses 100, field-change events silently stop
+being consumed while the drain reports health. Whether production has
+crossed the threshold is one founder-side query, in the register entry.
+The candidate fix (exclude consumer-less kinds from the batch SELECT) is
+one clause and is deliberately NOT made here: the drain's semantics are
+already under the open A2 total-order ruling, and both changes should
+land as one deliberate, both-directions-proven session once ruled.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
