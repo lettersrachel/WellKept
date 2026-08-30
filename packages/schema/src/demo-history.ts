@@ -104,11 +104,34 @@ const HISTORY: Row[] = [
 // is not a licence to duplicate demo rows on every run.
 await pool.query(
   "DELETE FROM audit_event WHERE household_id = $1 AND detail ? 'demoSeed'", [householdId]);
+
+// A reveal row has to NAME the field it revealed. These three carried a
+// reason and nothing else, so the drill-in rendered "viewed the secured
+// value of null" on the record a COO scrolls. The render now degrades
+// honestly rather than printing null, but the seed was producing a shape
+// the application cannot produce: api/reveal/route.ts always writes both
+// field_id and detail.field, because it reads the field before it decides.
+// A fixture that models an impossible state teaches the wrong thing about
+// the system, and it is how this got past every guard.
+const { rows: [s3] } = await pool.query(
+  `SELECT id, name FROM playbook_field
+    WHERE household_id = $1 AND sensitivity = 's3' ORDER BY name LIMIT 1`, [householdId]);
+if (!s3) {
+  console.error("REFUSED: no s3 field on this household, so a reveal row cannot name one. Seed the playbook first.");
+  await pool.end();
+  process.exit(1);
+}
+const REVEAL_KINDS = new Set(["s3_reveal", "s3_corporate_view"]);
+
 for (const [when, actor, role, kind, detail] of HISTORY) {
+  const namesAField = REVEAL_KINDS.has(kind as string);
   await pool.query(
-    `INSERT INTO audit_event (id, household_id, actor_user, actor_role, kind, detail, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$7)`,
-    [randomUUID(), householdId, actor, role, kind, JSON.stringify({ ...detail, demoSeed: true }), when]);
+    `INSERT INTO audit_event (id, household_id, actor_user, actor_role, kind, field_id, detail, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)`,
+    [randomUUID(), householdId, actor, role, kind,
+     namesAField ? s3.id : null,
+     JSON.stringify({ ...detail, ...(namesAField ? { field: s3.name } : {}), demoSeed: true }),
+     when]);
 }
 console.log(`change log: ${HISTORY.length} rows seeded, March to September`);
 

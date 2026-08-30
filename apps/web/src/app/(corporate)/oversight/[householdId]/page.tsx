@@ -1483,13 +1483,27 @@ export default async function Oversight({ params, searchParams }: {
           <div className="note">No events yet. Reveals, tag changes, and merges land here.</div>
         ) : (
           audit.map((a) => {
-            const field = (a.fieldId && fieldName.get(a.fieldId)?.split(":")[0]) ?? null;
+            // The label came from the LIVE field list only, and printed the
+            // literal string "null" whenever that lookup missed: an audit
+            // line that cannot name the field it is about, on the record a
+            // COO scrolls. Two changes. First, the audit row's OWN detail
+            // wins where it has one, because the log should say what the
+            // field was called then rather than deriving from mutable
+            // current state (the reveal route has always written
+            // detail.field; the live map stays the fallback for the write
+            // kinds, whose detail carries `via` instead). Second, an
+            // unresolvable name degrades to a sentence that is still TRUE
+            // rather than interpolating null. All four naming kinds were
+            // affected, not just the reveal pair.
+            const aDetail = (a.detail ?? {}) as Record<string, unknown>;
+            const recordedName = typeof aDetail.field === "string" && aDetail.field.trim() !== "" ? aDetail.field : null;
+            const field = recordedName ?? (a.fieldId ? fieldName.get(a.fieldId)?.split(":")[0] ?? null : null);
             const when = a.createdAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
             const sentence =
-              a.kind === "field_write" ? `merged a client update into “${field}”` :
-              a.kind === "vault_write" ? `sealed a new vault value for “${field}”` :
-              a.kind === "s3_corporate_view" ? `viewed the secured value of “${field}”` :
-              a.kind === "s3_reveal" ? `revealed “${field}” in context` :
+              a.kind === "field_write" ? (field ? `merged a client update into “${field}”` : "merged a client update; this row does not name the field") :
+              a.kind === "vault_write" ? (field ? `sealed a new vault value for “${field}”` : "sealed a vault value; this row does not name the field") :
+              a.kind === "s3_corporate_view" ? (field ? `viewed the secured value of “${field}”` : "viewed a secured value; this row does not name the field") :
+              a.kind === "s3_reveal" ? (field ? `revealed “${field}” in context` : "revealed a secured value in context; this row does not name the field") :
               a.kind === "tag_change" ? `set the status tag ${(a.detail as { from?: string; to?: string })?.from ?? "?"} → ${(a.detail as { to?: string })?.to ?? "?"}` :
               a.kind;
             return (

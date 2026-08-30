@@ -16,10 +16,25 @@ import { outboxFieldEvent } from "./field-events";
 const H = randomUUID();
 const created: string[] = [];
 
-const row = (kind: string, payload: Record<string, unknown>, occurredAt: Date) => {
+// createdAt is set EXPLICITLY and distinctly, and the reason is not
+// tidiness. All four rows used to be inserted in one statement, so
+// created_at took the transaction timestamp and all four were identical.
+// The drain orders by created_at alone (run.ts), and ORDER BY on a tie has
+// no defined result, so this test asserted a sequence the executor was free
+// to vary. It passed most runs and failed under parallel load, which is a
+// broken TEST regardless of what the system should promise: it asserted an
+// order the database never agreed to.
+//
+// This does NOT settle the system question, and must not be read as
+// settling it. Whether the DRAIN should carry a total order
+// (`createdAt, id`) is a change to shipped ordering semantics and is the
+// founder's call, still open as item 2 of NEXT_SESSIONS_2026-08-28.md. If
+// that ruling lands as a total order, this test can go back to identical
+// timestamps and assert it, which is the stronger test.
+const row = (kind: string, payload: Record<string, unknown>, occurredAt: Date, createdAt: Date) => {
   const id = randomUUID();
   created.push(id);
-  return { id, householdId: H, kind, payload, occurredAt };
+  return { id, householdId: H, kind, payload, occurredAt, createdAt };
 };
 
 afterAll(async () => {
@@ -27,10 +42,11 @@ afterAll(async () => {
 });
 
 test("a registered consumer processes in order; failures spend attempts; unknown kinds wait untouched", async () => {
-  const first = row("test.echo", { n: 1 }, new Date(Date.now() - 3000));
-  const second = row("test.echo", { n: 2 }, new Date(Date.now() - 2000));
-  const boom = row("test.boom", { n: 3 }, new Date(Date.now() - 1000));
-  const orphan = row("future.kind", { n: 4 }, new Date());
+  const t = Date.now();
+  const first = row("test.echo", { n: 1 }, new Date(t - 3000), new Date(t - 3000));
+  const second = row("test.echo", { n: 2 }, new Date(t - 2000), new Date(t - 2000));
+  const boom = row("test.boom", { n: 3 }, new Date(t - 1000), new Date(t - 1000));
+  const orphan = row("future.kind", { n: 4 }, new Date(t), new Date(t));
   await db.insert(eventOutbox).values([first, second, boom, orphan]);
 
   const seen: number[] = [];

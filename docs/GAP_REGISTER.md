@@ -6414,3 +6414,133 @@ ran and returned the wrong thing, which at least looks like evidence. Here the
 check was one command, on a machine where every dependency was already
 running, and it was skipped in favour of an inference. **Zero cost to verify,
 and the verification was not attempted.**
+
+---
+
+### G-113. Three defects on the fifteenth-run build, and two flakes underneath them
+
+**Filed 29 August 2026. Defects 1 to 3 found by the founder reading the
+deployed build; the two flakes found while verifying the fixes.**
+
+#### 1. An audit line that could not name the field it was about
+
+Fernbrook's change log read **"corporate admin viewed the secured value of
+null"** at Aug 28 11:30. Two causes, and the second is the one that matters.
+
+**The seed's part.** `demo-history.ts` wrote three `s3_corporate_view` rows
+carrying a reason and nothing else: no `field_id`, no `field` in detail. **The
+application cannot produce that row.** `api/reveal/route.ts` reads the field
+before it decides anything, so every real reveal row carries both. A fixture
+that models an impossible state teaches the wrong thing about the system, and
+it is how this got past every guard: nothing was wrong with the code the guards
+inspect.
+
+**The render's part, which is wider.** The drill-in resolved the label from the
+LIVE field list only and interpolated the result, so a miss printed the literal
+string `null`. It affected **four kinds**, not the reveal pair alone:
+`field_write`, `vault_write`, `s3_corporate_view`, `s3_reveal`.
+
+And underneath that: **the render derived an audit label from mutable current
+state while ignoring the audit row's own record of it.** The reveal route has
+always written `detail.field`, the name as it stood at the time. A log should
+say what the field was called then, not what it is called now, and should
+certainly not go blank because the live lookup missed.
+
+> **An audit line that cannot name its subject has failed at the only job it
+> has**, and it fails silently: the row is present, the timestamp is right, the
+> actor is right, and the sentence is a lie by omission.
+
+Fixed both ways. The row's own detail wins; the live map is the fallback for
+the write kinds, whose detail carries `via` instead; and an unresolvable name
+now degrades to a sentence that is still true ("this row does not name the
+field") rather than printing null. The seed resolves a real s3 field and
+REFUSES if the household has none, so it can no longer write the impossible
+shape.
+
+#### 2. One fact, three renderings, on a client-facing surface
+
+Fernbrook's water heater rendered its own installation three times in one line,
+on the corporate record **and** the client preview:
+
+    installed 2019 · Jun 1, 2019 · anode check every 3 yr · installed Jun 1, 2019 · serviced Jul 4, 2023 · service every 36mo
+
+`detail.installYear` (legacy jsonb), a bare `key_date`, and `installed_at`, all
+rendered as separate bits.
+
+**Ruled: `installed_at` is authoritative.** It is the typed column the
+maintenance clocks compute from and the one a capture surface will write.
+`installYear` renders only where `installed_at` is absent; `key_date` renders
+only where it is a DIFFERENT date, which is what `key_date` is for on entries
+whose governing date is not the install.
+
+Proven in three directions before it was trusted: the before-string reproduces
+the founder's report exactly, the after-string carries one install date, and a
+key-date-only entry (a filter with a replace-by date) and a legacy
+year-only entry both still render theirs. **The fix deletes no information.**
+
+#### 3. Hours with no visits: two seeds keeping two clocks
+
+The board read **0 applied visits in 30 days** while Fernbrook read **15.5
+delivery hours** in the same window and a last applied visit of 19 July.
+
+**Internally contradictory, and the founder's read was right: a seed problem,
+not a code one.** In the real system a visit close writes its own time entry,
+in one transaction. `demo-primitives.ts` seeded four Thursdays of delivery
+hours at FIXED dates and no visit rows at all, and its comment said why:
+"Without these the corporate board's capacity panel sits at zero." It filled
+the capacity panel and left the visit count empty. Meanwhile
+`demo-content.ts` inserted its applied visit with no `received_at`, so the
+column defaulted to `now()` and the row was dated whenever the seed last ran,
+which in production was 19 July. **Seeded months apart, the two disagreed, and
+the disagreement grew by one day per day.**
+
+Fixed with a shared `demo-clock.ts` both read, applied visits written for the
+hours that claim they happened, and a re-seed that CORRECTS an already-dated
+row rather than skipping it, since skipping would leave every database seeded
+before the fix carrying its old date forever. The seed now prints visits
+beside hours in one line, so the two can never be reported apart again.
+
+**The generalizable half, and it links defects 1 and 3.** Both seeds were
+writing states the application cannot produce: a reveal with no field, and
+service hours with no visit. **A fixture is a claim about what the system can
+look like.** When it models an impossible state, every reader downstream
+reasons from it, and no guard fires, because the guards check the code.
+
+#### The two flakes, found while verifying the above
+
+The suite had failed once the previous evening at ten of eleven tasks, with no
+cause established and none claimed. The founder's instruction was to leave it
+as one instance: **"if it recurs, the second instance is the diagnosis."** It
+recurred immediately, twice in three runs, and resolved into **two unrelated
+causes**.
+
+**Flake A, new: the copy census was walking build output.** The failure was
+`ENOENT ... apps/web/.next/types/app/(client)/playbook/page.ts`. `notVendored`
+excluded `node_modules`, `/dist/` and `__tmp_` and **not `.next`**, so the
+census descended into Next's generated tree; a sibling turbo task rewrote it
+mid-walk, and a file was enumerated and then deleted before it was opened.
+
+**The race is the symptom. The defect is the scope.** A guard whose job is to
+DERIVE the copy-emitting surfaces was reading generated output, where a
+generated file could satisfy a rule and count toward a floor. A census with the
+wrong input set is the failure this file exists to prevent, one level up.
+
+Fixed by never descending into `.next` or `.turbo`. **Deliberately not fixed by
+swallowing the read error**, which would let the census shrink silently, the
+same defect wearing a different hat.
+
+**Flake B, already known and NOT newly diagnosed:** the outbox drain orders on
+`created_at` alone, and the integration test inserted four rows in one
+statement so all four tied. This is item 2 of `NEXT_SESSIONS_2026-08-28.md`,
+where it is already written up with two non-equivalent fixes.
+
+**Only the test half is fixed here, and the ruling is still owed.** A test that
+asserts an order the database never promised is a broken test regardless of
+what the system should promise, so the rows now carry distinct `created_at`
+values. **Whether the DRAIN should carry a total order (`createdAt, id`) is a
+change to shipped ordering semantics and remains the founder's call.** The test
+carries that sentence in a comment so the fix cannot be mistaken for the
+ruling.
+
+**Result, measured rather than asserted:** two failures in three full-suite
+runs before; five consecutive green runs after.

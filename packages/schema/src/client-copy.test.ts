@@ -260,11 +260,33 @@ test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {
 const REPO = path.join(here, "../../..");
 const repoRel = (p: string) => path.relative(REPO, p).split(path.sep).join("/");
 
+/**
+ * Directories the census must never descend into, because they hold
+ * GENERATED output rather than authored source.
+ *
+ * `.next` is the one that bit. The census read
+ * `apps/web/.next/types/app/(client)/playbook/page.ts` and the suite failed
+ * with ENOENT, intermittently and only under turbo: Next rewrites that tree
+ * while a sibling task runs, so the file was enumerated and then deleted
+ * before it was opened. Two runs in three failed that way.
+ *
+ * The race is the symptom. The defect is that a guard whose job is to
+ * derive the copy-emitting SURFACES was walking build output at all, where
+ * a generated file could satisfy a rule and count toward a floor. A census
+ * with the wrong input set is the failure this file exists to prevent, one
+ * level up.
+ *
+ * Deliberately NOT fixed by swallowing the read error: that would let the
+ * census shrink silently, which is the same defect wearing a different hat.
+ */
+const GENERATED_DIRS = new Set([".next", ".turbo"]);
+
 function walkFiles(dir: string, keep: (name: string) => boolean): string[] {
   const out: string[] = [];
   let entries: string[];
   try { entries = readdirSync(dir); } catch { return out; }
   for (const name of entries) {
+    if (GENERATED_DIRS.has(name)) continue;
     const p = path.join(dir, name);
     if (statSync(p).isDirectory()) out.push(...walkFiles(p, keep));
     else if (keep(name)) out.push(p);

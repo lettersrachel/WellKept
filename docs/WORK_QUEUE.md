@@ -1571,6 +1571,55 @@ The headlines, so this file states them rather than pointing at a document:
 **Not in launch scope under 24.2, named so it does not drift back in:** the
 systems capture form specified earlier on 28 August.
 
+**29 August 2026: production serves `3d86708` (the FIFTEENTH clean run),
+and the founder's read of it found three defects, now fixed (G-113).**
+Five confirmations passed and all three changed surfaces verified; the prompt
+fix works (one due-today item, the anode reading overdue by 2 months, Coming
+Up carrying eight dated items).
+
+- **An audit line that could not name its subject.** The change log read
+  "viewed the secured value of null". The render resolved the label from the
+  LIVE field list only and interpolated the miss, affecting FOUR kinds; it now
+  prefers the audit row's own `detail.field`, because a log should say what the
+  field was called THEN, and degrades to a true sentence rather than printing
+  null. The seed was writing three reveal rows with no field at all, **a shape
+  the application cannot produce**, and now resolves a real s3 field or refuses.
+- **One fact rendered three times on a client-facing surface.** The water
+  heater showed `installed 2019`, a bare `Jun 1, 2019`, and `installed Jun 1,
+  2019`. **Ruled: `installed_at` is authoritative**; `installYear` renders only
+  where it is absent, and `key_date` only where it is a different date. Proven
+  in three directions, including that a key-date-only entry and a legacy
+  year-only entry both still render theirs, so the fix deletes no information.
+- **Hours with no visits.** The board read 0 applied visits in 30 days against
+  15.5 delivery hours and a last visit of 19 July. The founder's read was
+  right: a seed problem. `demo-primitives.ts` wrote fixed-date hours and no
+  visits; `demo-content.ts` let `received_at` default to `now()`, so its visit
+  was dated whenever the seed last ran. **Two seeds keeping two clocks, drifting
+  by one day per day.** Fixed with a shared `demo-clock.ts`, applied visits for
+  the hours that claim they happened, a re-seed that CORRECTS an already-dated
+  row, and visits printed beside hours so the two cannot be reported apart.
+
+**The half that generalizes: both seeds were writing states the application
+cannot produce** (a reveal with no field, service hours with no visit). A
+fixture is a claim about what the system can look like, and when it models an
+impossible state every reader downstream reasons from it while no guard fires,
+because the guards check the code.
+
+**And the suite flake resolved into TWO causes on its second instance**, which
+is what the founder's "leave it at one instance" rule was waiting for.
+**New: the copy census was walking `apps/web/.next`**, so a concurrent turbo
+task rewrote a file between enumeration and read. The race is the symptom; the
+defect is that a guard deriving the copy-emitting surfaces was reading
+GENERATED output, where a generated file could satisfy a rule and count toward
+a floor. Fixed by never descending into `.next` or `.turbo`, and deliberately
+NOT by swallowing the read error, which would let the census shrink silently.
+**Already known: the outbox drain ties on `created_at`** (item 2 of the next-
+sessions list). Only the TEST half is fixed, since a test asserting an order
+the database never promised is broken regardless; **whether the drain should
+carry a total order is a change to shipped semantics and is still the
+founder's call.** Two failures in three full-suite runs before; five
+consecutive green runs after.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

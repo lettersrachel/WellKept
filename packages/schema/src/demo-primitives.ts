@@ -32,6 +32,7 @@
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
+import { DEMO_VISIT_DAYS, DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC } from "./demo-clock.ts";
 
 const pool = new pg.Pool({
   connectionString:
@@ -168,7 +169,7 @@ for (const w of WORK) {
 // each way and one admin entry. Without these the corporate board's
 // capacity panel sits at zero, which makes the gates look untested rather
 // than unused.
-const VISIT_DAYS = ["2026-08-06", "2026-08-13", "2026-08-20", "2026-08-27"];
+const VISIT_DAYS = [...DEMO_VISIT_DAYS];
 const DELIVERY_MIN = [210, 240, 240, 240]; // 3.5 to 4 hours, per the spec
 let timeWritten = 0;
 for (let i = 0; i < VISIT_DAYS.length; i += 1) {
@@ -191,6 +192,42 @@ for (let i = 0; i < VISIT_DAYS.length; i += 1) {
     timeWritten += 1;
   }
 }
+// The visits those hours belong to. Delivery hours WITHOUT an applied visit
+// is a state the application cannot produce: a visit close writes its own
+// time entry, in one transaction (visit-command-store.ts). Seeding the hours
+// alone made the corporate board read zero visits beside a full capacity
+// panel, which is a contradiction a reader cannot resolve and should never
+// have to.
+//
+// The most recent day is deliberately skipped: demo-content.ts owns that
+// one, because it carries the rich three-sentence report the client email
+// and the client preview render. Both files read the same demo clock.
+let visitsWritten = 0;
+for (const day of VISIT_DAYS) {
+  if (day === DEMO_LAST_VISIT_DAY) continue;
+  const id = `01980000-0000-7000-8000-0000000${day.replace(/-/g, "").slice(4)}`;
+  const closedAt = `${day}T${DEMO_VISIT_CLOSE_UTC}`;
+  const found = await pool.query("SELECT id FROM visit_command WHERE id = $1", [id]);
+  if (found.rowCount) {
+    await pool.query("UPDATE visit_command SET received_at = $2 WHERE id = $1", [id, closedAt]);
+    continue;
+  }
+  await pool.query(
+    `INSERT INTO visit_command (id, type, household_id, payload, status, received_at)
+     VALUES ($1, 'visit.submit', $2, $3::jsonb, 'applied', $4)`,
+    [id, H, JSON.stringify({
+      householdId: H,
+      startedAt: `${day}T13:00:00Z`,
+      photoIds: [],
+      report: [
+        "Weekly service completed to the household's standard.",
+        "Nothing outside the routine came up.",
+        "Next Thursday is set.",
+      ],
+    }), closedAt]);
+  visitsWritten += 1;
+}
+
 {
   const startedAt = "2026-08-28T09:00:00Z";
   const existing = await pool.query(
@@ -223,13 +260,18 @@ const c = await pool.query(
      (SELECT coalesce(sum(minutes),0) FROM time_entry WHERE household_id=$1 AND category='delivery'
         AND started_at >= '2026-08-04' AND started_at < '2026-09-04')::int AS delivery_min,
      (SELECT count(*) FROM shadow_log WHERE household_id=$1)::int                            AS shadow,
-     (SELECT count(*) FROM decision_record WHERE household_id=$1)::int                       AS decisions`, [H]);
+     (SELECT count(*) FROM decision_record WHERE household_id=$1)::int                       AS decisions,
+     -- Applied visits in the same window, printed BESIDE the hours so the
+     -- two can never be reported apart again. Hours with no visits is what
+     -- sent a founder looking for a code defect that was a seed defect.
+     (SELECT count(*) FROM visit_command WHERE household_id=$1 AND type='visit.submit' AND status='applied'
+        AND received_at >= '2026-08-04' AND received_at < '2026-09-04')::int AS visits_30d`, [H]);
 const n = c.rows[0];
-console.log(`\nwritten this run: ${rulesWritten} rule(s), ${sitsWritten} situation(s), ${workWritten} work item(s), ${timeWritten} time entr(ies)`);
+console.log(`\nwritten this run: ${rulesWritten} rule(s), ${sitsWritten} situation(s), ${workWritten} work item(s), ${timeWritten} time entr(ies), ${visitsWritten} visit(s)`);
 console.log(`preference rules: ${n.rules_active} active, ${n.rules_retired} retired`);
 console.log(`situations:       ${n.sits_open} open, ${n.sits_resolved} resolved`);
 console.log(`work items:       ${n.work_open} open, ${n.work_done} done`);
 console.log(`open dots:        ${n.dots_open}`);
-console.log(`delivery time:    ${(n.delivery_min / 60).toFixed(1)} hours in the trailing 30 days to the demo clock`);
+console.log(`delivery time:    ${(n.delivery_min / 60).toFixed(1)} hours across ${n.visits_30d} applied visit(s) in the trailing 30 days to the demo clock`);
 console.log(`deliberately empty: shadow_log ${n.shadow}, decision_record ${n.decisions}`);
 await pool.end();
