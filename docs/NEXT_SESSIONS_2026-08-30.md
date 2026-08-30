@@ -20,15 +20,20 @@ that is how this file is organized.
 
 ## A. Founder decisions holding builds
 
-### A1. G-111, the paid-time answer: ADOPTED AND BUILT, in review
+### A1. G-111, the paid-time answer: ADOPTED, BUILT, MERGED AND DEPLOYED
 
 Ruled 30 August and built the same day as migration 0059 (G-111 second
 addendum): nullable household subject on `time_entry` only, the WK-SOP-017
 vocabulary verbatim, the subject-shape CHECK proven three refusals red and
 two shapes green with preconditions asserted first, the erasure
 unreachability recorded in the tool's own header, and the household surfaces
-no longer offering `training`. **The PR awaits founder review rather than the
-usual merge path, per the ruling.** Still open behind it, each its own
+no longer offering `training`. **PR #265 went through founder review per the
+ruling and merged the same day; production serves it as of the eighteenth
+clean run (`373e340`, migrations three ways at 60), with the precondition
+re-verified CURRENT against production immediately before the apply.** The
+CHECK's null-household branch is proven in SQL and CI and has never fired on
+real data, because nothing can write that state yet; its first real exercise
+arrives with its producer. Still open behind it, each its own
 session: the person-scoped capture surface (no producer yet, stated in
 0059's header) and the WK-SOP-017 employee self-access view. The friction
 and access-custody answers remain recommendations with no clock.
