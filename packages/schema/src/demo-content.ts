@@ -11,6 +11,7 @@ import { ilike, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { household, playbookField, dot, authUser, visitCommand } from "./tables.ts";
 import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
+import { DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC } from "./demo-clock.ts";
 
 const pool = new pg.Pool({
   connectionString:
@@ -118,9 +119,21 @@ if (jordan) {
   console.log("dots seeded");
 }
 
-// A prior visit report (yesterday, so a fresh demo submit today never conflicts).
+// The most recent visit, carrying the rich report. Its date comes from the
+// shared demo clock rather than from the wall clock: `received_at` used to
+// default to now(), so this row was dated whenever the seed last ran, and
+// production's read 19 July while the delivery hours sat in August. That is
+// the contradiction demo-clock.ts exists to end.
 const visitId = "01980000-0000-7000-8000-00000000de10";
+const visitClosedAt = new Date(`${DEMO_LAST_VISIT_DAY}T${DEMO_VISIT_CLOSE_UTC}`);
 const existing = await db.select().from(visitCommand).where(eq(visitCommand.id, visitId));
+if (existing.length) {
+  // A re-seed CORRECTS an already-dated row. Skipping it would leave every
+  // database seeded before this fix carrying its old wall-clock date
+  // forever, which is exactly the state that produced the defect.
+  await db.update(visitCommand).set({ receivedAt: visitClosedAt }).where(eq(visitCommand.id, visitId));
+  console.log(`prior visit report re-dated to ${DEMO_LAST_VISIT_DAY}`);
+}
 if (!existing.length) {
   await db.insert(visitCommand).values({
     id: visitId,
@@ -128,9 +141,10 @@ if (!existing.length) {
     householdId,
     status: "applied",
     reason: null,
+    receivedAt: visitClosedAt,
     payload: {
       householdId,
-      startedAt: new Date(Date.now() - 26 * 3600_000).toISOString(),
+      startedAt: new Date(+visitClosedAt - 4 * 3600_000).toISOString(),
       photoIds: ["kitchen-after.jpg", "linens.jpg", "biscuit-walk.jpg", "mudroom.jpg"],
       report: [
         "Kitchen reset, linens rotated, and Biscuit walked, fed, and thoroughly complimented.",

@@ -70,14 +70,30 @@ export function RegistryCard({ entries, showSensitivity = false, series, observe
             .filter((e) => e.kind === kind)
             .map((e) => {
               const d = (e.detail ?? {}) as Record<string, unknown>;
+              // ONE install date. Fernbrook's water heater rendered its own
+              // installation three times in one line, on the corporate
+              // record AND the client preview: "installed 2019" from the
+              // legacy jsonb detail, a bare "Jun 1, 2019" from key_date, and
+              // "installed Jun 1, 2019" from installed_at.
+              //
+              // installed_at is authoritative. It is the typed column the
+              // maintenance clocks compute from, and it is the one a capture
+              // surface will write; detail.installYear is free text carried
+              // from the seed era, and key_date on an entry like this holds
+              // the same fact under a different name. So installYear renders
+              // only where installed_at is absent, and key_date renders only
+              // where it is a DIFFERENT date (on entries whose governing
+              // date is not the install, which is what key_date is for).
+              const sameDay = (a: Date | null | undefined, b: Date | null | undefined) =>
+                Boolean(a && b && fmt(a) === fmt(b));
               const bits = [
                 d.size && `${d.size}`,
                 d.rhythm && `${d.rhythm}`,
                 d.filterSize && `filter ${d.filterSize}`,
-                d.installYear && `installed ${d.installYear}`,
+                !e.installedAt && d.installYear && `installed ${d.installYear}`,
                 d.what && `${d.what}`,
                 d.window && `${d.window}`,
-                e.keyDate && fmt(e.keyDate),
+                e.keyDate && !sameDay(e.keyDate, e.installedAt) && fmt(e.keyDate),
                 e.cadence,
                 e.installedAt && `installed ${fmt(e.installedAt)}`,
                 e.lifespanMonths && `${e.lifespanMonths}mo lifespan`,
