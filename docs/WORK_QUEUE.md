@@ -1895,6 +1895,24 @@ sweeps, and the client-digest scheduler; web-side behavior is unaffected.
 Founder-side: read the Railway service's deployed commit and one scroll
 of logs, then redeploy current main. G-115 carries the full trace.
 
+**Settled the same day by the founder's log read (G-115 addendum):
+scenario 2, with the predicted error text.** The running build HAS the
+drain job and fails it every five minutes on the dropped
+`field_event_outbox`; the failure has been LOUD AND UNREAD for five
+days, which is a monitoring gap, not a missing signal (her correction,
+applied to the entry). Two causes, layered: the Railway watch path
+`/services/worker/**` misses trigger-engine changes by construction
+(the table-switch commit touched zero worker files), AND five in-path
+commits from 24-25 August never deployed either, so the integration has
+delivered nothing since 28 July. Open question in the addendum: whether
+`SENTRY_DSN` is set on the Railway service at all (the record shows it
+on Vercel only); one look at either dashboard answers it. The redeploy
+from current main is hers, with the expected post-redeploy state
+written in the addendum before the fact: `field.changed` drains within
+one cycle, the other nine rows correctly keep waiting (G-114's
+material), and the August worker features begin their first production
+execution.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
