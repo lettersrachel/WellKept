@@ -1642,6 +1642,20 @@ hours. Also owed: **check 8**, since RegistryCard reaches the client
 preview, and a read of the water heater line on THAT surface rather than only
 the drill-in.
 
+**The seeds ran against production and surfaced the join gap (G-113 second
+addendum):** four applied visits at zero linked minutes beside 23.4 hours of
+entries carrying no `visit_command_id`, and the economics page derives hours
+from the visit PAYLOAD, which none of the seeded visits carried. The clock fix
+had aligned the dates and never written the join or the payload hours, so the
+summary line was two queries stitched by a preposition; the founder's tell was
+that re-dating a visit moved the count and not the hours. Fixed in the seeds
+(entries linked per visit, `hours` patched into every seeded payload via
+jsonb_set, the summary derived THROUGH the join and printing the unlinked
+count, which must be 0), proven by the founder's own query shape re-run
+(210|240|240|240 linked minutes, payload hours true on all four) and
+idempotent on the second run. Seed-only: no web deploy owed; the founder
+re-runs `db:demo` then `db:demo-primitives` from the pulled checkout.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

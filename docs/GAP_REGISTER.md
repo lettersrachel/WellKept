@@ -6544,3 +6544,53 @@ ruling.
 
 **Result, measured rather than asserted:** two failures in three full-suite
 runs before; five consecutive green runs after.
+
+---
+
+### G-113 second addendum, 29 August 2026: the clock fix aligned the dates and never wrote the join
+
+**Found by the founder, by querying per-visit minutes after the seeds re-ran
+clean.** Four applied visits, zero linked minutes each, beside 23.4 hours of
+Fernbrook time entries carrying no `visit_command_id`. And the economics page
+computes its delivery hours from the visit PAYLOAD's own `hours` field
+(`economics/page.tsx:63-68`), which none of the seeded visits carried, so that
+surface would have read four visits at zero hours.
+
+**The G-113 fix had modelled the impossible state one level down.** In the
+application, an applied visit with hours and its delivery time entry are
+inseparable: `applyVisitCommand` writes the entry WITH `visit_command_id`, in
+one transaction, and the payload carries `hours` because the close flow refuses
+to submit without them. The clock fix made the dates agree and left both the
+foreign key and the payload hours unwritten, so "15.5 hours across 4 applied
+visits" was **two independent queries stitched by a preposition**. The
+founder's tell was exact: re-dating a visit moved the count and not the hours,
+which related facts cannot do.
+
+Fixed three ways, each proven by her own query shape re-run:
+
+- **The join.** Each day's delivery entry now links to its visit
+  (`210|240|240|240` minutes per visit, one entry each). Linking skips, and
+  says so, on any day whose visit row does not exist yet, so script order
+  cannot corrupt anything. Idempotent: the second run wrote 0 links.
+- **The payload.** Every seeded visit carries `hours` in the close flow's own
+  shape, PATCHED via `jsonb_set` on existing rows so the de10 row's rich
+  report survives. The economics page now derives 15.5 hours from the same
+  visits it counts.
+- **The summary line.** It now derives the hours THROUGH the join and prints
+  the window total and the unlinked count beside it
+  (`15.5 hours LINKED to 4 applied visit(s) ... 0 unlinked`), so the sentence
+  is an assertion rather than a stitch: the two figures agree only when every
+  window entry is linked.
+
+**Also corrected, the ordering artifact in the run instructions:** the "across
+3" reading came from `db:demo-primitives` being sequenced before `db:demo`, so
+the fourth visit had not yet been re-dated into the window when the count ran.
+A promised proof line has to be reachable from the sequence it is promised
+for.
+
+**The lesson G-113 stated, now with its second instance in the same seed:** a
+fixture models the application's PRODUCIBLE states, and producibility is not
+one property. The dates were made consistent and the state was still
+impossible, because consistency of one attribute is not the join, and the join
+is not the payload. The founder found both by querying the relationship
+rather than re-reading the two numbers.

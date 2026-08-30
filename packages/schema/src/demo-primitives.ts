@@ -32,7 +32,7 @@
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
-import { DEMO_VISIT_DAYS, DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC } from "./demo-clock.ts";
+import { DEMO_VISIT_DAYS, DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC, DEMO_DELIVERY_MIN, DEMO_LAST_VISIT_ID, demoVisitHours } from "./demo-clock.ts";
 
 const pool = new pg.Pool({
   connectionString:
@@ -170,7 +170,7 @@ for (const w of WORK) {
 // capacity panel sits at zero, which makes the gates look untested rather
 // than unused.
 const VISIT_DAYS = [...DEMO_VISIT_DAYS];
-const DELIVERY_MIN = [210, 240, 240, 240]; // 3.5 to 4 hours, per the spec
+const DELIVERY_MIN = [...DEMO_DELIVERY_MIN]; // 3.5 to 4 hours, per the spec; shared so payloads and entries agree
 let timeWritten = 0;
 for (let i = 0; i < VISIT_DAYS.length; i += 1) {
   const day = VISIT_DAYS[i]!;
@@ -203,13 +203,21 @@ for (let i = 0; i < VISIT_DAYS.length; i += 1) {
 // one, because it carries the rich three-sentence report the client email
 // and the client preview render. Both files read the same demo clock.
 let visitsWritten = 0;
-for (const day of VISIT_DAYS) {
+for (let i = 0; i < VISIT_DAYS.length; i += 1) {
+  const day = VISIT_DAYS[i]!;
   if (day === DEMO_LAST_VISIT_DAY) continue;
   const id = `01980000-0000-7000-8000-0000000${day.replace(/-/g, "").slice(4)}`;
   const closedAt = `${day}T${DEMO_VISIT_CLOSE_UTC}`;
+  // payload.hours matters as much as the row: the economics page derives
+  // its hours from the visit payloads (economics/page.tsx reads p.hours),
+  // so a visit without them reads as a visit with zero delivery time.
+  const hours = demoVisitHours(day, DELIVERY_MIN[i]!);
   const found = await pool.query("SELECT id FROM visit_command WHERE id = $1", [id]);
   if (found.rowCount) {
-    await pool.query("UPDATE visit_command SET received_at = $2 WHERE id = $1", [id, closedAt]);
+    await pool.query(
+      `UPDATE visit_command SET received_at = $2,
+         payload = jsonb_set(payload, '{hours}', $3::jsonb) WHERE id = $1`,
+      [id, closedAt, JSON.stringify(hours)]);
     continue;
   }
   await pool.query(
@@ -218,6 +226,7 @@ for (const day of VISIT_DAYS) {
     [id, H, JSON.stringify({
       householdId: H,
       startedAt: `${day}T13:00:00Z`,
+      hours,
       photoIds: [],
       report: [
         "Weekly service completed to the household's standard.",
@@ -226,6 +235,35 @@ for (const day of VISIT_DAYS) {
       ],
     }), closedAt]);
   visitsWritten += 1;
+}
+
+// Link each day's delivery entry to its visit. In the real system this
+// link is not optional: applyVisitCommand writes the time entry WITH
+// visit_command_id, in one transaction, so an applied visit with hours
+// and an unlinked delivery entry is a state the application cannot
+// produce. The seed modelled exactly that state (found by the founder:
+// four visits at 0 minutes each beside 23.4 hours of entries), because
+// the clock fix aligned the DATES and never wrote the JOIN. The Aug 27
+// visit belongs to demo-content.ts; DEMO_LAST_VISIT_ID names it here so
+// its entry links too. Linking is skipped, and said, for any day whose
+// visit row does not exist yet (a fresh database where db:demo has not
+// run), so script order cannot corrupt anything.
+let linked = 0;
+for (const day of VISIT_DAYS) {
+  const visitId = day === DEMO_LAST_VISIT_DAY
+    ? DEMO_LAST_VISIT_ID
+    : `01980000-0000-7000-8000-0000000${day.replace(/-/g, "").slice(4)}`;
+  const visit = await pool.query("SELECT id FROM visit_command WHERE id = $1", [visitId]);
+  if (!visit.rowCount) {
+    console.log(`link skipped for ${day}: visit ${visitId} not present yet (run db:demo)`);
+    continue;
+  }
+  const r = await pool.query(
+    `UPDATE time_entry SET visit_command_id = $1
+      WHERE household_id = $2 AND category = 'delivery'::time_category
+        AND started_at = $3 AND (visit_command_id IS DISTINCT FROM $1)`,
+    [visitId, H, `${day}T13:00:00Z`]);
+  linked += r.rowCount ?? 0;
 }
 
 {
@@ -265,13 +303,28 @@ const c = await pool.query(
      -- two can never be reported apart again. Hours with no visits is what
      -- sent a founder looking for a code defect that was a seed defect.
      (SELECT count(*) FROM visit_command WHERE household_id=$1 AND type='visit.submit' AND status='applied'
-        AND received_at >= '2026-08-04' AND received_at < '2026-09-04')::int AS visits_30d`, [H]);
+        AND received_at >= '2026-08-04' AND received_at < '2026-09-04')::int AS visits_30d,
+     -- Hours DERIVED THROUGH THE JOIN, and the window entries the join
+     -- misses. The first summary line read "15.5 hours across 4 visits"
+     -- as two independent queries stitched by a preposition (the
+     -- founder's finding): re-dating a visit moved the count and not the
+     -- hours, which was the tell. joined_min equals delivery_min only
+     -- when every window delivery entry is linked to an applied visit,
+     -- so printing both is the assertion.
+     (SELECT coalesce(sum(t.minutes),0) FROM time_entry t
+        JOIN visit_command v ON v.id = t.visit_command_id
+       WHERE t.household_id=$1 AND t.category='delivery'
+         AND v.status='applied'
+         AND t.started_at >= '2026-08-04' AND t.started_at < '2026-09-04')::int AS joined_min,
+     (SELECT count(*) FROM time_entry WHERE household_id=$1 AND category='delivery'
+        AND visit_command_id IS NULL
+        AND started_at >= '2026-08-04' AND started_at < '2026-09-04')::int AS unlinked_delivery`, [H]);
 const n = c.rows[0];
-console.log(`\nwritten this run: ${rulesWritten} rule(s), ${sitsWritten} situation(s), ${workWritten} work item(s), ${timeWritten} time entr(ies), ${visitsWritten} visit(s)`);
+console.log(`\nwritten this run: ${rulesWritten} rule(s), ${sitsWritten} situation(s), ${workWritten} work item(s), ${timeWritten} time entr(ies), ${visitsWritten} visit(s), ${linked} entry-to-visit link(s)`);
 console.log(`preference rules: ${n.rules_active} active, ${n.rules_retired} retired`);
 console.log(`situations:       ${n.sits_open} open, ${n.sits_resolved} resolved`);
 console.log(`work items:       ${n.work_open} open, ${n.work_done} done`);
 console.log(`open dots:        ${n.dots_open}`);
-console.log(`delivery time:    ${(n.delivery_min / 60).toFixed(1)} hours across ${n.visits_30d} applied visit(s) in the trailing 30 days to the demo clock`);
+console.log(`delivery time:    ${(n.joined_min / 60).toFixed(1)} hours LINKED to ${n.visits_30d} applied visit(s) in the trailing 30 days to the demo clock (window total ${(n.delivery_min / 60).toFixed(1)}h; ${n.unlinked_delivery} unlinked delivery entr(ies), which should be 0)`);
 console.log(`deliberately empty: shadow_log ${n.shadow}, decision_record ${n.decisions}`);
 await pool.end();
