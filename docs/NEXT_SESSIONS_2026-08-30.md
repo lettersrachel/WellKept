@@ -56,6 +56,23 @@ The `proposeEdit` member refusal copy.
 
 ## B. Build sessions, ready now, in the order I would run them
 
+**Three defects deliberately NOT in this list, because they CLOSED this
+stretch and a later reader holding an older note should not re-file them
+(the carried-forward rule: a re-flag names the build the prior pass
+describes).** The founder's three deploy-check finds on `3d86708` were filed
+as G-113 and are fixed, deployed and verified on the build production now
+serves: the audit line that read `viewed the secured value of "null"` (the
+render now prefers the row's own `detail.field` across all four naming kinds
+and degrades to a true sentence; the seed no longer writes fieldless
+reveals; verified naming the FOSTER CONFIDENTIALITY field in the 30 August
+screenshot); the water heater's tripled install date (`installed_at` ruled
+authoritative, one date on both surfaces, verified character for character;
+the same table's display-name work continues as B4, which is the surviving
+half of that class); and the hours-without-visits contradiction (reported as
+SEED before anything changed, per the instruction: two seeds keeping two
+clocks, then the join and payload hours found unwritten; fixed, linked
+210|240|240|240, verified by the founder's own queries).
+
 ### B1. RFC-ATTR-01 step 1: the vocabulary module and its guard
 
 No migration. One module exporting the two proposed vocabularies (knowing
@@ -70,7 +87,14 @@ on the tree.
 ### B2. The accessibility contract's first stone
 
 D2's baseline is adopted law with NOTHING enforcing it and no trigger to wait
-for (G-102). Do not attempt the whole contract in one session. The honest
+for. **That sentence supersedes a founder ruling, and the handoff carries the
+correction rather than silently reflecting the right answer** (her
+instruction): on 27 August a two-trigger deferral was ruled for a baseline D2
+had already adopted on 24 August under the two-key authorization, and the
+founder voided her own ruling the next day (G-102). A later reader should see
+which way the correction ran: the deferral was withdrawn, the baseline stood,
+and the enforcement gap it left is exactly what this item exists to close.
+Do not attempt the whole contract in one session. The honest
 first stone: axe checks wired into the existing Playwright journeys for the
 three critical flows (sign-in, visit close, drill-in), failures reported not
 gating for one week of runs, then gating. The component-library contract
@@ -136,6 +160,14 @@ a date on them.
 
 ## Standing cautions for the next session, earned this stretch
 
+- **When the honest options are "make the system say something true" and "make
+  the system do something new", take the first and let the second be its own
+  decision.** Three instances this stretch: the board disclaiming the hiring
+  trigger instead of computing WK-SOP-014's rule, trace rows recorded Partial
+  with the interim control named instead of building capture, and the
+  pause-resume gap surfaced as a date-passed statement instead of a
+  scheduler. A scoping heuristic rather than an evidence rule, and it is the
+  one that keeps sessions small.
 - A fixture models the application's PRODUCIBLE states, and producibility is
   not one property: dates, joins, and payloads each had to be made true
   separately (G-113 and both addenda).
