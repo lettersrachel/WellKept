@@ -1708,6 +1708,13 @@ still naming its field, since the 30 August PDF pass describes `727efc1` and
 this delta touched the card that renders both. The install date's pass
 carries: `RegistryCard.tsx` is not in this delta.
 
+**That read PASSED (30 August, 9:15 AM, founder screenshot verified against
+the PDF's own text):** all ten dedupe rows in sentences naming their entry's
+label, the Aug 28 11:30 line still naming the FOSTER CONFIDENTIALITY field
+after the sentence-chain rewrite, and zero bare underscored kinds on the
+card, checked by pattern rather than by eye. **Nothing is open on Fernbrook:
+every demo surface is verified on the build that will serve it.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
