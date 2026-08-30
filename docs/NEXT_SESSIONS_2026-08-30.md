@@ -59,6 +59,14 @@ clause; it should land WITH the total-order answer as one deliberate
 drain-semantics change, proven in both directions. Whether production has
 already crossed the threshold is one query, in the G-114 entry.
 
+**G-115 (same day, from the founder running that query) comes FIRST:**
+production's outbox has no live consumer at all (ten waiting rows, every
+attempt count zero), and the trace points at a Railway worker stale at or
+before `b7026dd` (28 July), which predates the drain job's existence. One
+dashboard visit separates stale from mid-window from dead; the remedy is
+a Railway redeploy of current main. Until G-115 is settled, G-114 and A2
+are questions about code that does not run in production.
+
 ### A3. Row 6's return-code answers and the D5 selection
 
 The processor questions carry the Phase 2 fraud-monitoring question and the
