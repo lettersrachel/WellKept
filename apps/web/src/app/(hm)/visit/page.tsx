@@ -540,7 +540,7 @@ export default async function VisitPage({ searchParams }: {
       {/* Capture sessions 1+2: after-the-fact time and cost entry (founder
           decisions 2026-07-27). The visit close already produces the
           delivery entry automatically; these forms cover everything else:
-          travel, intake, admin, training, and the costs. Hours in, never
+          travel, intake, admin, and the costs (training is person-scoped now, G-111, and logs elsewhere). Hours in, never
           pay out (ADR-004). */}
       <div className="eyebrow">Time &amp; costs; after the fact</div>
       <div className="note">
@@ -554,7 +554,7 @@ export default async function VisitPage({ searchParams }: {
         <span>
           <label htmlFor="te-cat">Time</label>
           <select key={`te-${r ?? "0"}`} id="te-cat" name="category" defaultValue="travel" className="inline">
-            {["travel", "intake", "admin", "training", "delivery"].map((c) => <option key={c}>{c}</option>)}
+            {["travel", "intake", "admin", "delivery"].map((c) => <option key={c}>{c}</option>)}
           </select>
         </span>
         <span>

@@ -504,13 +504,32 @@ export const devicePairing = pgTable("device_pairing", {
 // list; entry is after-the-fact for the pilot (no live clock — a clock has
 // to survive offline sync gaps and waits for a second HM). ADR-004 holds:
 // hours in, never paychecks out — no rates, no overtime, no payroll.
+// G-111 paid time, ADOPTED by founder ruling 30 August 2026. The four new
+// values are WK-SOP-017's own list, verbatim ("required training, team
+// meetings, Playbook maintenance, supervised onboarding visits and shadow
+// visits are paid time and are coded to their categories in the app"), and
+// nowhere else: training already existed; the sentence contributes the
+// other four. NO PRODUCER YET for any of the four: the capture surface for
+// non-household paid time is its own session, and this is schema ahead of
+// its writer, deliberately.
 export const timeCategoryEnum = pgEnum("time_category", [
   "delivery", "travel", "intake", "admin", "training",
+  "team_meeting", "playbook_maintenance", "onboarding_visit", "shadow_visit",
 ]);
 
 export const timeEntry = pgTable("time_entry", {
   ...stamps,
-  householdId: uuid("household_id").notNull(),
+  // G-111 (founder ruling, 30 Aug 2026): NULLABLE, and this is the ONE
+  // table where that is permitted. time_entry is a payroll record rather
+  // than a household record; a team meeting or required training is paid
+  // time about a PERSON, with no household to attach to, and WK-SOP-017
+  // makes coding it an FLSA/Virginia wage obligation, not a feature. The
+  // tenant invariant on every other household_id column is untouched.
+  // The subject-shape CHECK below holds the two row shapes; the
+  // counsel-directed erasure DELETE is keyed on household_id, so a
+  // null-household wage row is UNREACHABLE by it by construction, which
+  // is what keeps the four-year retention obligation safe.
+  householdId: uuid("household_id"),
   userId: text("user_id").notNull().references(() => authUser.id), // the staff member
   category: timeCategoryEnum("category").notNull(),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
@@ -519,7 +538,21 @@ export const timeEntry = pgTable("time_entry", {
   source: text("source").notNull(), // visit_close (derived from the applied visit) | manual
   visitCommandId: text("visit_command_id"), // the visit.submit this derives from, if any
   note: text("note"), // s2
-}, (t) => [index("time_entry_household_started_idx").on(t.householdId, t.startedAt)]);
+}, (t) => [
+  index("time_entry_household_started_idx").on(t.householdId, t.startedAt),
+  // The two ruled row shapes, whole or absent (the 0050/0051 discipline):
+  // household work carries its household; person work carries none. The
+  // ruling names training and the four new categories as person-scoped
+  // ("attach to a category and a person, with no household"). delivery,
+  // travel, intake and admin keep today's household requirement: no row
+  // of those categories has ever existed without one (production census
+  // 29 Aug: delivery/travel/intake/admin only), and widening them was not
+  // ruled. category::text, not enum literals, so the CHECK and the enum
+  // extension can ship in one migration transaction.
+  check("time_entry_subject_shape",
+    sql`(${t.householdId} IS NOT NULL AND ${t.category}::text IN ('delivery','travel','intake','admin'))
+     OR (${t.householdId} IS NULL AND ${t.category}::text IN ('training','team_meeting','playbook_maintenance','onboarding_visit','shadow_visit'))`),
+]);
 
 // Capture session 2: non-labor cost. Founder decisions 2026-07-27:
 // categories supplies | materials | mileage | other; mileage ENTERED, not

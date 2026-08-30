@@ -20,15 +20,18 @@ that is how this file is organized.
 
 ## A. Founder decisions holding builds
 
-### A1. G-111, the paid-time answer, and it has a clock
+### A1. G-111, the paid-time answer: ADOPTED AND BUILT, in review
 
-Your three answers are recorded in G-111 as recommendations, not adopted. The
-paid-time one (`time_entry` gains a category-plus-nullable-household subject
-shape, whole-or-absent by CHECK) is **the difference between compliant and
-non-compliant wage records, and the first payroll run is February 2027**. One
-word adopts it; the build session's FIRST step is re-reading the four census
-guards against a nullable `household_id` on that table, then one migration.
-The friction and access-custody answers have no clock and wait comfortably.
+Ruled 30 August and built the same day as migration 0059 (G-111 second
+addendum): nullable household subject on `time_entry` only, the WK-SOP-017
+vocabulary verbatim, the subject-shape CHECK proven three refusals red and
+two shapes green with preconditions asserted first, the erasure
+unreachability recorded in the tool's own header, and the household surfaces
+no longer offering `training`. **The PR awaits founder review rather than the
+usual merge path, per the ruling.** Still open behind it, each its own
+session: the person-scoped capture surface (no producer yet, stated in
+0059's header) and the WK-SOP-017 employee self-access view. The friction
+and access-custody answers remain recommendations with no clock.
 
 ### A2. The outbox drain's total order
 
