@@ -6652,3 +6652,59 @@ schema no longer does.
 
 **Per the ruling, the PR goes to founder review rather than the usual merge
 path.**
+
+### G-111 third addendum, 30 August 2026: the producer exists, and the null branch has fired on a real click
+
+The person-scoped capture surface named as open in the second addendum is
+BUILT, migration-free, the same day 0059 deployed (the eighteenth run). The
+0059 header's "NO PRODUCER YET" lines were true at write time and are now
+answered in code rather than edited in the record:
+
+- **The action is `createCompanyTimeEntry`** (`apps/web/src/lib/actions.ts`),
+  writing the null-household shape: the signed-in staff member's OWN time, a
+  category from exactly the CHECK's non-delivery half, and no household
+  field at all, so there is no way to name one. Attribution is structural:
+  `user_id` is the staff identity's, never an input, so nobody logs company
+  time onto somebody else (the R23 typed-fields interim applied to the
+  person-scoped half). A delivery-class category posted to it refuses as
+  bad-input rather than reaching the CHECK as a 500, the same G-29
+  reasoning that took `training` out of `createTimeEntry`.
+- **Its gate is a new resolution shape, `getStaffIdentity`**
+  (`apps/web/src/lib/session.ts`): is the signed-in person a staff member
+  anywhere, answered from `household_role_assignment` and nothing the
+  client supplies, null for signed-out and client-only sessions, the
+  getPrincipal fail-closed posture without the household getPrincipal
+  demands and this record deliberately lacks.
+- **Two surfaces, both already banner-wired**: a form on /visit ("Your
+  time, not tied to a household") and a Company time section on the fleet
+  board, which also READS the rows back aggregated BY CATEGORY over 30
+  days. The read-back names no person: Ruling 1's posture is that the wage
+  record holds its person and a display does not, and the journey asserts
+  the section contains no email and no identity name.
+- **The CHECK's null-household branch has now fired on a real click.** The
+  journey (twenty-third in the file) writes a team_meeting row through the
+  /visit form and reads the null-household row back by SQL, which is the
+  first producer-driven exercise the 0059 record said would arrive with
+  its producer. The forged-category case is confirmed LANDED before its
+  result is read (`selectOption` plus an inputValue assertion), because
+  the first version of the test injected the option before hydration,
+  React reverted the value, and the submission RECORDED the default
+  instead of refusing: the G-72 class caught inside the session that
+  built the test, fixed by asserting the mutation rather than assuming it.
+- **The sixteenth guard was proven to SEE the new action, not merely to
+  pass**: `recordedTo` was deliberately removed, success-visibility went
+  red naming `createCompanyTimeEntry` by name, and the restore ran green.
+
+**Honest partials, named at the moment of writing (G-84):** the action's
+forbidden branch (a client or signed-out session posting directly) is
+unexercised by the journey, because a client cannot reach either form and a
+raw server-action POST is not forgeable from the test rig; it is the same
+refuseTo shape the bad-input case proves, gated by getStaffIdentity's
+fail-closed null. And a tester-flagged staff member's company time would
+enter the fleet board's category aggregate, because the is_tester flag
+lives on household assignments and a person-scoped row has no household to
+filter through; noted rather than solved, since inventing a person-level
+tester rule is a taxonomy call.
+
+**Still open behind G-111, now one item:** the WK-SOP-017 employee
+self-access view, its own session.

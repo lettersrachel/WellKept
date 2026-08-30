@@ -33,10 +33,12 @@ clean run (`373e340`, migrations three ways at 60), with the precondition
 re-verified CURRENT against production immediately before the apply.** The
 CHECK's null-household branch is proven in SQL and CI and has never fired on
 real data, because nothing can write that state yet; its first real exercise
-arrives with its producer. Still open behind it, each its own
-session: the person-scoped capture surface (no producer yet, stated in
-0059's header) and the WK-SOP-017 employee self-access view. The friction
-and access-custody answers remain recommendations with no clock.
+arrives with its producer. **The producer arrived the same day** (G-111
+third addendum): `createCompanyTimeEntry` behind `getStaffIdentity`, forms
+on /visit and the fleet board, the board's by-category read-back, and the
+null branch's first real exercise in the twenty-third journey. Still open
+behind it, one session: the WK-SOP-017 employee self-access view. The
+friction and access-custody answers remain recommendations with no clock.
 
 ### A2. The outbox drain's total order
 

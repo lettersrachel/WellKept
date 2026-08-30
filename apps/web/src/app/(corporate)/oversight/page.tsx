@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { eq, and, isNull } from "drizzle-orm";
-import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit, incidentReport } from "@wellkept/schema";
+import { eq, and, isNull, gte } from "drizzle-orm";
+import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit, incidentReport, timeEntry } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
+import { createCompanyTimeEntry } from "@/lib/actions";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 import { RefusalBanner } from "@/components/RefusalBanner";
@@ -42,6 +43,18 @@ export default async function FleetBoard({ searchParams }: {
   const [reconKnob] = await db.select({ value: appSetting.value }).from(appSetting)
     .where(eq(appSetting.key, "visit_reconciliation"));
   const gapDaysKnob = (reconKnob?.value as { gapDays?: number | null } | undefined)?.gapDays ?? null;
+
+  // G-111: the null-household paid-time rows, aggregated by CATEGORY for
+  // the company-time read-back. Never grouped or filtered by person here;
+  // the row holds its person for the wage record, the display does not.
+  const companyRows = await db
+    .select({ category: timeEntry.category, minutes: timeEntry.minutes })
+    .from(timeEntry)
+    .where(and(isNull(timeEntry.householdId), gte(timeEntry.startedAt, new Date(Date.now() - 30 * 86_400_000))));
+  const companyByCat = new Map<string, number>();
+  for (const t of companyRows) companyByCat.set(t.category, (companyByCat.get(t.category) ?? 0) + t.minutes);
+  const companyTime = Array.from(companyByCat, ([category, minutes]) => ({ category, minutes }))
+    .sort((a, b) => b.minutes - a.minutes);
 
   const rowsAll = await Promise.all(
     corporate.map(async ({ hh }) => {
@@ -172,6 +185,50 @@ export default async function FleetBoard({ searchParams }: {
           Rows are the households you hold an explicit assignment for; there is no
           fleet-wide wildcard (REQ-001).
         </div>
+      </div>
+
+      {/* G-111's producer, corporate half: non-household paid time (0059's
+          null-household shape). The read-back aggregates by CATEGORY and
+          never by person (Ruling 1: a wage record names its person, a
+          display does not rank one); the action writes the signed-in
+          person's OWN time and takes no person input. */}
+      <div className="card">
+        <div className="eyebrow">Company time; trailing 30 days</div>
+        <div className="note">
+          Team meetings, required training, onboarding and shadow visits, and playbook
+          upkeep are paid time about a person, recorded with no household attached.
+          Totals here are by category only. QuickBooks stays the book of record for pay
+          (ADR-004): hours in, never pay out.
+        </div>
+        <div className="prov" style={{ marginTop: 6 }}>
+          {companyTime.length === 0
+            ? "None recorded in the last 30 days."
+            : companyTime.map(({ category, minutes }) =>
+                `${category.replace(/_/g, " ")} ${(minutes / 60).toFixed(1)}h`).join(" · ")}
+        </div>
+        <form action={createCompanyTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end", marginTop: 8 }}>
+          <input type="hidden" name="returnTo" value="/oversight" />
+          <span>
+            <label htmlFor="fct-cat">Time</label>
+            <select key={`fct-${recorded ?? "0"}`} id="fct-cat" name="category" defaultValue="team_meeting" className="inline">
+              {["team_meeting", "training", "onboarding_visit", "shadow_visit", "playbook_maintenance"].map(
+                (c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+            </select>
+          </span>
+          <span>
+            <label htmlFor="fct-start">From</label>
+            <input id="fct-start" name="startedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+          </span>
+          <span>
+            <label htmlFor="fct-end">To</label>
+            <input id="fct-end" name="endedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+          </span>
+          <span style={{ flex: 1, minWidth: 140 }}>
+            <label htmlFor="fct-note">Note</label>
+            <input id="fct-note" name="note" placeholder="optional" style={{ marginTop: 0 }} />
+          </span>
+          <button className="act subtle">Log company time</button>
+        </form>
       </div>
     </>
   );

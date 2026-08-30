@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, emitOutboxEvent } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
-import { getPrincipal } from "./session";
+import { getPrincipal, getStaffIdentity } from "./session";
 import { emitFieldChange, outboxFieldEvent } from "./field-events";
 import { vaultWrite } from "./vault";
 import { isClientEditable } from "./client-allowlist";
@@ -1049,6 +1049,48 @@ export async function createTimeEntry(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
   recordedTo(returnTo, `${category} time, ${minutes} min`);
+}
+
+/**
+ * G-111's producer (founder ruling 30 Aug 2026): non-household paid time.
+ * A team meeting or required training is paid time about a PERSON, so this
+ * writes 0059's null-household shape: the signed-in staff member's OWN
+ * time, a category from WK-SOP-017's non-delivery set, and no household
+ * field at all, so there is no way to name one. Attribution is structural:
+ * userId is the staff identity's, never an input, which means nobody logs
+ * company time onto somebody else (the R23 typed-fields interim, applied
+ * to the person-scoped half). ADR-004 holds here as everywhere: hours in,
+ * never pay out; the wage computation is payroll's.
+ */
+export async function createCompanyTimeEntry(formData: FormData) {
+  // Two surfaces only (the HOM's own page and the fleet board), both of
+  // which render the banners; anything else falls to the fleet board,
+  // resolveReturnTo's own fallback for the household-less case.
+  const returnTo = String(formData.get("returnTo") ?? "") === "/visit" ? "/visit" : "/oversight";
+  const category = String(formData.get("category") ?? "");
+  // The WK-SOP-017 non-delivery set, exactly the CHECK's null-household
+  // half. A delivery-class category posted here refuses as bad input
+  // rather than reaching time_entry_subject_shape as a 500 (the G-29
+  // class, same reasoning as createTimeEntry excluding training).
+  const CATEGORIES = ["training", "team_meeting", "playbook_maintenance", "onboarding_visit", "shadow_visit"] as const;
+  if (!(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
+  const staff = await getStaffIdentity();
+  if (!staff) refuseTo(returnTo, "forbidden");
+  const start = new Date(String(formData.get("startedAt") ?? ""));
+  const end = new Date(String(formData.get("endedAt") ?? ""));
+  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) refuseTo(returnTo, "bad-input");
+  const minutes = Math.round((+end - +start) / 60_000);
+  if (minutes > 24 * 60) refuseTo(returnTo, "bad-input"); // an entry over a day is a typo, not a shift
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
+  const { timeEntry } = await import("@wellkept/schema");
+  await db.insert(timeEntry).values({
+    id: randomUUID(), householdId: null, userId: staff.userId,
+    category: category as (typeof CATEGORIES)[number],
+    startedAt: start, endedAt: end, minutes, source: "manual", note,
+  });
+  revalidatePath("/oversight");
+  revalidatePath("/visit");
+  recordedTo(returnTo, `${category.replace(/_/g, " ")} time, ${minutes} min`);
 }
 
 /**
