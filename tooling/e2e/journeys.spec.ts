@@ -89,6 +89,10 @@ test.afterAll(async () => {
   await pool.query("DELETE FROM decision_record WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM work_item WHERE household_id = ANY($1)", [[synId, orphanId]]);
   await pool.query("DELETE FROM event_outbox WHERE household_id = ANY($1)", [[synId, orphanId]]);
+  // G-111 company-time journey: null-household rows have no household to
+  // cascade from, so they are deleted by writer. rachel's SEEDED rows all
+  // carry a household, so this touches only what the journey wrote.
+  await pool.query("DELETE FROM time_entry WHERE household_id IS NULL AND user_id = ANY($1)", [[synHomId, rachelId]]);
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken, synHomToken]]);
   await pool.query("DELETE FROM auth_user WHERE id = $1", [synHomId]); // assignment already cascaded with the household
@@ -1096,4 +1100,92 @@ test("G-68: assign and revoke SAY what they did, and the trail agrees", async ({
   // a server refusal through it would be proving the wrong thing;
   // refusal-visibility.test.ts and the drill-in's own journeys hold that
   // half.
+});
+
+/**
+ * G-111's producer (founder ruling 30 Aug 2026): the person-scoped
+ * capture surface. This is the 0059 null-household shape's FIRST
+ * producer-driven exercise: the schema proof and the CI integration test
+ * proved the CHECK's logic in SQL; this proves a real click through the
+ * real action writes the shape, and that the walls around it hold.
+ *
+ * Three claims, each read back from the database, never from the banner
+ * alone (G-53/G-68: a confirmation proves the code path ran, not that
+ * the write committed):
+ * 1. The HOM's own company time lands with household_id NULL, the
+ *    signer's user_id, and the chosen category.
+ * 2. A forged delivery-class category refuses at the SERVER wall as
+ *    bad input (the select offers five options by design, so the test
+ *    injects a sixth; the browser's list is not the wall).
+ * 3. The fleet board's read-back aggregates by CATEGORY and names no
+ *    person (the Ruling 1 posture: a wage record holds its person, a
+ *    display does not).
+ */
+test("company time (G-111's producer): the HOM logs their own with NO household, a forged delivery category refuses server-side, and the board aggregates by category never person", async ({ context, page }) => {
+  // The HOM half: /visit's company-time form.
+  await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+  await page.goto("/visit");
+  await expect(page.getByText("Your time, not tied to a household")).toBeVisible({ timeout: 30_000 });
+  await page.locator("#cte-start").fill("2026-08-30T09:00");
+  await page.locator("#cte-end").fill("2026-08-30T09:45");
+  await page.getByRole("button", { name: "Log company time" }).click();
+  await expect(page.getByText("team meeting time, 45 min")).toBeVisible({ timeout: 30_000 });
+
+  // The database is the record: the null-household shape, the signer as
+  // the person, the CHECK accepting it live.
+  const { rows: [row] } = await pool.query(
+    "SELECT household_id, user_id, category, minutes FROM time_entry WHERE household_id IS NULL AND user_id=$1", [synHomId]);
+  expect(row.household_id).toBeNull();
+  expect(row.category).toBe("team_meeting");
+  expect(row.minutes).toBe(45);
+
+  // The server wall: inject a sixth option the form does not offer and
+  // submit a delivery-class category. It must refuse as bad input and
+  // never reach the CHECK as a 500.
+  await page.goto("/visit");
+  await expect(page.getByText("Your time, not tied to a household")).toBeVisible({ timeout: 30_000 });
+  // Fill first: by the time typed input has landed, hydration has too, so
+  // the injected option is not wiped by React re-rendering the select.
+  // The first version of this test injected before hydration, the value
+  // reverted to the default, and the submission RECORDED team_meeting
+  // instead of refusing (the G-72 class: a mutation that never landed).
+  await page.locator("#cte-start").fill("2026-08-30T10:00");
+  await page.locator("#cte-end").fill("2026-08-30T10:30");
+  await page.evaluate(() => {
+    const doc = (globalThis as any).document;
+    const opt = doc.createElement("option");
+    opt.value = "delivery"; opt.textContent = "delivery";
+    doc.querySelector("#cte-cat").appendChild(opt);
+  });
+  await page.selectOption("#cte-cat", "delivery"); // throws if the injection did not land
+  // Confirm the forgery LANDED before reading the result (G-72: the
+  // mutation is asserted, never assumed).
+  expect(await page.locator("#cte-cat").inputValue()).toBe("delivery");
+  await page.getByRole("button", { name: "Log company time" }).click();
+  await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 30_000 });
+  const { rows: [afterForge] } = await pool.query(
+    "SELECT count(*)::int n FROM time_entry WHERE household_id IS NULL AND user_id=$1", [synHomId]);
+  expect(afterForge.n).toBe(1); // the forgery wrote nothing
+
+  // The corporate half: the board reads back by category, its own form
+  // writes the same shape, and the section names no person.
+  await context.clearCookies();
+  await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+  await page.goto("/oversight");
+  await expect(page.getByText("Company time; trailing 30 days")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/team meeting 0\.8h/)).toBeVisible();
+  await page.locator("#fct-cat").selectOption("training");
+  await page.locator("#fct-start").fill("2026-08-30T13:00");
+  await page.locator("#fct-end").fill("2026-08-30T14:00");
+  await page.getByRole("button", { name: "Log company time" }).click();
+  await expect(page.getByText("training time, 60 min")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/training 1\.0h/)).toBeVisible();
+  const { rows: [rachelRow] } = await pool.query(
+    "SELECT household_id, category, minutes FROM time_entry WHERE household_id IS NULL AND user_id=$1", [rachelId]);
+  expect(rachelRow.household_id).toBeNull();
+  expect(rachelRow.category).toBe("training");
+  expect(rachelRow.minutes).toBe(60);
+  const section = await page.locator(".card", { hasText: "Company time; trailing 30 days" }).innerText();
+  expect(section).not.toContain("@"); // no email, hence no person, in the read-back
+  expect(section).not.toContain("SYN-01 field identity");
 });

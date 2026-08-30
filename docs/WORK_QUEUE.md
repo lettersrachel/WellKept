@@ -1768,6 +1768,33 @@ the default, `admin`, `travel`, `delivery`), `training` absent, nothing
 new added. Describes `373e340`. **Nothing is owed against the eighteenth
 run's build.**
 
+**Same day, the person-scoped capture surface is BUILT (G-111 third
+addendum, migration-free): 0059's null-household shape has its producer.**
+`createCompanyTimeEntry` writes the signed-in staff member's OWN time (a
+WK-SOP-017 non-delivery category, no household field at all; attribution
+structural, `user_id` never an input, the R23 interim applied to the
+person-scoped half), gated by the new `getStaffIdentity` resolution (staff
+anywhere, from `household_role_assignment`, fail-closed null for clients
+and signed-out sessions). Two surfaces, both banner-wired: /visit's "Your
+time, not tied to a household" form, and the fleet board's Company time
+section, whose 30-day read-back aggregates BY CATEGORY and names no person
+(Ruling 1's posture: the wage record holds its person, the display does
+not; the journey asserts no email and no identity name in the section).
+**The CHECK's null branch has now fired on a real click**: the
+twenty-third journey writes team_meeting through the form and reads the
+null-household row back by SQL, refuses a forged delivery category at the
+server wall with the forgery CONFIRMED LANDED first (the first version
+injected before hydration, React reverted the value, and the submission
+recorded instead of refusing: the G-72 class caught in its own test), and
+proves the corporate half end to end. success-visibility was proven to
+SEE the new action (recordedTo removed, red naming it, restore green).
+Honest partials in the addendum: the forbidden branch is unexercised by
+journey (unreachable forms; same refuseTo shape as the proven case), and
+a tester's company time would enter the category aggregate, since
+is_tester lives on household assignments and these rows have none.
+Twenty-two e2e green, suite 11/11 uncached. **Remaining behind G-111: the
+WK-SOP-017 employee self-access view, its own session.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

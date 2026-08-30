@@ -9,7 +9,7 @@ import { getFieldHouseholdAndPrincipal, getFields, getOpenDots, getUpcomingPackI
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { composeFieldBrief, recordAndDeliverBrief } from "@/lib/field-brief";
-import { logStrangerTest, createTimeEntry, createCostEntry, createPausedDecision, tellWellKept } from "@/lib/actions";
+import { logStrangerTest, createTimeEntry, createCompanyTimeEntry, createCostEntry, createPausedDecision, tellWellKept } from "@/lib/actions";
 import { VisitWizard } from "./VisitWizard";
 import { FlagCaptureForm, FlagLookForm, FlagCloseForm, ResolveButtons, OutcomeButton } from "./OfflineCapture";
 import { VisitAlerts } from "./VisitAlerts";
@@ -593,6 +593,36 @@ export default async function VisitPage({ searchParams }: {
           <input id="ce-note" name="note" placeholder="optional" style={{ marginTop: 0 }} />
         </span>
         <button className="act subtle">Log cost</button>
+      </form>
+
+      {/* G-111's producer: the 0059 null-household shape gets its writer.
+          Categories are WK-SOP-017's non-delivery set (keyed values,
+          humanized labels; the pack_key lesson). The action writes the
+          signed-in person's OWN time and takes no person input. */}
+      <div className="eyebrow">Your time, not tied to a household</div>
+      <div className="note">
+        Team meetings, required training, onboarding and shadow visits, and playbook
+        upkeep are paid time about you, not about a household. They go on your own
+        record with no household attached.
+      </div>
+      <form action={createCompanyTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <input type="hidden" name="returnTo" value="/visit" />
+        <span>
+          <label htmlFor="cte-cat">Time</label>
+          <select key={`cte-${r ?? "0"}`} id="cte-cat" name="category" defaultValue="team_meeting" className="inline">
+            {["team_meeting", "training", "onboarding_visit", "shadow_visit", "playbook_maintenance"].map(
+              (c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+          </select>
+        </span>
+        <span>
+          <label htmlFor="cte-start">From</label>
+          <input id="cte-start" name="startedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+        </span>
+        <span>
+          <label htmlFor="cte-end">To</label>
+          <input id="cte-end" name="endedAt" type="datetime-local" required style={{ marginTop: 0 }} />
+        </span>
+        <button className="act subtle">Log company time</button>
       </form>
 
       <div className="eyebrow">Close the visit</div>

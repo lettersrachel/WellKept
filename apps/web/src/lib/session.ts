@@ -66,3 +66,36 @@ export async function getPrincipal(householdId: string): Promise<Principal | nul
 }
 
 export const CORPORATE_ROLES = new Set(["corporate_ops", "corporate_admin", "cfo_readonly"]);
+
+/** Roles that may write records (cfo_readonly reads, clients are members). */
+const STAFF_WRITE_ROLES = new Set(["house_manager", "backup_hm", "corporate_ops", "corporate_admin"]);
+
+export interface StaffIdentity {
+  userId: string;
+  email: string;
+  name: string | null;
+  roles: Set<string>; // the staff roles this person holds, across households
+}
+
+/**
+ * G-111 (founder ruling, 30 Aug 2026): person-scoped identity resolution.
+ * A non-household paid-time row is about a PERSON, so its gate cannot be
+ * getPrincipal, which keys on (user, household) and would demand a
+ * household the record deliberately does not have. The question here is
+ * narrower and answerable without one: is the signed-in person a staff
+ * member anywhere? Any writing staff assignment qualifies; a client-only
+ * or signed-out session resolves null, the same fail-closed shape as
+ * getPrincipal. Roles still come from household_role_assignment, never
+ * from anything the client supplies.
+ */
+export async function getStaffIdentity(): Promise<StaffIdentity | null> {
+  const user = await getSessionUser();
+  if (!user) return null;
+  const rows = await db
+    .select({ role: householdRoleAssignment.role })
+    .from(householdRoleAssignment)
+    .where(eq(householdRoleAssignment.userId, user.id));
+  const roles = new Set(rows.map((r) => r.role as string).filter((r) => STAFF_WRITE_ROLES.has(r)));
+  if (roles.size === 0) return null;
+  return { userId: user.id, email: user.email, name: user.name, roles };
+}
