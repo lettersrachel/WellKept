@@ -6834,3 +6834,68 @@ if it is broken), after which the drain processes the waiting
 entries travel together: G-114 is the drain's window logic, G-115 is
 whether the drain runs at all, and fixing the second without the first
 eventually meets the first.
+
+### G-115 addendum, 30 August 2026: scenario 2 confirmed in the Railway logs, and the entry corrected
+
+**The founder read the logs and they settle it.** Boot line:
+`[worker] scheduled: daily sweep, weekly digest, outbox drain (5m), uptime
+check (5m)`, so the drain job EXISTS in the running build; one second
+later, `repeat:drain-outbox FAILED: Failed query: select ... from
+"field_event_outbox"`, the table 0037 dropped on 25 August. The second
+scenario, with the predicted error text.
+
+**Correction, the founder's, applied to this entry:** the failure has
+been LOUD AND UNREAD, roughly every five minutes for five days, not
+silent. A loud failure nobody reads is a different defect from an
+invisible one: the first is a monitoring and attention gap, the second a
+missing signal, and the remedy for each is different. The original
+entry's "silence is clean" described the b7026dd scenario, which the
+logs have now ruled out.
+
+**The cause, two layers, and the second is the larger one:**
+
+1. **The Railway watch path is `/services/worker/**` (founder-read from
+   the dashboard), and the change that broke the drain lives outside
+   it.** Corroborated code-side: `09a1183` (24 August), the commit that
+   moved the drain from `field_event_outbox` to `event_outbox`, touched
+   ZERO files under `services/worker/`, so even a healthy integration
+   with that watch path would not have redeployed for it. A watch path
+   narrower than the deployable unit's real dependency set (the worker
+   imports `@wellkept/trigger-engine` and `@wellkept/schema`) turns
+   every out-of-path dependency change into exactly this class of skew.
+2. **But the watch path alone cannot account for the staleness.** FIVE
+   commits on 24 and 25 August (`e6dcbe5`, `05d8a9e`, `9283202`,
+   `7ff5a7e`, `12cb9a4`) touched `services/worker/` INSIDE the watch
+   path and none of them deployed either: the running build's window
+   (post-#68 by its boot line, pre-`09a1183` by its failing query)
+   contains only 28-July worker commits, so the last successful deploy
+   dates to 28 July. The integration has delivered nothing since. The
+   dashboard's deploy history separates never-triggered from
+   triggered-and-failed.
+
+**The Sentry report, as asked.** The worker's code wires Sentry
+(`services/worker/src/index.ts`): init gated on `SENTRY_DSN`, and every
+failed job is captured with the job name tagged, so drain-outbox
+failures WOULD page if the DSN is present. What the record shows:
+LAUNCH 2.1 records Sentry live in production, and the 26 August
+incident inventory shows `SENTRY_DSN` set on the VERCEL project. **No
+document records it set on the RAILWAY service**, and that is the open
+question. Two branches, one look each: if it is set, roughly 288
+captured drain failures per day for five days are sitting in the Sentry
+project unread, which is the unread half of the correction; if it is
+not set, the worker has had NO error monitoring at all, which is its
+own finding. The Railway service's variables list, or the Sentry
+project's issue list, answers it.
+
+**Expected state after the redeploy, written BEFORE the confirmation so
+the reading is not improvised:** within one five-minute cycle the
+waiting `field.changed` processes and its attempts stay 0 with
+`processed_at` set; the OTHER nine rows REMAIN waiting, correctly,
+because their kinds have no registered consumer (that is G-114's
+material, unchanged); the late trigger pass may raise prompt items for
+a five-day-old field change, which is delivery, not a defect; and the
+August worker features begin their FIRST production execution (the
+hourly shadow pass, the daily-pass attention and decision-expiry
+sweeps at 09:00 UTC, the client-digest scheduler still dark behind its
+flag, the Tuesday recall job). First-run artifacts from those are
+expected and should be read as arrivals, not anomalies.
