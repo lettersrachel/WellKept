@@ -1685,6 +1685,29 @@ map covers five kinds and falls through to `a.kind` for the rest. Honest,
 ugly, and on the record a COO scrolls; a sentence for the common kinds is a
 small copy task for a later session.
 
+**The copy task ran the same day rather than waiting** (founder: "yes fix
+this"): the sentence map now covers every audit kind a write path or seed
+produces, twenty-eight in all, each stating the ACT and never a stored value,
+with the fallback humanizing an unmapped future kind instead of printing the
+identifier. Proven by simulating the map over each writer's own detail shape,
+read from its INSERT.
+
+**Same day, production serves `45c40be` (the SEVENTEENTH clean run):** sha
+current as the tip, migrations three ways at 59 with nothing applied, build
+id verified three times and confirmed independently, health ok, mechanical
+checks 1/4a/4b/12/15 PASS. The CI gate earned its cleanest proof yet: the
+same command refused while the tip's run was in progress and passed once it
+completed green, both directions on consecutive invocations with only the
+checked state changing.
+
+**Owed against this build, one read:** the change-log CARD on Fernbrook's
+drill-in, hard-refreshed. Both facts live in the same changed file, so both
+re-read together: the ten dedupe rows now in sentences ("removed a duplicate
+registry entry ... audited by the dedupe tool") AND the Aug 28 11:30 line
+still naming its field, since the 30 August PDF pass describes `727efc1` and
+this delta touched the card that renders both. The install date's pass
+carries: `RegistryCard.tsx` is not in this delta.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
