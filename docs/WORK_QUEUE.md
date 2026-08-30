@@ -1795,6 +1795,44 @@ is_tester lives on household assignments and these rows have none.
 Twenty-two e2e green, suite 11/11 uncached. **Remaining behind G-111: the
 WK-SOP-017 employee self-access view, its own session.**
 
+**Same day, production serves `ab5d165` (the NINETEENTH clean run): the
+G-111 producer is live.** Sha current as the origin/main tip, migrations
+three ways at 60 with nothing pending (the delta carries no migration),
+build id verified three times and confirmed independently after the run
+against the same endpoint that had read `373e340` fifteen minutes earlier,
+so the difference is the deploy and not a cache. Mechanical checks
+1/4a/4b/12/15 PASS. The run followed a correct catch by the founder's
+session: the pasted EXPECTED output (a template with angle-bracket
+placeholders) was checked against production before being believed, three
+reads ruling out the alias-flip shape, and the absence of a real transcript
+was read as no-run rather than as failure. A template and a transcript are
+different documents, and the check that told them apart was reading the
+endpoint.
+
+**What is live:** `createCompanyTimeEntry` behind `getStaffIdentity`, on
+/visit and the fleet board, with the board's by-category read-back.
+`getPrincipal`, the one-role index, and the AJ resolution are untouched
+(the session.ts delta is a pure append, zero lines deleted).
+
+**A precision on the null branch's standing, so the record does not
+undersell the proof:** the CHECK's refusing directions were proven by name
+in SQL and in the CI integration test, and the null-ACCEPTING branch fired
+on a real click in the twenty-third journey on a real Postgres. What has
+never existed is a PRODUCTION row with a null household; the logic is
+proven, the production data state is new.
+
+**Owed against this build, two reads and an optional first row:** the
+/visit form ("Your time, not tied to a household", five humanized
+categories, team meeting the default) and the fleet board's Company time
+card reading `None recorded in the last 30 days.` The optional third is
+the accepting direction on real data: one TRUE entry of the founder's own
+time (a production row here is a wage record from its first write, so only
+one that actually happened), verified BY QUERY: `household_id` NULL,
+`user_id` her own, the category as chosen. The refusing direction needs no
+production exercise: the form offers only the five valid categories by
+design, and the forged-POST wall is journey-proven in CI with the forgery
+confirmed landed.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
