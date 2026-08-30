@@ -25,3 +25,23 @@ export const DEMO_LAST_VISIT_DAY = DEMO_VISIT_DAYS[DEMO_VISIT_DAYS.length - 1]!;
 
 /** Visits close in the early evening; the report lands with the close. */
 export const DEMO_VISIT_CLOSE_UTC = "18:10:00Z";
+
+/** Delivery minutes per visit day, aligned index-for-index with
+ * DEMO_VISIT_DAYS (3.5 to 4 hours, per the demo spec). The same figures
+ * drive the time entries, the visit payloads' hours, and therefore what
+ * the economics page derives, so the three can never disagree. */
+export const DEMO_DELIVERY_MIN = [210, 240, 240, 240] as const;
+
+/** The fixed id of the most recent visit, which demo-content.ts owns
+ * (it carries the rich three-sentence report). Here so demo-primitives
+ * can LINK the Aug 27 delivery time entry to it without either script
+ * importing the other. */
+export const DEMO_LAST_VISIT_ID = "01980000-0000-7000-8000-00000000de10";
+
+/** An applied visit's payload hours for a given day and duration, in the
+ * exact shape the close flow submits and the economics page reads. */
+export function demoVisitHours(day: string, minutes: number) {
+  const startedAt = `${day}T13:00:00.000Z`;
+  const endedAt = new Date(+new Date(startedAt) + minutes * 60_000).toISOString();
+  return { startedAt, endedAt };
+}

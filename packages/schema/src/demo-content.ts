@@ -11,7 +11,7 @@ import { ilike, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { household, playbookField, dot, authUser, visitCommand } from "./tables.ts";
 import { FERNBROOK_DEMO_ID } from "../../../tooling/fixture-ids.mjs";
-import { DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC } from "./demo-clock.ts";
+import { DEMO_LAST_VISIT_DAY, DEMO_VISIT_CLOSE_UTC, DEMO_DELIVERY_MIN, DEMO_LAST_VISIT_ID, demoVisitHours } from "./demo-clock.ts";
 
 const pool = new pg.Pool({
   connectionString:
@@ -124,15 +124,24 @@ if (jordan) {
 // default to now(), so this row was dated whenever the seed last ran, and
 // production's read 19 July while the delivery hours sat in August. That is
 // the contradiction demo-clock.ts exists to end.
-const visitId = "01980000-0000-7000-8000-00000000de10";
+const visitId = DEMO_LAST_VISIT_ID;
 const visitClosedAt = new Date(`${DEMO_LAST_VISIT_DAY}T${DEMO_VISIT_CLOSE_UTC}`);
+// payload.hours in the close flow's own shape: the economics page derives
+// delivery hours from visit payloads, so a visit without hours reads as a
+// visit with zero minutes (the founder's four-visits-zero-minutes finding).
+const visitHours = demoVisitHours(DEMO_LAST_VISIT_DAY, DEMO_DELIVERY_MIN[DEMO_DELIVERY_MIN.length - 1]!);
 const existing = await db.select().from(visitCommand).where(eq(visitCommand.id, visitId));
 if (existing.length) {
   // A re-seed CORRECTS an already-dated row. Skipping it would leave every
   // database seeded before this fix carrying its old wall-clock date
-  // forever, which is exactly the state that produced the defect.
-  await db.update(visitCommand).set({ receivedAt: visitClosedAt }).where(eq(visitCommand.id, visitId));
-  console.log(`prior visit report re-dated to ${DEMO_LAST_VISIT_DAY}`);
+  // forever, which is exactly the state that produced the defect. The
+  // hours are PATCHED into the payload rather than the payload replaced,
+  // because this row carries the rich report the client surfaces render.
+  await pool.query(
+    `UPDATE visit_command SET received_at = $2,
+       payload = jsonb_set(payload, '{hours}', $3::jsonb) WHERE id = $1`,
+    [visitId, visitClosedAt, JSON.stringify(visitHours)]);
+  console.log(`prior visit report re-dated to ${DEMO_LAST_VISIT_DAY}, payload hours set`);
 }
 if (!existing.length) {
   await db.insert(visitCommand).values({
@@ -145,6 +154,7 @@ if (!existing.length) {
     payload: {
       householdId,
       startedAt: new Date(+visitClosedAt - 4 * 3600_000).toISOString(),
+      hours: visitHours,
       photoIds: ["kitchen-after.jpg", "linens.jpg", "biscuit-walk.jpg", "mudroom.jpg"],
       report: [
         "Kitchen reset, linens rotated, and Biscuit walked, fed, and thoroughly complimented.",
