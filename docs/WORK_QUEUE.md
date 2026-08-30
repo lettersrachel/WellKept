@@ -1656,6 +1656,17 @@ count, which must be 0), proven by the founder's own query shape re-run
 idempotent on the second run. Seed-only: no web deploy owed; the founder
 re-runs `db:demo` then `db:demo-primitives` from the pulled checkout.
 
+**The re-runs LANDED on production and the founder verified them
+independently (29 August):** four links written, one delivery entry per
+applied visit at 210|240|240|240 minutes, linked total 930 minutes equal to
+the window total, zero unlinked delivery entries. Travel (8 rows), intake (2)
+and admin (1) correctly stay unlinked, since the app writes the FK only on
+the visit's own delivery interval. `db:demo` set payload hours on the
+re-dated visit; both scripts idempotent on re-run. **The G-113 seed items are
+CLOSED.** Still open on Fernbrook, eyes only: the Aug 28 11:30 change-log
+line naming its field, the water heater on the CLIENT PREVIEW (check 8), and
+the economics page reading 15.5 hours from the same four visits it counts.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
