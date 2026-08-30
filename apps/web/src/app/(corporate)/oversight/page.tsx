@@ -198,7 +198,8 @@ export default async function FleetBoard({ searchParams }: {
           Team meetings, required training, onboarding and shadow visits, and playbook
           upkeep are paid time about a person, recorded with no household attached.
           Totals here are by category only. QuickBooks stays the book of record for pay
-          (ADR-004): hours in, never pay out.
+          (ADR-004): hours in, never pay out. Your own entries, all of them, are at{" "}
+          <Link href="/my-time">your time record</Link>.
         </div>
         <div className="prov" style={{ marginTop: 6 }}>
           {companyTime.length === 0

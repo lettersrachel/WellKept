@@ -36,11 +36,13 @@ real data, because nothing can write that state yet; its first real exercise
 arrives with its producer. **The producer arrived the same day** (G-111
 third addendum): `createCompanyTimeEntry` behind `getStaffIdentity`, forms
 on /visit and the fleet board, the board's by-category read-back, and the
-null branch's first real exercise in the twenty-third journey. Still open
-behind it, one session: the WK-SOP-017 employee self-access view. The
-friction and access-custody answers remain recommendations with no clock.
+null branch's first real exercise in the twenty-third journey. **The
+self-access view followed the same day** (/my-time, the twenty-fourth
+journey proving own-rows, the not-yours wall, and the client wall), so
+**everything behind G-111 is built**. The friction and access-custody
+answers remain recommendations with no clock.
 
-### A2. The outbox drain's total order
+### A2. The outbox drain's total order, now joined by G-114's starvation
 
 Item 2 of the 28 August list, still open, now sharpened: the TEST half is
 fixed (distinct timestamps, so it asserts only what the database promises),
@@ -48,6 +50,14 @@ and the flake is gone. **Whether the DRAIN should order by `(createdAt, id)`
 is a change to shipped ordering semantics and is yours.** If ruled yes, the
 test reverts to identical timestamps and asserts the total order, which is
 the stronger test.
+
+**G-114 (30 August) belongs to the same ruling:** the drain's batch window
+can be permanently occupied by consumer-less kinds once 100 of them are
+older than any consumable row, silently starving `field.changed`. The
+candidate fix (exclude unregistered kinds from the batch SELECT) is one
+clause; it should land WITH the total-order answer as one deliberate
+drain-semantics change, proven in both directions. Whether production has
+already crossed the threshold is one query, in the G-114 entry.
 
 ### A3. Row 6's return-code answers and the D5 selection
 

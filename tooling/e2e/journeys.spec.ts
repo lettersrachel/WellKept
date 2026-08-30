@@ -93,6 +93,9 @@ test.afterAll(async () => {
   // cascade from, so they are deleted by writer. rachel's SEEDED rows all
   // carry a household, so this touches only what the journey wrote.
   await pool.query("DELETE FROM time_entry WHERE household_id IS NULL AND user_id = ANY($1)", [[synHomId, rachelId]]);
+  // Self-access journey: its marker rows, wherever they live, so the
+  // household delete below never trips on a time_entry FK.
+  await pool.query("DELETE FROM time_entry WHERE note LIKE 'SELFVIEW-%'");
   await pool.query("DELETE FROM household WHERE id = ANY($1)", [[synId, orphanId]]); // assignments cascade
   await pool.query("DELETE FROM auth_session WHERE session_token = ANY($1)", [[rachelToken, lisaToken, synHomToken]]);
   await pool.query("DELETE FROM auth_user WHERE id = $1", [synHomId]); // assignment already cascaded with the household
@@ -1188,4 +1191,52 @@ test("company time (G-111's producer): the HOM logs their own with NO household,
   const section = await page.locator(".card", { hasText: "Company time; trailing 30 days" }).innerText();
   expect(section).not.toContain("@"); // no email, hence no person, in the read-back
   expect(section).not.toContain("SYN-01 field identity");
+});
+
+/**
+ * WK-SOP-017 employee self-access (G-111's last open item): a staff
+ * member reads their OWN wage-time record, all categories, household and
+ * person-scoped alike, and nobody else's. Three walls proven:
+ * 1. Own rows render, both shapes, with the derived per-category totals
+ *    and the entries count matching the database's own count.
+ * 2. Another staff member's row, planted with a unique marker, never
+ *    appears (the WHERE user_id clause is the wall, and this is its
+ *    failing-direction probe).
+ * 3. A client session never reaches the page at all.
+ */
+test("self-access: a staff member reads their whole time record, another person's rows never appear, and a client cannot reach the page", async ({ context, page }) => {
+  // Plant the rows by SQL in shapes the app itself writes: one delivery
+  // row on the synthetic household, one person-scoped row, and one row
+  // belonging to ANOTHER user with a marker that must never render.
+  await pool.query(
+    "INSERT INTO time_entry (id, household_id, user_id, category, started_at, ended_at, minutes, source, note) VALUES " +
+    "($1, $2, $3, 'delivery', '2026-08-29T14:00:00Z', '2026-08-29T16:00:00Z', 120, 'manual', 'SELFVIEW-OWN-DELIVERY'), " +
+    "($4, NULL, $3, 'playbook_maintenance', '2026-08-29T17:00:00Z', '2026-08-29T18:30:00Z', 90, 'manual', 'SELFVIEW-OWN-COMPANY'), " +
+    "($5, $2, $6, 'delivery', '2026-08-29T09:00:00Z', '2026-08-29T10:00:00Z', 60, 'manual', 'SELFVIEW-NOT-YOURS')",
+    [randomUUID(), synId, synHomId, randomUUID(), randomUUID(), rachelId]);
+
+  await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+  await page.goto("/my-time");
+  await expect(page.getByRole("heading", { name: "Your time record" })).toBeVisible({ timeout: 30_000 });
+
+  // Own rows, both shapes, and the null-household row says so in words.
+  await expect(page.getByText("SELFVIEW-OWN-DELIVERY")).toBeVisible();
+  await expect(page.getByText("SELFVIEW-OWN-COMPANY")).toBeVisible();
+  await expect(page.getByText("not tied to a household").first()).toBeVisible();
+
+  // The entries count is the database's, not a rendered guess.
+  const { rows: [own] } = await pool.query(
+    "SELECT count(*)::int n FROM time_entry WHERE user_id=$1", [synHomId]);
+  await expect(page.getByText(`${own.n} entries on record`)).toBeVisible();
+
+  // The wall's failing-direction probe: another person's marker row is in
+  // the database and must not be on this page.
+  const body = await page.locator("body").innerText();
+  expect(body).not.toContain("SELFVIEW-NOT-YOURS");
+
+  // The client wall: lisa never sees the page.
+  await context.clearCookies();
+  await context.addCookies([{ name: "authjs.session-token", value: lisaToken, url: BASE }]);
+  await page.goto("/my-time");
+  await expect(page.getByRole("heading", { name: "Your time record" })).not.toBeVisible();
 });
