@@ -1715,6 +1715,52 @@ after the sentence-chain rewrite, and zero bare underscored kinds on the
 card, checked by pattern rather than by eye. **Nothing is open on Fernbrook:
 every demo surface is verified on the build that will serve it.**
 
+**30 August 2026: production serves `373e340` (the EIGHTEENTH clean run),
+and migration 0059 is applied: G-111's paid-time adoption is live.** Sha
+current as the origin/main tip, migrations three ways at 60 (the read-only
+preflight reported exactly one pending, `database 59, disk 60`, and applied
+nothing), build id verified three times, mechanical checks 1/4a/4b/12/15
+PASS. The merge path was the ruling's own: PR #265 went through FOUNDER
+REVIEW rather than verify-then-merge, the merged tree byte-identical to the
+reviewed commit, `ci` green on the merge commit with both jobs by name.
+
+**The precondition was re-verified CURRENT, not inherited.** The migration
+header's precondition cited the 29 August production census, which predates
+the demo-seed linking work; the founder's session flagged the staleness and
+re-ran the census against production immediately before the apply: 21 rows
+across exactly the four delivery-class categories, every one with a
+household, zero rows violating either half of `time_entry_subject_shape`.
+The ALTER then validated atomically against those same rows. This is the
+G-82 legitimacy-versus-currency rule applied in the accepting direction: the
+header's claim was legitimate and stale, and the check that mattered was the
+fresh read.
+
+**Verified against production after the fact, not taken from the deploy
+output:** the CHECK present and still comparing `category::text` to text
+literals (the same-transaction ADD VALUE constraint, not "simplified" away),
+`household_id` nullable (`attnotnull = false`), and the enum carrying all
+nine values. A counting correction recorded where it happened: 0059 adds
+FOUR enum values (`training` predates it, written by nothing); the migration
+header said four correctly and the PR body said five beside it, corrected on
+the PR as an appended dated note (the hand-carried-count class, again).
+
+**What the deploy changes and what it does not, stated so neither is
+over-read.** The schema now permits a wage row with no household and
+NOTHING writes one: the non-household capture surface is its own session,
+so the new state is unreachable in production by construction. The honest
+partial that follows: **the CHECK's null-household branch has never fired
+in either direction on real data.** It is proven both directions in SQL and
+in the CI integration test on a real Postgres, which is proof of the LOGIC;
+its first real exercise arrives with its producer. The erasure interaction
+needs no waiting: a null-household row being unreachable by
+`--erase-time-and-costs` is construction (`WHERE household_id = $1`), not a
+behavior to observe.
+
+**Owed against this build, one read:** the Log time category control (visit
+page or a drill-in) offering exactly four categories with `training` gone,
+the delta's one visible surface change. Everything else in
+`45c40be..373e340` beyond the 0059 commit is docs.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
