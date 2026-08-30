@@ -1505,7 +1505,43 @@ export default async function Oversight({ params, searchParams }: {
               a.kind === "s3_corporate_view" ? (field ? `viewed the secured value of “${field}”` : "viewed a secured value; this row does not name the field") :
               a.kind === "s3_reveal" ? (field ? `revealed “${field}” in context` : "revealed a secured value in context; this row does not name the field") :
               a.kind === "tag_change" ? `set the status tag ${(a.detail as { from?: string; to?: string })?.from ?? "?"} → ${(a.detail as { to?: string })?.to ?? "?"}` :
-              a.kind;
+              // The change log rendered eleven Fernbrook rows as raw kind
+              // strings ("corporate admin registry_entry_deduped"), because
+              // this map covered five kinds and fell through to a.kind.
+              // Sentences below for every kind a write path or seed
+              // produces today; each states the ACT and never a stored
+              // value (the field name and vocabulary words are the only
+              // interpolations, the recorded() rule applied to a render).
+              // Copy is a proposal throughout, the AG precedent. The final
+              // fallback humanizes the kind rather than printing the
+              // identifier, so an unmapped future kind reads as words and
+              // is still visibly unmapped.
+              a.kind === "registry_entry_deduped" ? (typeof aDetail.label === "string" ? `removed a duplicate registry entry (“${aDetail.label}”), audited by the dedupe tool` : "removed a duplicate registry entry, audited by the dedupe tool") :
+              a.kind === "field_merged" ? (field ? `merged an update into “${field}”` : "merged a field update") :
+              a.kind === "visit_applied" ? "applied a visit to the record" :
+              a.kind === "intake_completed" ? "completed the intake" :
+              a.kind === "client_edit_submitted" ? (field ? `proposed an edit to “${field}”` : "proposed a field edit") :
+              a.kind === "client_edit_reviewed" ? `reviewed a client edit${typeof aDetail.outcome === "string" ? ` (${aDetail.outcome})` : ""}` :
+              a.kind === "consent_recorded" ? "recorded the household consent" :
+              a.kind === "role_assigned" ? `assigned the ${typeof aDetail.role === "string" ? aDetail.role.replace(/_/g, " ") : "household"} role` :
+              a.kind === "role_revoked" ? `revoked the ${typeof aDetail.role === "string" ? aDetail.role.replace(/_/g, " ") : "household"} role` :
+              a.kind === "membership_event" ? `recorded a membership ${typeof aDetail.eventKind === "string" ? aDetail.eventKind.replace(/_/g, " ") : "event"}` :
+              a.kind === "incident_logged" ? "logged an incident" :
+              a.kind === "incident_resolved" ? "resolved an incident" :
+              a.kind === "s3_reveal_outcome" ? (aDetail.delivered === true ? (field ? `the reveal of “${field}” delivered` : "the reveal delivered") : (field ? `the reveal of “${field}” did NOT deliver` : "the reveal did NOT deliver")) :
+              a.kind === "photo_reuse_change" ? "changed a photo's reuse permission" :
+              a.kind === "photo_hold_change" ? "changed a photo's retention hold" :
+              a.kind === "rate_change" ? "changed the monthly rate" :
+              a.kind === "referral_recorded" ? "recorded the referral source" :
+              a.kind === "trigger_rule_change" ? "changed a trigger rule" :
+              a.kind === "exclusion_created" ? "created an anticipation exclusion" :
+              a.kind === "exclusion_ended" ? "ended an anticipation exclusion" :
+              a.kind === "sessions_revoked" ? "revoked a user's sessions" :
+              a.kind === "totp_reset" ? "reset a user's second factor" :
+              a.kind === "command_discarded" ? "discarded a dead queued command, audited first" :
+              a.kind === "shadow_scored" ? "scored a shadow-engine signal" :
+              a.kind === "household_provisioned" ? "provisioned the household" :
+              a.kind.replace(/_/g, " ");
             return (
               <div key={a.id} className="field">
                 <span className="fval sans" style={{ fontSize: 13 }}>
