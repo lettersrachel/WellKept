@@ -1761,6 +1761,13 @@ page or a drill-in) offering exactly four categories with `training` gone,
 the delta's one visible surface change. Everything else in
 `45c40be..373e340` beyond the 0059 commit is docs.
 
+**That read PASSED (30 August, 11:20 AM, founder screenshot):** the
+category dropdown open on the Fernbrook drill-in at the production host,
+offering exactly four options in the code's own render order (`intake` as
+the default, `admin`, `travel`, `delivery`), `training` absent, nothing
+new added. Describes `373e340`. **Nothing is owed against the eighteenth
+run's build.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
