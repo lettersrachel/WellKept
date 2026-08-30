@@ -6762,3 +6762,75 @@ that surfaced the live defect. The residue was deleted and the suite runs
 11/11 uncached green. A guard cannot hold this: the condition lives in
 accumulated production data, which is exactly what the founder query
 reads.
+
+### G-115. The production outbox has no live consumer, and the evidence points at a stale or dead Railway worker
+
+**Filed 30 August 2026, from the founder's own G-114 query against
+production. Reported, not fixed; nothing here is reachable from the
+development container, and every discriminating check is one dashboard
+visit.**
+
+**The production reading (founder, 30 August):** ten unprocessed
+`event_outbox` rows of fifteen total, EVERY one at `attempts = 0`, oldest
+25 August, including a `field.changed` from a real client-edit approval.
+Attempts never spent means nothing ever tried: this is an ABSENT
+consumer, not a stuck one, which is the founder session's own reading and
+it is correct. This is not G-114's starvation (the window is nowhere near
+full); it is the drain not running at all.
+
+**The code trace, three dated facts:**
+
+1. The `drain-outbox` job and its five-minute scheduler entered
+   `services/worker/src/index.ts` in PR #68 (`791cf13`, 28 July 2026).
+2. The last Railway deploy ever CONFIRMED is `b7026dd` (PR #61's merge,
+   28 July 2026, founder-confirmed in the dashboard that day; no later
+   confirmation exists anywhere in the record). **`791cf13` is NOT an
+   ancestor of `b7026dd`**, checked with `git merge-base --is-ancestor`:
+   the confirmed worker build has NO drain job to schedule, so its
+   silence is clean, with no failure signature anyone would notice.
+3. Migration 0037 (applied to production 25 August in the ninth run's
+   batch) copied `field_event_outbox` into `event_outbox` WITH
+   `processed_at` intact and DROPPED the old table. The five processed
+   rows are therefore explainable as pre-migration history carried over,
+   and any worker build from the #68..pre-0037 window would now FAIL
+   loudly every five minutes ("relation field_event_outbox does not
+   exist"), which is a different, checkable signature.
+
+**The three scenarios and how one dashboard visit separates them:**
+
+- Worker at `b7026dd` or older: logs show NO drain-outbox jobs ever, boot
+  line lacks "outbox drain (5m)". Quiet. Most consistent with the data.
+- Worker from the #68..pre-August window: drain-outbox FAILED entries
+  every five minutes since 25 August, and Sentry errors to match.
+- Worker dead entirely: no logs at all, and the weekly fleet digest and
+  five-minute uptime check are also silently gone.
+
+The check is the Railway service's deployed commit plus one scroll of its
+recent logs. **This is the custody checklist's own named failure shape**
+("the Railway git integration, whose failure looks like a healthy worker
+running old code"), filed there on 28 August as a risk and now met as an
+apparent fact two days later.
+
+**The blast radius if the worker is stale, stated by method rather than
+by list:** every worker-side feature merged after `b7026dd` (28 July) has
+no confirmed production execution. That includes the outbox drain and
+uptime check (#68), and the August additions to the daily pass and
+schedulers: the shadow evaluation pass, the attention and decision-expiry
+sweeps, the client weekly digest scheduler, and the CPSC recall job,
+whose "Railway execution check is founder-side" line has stood open since
+24 August, consistently with this entry. Web-side behavior is unaffected:
+the nineteen clean runs deploy Vercel, not Railway.
+
+**What this does NOT establish:** which scenario holds, when the git
+integration (if broken) broke, and whether the five processed rows were
+drained by the July worker before 0037 or by something else. The
+dashboard reading settles the first; the rows' own `processed_at`
+timestamps settle the third.
+
+**Remedy shape, named:** once the deployed commit is read, the fix is a
+Railway redeploy of current `main` (and re-connecting the git integration
+if it is broken), after which the drain processes the waiting
+`field.changed` and the G-114 window question becomes live again. The two
+entries travel together: G-114 is the drain's window logic, G-115 is
+whether the drain runs at all, and fixing the second without the first
+eventually meets the first.

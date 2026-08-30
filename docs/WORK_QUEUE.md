@@ -1872,6 +1872,29 @@ one clause and is deliberately NOT made here: the drain's semantics are
 already under the open A2 total-order ruling, and both changes should
 land as one deliberate, both-directions-proven session once ruled.
 
+**Same day, the founder ran the G-114 query against production and the
+answer opened G-115: the production outbox has no live consumer.** Ten
+unprocessed rows of fifteen, EVERY one at attempts 0 (an absent consumer,
+not a stuck one; her session's reading, and correct), oldest 25 August,
+a real `field.changed` among them. The code trace is decisive on the
+likely cause: the drain-outbox job entered the worker in PR #68
+(`791cf13`, 28 July), the last CONFIRMED Railway deploy is `b7026dd`
+(PR #61, the same day), and **`791cf13` is not an ancestor of
+`b7026dd`**, so the confirmed worker build has no drain job to schedule
+and its silence is clean. The five processed rows are explainable as
+pre-0037 history carried over by the migration's copy. This is the
+custody checklist's own named failure shape (a healthy-looking worker
+running old code), met as an apparent fact two days after it was filed
+as a risk. **One dashboard visit separates the three scenarios** (stale
+at b7026dd: no drain jobs in the logs; stale mid-window: drain FAILED
+every five minutes since 25 August; dead: nothing at all, and the
+Monday digest and uptime check silently gone). If stale, every
+worker-side feature merged after 28 July has no confirmed production
+execution, including the shadow pass, the attention and decision-expiry
+sweeps, and the client-digest scheduler; web-side behavior is unaffected.
+Founder-side: read the Railway service's deployed commit and one scroll
+of logs, then redeploy current main. G-115 carries the full trace.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
