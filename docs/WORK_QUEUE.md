@@ -1663,9 +1663,27 @@ the window total, zero unlinked delivery entries. Travel (8 rows), intake (2)
 and admin (1) correctly stay unlinked, since the app writes the FK only on
 the visit's own delivery interval. `db:demo` set payload hours on the
 re-dated visit; both scripts idempotent on re-run. **The G-113 seed items are
-CLOSED.** Still open on Fernbrook, eyes only: the Aug 28 11:30 change-log
-line naming its field, the water heater on the CLIENT PREVIEW (check 8), and
-the economics page reading 15.5 hours from the same four visits it counts.
+CLOSED.**
+
+**And the three eyes-only reads PASSED (30 August, founder screenshots,
+verified against the PDFs' own text):** the Aug 28 11:30 change-log line
+names its field (the FOSTER CONFIDENTIALITY s3 field, the exact one
+predicted, no "null" anywhere on the page); the water heater carries ONE
+install date, character for character the predicted string, on the client
+preview AND the drill-in, with the Important Dates entries keeping their key
+dates so the fix deleted nothing (this is check 8's pass for this delta, on
+the preview surface, same scope note as the 27 August pass); and the
+economics page reads `15.5h across 4 visit(s) /30d` on Fernbrook's row with
+the portfolio header agreeing. **Everything G-113 opened is now closed, and
+Fernbrook is demo-ready by every check that exists.**
+
+One cosmetic observation from the same read, noted and not chased: the
+change log renders ELEVEN rows as raw kind strings ("corporate admin
+registry_entry_deduped" ten times from the dedupe run, "house manager
+field_merged" once from the seeded history), because the render's sentence
+map covers five kinds and falls through to `a.kind` for the rest. Honest,
+ugly, and on the record a COO scrolls; a sentence for the common kinds is a
+small copy task for a later session.
 
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
