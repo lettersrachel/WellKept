@@ -414,6 +414,13 @@
       "when": 1787832313146,
       "tag": "0058_systems_walkthrough",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1788097664430,
+      "tag": "0059_paid_time_subject",
+      "breakpoints": true
     }
   ]
 }

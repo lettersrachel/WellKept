@@ -1024,7 +1024,13 @@ export async function createTimeEntry(formData: FormData) {
   // trusted raw: an HM's refusal must not strand them on a corporate URL.
   const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
   const category = String(formData.get("category") ?? "");
-  const CATEGORIES = ["delivery", "travel", "intake", "admin", "training"] as const;
+  // G-111 (30 Aug 2026): training is PERSON-scoped now, with no household,
+  // and this action writes household rows only. Offering it here would
+  // send a click into the subject-shape CHECK as a 500 instead of a
+  // refusal (the G-29 class), so it is out of the list and a forged POST
+  // refuses as bad-input. The person-scoped capture surface is its own
+  // session (no producer yet, stated in 0059's header).
+  const CATEGORIES = ["delivery", "travel", "intake", "admin"] as const;
   if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
   const principal = await getPrincipal(householdId);
   if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");

@@ -6594,3 +6594,61 @@ one property. The dates were made consistent and the state was still
 impossible, because consistency of one attribute is not the join, and the join
 is not the payload. The founder found both by querying the relationship
 rather than re-reading the two numbers.
+
+---
+
+### G-111 second addendum, 30 August 2026: the paid-time answer is ADOPTED and built
+
+**Founder ruling, 30 August 2026, verbatim in substance:** non-household paid
+time gets a category and a nullable household subject on `time_entry`, the
+ONE table where nullability is permitted, because it is a payroll record
+rather than a household record. Delivery hours attach to a visit and
+therefore to a household; training, team meetings, Playbook maintenance,
+supervised onboarding visits and shadow visits attach to a category and a
+person, with no household. **`household_id` stays NOT NULL everywhere else;
+the tenant invariant is untouched.** Adopted rather than queued because
+WK-SOP-017's coding, retention and self-access requirements are FLSA and
+Virginia wage obligations with the first payroll run in February 2027, and
+the records have to be right from the first one.
+
+Built as migration 0059, to the ruling's own requirements in its own order:
+
+- **The four census guards were re-read FIRST.** All four detect
+  household-referencing tables by the string `household_id` in the table
+  body, which a nullable column still carries, so `time_entry` stays in
+  every census; all four run green after the change.
+- **The vocabulary is WK-SOP-017's and nowhere else:** `team_meeting`,
+  `playbook_maintenance`, `onboarding_visit`, `shadow_visit` from the SOP's
+  own sentence; `training` already existed and is re-scoped to person by the
+  ruling's list. Nothing invented.
+- **The CHECK (`time_entry_subject_shape`) holds both ruled shapes**:
+  household work (delivery, travel, intake, admin) requires its household;
+  person work (the five) requires none. It compares `category::text` to text
+  literals deliberately, so the enum extension and the CHECK survive one
+  migration transaction; 0059's header says not to "simplify" that away.
+- **The erasure protection is confirmed and recorded where the deletion
+  happens**: every `erase-household.mjs` statement is keyed
+  `WHERE household_id = $1`, so a null-household wage row is UNREACHABLE by
+  the counsel-directed DELETE by construction. The note is now in the tool's
+  own header, which is the place a future operator reads.
+- **Producer, per column and per value, in the migration header**: the NULL
+  half of `household_id` and all four new categories have NO PRODUCER YET;
+  the person-scoped capture surface is its own session. Schema ahead of its
+  writer, deliberately and in writing.
+- **Proven red before green with preconditions asserted first**: constraint
+  presence printed from `pg_constraint` before any case; three refusals
+  (delivery without household, training with one, team_meeting with one),
+  two accepting shapes, 58 existing rows surviving unchanged; the CI copy of
+  the proofs chases the constraint NAME through drizzle's error-cause chain,
+  and its helper is itself proven red against a wrong failure, so a down
+  database cannot read as a passing refusal.
+- **The household surfaces stopped offering `training`** (logTime and both
+  category dropdowns), so a click cannot reach the CHECK as a 500; a forged
+  POST refuses as bad-input.
+
+**Open behind it, named:** the person-scoped capture surface, and the
+WK-SOP-017 employee self-access view. Both wait on their own sessions; the
+schema no longer does.
+
+**Per the ruling, the PR goes to founder review rather than the usual merge
+path.**

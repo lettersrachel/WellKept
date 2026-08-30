@@ -461,7 +461,7 @@ export default async function Oversight({ params, searchParams }: {
         {timeByCategory.length === 0 && recentCosts.length === 0 ? (
           <div className="note">
             Nothing recorded yet. Delivery hours record themselves when a visit closes;
-            travel/intake/admin/training and costs are logged after the fact on the
+            travel/intake/admin and costs are logged after the fact on the
             visit surface (or the forms below at need).
           </div>
         ) : (
@@ -494,7 +494,7 @@ export default async function Oversight({ params, searchParams }: {
           <input type="hidden" name="householdId" value={hh.id} />
           <input type="hidden" name="returnTo" value={`/oversight/${hh.id}`} />
           <select key={`tcat-${timeRows.length}`} name="category" defaultValue="intake" className="inline" aria-label="Time category">
-            {["intake", "admin", "training", "travel", "delivery"].map((c) => <option key={c}>{c}</option>)}
+            {["intake", "admin", "travel", "delivery"].map((c) => <option key={c}>{c}</option>)}
           </select>
           <label className="sans" style={{ fontWeight: "normal", fontSize: 12, marginTop: 0 }}>
             From <input type="datetime-local" name="startedAt" required style={{ marginTop: 0 }} />

@@ -48,7 +48,12 @@
  *  - time_entry / cost_entry: rows KEPT by default (employer and business
  *    records - hours worked and money spent outlive the household data
  *    they served); free-text notes are blanked. --erase-time-and-costs
- *    deletes the rows if counsel directs. A cost entry's receipt photo is
+ *    deletes the rows if counsel directs. G-111 (30 Aug 2026): every
+ *    statement here is keyed WHERE household_id = the erased household,
+ *    so a NULL-household wage row (person-scoped paid time under
+ *    WK-SOP-017) is UNREACHABLE by this tool by construction; the
+ *    four-year retention obligation on those rows is protected by the
+ *    shape, not by anyone remembering this note. A cost entry's receipt photo is
  *    a visit_photo row and is purged by the photo pass above.
  *  - membership_event: rows KEPT by default (commercial history is a
  *    business record); cancellation reasons (free text) are blanked.
