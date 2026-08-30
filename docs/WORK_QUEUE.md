@@ -1620,6 +1620,28 @@ carry a total order is a change to shipped semantics and is still the
 founder's call.** Two failures in three full-suite runs before; five
 consecutive green runs after.
 
+**Same day, production serves `727efc1` (the SIXTEENTH clean run):** sha
+current as the origin/main tip, migrations three ways at 59 with nothing
+applied, build id verified three times and confirmed independently, health ok,
+mechanical checks 1/4a/4b/12/15 PASS. The run also exercised the deploy gate's
+refusing direction on a real input first: the founder's clone was one merge
+behind, the gate refused the sha as absent from the clone and named the
+remedy, and the preflight ran clean after the pull. The delta carries the two
+G-113 display fixes (the audit label render on the drill-in, the single
+install date on RegistryCard, which renders on the corporate record AND the
+client preview) plus the seed corrections and the two flake fixes.
+
+**Owed against this build, named at the moment of writing (G-84 applied
+forwards):** the THREE SEED RE-RUNS have not been reported run against
+production (`db:demo-history`, `db:demo-primitives` expecting `15.5 hours
+across 4 applied visit(s)`, `db:demo` expecting the re-date line). Until they
+run, the Aug 28 11:30 change-log line renders the honest-degradation sentence
+rather than naming its field (the render fix working on the still-fieldless
+seeded row), and the board's visit count still disagrees with the delivery
+hours. Also owed: **check 8**, since RegistryCard reaches the client
+preview, and a read of the water heater line on THAT surface rather than only
+the drill-in.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
