@@ -6899,3 +6899,41 @@ hourly shadow pass, the daily-pass attention and decision-expiry
 sweeps at 09:00 UTC, the client-digest scheduler still dark behind its
 flag, the Tuesday recall job). First-run artifacts from those are
 expected and should be read as arrivals, not anomalies.
+
+### G-115 second addendum, 31 August 2026: the redeploy's first attempt crashed at boot, and the cause was in the tree, not in Railway
+
+**The founder's redeploy of current main exited status 1 at 05:01:33
+with no output visible in Deploy Logs.** Reproduced in the development
+container by running the worker exactly as its Dockerfile does
+(`node src/index.ts`): the process dies at module link on
+`packages/schema/src/feature-flags.ts` importing `./tables` WITHOUT an
+extension. Bare-Node TypeScript execution demands explicit extensions;
+the web app's bundler resolves extensionless imports, so the whole suite
+and every web deploy stayed green while the worker's runtime could not
+load the file. A systematic sweep of the worker-reachable packages found
+exactly TWO such imports, both from the 24 August shadow session:
+`feature-flags.ts` (`./tables`) and `trigger-engine/src/shadow.ts`
+(`./authority`). Fixed with explicit `.ts` extensions, the repo's own
+convention everywhere else. Proven both directions: exit 1 at the exact
+import before, `[worker] listening on field-events` after (the local run
+then correctly fails toward a Redis this container does not have).
+
+**What this means for the timeline:** every worker build since 24 August
+would have crashed at boot, so even a healthy watch path would have
+produced a crash-looping worker rather than a current one from that day
+forward. The stale build and the unbootable tree are two separate
+defects that happened to cover for each other.
+
+**The Sentry question is ANSWERED: `SENTRY_DSN` IS set on the Railway
+service** (founder screenshot of the Variables tab, 31 August). So the
+five days of drain failures were captured, roughly 288 per day, and sat
+unread in the Sentry project: the loud-and-unread correction extends to
+Sentry, not only to the Railway logs. Reading and clearing that backlog,
+and deciding who watches that project, is founder-side.
+
+**A log oddity recorded, not explained:** the crashing deployment's
+Deploy Logs showed ONLY `Exit status 1`, while the same crash locally
+prints a full ERR_MODULE_NOT_FOUND stack to stderr. Whether Railway put
+the stack in another pane or swallowed pre-boot stderr is unknown; if a
+future boot failure shows the same bare line, check the Build Logs tab
+before concluding the process said nothing.

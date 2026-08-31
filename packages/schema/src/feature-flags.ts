@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { appSetting } from "./tables";
+import { appSetting } from "./tables.ts";
 
 /**
  * CAND-REL-01 (assigned week one, founder inputs section 3): feature

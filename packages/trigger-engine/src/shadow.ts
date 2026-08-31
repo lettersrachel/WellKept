@@ -1,4 +1,4 @@
-import { assertWithinCap, type AuthorityClass } from "./authority";
+import { assertWithinCap, type AuthorityClass } from "./authority.ts";
 
 /**
  * The shadow evaluation harness (WK-DEV-007 section 3). The engine
