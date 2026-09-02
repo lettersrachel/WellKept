@@ -6937,3 +6937,40 @@ prints a full ERR_MODULE_NOT_FOUND stack to stderr. Whether Railway put
 the stack in another pane or swallowed pre-boot stderr is unknown; if a
 future boot failure shows the same bare line, check the Build Logs tab
 before concluding the process said nothing.
+
+### G-116. Typed times are interpreted in the SERVER'S timezone, so every hand-entered interval is shifted by the operator's offset
+
+**Filed 2 September 2026 during the technical-opinion pass. Reported,
+not fixed; the capture semantics are a founder decision.**
+
+Every hand-typed time in the system arrives from a `datetime-local`
+input as a ZONE-LESS string ("2026-08-30T09:00") and is parsed
+server-side with `new Date(...)` (`createTimeEntry` and
+`createCompanyTimeEntry` at their start/end reads; the visit-close
+hours ride the command payload as the same raw strings and are parsed
+at the sink). A zone-less date-time parses as LOCAL time, and the
+server's locale is UTC, so a HOM in Virginia typing 9:00 AM stores
+09:00 UTC, which is 5:00 AM her time. **Durations are correct** (both
+ends shift equally), which is why nothing has looked wrong: the
+economics page, the covenant minutes, and every aggregate derive from
+minutes. **The clock times are wrong by the operator's offset** on
+every typed interval in production.
+
+Where it bites under real use: wage records (WK-SOP-017 is an FLSA
+document; start and end times are part of the record, not only the
+duration); any future comparison of a typed interval against a REAL
+timestamp (visit_command.received_at, audit rows, time_segment
+windows), which would show a visit "closed" hours before its delivery
+interval ended; and /my-time, which renders the stored value labeled
+"UTC as stored", faithfully displaying the number the operator typed
+under a label that misdescribes it.
+
+Three candidate shapes, none chosen here: attach the zone client-side
+before submit (the wizard already runs client JS; the server actions
+would need a hidden offset field); declare typed times to BE local
+wall-clock and store them as such with the zone recorded; or keep
+UTC-as-typed and say so on the capture forms rather than only on the
+display. The choice affects stored data retroactively or not, which is
+exactly why it is not an engineering default. Until ruled, the honest
+statement is: typed clock times in production are wall-clock numbers
+wearing a UTC label, and durations are trustworthy.
