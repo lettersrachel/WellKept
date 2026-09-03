@@ -1913,6 +1913,30 @@ one cycle, the other nine rows correctly keep waiting (G-114's
 material), and the August worker features begin their first production
 execution.
 
+**2 September 2026: three rulings executed in one change (migration
+0060, the session's one).** A2/G-114: the drain fix merged as ruled
+(batch selects registered kinds only, window stays 100; the 500-row
+acceptance backlog drained to zero across consecutive runs THROUGH an
+older 150-row consumer-less wall), with the `rows_waiting_after_run`
+metric upserted every run and rendered on the fleet board with a
+staleness tag (G-117 carries its not-covered note: progress, never
+correctness). G-65: /visit demands an explicit selection whenever a HOM
+holds more than one field assignment; the picker is the whole page, a
+forged `?hh=` is ignored, one assignment goes straight through, and the
+journey proves all four directions. "Next scheduled visit" ordering is
+built as the most-due proxy and REPORTED as a substitution, since the
+system holds no schedule (ADR-004); auto-open is deferred ninety days
+(G-118). G-116: "true instant" landed as 0060 (`time_entry.tz`), the
+one conversion path with the DST acceptance conversions proven by name,
+zone-less writes refusing, per-row zone display on /my-time, and the tz
+ride-along through close-flow and the sink. **A scope correction with
+it: the visit-close hours were never skewed** (captureHours converts in
+the operator's browser), so the backfill (G-119, its own session per
+the ruling) covers `source = 'manual'` rows only. Suite 11/11 uncached,
+24 journeys, airplane green. **Owed at the next deploy: 0060 applies
+(60 to 61), and the worker redeploy picks up the drain fix and starts
+writing the metric.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

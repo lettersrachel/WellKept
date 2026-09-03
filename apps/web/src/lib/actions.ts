@@ -67,6 +67,11 @@ function refuse(householdId: string | null | undefined, reason: RefusalReason): 
  */
 function resolveReturnTo(raw: string, householdId: string): string {
   if (raw === "/visit") return "/visit";
+  // G-65: the field surface carries its selected household so a
+  // two-assignment HOM's verdict lands back on the household they were
+  // working, not on the picker. Fixed shape, id only; the page re-resolves
+  // and re-validates the selection against their own assignments.
+  if (/^\/visit\?hh=[0-9a-f-]{36}$/i.test(raw)) return raw;
   if (householdId && raw === `/oversight/${householdId}`) return raw;
   // s3.3 contextual entry: a capture made FROM an asset's context page
   // returns to it. Fixed prefix plus a uuid, nothing else; the page
@@ -1034,9 +1039,14 @@ export async function createTimeEntry(formData: FormData) {
   if (!householdId || !(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
   const principal = await getPrincipal(householdId);
   if (!principal || !["house_manager", "backup_hm", "corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
-  const start = new Date(String(formData.get("startedAt") ?? ""));
-  const end = new Date(String(formData.get("endedAt") ?? ""));
-  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) refuseTo(returnTo, "bad-input");
+  // G-116 ("true instant"): typed times are wall clock in the operator's
+  // zone; the ONE conversion path turns them into UTC instants, and a
+  // zone-less write refuses rather than storing a wall clock as UTC.
+  const { parseTypedInstant } = await import("./typed-time");
+  const tz = String(formData.get("tz") ?? "");
+  const start = parseTypedInstant(String(formData.get("startedAt") ?? ""), tz);
+  const end = parseTypedInstant(String(formData.get("endedAt") ?? ""), tz);
+  if (!start || !end || +end <= +start) refuseTo(returnTo, "bad-input");
   const minutes = Math.round((+end - +start) / 60_000);
   if (minutes > 24 * 60) refuseTo(returnTo, "bad-input"); // an entry over a day is a typo, not a shift
   const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
@@ -1044,7 +1054,7 @@ export async function createTimeEntry(formData: FormData) {
   await db.insert(timeEntry).values({
     id: randomUUID(), householdId, userId: principal.userId,
     category: category as (typeof CATEGORIES)[number],
-    startedAt: start, endedAt: end, minutes, source: "manual", note,
+    startedAt: start, endedAt: end, minutes, source: "manual", note, tz,
   });
   revalidatePath(`/oversight/${householdId}`);
   revalidatePath("/visit");
@@ -1065,8 +1075,12 @@ export async function createTimeEntry(formData: FormData) {
 export async function createCompanyTimeEntry(formData: FormData) {
   // Two surfaces only (the HOM's own page and the fleet board), both of
   // which render the banners; anything else falls to the fleet board,
-  // resolveReturnTo's own fallback for the household-less case.
-  const returnTo = String(formData.get("returnTo") ?? "") === "/visit" ? "/visit" : "/oversight";
+  // resolveReturnTo's own fallback for the household-less case. The
+  // /visit shape may carry the G-65 selection so the verdict lands on the
+  // household the HOM was working, not on the picker.
+  const returnToRaw = String(formData.get("returnTo") ?? "");
+  const returnTo = returnToRaw === "/visit" || /^\/visit\?hh=[0-9a-f-]{36}$/i.test(returnToRaw)
+    ? returnToRaw : "/oversight";
   const category = String(formData.get("category") ?? "");
   // The WK-SOP-017 non-delivery set, exactly the CHECK's null-household
   // half. A delivery-class category posted here refuses as bad input
@@ -1076,9 +1090,13 @@ export async function createCompanyTimeEntry(formData: FormData) {
   if (!(CATEGORIES as readonly string[]).includes(category)) refuseTo(returnTo, "bad-input");
   const staff = await getStaffIdentity();
   if (!staff) refuseTo(returnTo, "forbidden");
-  const start = new Date(String(formData.get("startedAt") ?? ""));
-  const end = new Date(String(formData.get("endedAt") ?? ""));
-  if (Number.isNaN(+start) || Number.isNaN(+end) || +end <= +start) refuseTo(returnTo, "bad-input");
+  // G-116 ("true instant"): same one conversion path as createTimeEntry;
+  // a zone-less write refuses.
+  const { parseTypedInstant } = await import("./typed-time");
+  const tz = String(formData.get("tz") ?? "");
+  const start = parseTypedInstant(String(formData.get("startedAt") ?? ""), tz);
+  const end = parseTypedInstant(String(formData.get("endedAt") ?? ""), tz);
+  if (!start || !end || +end <= +start) refuseTo(returnTo, "bad-input");
   const minutes = Math.round((+end - +start) / 60_000);
   if (minutes > 24 * 60) refuseTo(returnTo, "bad-input"); // an entry over a day is a typo, not a shift
   const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null; // s2
@@ -1086,7 +1104,7 @@ export async function createCompanyTimeEntry(formData: FormData) {
   await db.insert(timeEntry).values({
     id: randomUUID(), householdId: null, userId: staff.userId,
     category: category as (typeof CATEGORIES)[number],
-    startedAt: start, endedAt: end, minutes, source: "manual", note,
+    startedAt: start, endedAt: end, minutes, source: "manual", note, tz,
   });
   revalidatePath("/oversight");
   revalidatePath("/visit");

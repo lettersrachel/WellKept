@@ -200,7 +200,7 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
     // derived from entries, and because the entry rides the idempotent
     // command apply, it survives offline sync with no client changes.
     if (type === "visit.submit" && status === "applied") {
-      const hours = (payload as { hours?: { startedAt?: string; endedAt?: string } }).hours;
+      const hours = (payload as { hours?: { startedAt?: string; endedAt?: string; tz?: string } }).hours;
       const submittedBy = (payload as { submittedBy?: string }).submittedBy;
       const start = hours?.startedAt ? new Date(hours.startedAt) : null;
       const end = hours?.endedAt ? new Date(hours.endedAt) : null;
@@ -215,6 +215,11 @@ export async function applyVisitCommand({ idempotencyKey, type, payload }: Apply
           minutes: Math.round((+end - +start) / 60_000),
           source: "visit_close",
           visitCommandId: idempotencyKey,
+          // G-116: the operator's zone rides the payload from the ruling
+          // forward; a legacy queued command without it stays a valid
+          // pre-ruling row (its instants were always true; captureHours
+          // converts in the browser), so the queue head cannot brick.
+          tz: hours?.tz ?? null,
         });
         // REQ-083 (register A561): the covenant event stream. The applied
         // visit's hours ARE the arrival and departure taps, so the events

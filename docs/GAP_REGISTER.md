@@ -6974,3 +6974,111 @@ display. The choice affects stored data retroactively or not, which is
 exactly why it is not an engineering default. Until ruled, the honest
 statement is: typed clock times in production are wall-clock numbers
 wearing a UTC label, and durations are trustworthy.
+
+### G-114 CLOSED, 2 September 2026: the A2 ruling landed and the drain no longer starves
+
+The founder's A2 ruling released the held fix and it is merged (the PR
+number is recorded at the end of this entry's change). The batch now
+selects ONLY kinds with a registered consumer; waiting kinds keep their
+left-waiting semantics (attempts unspent, never dead-lettered) and no
+longer occupy the window. The window stays at 100, per the ruling.
+Acceptance ran as specified: a seeded 500-row backlog drained to zero
+across consecutive runs in CI, THROUGH a deliberately older wall of 150
+consumer-less rows, which is the exact starvation shape the old code
+could never cross; each full run drained a whole window and the wall
+kept waiting with zero attempts spent. Closed by PR #276.
+
+### G-117. The drain's rows_waiting_after_run metric, and what it does not prove
+
+**Opened by the A2 ruling, 2 September 2026, built with the G-114 close.**
+Every drain run upserts `app_setting.outbox_drain_status`
+({ lastRunAt, rowsWaitingAfterRun, processed }; a plain upsert, never the
+versioned knob path, because a five-minute heartbeat is state and not a
+decision). The fleet board renders it with a staleness tag when the last
+run is more than fifteen minutes old, which is the G-115 shape made
+visible on the surface the monitoring owner reads daily. Placement on
+the FLEET BOARD is an engineering proposal; moving it is one line.
+
+**Not covered, per the ruling's own words: the metric proves PROGRESS,
+not correctness.** A consumer that processes wrongly still drains the
+count. Also not covered: the metric row is written by the drain itself,
+so a drain that never runs writes nothing, and the staleness tag on the
+board, not the metric, is what catches that; and a tester's events
+count like anyone's, since the outbox carries no tester flag.
+
+### G-65 CLOSED, 2 September 2026: selection is required, never inferred
+
+The ruling landed: /visit renders an explicit household picker whenever
+the signed-in HOM holds more than one active field assignment, and the
+picker is the WHOLE page in that state (no capture, no close, nothing to
+type onto the wrong household). One assignment goes straight through
+unchanged. A selection rides `?hh=` and is validated against the HOM's
+own assignments; a forged id is ignored and the picker stands. The
+journey proves all four directions, and verdict banners render on the
+picker too, so an action that redirected to bare /visit stays legible.
+
+**One substitution, reported rather than silently claimed:** the ruling
+orders the picker by "the household with the next scheduled visit", and
+the system HOLDS NO SCHEDULE (ADR-004: scheduling is Jobber). The
+computable proxy built is most-due-first: longest gap since the last
+applied visit, the same weekly-rhythm assumption the reconciliation
+floor rests on. If the proxy is wrong, the fix is one sort function.
+
+**Cosmetic residue, recorded:** the top banner lives in the layout,
+which cannot read searchParams (a Next constraint), so for a
+multi-household HOM it names the FIRST assignment while the page body
+names the selected one. The body is authoritative and the journey
+asserts it there.
+
+### G-118. Auto-opening the next scheduled household: deferred by the ruling
+
+Per the G-65 ruling: "auto-open next scheduled" is deliberately NOT
+built, and revisits after ninety days of route data (from 2 September
+2026). Whatever ordering evidence accumulates by then also settles the
+G-65 proxy question above.
+
+### G-116 CLOSED, 2 September 2026, with migration 0060 and a scope correction
+
+**The scope correction first, because the entry as filed overclaimed:**
+the visit-close hours were NEVER skewed. `captureHours` parses in the
+OPERATOR'S browser and stores `toISOString()` instants, so the zone-less
+string resolved in their own zone all along; the sink parses Z-strings.
+The skew was confined to the two SERVER-ACTION forms, so only
+`source = 'manual'` rows carry wall-clock-as-UTC times. The correction
+narrows the backfill (G-119) to exactly those rows.
+
+**The "true instant" ruling landed:** migration 0060 adds
+`time_entry.tz` (the operator's IANA zone; nullable only for pre-ruling
+rows, tightened by the backfill session). Both time forms carry a
+hydration-filled zone field; the ONE conversion path
+(`lib/typed-time.ts`, the standard two-pass Intl technique, no new
+dependency) turns wall clock plus zone into the UTC instant, and a
+zone-less write REFUSES as bad input, which is the ruling's guard in its
+fail-closed direction (a pre-hydration or no-JS submit refuses visibly
+rather than storing a wall clock as UTC). The visit-close path now
+carries tz through the close-flow Hours shape and the sink stores it; a
+legacy queued command without tz stays a valid pre-ruling row, so the
+offline queue head cannot brick on the upgrade. /my-time renders each
+row in its own recorded zone, named per row, with the honest UTC label
+only on pre-ruling rows.
+
+**Acceptance proven by name in the guard test:** 9:00 America/New_York
+stores as 13:00Z in DST and 14:00Z in standard time and displays as
+9:00; a nonexistent spring-forward wall time still resolves; empty,
+invented, and oversized zones refuse; and the census half fails if any
+future author parses a typed-time field outside the conversion path.
+Not covered by the census: a typed-time surface in a file it does not
+read (none exists today; a new one needs its own line).
+
+### G-119. The typed-time backfill: manual rows only, its own migration and session
+
+Opened by the G-116 ruling, narrowed by its scope correction: convert
+the stored instants of `source = 'manual'` time_entry rows (wall clock
+stored as UTC) using the known zones of the two operators who typed
+them, set their tz, and tighten the column. DST-aware per row date, and
+NOT RECOVERABLE if wrong (the G-61 non-recoverability caution applies:
+the original wall clock is only implicit in the stored value), which is
+why it is its own migration and session with its own proofs, per the
+ruling's own text. The row count goes in this entry when it runs.
+`source = 'visit_close'` rows need no conversion (their instants were
+always true); their tz stays null as an honest not-recorded.

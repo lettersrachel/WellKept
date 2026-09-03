@@ -122,3 +122,47 @@ test("emitOutboxEvent stamps the s4 envelope; id-only payloads default to s1", a
   assert.equal(row.actor, null);
   assert.equal(row.eventVersion, 1);
 });
+
+test("A2 acceptance (G-114): a 500-row backlog drains to zero across consecutive runs, THROUGH an older wall of consumer-less rows, and the metric lands", async () => {
+  // The starvation shape, deliberately: 150 consumer-less rows OLDER than
+  // every consumable row. Under the pre-ruling drain the first batch was
+  // 100 of these and processed nothing, forever; the ruling's WHERE keeps
+  // them waiting OUTSIDE the window.
+  const t = Date.now() - 10_000_000;
+  const wall = Array.from({ length: 150 }, (_, i) =>
+    row("a2.unshipped", { i }, new Date(t + i), new Date(t + i)));
+  const backlog = Array.from({ length: 500 }, (_, i) =>
+    row("a2.echo", { i }, new Date(t + 1_000_000 + i), new Date(t + 1_000_000 + i)));
+  for (let i = 0; i < wall.length; i += 100) await db.insert(eventOutbox).values(wall.slice(i, i + 100));
+  for (let i = 0; i < backlog.length; i += 100) await db.insert(eventOutbox).values(backlog.slice(i, i + 100));
+
+  const consumers = { "a2.echo": async () => {} };
+  let runs = 0;
+  let last = { processed: -1, rowsWaitingAfterRun: -1 };
+  // Five full batches drain 500; the guard rail stops a broken drain from
+  // looping forever rather than asserting a hand-carried run count.
+  while (runs < 10) {
+    last = await drainEventOutbox(db, { consumers });
+    runs += 1;
+    if (last.processed === 0) break;
+    assert.equal(last.processed, 100, "each full run drains a whole window despite the older wall");
+  }
+  const myIds = [...wall, ...backlog].map((r) => r.id);
+  const remaining = await db.select().from(eventOutbox)
+    .where(inArray(eventOutbox.id, myIds));
+  const consumable = remaining.filter((r) => r.kind === "a2.echo" && r.processedAt === null);
+  const waitingWall = remaining.filter((r) => r.kind === "a2.unshipped" && r.processedAt === null);
+  assert.equal(consumable.length, 0, "the backlog drained to zero across consecutive runs");
+  assert.equal(waitingWall.length, 150, "consumer-less rows keep waiting, none dead-lettered");
+  assert.ok(waitingWall.every((r) => r.attempts === 0), "waiting rows spend no attempts");
+
+  // The metric: emitted by the drain, counts ALL waiting rows after the
+  // run (this suite's other tests may have residue, so >= the wall).
+  const { appSetting } = await import("@wellkept/schema");
+  const [status] = await db.select().from(appSetting).where(eq(appSetting.key, "outbox_drain_status"));
+  assert.ok(status, "the drain emitted its status row");
+  const v = status.value as { lastRunAt?: string; rowsWaitingAfterRun?: number };
+  assert.ok(v.lastRunAt && Number.isFinite(Date.parse(v.lastRunAt)), "lastRunAt is a real instant");
+  assert.ok((v.rowsWaitingAfterRun ?? -1) >= 150, "the wall is visible in the metric");
+  assert.equal(v.rowsWaitingAfterRun, last.rowsWaitingAfterRun, "the stored metric is the run's own count");
+});

@@ -1,0 +1,18 @@
+-- 0060: G-116 ruling (founder, 2 September 2026, "true instant").
+-- One column: time_entry.tz, the operator's IANA timezone, so every typed
+-- interval is a TRUE UTC instant with the wall clock recoverable.
+--
+-- Producer, per column: tz is written by createTimeEntry,
+-- createCompanyTimeEntry, and the visit-close sink from this change
+-- forward; a NEW write without it refuses at the action wall.
+-- NULLABLE deliberately: rows predating the ruling have no zone recorded,
+-- and the ruling's backfill (converting their instants using the two
+-- founder operators' known zones, then tightening) is ITS OWN migration
+-- and session, by the ruling's own text. Until that session, a NULL tz
+-- marks a pre-ruling row whose stored clock time is wall-clock wearing a
+-- UTC label (the G-116 finding), and displays fall back to the honest
+-- UTC label for exactly those rows.
+--
+-- READ before applying: one statement, pure ADD COLUMN, no constraint,
+-- no backfill, nothing the old build cannot ignore.
+ALTER TABLE "time_entry" ADD COLUMN "tz" text;

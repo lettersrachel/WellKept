@@ -208,22 +208,32 @@ export async function drainEventOutbox(
   db: any,
   opts: { batch?: number; maxAttempts?: number; consumers?: Record<string, OutboxConsumer> } = {},
 ) {
-  const { eventOutbox } = await import("@wellkept/schema");
-  const { isNull, and, lt, asc } = await import("drizzle-orm");
+  const { eventOutbox, appSetting } = await import("@wellkept/schema");
+  const { isNull, and, lt, asc, inArray, notInArray, sql } = await import("drizzle-orm");
   const batch = opts.batch ?? 100;
   const maxAttempts = opts.maxAttempts ?? 10;
   const consumers = opts.consumers ?? OUTBOX_CONSUMERS;
 
-  const pending = await db.select().from(eventOutbox)
-    .where(and(isNull(eventOutbox.processedAt), lt(eventOutbox.attempts, maxAttempts)))
+  // A2 ruling / G-114 (2 September 2026): the batch selects ONLY kinds a
+  // consumer is registered for. Kinds without one keep their left-waiting
+  // semantics (no attempts spent, never dead-lettered) but no longer
+  // OCCUPY the window: before this clause, one hundred waiting rows older
+  // than any consumable row starved the drain permanently while it
+  // reported health. The window stays at 100 by the same ruling.
+  const registeredKinds = Object.keys(consumers);
+  const pending = registeredKinds.length === 0 ? [] : await db.select().from(eventOutbox)
+    .where(and(
+      isNull(eventOutbox.processedAt),
+      lt(eventOutbox.attempts, maxAttempts),
+      inArray(eventOutbox.kind, registeredKinds),
+    ))
     .orderBy(asc(eventOutbox.createdAt))
     .limit(batch);
 
   let processed = 0;
-  let unconsumed = 0;
   for (const row of pending) {
     const consumer = consumers[row.kind];
-    if (!consumer) { unconsumed += 1; continue; }
+    if (!consumer) continue; // unreachable under the WHERE; kept fail-safe
     try {
       await consumer(db, row.householdId, row.payload as Record<string, unknown>);
       await db.update(eventOutbox).set({ processedAt: new Date() }).where(eq(eventOutbox.id, row.id));
@@ -233,8 +243,30 @@ export async function drainEventOutbox(
       console.error(`[outbox] ${row.kind} row ${row.id} failed (attempt ${row.attempts + 1}):`, err instanceof Error ? err.message : err);
     }
   }
+
+  // The A2 metric: rows still waiting AFTER this run, all kinds, so a
+  // growing number is visible on the surface the monitoring owner reads
+  // (the G-115 lesson: a signal nobody is assigned to read is not a
+  // signal). The metric proves PROGRESS, not correctness: a consumer
+  // that "processes" wrongly still drains the count.
+  const [waiting] = await db.select({ n: sql<number>`count(*)::int` }).from(eventOutbox)
+    .where(isNull(eventOutbox.processedAt));
+  const rowsWaitingAfterRun = waiting?.n ?? 0;
+  const [unconsumedRow] = registeredKinds.length === 0
+    ? [{ n: rowsWaitingAfterRun }]
+    : await db.select({ n: sql<number>`count(*)::int` }).from(eventOutbox)
+      .where(and(isNull(eventOutbox.processedAt), notInArray(eventOutbox.kind, registeredKinds)));
+  const unconsumed = unconsumedRow?.n ?? 0;
   if (unconsumed > 0) console.error(`[outbox] ${unconsumed} row(s) of kinds with no registered consumer left waiting (not an error; their consumer has not shipped)`);
-  return { pending: pending.length, processed, unconsumed };
+
+  // Emitted every run, plain upsert (never the versioned knob path: a
+  // five-minute heartbeat is state, not a decision). lastRunAt doubles as
+  // the liveness signal a stale worker cannot fake.
+  const status = { lastRunAt: new Date().toISOString(), rowsWaitingAfterRun, processed };
+  await db.insert(appSetting).values({ key: "outbox_drain_status", value: status, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: appSetting.key, set: { value: status, updatedAt: new Date() } });
+
+  return { pending: pending.length, processed, unconsumed, rowsWaitingAfterRun };
 }
 
 /** The pre-generalization name, kept so existing schedulers keep working. */
