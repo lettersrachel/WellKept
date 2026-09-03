@@ -1977,6 +1977,20 @@ conversions on the migration itself. Suite 11/11 uncached. **Owed at
 the next deploy: 0061 applies (61 to 62) and the founder records the
 production row count in G-119 with the query written there.**
 
+**Same day, production serves `bc34f46` (the TWENTY-FIRST clean run):
+0061 applied and G-119 is CLOSED, verified row by row against the
+founder's own pre-migration snapshot.** Migrations three ways at 62,
+build id verified three times, mechanical checks PASS. The counts, per
+the ruling: 6 manual instants moved (+4 hours each, July EDT, every
+duration unchanged), 2 visit_close rows labeled without moving, 13 seed
+rows NULL by design. The snapshot-then-compare was the right hatch for
+the non-recoverable clause and is the pattern for any future one. A
+re-run is a structural no-op. **The one remainder from the ruling set:
+the tz NOT NULL tighten**, a future one-liner gated on the founder
+confirming no pre-0060 offline command can still be queued. **Still
+owed from the A2 ruling: the Railway worker redeploy**, which flips the
+fleet board's drain line and completes "metric visible in production".
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
