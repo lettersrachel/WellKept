@@ -1937,6 +1937,32 @@ the ruling) covers `source = 'manual'` rows only. Suite 11/11 uncached,
 (60 to 61), and the worker redeploy picks up the drain fix and starts
 writing the metric.**
 
+**Same day, production serves `cafd9f8` (the TWENTIETH clean run): 0060
+applied, migrations three ways at 61.** Sha current as the tip, the
+preflight's one-pending report exact (`database 60, disk 61`), build id
+verified three times and confirmed independently, mechanical checks
+1/4a/4b/12/15 PASS. Verified by query after the fact: `time_entry.tz`
+present, text, nullable; 21 rows, all NULL, which is the correct
+baseline and the number the first zoned write is checked against. A
+precision held from the G-116 scope correction, because the broad form
+keeps re-appearing: NULL tz means UNTRUSTWORTHY CLOCK TIME only on
+`source = 'manual'` rows; a visit-close row's instants were always true
+and its NULL means only "zone not recorded". G-119's backfill covers
+the manual rows alone.
+
+**Live from this build:** /my-time, the G-65 picker (correctly invisible
+until a multi-household HOM exists), the zone-capturing time forms, and
+the fleet board's drain line reading its honest quiet state.
+
+**Owed after this run, in order:** the RAILWAY WORKER REDEPLOY (step 2,
+not yet reported done), which is what flips the drain line from "no run
+recorded yet" to a live count within one five-minute cycle: the A2
+ruling's "metric visible in production" acceptance. Then optionally one
+TRUE company time entry, which exercises 0059's null-household branch
+and 0060's zone capture in a single write, verified by query against
+the 21-row baseline: `household_id` NULL, `tz` the operator's IANA
+zone, `started_at` the true instant.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
