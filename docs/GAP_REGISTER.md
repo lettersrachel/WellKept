@@ -7082,3 +7082,54 @@ why it is its own migration and session with its own proofs, per the
 ruling's own text. The row count goes in this entry when it runs.
 `source = 'visit_close'` rows need no conversion (their instants were
 always true); their tz stays null as an honest not-recorded.
+
+### G-119 addendum, 2 September 2026: the backfill is BUILT as 0061, with a sharper discriminator than the entry assumed
+
+**The founder confirmed America/New_York for both operators and said
+proceed.** Migration 0061 (this session's one) converts in two clauses,
+and the WHERE turned out sharper than the entry's plan because the seeds
+answered a question the plan had wrong: **demo scripts write
+`source = 'seed'`**, a third value the column comment undersold, and
+their rows hold deliberate TRUE instants (the G-113 clock work). So the
+discriminator is `source = 'manual' AND tz IS NULL` alone, with no
+fixture join: a blanket manual shift keyed on is_fixture would have been
+built on a false premise (Fernbrook is is_fixture = false locally), and
+the source column is the wall that actually holds.
+
+- **Clause 1, the non-recoverable one:** manual null-tz rows shift
+  (`(t AT TIME ZONE 'UTC') AT TIME ZONE 'America/New_York'`, DST-aware
+  per row date by Postgres tzdata) and gain their zone. The `tz IS NULL`
+  guard makes a post-0060 row untouchable and a re-apply a no-op.
+- **Clause 2, the correctable one:** visit_close null-tz rows gain the
+  zone LABEL only, instants untouched (they were always true). If a
+  label is ever wrong here it mislabels display and is fixable, unlike
+  clause 1.
+- **Seed rows keep tz NULL deliberately**: their author is a script and
+  "zone not recorded" is the true statement.
+- **The tighten (tz NOT NULL) is deliberately deferred**: the sink still
+  grandfathers a legacy queued offline command without tz, and a NOT
+  NULL would turn a pre-0060 device's sync into a stuck queue head. It
+  lands as its own one-line migration once no pre-0060 queued command
+  can exist (every field device has synced on a post-cafd9f8 build),
+  which is a founder-confirmable condition.
+
+**Proven locally with six sentinels, preconditions printed first**
+(migration count 61 before, 62 after): summer 09:00Z became 13:00Z and
+winter 09:00Z became 14:00Z (the ruling's acceptance conversions, on
+the migration itself rather than only the helper); an already-zoned
+manual row did NOT double-shift; a seed row was fully untouched; a
+visit_close row kept its instant and gained its label; a null-household
+manual row shifted; minutes unchanged on every row.
+
+**A zone assumption recorded, not silently made:** any manual or
+visit_close row typed or closed by the TESTER converts and labels under
+America/New_York on the founder's "both operators" answer. If Lauren
+ever logged from another zone, clause 1 rows of hers would be shifted
+by the wrong offset; one founder query of the affected user_ids settles
+whether any exist.
+
+**The production row count goes here after the apply** (the ruling's
+own requirement), from:
+`SELECT source, count(*) FILTER (WHERE tz IS NOT NULL) AS zoned, count(*) AS total FROM time_entry GROUP BY source;`
+Expected shape: every manual and visit_close row zoned, seed rows at
+zero, and the manual count is the number of instants that moved.

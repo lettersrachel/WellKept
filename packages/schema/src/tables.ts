@@ -535,7 +535,7 @@ export const timeEntry = pgTable("time_entry", {
   startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
   endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
   minutes: integer("minutes").notNull(), // derived from the interval at write
-  source: text("source").notNull(), // visit_close (derived from the applied visit) | manual
+  source: text("source").notNull(), // visit_close (derived from the applied visit) | manual | seed (demo scripts; G-119 keys on this)
   visitCommandId: text("visit_command_id"), // the visit.submit this derives from, if any
   note: text("note"), // s2
   // G-116 ruling (2 Sep 2026, "true instant"): the operator's IANA zone,

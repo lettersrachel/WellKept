@@ -1963,6 +1963,20 @@ and 0060's zone capture in a single write, verified by query against
 the 21-row baseline: `household_id` NULL, `tz` the operator's IANA
 zone, `started_at` the true instant.
 
+**Same day, the G-119 backfill is BUILT as 0061 (the session's one
+migration), on a sharper discriminator than planned:** demo seeds write
+`source = 'seed'` with deliberate true instants, so the conversion keys
+on `source = 'manual' AND tz IS NULL` alone and no fixture join exists
+to be wrong. Manual rows shift DST-aware and gain America/New_York;
+visit_close rows gain the label only (instants were always true); seed
+rows stay honestly unzoned; the NOT NULL tighten is deferred with its
+reason (the sink's legacy-queued-command grandfather) as its own future
+one-liner. Proven with six sentinels covering every direction including
+the no-double-shift and the ruling's summer/winter acceptance
+conversions on the migration itself. Suite 11/11 uncached. **Owed at
+the next deploy: 0061 applies (61 to 62) and the founder records the
+production row count in G-119 with the query written there.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
