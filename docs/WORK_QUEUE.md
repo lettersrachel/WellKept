@@ -1991,6 +1991,46 @@ confirming no pre-0060 offline command can still be queued. **Still
 owed from the A2 ruling: the Railway worker redeploy**, which flips the
 fleet board's drain line and completes "metric visible in production".
 
+**Same day, the two queued builds land: B2 (the accessibility first
+stone) and B1 (the RFC-ATTR-01 vocabulary guard).**
+
+**B2:** `a11y.spec.ts` scans the three critical flows (sign-in, the
+visit surface carrying the close flow, the corporate drill-in) under
+the WCAG 2.2 AA tags, REPORTING until 9 September and GATING after,
+per the approved plan's own week-then-gate wording. It runs in the same
+CI job as every other spec. **One pinned dependency was added for it,
+`@axe-core/playwright` at 4.10.2, scoped to the e2e harness and never
+the app: the sanctioned reviewed exception to the no-new-dependencies
+rule, taken because the approved plan names axe as the instrument.**
+The first run earned its keep immediately: sign-in scans CLEAN; /visit
+carries one rule (color-contrast, 15 nodes, the .prov muted text); the
+drill-in carries four (color-contrast x5, a link distinguishable only
+by color, TWO CRITICAL unnamed selects including statusTag, and 32
+touch targets under 24px). Those are the week's opening findings list,
+and the component contract D2 names grows from what the week adds to
+it. Not covered, written in the spec: pages outside the three flows,
+anything a scan cannot see (focus order, keyboard traps, screen-reader
+phrasing), and the frozen client surfaces.
+
+**B1:** a new guard, `field-attributes.test.ts` (the guard count is the
+manifest's to state, per the no-hand-carried-counts rule), beside the
+new vocabulary module `field-attributes.ts` (RFC-ATTR-01 step 1, no
+migration). The module defines knowing state (the existing provenance
+enum PROMOTED, parity asserted so the two cannot drift), the two-value
+source/derived class, and the confidence discipline (integer percent,
+zero refused, NULL the honest unknown, meaningless under
+verified_by_touch and client_written); materiality and consequence
+class are DELIBERATELY UNEXPORTED as founder taxonomy. The guard
+computes every attribute-shaped column from the schema (fifteen
+COLUMNS, the unit stated because one mechanism carries several) and
+demands a written classification naming its RFC section or stating
+"different question", which is where the eleventh ad-hoc mechanism
+stops; the reverse direction fails on a stale classification. Proven
+red both ways by name (a planted `vibe_confidence` refused as
+UNCLASSIFIED; a ghost classification refused as no-longer-detected)
+and green restored; manifest and CLAUDE.md table extended in the same
+change, the guard count now derived from the manifest as always.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
