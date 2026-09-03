@@ -7133,3 +7133,30 @@ own requirement), from:
 `SELECT source, count(*) FILTER (WHERE tz IS NOT NULL) AS zoned, count(*) AS total FROM time_entry GROUP BY source;`
 Expected shape: every manual and visit_close row zoned, seed rows at
 zero, and the manual count is the number of instants that moved.
+
+### G-119 second addendum, 2 September 2026: the pre-apply production baseline, and two questions already answered
+
+**The founder ran the verification query against production BEFORE 0061
+applies** (production serves cafd9f8, one merge behind), which turns the
+post-apply read into a comparison. The baseline: `manual` 6, `seed` 13,
+`visit_close` 2, all 21 unzoned. So the expected post-apply result is
+exact: **clause 1 moves the instants of exactly 6 rows** (manual 6/6
+zoned), **clause 2 labels exactly 2** (visit_close 2/2 zoned), and
+**seed stays 0/13 by decision**, so "most rows unzoned" remains true
+afterward and means only that the demo majority never had an operator.
+
+Two questions her session raised are answered in 0061 and the 0060
+producer as merged, recorded here so they are not re-opened:
+
+- **Seed rows are DECIDED, not deferred to the backfill session**: the
+  backfill session was this one, and it ruled them NULL deliberately
+  ("zone not recorded" is the true statement for a script's rows; their
+  instants are already true). Regenerating or zoning them would claim an
+  operator that never existed.
+- **The visit-close zone is captured AT CAPTURE, not at apply**:
+  `captureHours` attaches `Intl.DateTimeFormat().resolvedOptions().timeZone`
+  in the operator's browser at the moment the hours are saved, and the
+  zone rides the queued command's payload to the sink. A command
+  captured offline in one zone and applied hours later by a server in
+  another records the operator's zone, which is the property the
+  session asked to confirm.
