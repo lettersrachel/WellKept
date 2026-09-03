@@ -7160,3 +7160,25 @@ producer as merged, recorded here so they are not re-opened:
   captured offline in one zone and applied hours later by a server in
   another records the operator's zone, which is the property the
   session asked to confirm.
+
+### G-119 CLOSED, 2 September 2026: the backfill applied and verified row by row against the pre-migration snapshot
+
+**The production row count, per the ruling's own requirement: clause 1
+moved the instants of exactly 6 manual rows; clause 2 labeled exactly 2
+visit_close rows without moving them; the 13 seed rows stay NULL by
+design.** The founder took a snapshot of the six rows BEFORE the apply
+(the only way back from a non-recoverable clause, and the right hatch)
+and verified each against it afterward: both ends of every row moved
+exactly +4 hours (all six are July dates, so EDT), every duration
+survived unchanged, and every row carries America/New_York. The typed
+07:20 of last July is finally stored as the 11:20Z it always was.
+Applied in the twenty-first clean run (`bc34f46`, migrations three ways
+at 62). A re-run is now a no-op by the guards' own construction: no row
+matches `source = 'manual' AND tz IS NULL` any more.
+
+**The one named remainder, still open and gated on a founder-confirmable
+condition:** the tz NOT NULL tighten, its own one-line reviewed
+migration, releasable once no pre-0060 offline command can still be
+queued on any field device (every device has synced on a post-cafd9f8
+build). Until then the visit-close sink's legacy grandfather stands and
+the constraint would turn that sync into a stuck queue head.
