@@ -16,6 +16,7 @@ import { vaultHasValue } from "@/lib/vault";
 import { RevealButton } from "../RevealButton";
 import { RefusalBanner } from "@/components/RefusalBanner";
 import { RecordedBanner } from "@/components/RecordedBanner";
+import { TimezoneField } from "@/components/TimezoneField";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default: this page makes many sequential DB
@@ -491,6 +492,7 @@ export default async function Oversight({ params, searchParams }: {
           </>
         )}
         <form action={createTimeEntry} className="row" style={{ marginTop: 10, gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <TimezoneField />
           <input type="hidden" name="householdId" value={hh.id} />
           <input type="hidden" name="returnTo" value={`/oversight/${hh.id}`} />
           <select key={`tcat-${timeRows.length}`} name="category" defaultValue="intake" className="inline" aria-label="Time category">

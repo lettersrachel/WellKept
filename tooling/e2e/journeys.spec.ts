@@ -1129,6 +1129,7 @@ test("company time (G-111's producer): the HOM logs their own with NO household,
   await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
   await page.goto("/visit");
   await expect(page.getByText("Your time, not tied to a household")).toBeVisible({ timeout: 30_000 });
+  await page.waitForFunction(() => { const el = (globalThis as any).document.querySelector('input[name="tz"]'); return el && el.value; });
   await page.locator("#cte-start").fill("2026-08-30T09:00");
   await page.locator("#cte-end").fill("2026-08-30T09:45");
   await page.getByRole("button", { name: "Log company time" }).click();
@@ -1152,6 +1153,7 @@ test("company time (G-111's producer): the HOM logs their own with NO household,
   // The first version of this test injected before hydration, the value
   // reverted to the default, and the submission RECORDED team_meeting
   // instead of refusing (the G-72 class: a mutation that never landed).
+  await page.waitForFunction(() => { const el = (globalThis as any).document.querySelector('input[name="tz"]'); return el && el.value; });
   await page.locator("#cte-start").fill("2026-08-30T10:00");
   await page.locator("#cte-end").fill("2026-08-30T10:30");
   await page.evaluate(() => {
@@ -1177,6 +1179,7 @@ test("company time (G-111's producer): the HOM logs their own with NO household,
   await page.goto("/oversight");
   await expect(page.getByText("Company time; trailing 30 days")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/team meeting 0\.8h/)).toBeVisible();
+  await page.waitForFunction(() => { const el = (globalThis as any).document.querySelector('input[name="tz"]'); return el && el.value; });
   await page.locator("#fct-cat").selectOption("training");
   await page.locator("#fct-start").fill("2026-08-30T13:00");
   await page.locator("#fct-end").fill("2026-08-30T14:00");
@@ -1239,4 +1242,54 @@ test("self-access: a staff member reads their whole time record, another person'
   await context.addCookies([{ name: "authjs.session-token", value: lisaToken, url: BASE }]);
   await page.goto("/my-time");
   await expect(page.getByRole("heading", { name: "Your time record" })).not.toBeVisible();
+});
+
+/**
+ * G-65 ruling (2 September 2026): with more than one field assignment,
+ * /visit demands an explicit selection and never infers one. Both
+ * directions in one journey: one assignment goes straight through; a
+ * second forces the picker with NO capture surface reachable; a forged
+ * selection for a household the HOM does not hold is not honored; a
+ * legitimate selection unlocks the page for exactly that household.
+ */
+test("G-65: a second field assignment forces the picker, a forged selection is ignored, and one assignment goes straight through", async ({ context, page }) => {
+  await context.addCookies([{ name: "authjs.session-token", value: synHomToken, url: BASE }]);
+
+  // One assignment: straight through, no picker (the accepting direction).
+  await page.goto("/visit");
+  await expect(page.getByText("Your time, not tied to a household")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: "Which household is this visit for?" })).not.toBeVisible();
+
+  // The second assignment arrives.
+  const hh2 = randomUUID();
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [hh2, "G-65 second household"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'house_manager',true)",
+    [randomUUID(), synHomId, hh2]);
+  try {
+    // The picker is the WHOLE page: no capture, no close.
+    await page.goto("/visit");
+    await expect(page.getByRole("heading", { name: "Which household is this visit for?" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Your time, not tied to a household")).not.toBeVisible();
+    await expect(page.getByText("Close the visit")).not.toBeVisible();
+
+    // A forged selection (a household this HOM does not hold) is ignored:
+    // still the picker, still nothing to capture onto.
+    await page.goto(`/visit?hh=${orphanId}`);
+    await expect(page.getByRole("heading", { name: "Which household is this visit for?" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Close the visit")).not.toBeVisible();
+
+    // A legitimate selection unlocks exactly that household. The PAGE
+    // BODY names it; the layout banner cannot read searchParams (a Next
+    // constraint) and keeps the first assignment's name, recorded as
+    // cosmetic residue in the G-65 close.
+    await page.getByRole("link", { name: "G-65 second household" }).click();
+    await expect(page.getByText("Close the visit")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("main").getByText("G-65 second household").first()).toBeVisible();
+  } finally {
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = $1", [hh2]);
+    await pool.query("DELETE FROM attention_record WHERE household_id = $1", [hh2]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id = $1", [hh2]);
+    await pool.query("DELETE FROM household WHERE id = $1", [hh2]); // assignment cascades
+  }
 });

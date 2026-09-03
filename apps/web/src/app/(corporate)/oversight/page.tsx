@@ -4,6 +4,7 @@ import { eq, and, isNull, gte } from "drizzle-orm";
 import { playbookField, visitCommand, strangerTest, promptPackItem, clientEdit, incidentReport, timeEntry } from "@wellkept/schema";
 import { CORPORATE_ROLES } from "@/lib/session";
 import { createCompanyTimeEntry } from "@/lib/actions";
+import { TimezoneField } from "@/components/TimezoneField";
 import { db } from "@/lib/db";
 import { getAssignedHouseholds } from "@/lib/data";
 import { RefusalBanner } from "@/components/RefusalBanner";
@@ -43,6 +44,14 @@ export default async function FleetBoard({ searchParams }: {
   const [reconKnob] = await db.select({ value: appSetting.value }).from(appSetting)
     .where(eq(appSetting.key, "visit_reconciliation"));
   const gapDaysKnob = (reconKnob?.value as { gapDays?: number | null } | undefined)?.gapDays ?? null;
+
+  // A2 ruling (G-114/G-117): the drain's own heartbeat, read from the
+  // status row it upserts every run. lastRunAt going stale is the G-115
+  // shape made visible; the count proves PROGRESS, not correctness.
+  const [drainStatus] = await db.select({ value: appSetting.value }).from(appSetting)
+    .where(eq(appSetting.key, "outbox_drain_status"));
+  const drain = drainStatus?.value as { lastRunAt?: string; rowsWaitingAfterRun?: number } | undefined;
+  const drainAgeMin = drain?.lastRunAt ? Math.floor((Date.now() - Date.parse(drain.lastRunAt)) / 60_000) : null;
 
   // G-111: the null-household paid-time rows, aggregated by CATEGORY for
   // the company-time read-back. Never grouped or filtered by person here;
@@ -185,6 +194,20 @@ export default async function FleetBoard({ searchParams }: {
           Rows are the households you hold an explicit assignment for; there is no
           fleet-wide wildcard (REQ-001).
         </div>
+        <div className="prov" style={{ marginTop: 6 }}>
+          {drain?.lastRunAt ? (
+            <>
+              Outbox drain: {drain.rowsWaitingAfterRun ?? "?"} row(s) waiting after the
+              last run, {drainAgeMin} min ago.
+              {drainAgeMin !== null && drainAgeMin > 15 && (
+                <> <span className="tag CRITICAL">DRAIN STALE; the worker may be down or old</span></>
+              )}
+              {" "}Waiting counts progress only; kinds with no consumer yet wait by design.
+            </>
+          ) : (
+            "Outbox drain: no run recorded yet. The worker writes this line on its first drain."
+          )}
+        </div>
       </div>
 
       {/* G-111's producer, corporate half: non-household paid time (0059's
@@ -209,6 +232,7 @@ export default async function FleetBoard({ searchParams }: {
         </div>
         <form action={createCompanyTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end", marginTop: 8 }}>
           <input type="hidden" name="returnTo" value="/oversight" />
+          <TimezoneField />
           <span>
             <label htmlFor="fct-cat">Time</label>
             <select key={`fct-${recorded ?? "0"}`} id="fct-cat" name="category" defaultValue="team_meeting" className="inline">

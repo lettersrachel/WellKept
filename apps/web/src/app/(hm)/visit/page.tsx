@@ -17,6 +17,7 @@ import { PushRegister } from "./PushRegister";
 import { ProvisionList } from "../../ProvisionList";
 import { RefusalBanner } from "@/components/RefusalBanner";
 import { RecordedBanner } from "@/components/RecordedBanner";
+import { TimezoneField } from "@/components/TimezoneField";
 
 export const dynamic = "force-dynamic";
 
@@ -63,10 +64,39 @@ export default async function VisitPage({ searchParams }: {
   // G-29 completion: time/cost verdicts land HERE when submitted here -
   // recorded=<what> on success (with a nonce r that remounts the selects,
   // G-39), refused=<reason> on refusal.
-  searchParams: Promise<{ recorded?: string; refused?: string; r?: string }>;
+  searchParams: Promise<{ recorded?: string; refused?: string; r?: string; hh?: string }>;
 }) {
-  const { recorded, refused, r } = await searchParams;
-  const { hh, principal, seeded } = await getFieldHouseholdAndPrincipal();
+  const { recorded, refused, r, hh: selectedHh } = await searchParams;
+  const resolved = await getFieldHouseholdAndPrincipal(selectedHh);
+  // G-65 ruling: with more than one field assignment, selection is
+  // REQUIRED and never inferred. The picker is the WHOLE page in that
+  // state: no capture, no close, nothing to type onto the wrong
+  // household. Most-due-first ordering is the computable proxy for "next
+  // scheduled visit" (no schedule exists; ADR-004), reported as such.
+  if ("choices" in resolved && resolved.choices) {
+    return (
+      <div className="card">
+        {/* A verdict that redirected to bare /visit still lands legibly
+            here rather than vanishing behind the picker (G-29/G-68). */}
+        <RefusalBanner reason={refused} />
+        <RecordedBanner what={recorded} />
+        <h2>Which household is this visit for?</h2>
+        <div className="note">
+          You hold more than one household, so this page will not guess. Pick the
+          one you are working; the most due is listed first.
+        </div>
+        {resolved.choices.map(({ hh: c, gapDays }) => (
+          <div key={c.id} className="field">
+            <a href={`/visit?hh=${c.id}`} style={{ color: "var(--green)", fontWeight: "bold" }}>{c.name}</a>
+            <span className="prov" style={{ marginLeft: 8 }}>
+              {gapDays === 0 ? "visited today" : `${gapDays} day(s) since the last applied visit`}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  const { hh, principal, seeded } = resolved;
   // G-95: `seeded` distinguishes "the database has no households at all"
   // (a development state, worth saying) from "you are signed in with no
   // assignment" (which belongs at sign-in). This used to be told apart by
@@ -321,7 +351,7 @@ export default async function VisitPage({ searchParams }: {
         </p>
         <form action={tellWellKept}>
           <input type="hidden" name="householdId" value={hh.id} />
-          <input type="hidden" name="returnTo" value="/visit" />
+          <input type="hidden" name="returnTo" value={`/visit?hh=${hh.id}`} />
           <input name="content" aria-label="Tell Well Kept" placeholder="the shelf in the pantry is pulling away from the wall" />
           <p><button className="act">Tell Well Kept</button></p>
         </form>
@@ -360,7 +390,7 @@ export default async function VisitPage({ searchParams }: {
         ))}
         <form action={createPausedDecision}>
           <input type="hidden" name="householdId" value={hh.id} />
-          <input type="hidden" name="returnTo" value="/visit" />
+          <input type="hidden" name="returnTo" value={`/visit?hh=${hh.id}`} />
           <input name="decision" aria-label="What is being decided" placeholder="what is being decided (replace or repair the softener)" />
           <input name="research" aria-label="What you learned" placeholder="what you learned before pausing" />
           <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
@@ -550,7 +580,8 @@ export default async function VisitPage({ searchParams }: {
       </div>
       <form action={createTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
         <input type="hidden" name="householdId" value={hh.id} />
-        <input type="hidden" name="returnTo" value="/visit" />
+        <TimezoneField />
+        <input type="hidden" name="returnTo" value={`/visit?hh=${hh.id}`} />
         <span>
           <label htmlFor="te-cat">Time</label>
           <select key={`te-${r ?? "0"}`} id="te-cat" name="category" defaultValue="travel" className="inline">
@@ -569,7 +600,7 @@ export default async function VisitPage({ searchParams }: {
       </form>
       <form action={createCostEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end", marginTop: 6 }}>
         <input type="hidden" name="householdId" value={hh.id} />
-        <input type="hidden" name="returnTo" value="/visit" />
+        <input type="hidden" name="returnTo" value={`/visit?hh=${hh.id}`} />
         <span>
           <label htmlFor="ce-cat">Cost</label>
           <select key={`ce-${r ?? "0"}`} id="ce-cat" name="category" defaultValue="supplies" className="inline">
@@ -606,7 +637,8 @@ export default async function VisitPage({ searchParams }: {
         record with no household attached. <a href="/my-time">See your full time record</a>.
       </div>
       <form action={createCompanyTimeEntry} className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <input type="hidden" name="returnTo" value="/visit" />
+        <input type="hidden" name="returnTo" value={`/visit?hh=${hh.id}`} />
+        <TimezoneField />
         <span>
           <label htmlFor="cte-cat">Time</label>
           <select key={`cte-${r ?? "0"}`} id="cte-cat" name="category" defaultValue="team_meeting" className="inline">

@@ -42,7 +42,15 @@ journey proving own-rows, the not-yours wall, and the client wall), so
 **everything behind G-111 is built**. The friction and access-custody
 answers remain recommendations with no clock.
 
-### A2. The outbox drain's total order, now joined by G-114's starvation
+### A2. RESOLVED 2 September 2026: the ruling landed and G-114 is closed
+
+The drain fix merged as ruled (registered kinds only in the window, size
+100 unchanged), the rows_waiting_after_run metric is on the fleet board
+with its staleness tag, and the total-order question was settled by the
+same ruling: merge as written. The paragraphs below stand as the record
+of what was open.
+
+#### The entry as it stood
 
 Item 2 of the 28 August list, still open, now sharpened: the TEST half is
 fixed (distinct timestamps, so it asserts only what the database promises),

@@ -37,6 +37,7 @@ export default async function MyTimePage() {
       minutes: timeEntry.minutes,
       source: timeEntry.source,
       note: timeEntry.note,
+      tz: timeEntry.tz,
       householdName: household.name,
     })
     .from(timeEntry)
@@ -49,10 +50,14 @@ export default async function MyTimePage() {
   const totals = Array.from(byCat, ([category, minutes]) => ({ category, minutes }))
     .sort((a, b) => b.minutes - a.minutes);
 
-  // Timestamps render pinned UTC and say so: a wage interval read in a
-  // different zone than it was typed must not shift its day (the G-61
-  // class, stated rather than left to the browser).
-  const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
+  // G-116 ("true instant"): a row that knows its zone renders the
+  // operator's own wall clock WITH the zone named, which is what the
+  // wage record must show. A pre-ruling row (tz null) falls back to the
+  // honest UTC label, since its wall clock is not recoverable until the
+  // backfill session converts it.
+  const { formatInZone } = await import("@/lib/typed-time");
+  const fmt = (d: Date, tz: string | null) =>
+    tz ? formatInZone(d, tz) : `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
   return (
     <div className="card">
@@ -60,8 +65,9 @@ export default async function MyTimePage() {
       <div className="note">
         Every paid-time entry recorded under your identity, oldest kept four years
         (WK-SOP-017). Hours only, never pay: QuickBooks remains the book of record
-        for wages (ADR-004). Times are shown in UTC as stored. If an entry looks
-        wrong, tell your manager; corrections are new entries, not edits.
+        for wages (ADR-004). Times show in the timezone you entered them, named per
+        row; older rows without a recorded zone show in UTC and say so. If an entry
+        looks wrong, tell your manager; corrections are new entries, not edits.
       </div>
       {rows.length === 0 ? (
         <div className="prov" style={{ marginTop: 8 }}>No time entries on your record yet.</div>
@@ -75,8 +81,9 @@ export default async function MyTimePage() {
           <table className="panel" style={{ marginTop: 10 }}>
             <thead>
               <tr>
-                <th>From (UTC)</th>
-                <th>To (UTC)</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Zone</th>
                 <th>Category</th>
                 <th>Minutes</th>
                 <th>Where</th>
@@ -87,8 +94,9 @@ export default async function MyTimePage() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td>{fmt(r.startedAt)}</td>
-                  <td>{fmt(r.endedAt)}</td>
+                  <td>{fmt(r.startedAt, r.tz)}</td>
+                  <td>{fmt(r.endedAt, r.tz)}</td>
+                  <td>{r.tz ?? "UTC (zone not recorded)"}</td>
                   <td>{r.category.replace(/_/g, " ")}</td>
                   <td>{r.minutes}</td>
                   <td>{r.householdName ?? "not tied to a household"}</td>

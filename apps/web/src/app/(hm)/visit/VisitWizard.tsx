@@ -404,7 +404,7 @@ export function VisitWizard({ householdId }: { householdId: string }) {
             <div className="note">Enter your start and end times. These are the hours of record for this visit.</div>
             <label>Start <input type="datetime-local" value={hoursStart} onChange={(e) => setHoursStart(e.target.value)} /></label>
             <label>End <input type="datetime-local" value={hoursEnd} onChange={(e) => setHoursEnd(e.target.value)} /></label>
-            <p><button className="act subtle" type="button" onClick={() => run((f) => f.captureHours({ startedAt: hoursStart, endedAt: hoursEnd }))}>Save hours</button></p>
+            <p><button className="act subtle" type="button" onClick={() => run((f) => f.captureHours({ startedAt: hoursStart, endedAt: hoursEnd, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }))}>Save hours</button></p>
             {state.hours && <div className="prov">Saved: {state.hours.startedAt} – {state.hours.endedAt}</div>}
           </div>
 

@@ -19,7 +19,7 @@ const nonBlank = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
 export interface Dot { id: string; verbatim: string; heardAt: string }
-export interface Hours { startedAt: string; endedAt: string }
+export interface Hours { startedAt: string; endedAt: string; tz?: string }
 export interface ZoneDrift { answer: string; photoId: string | null }
 /** AC: a deliberate deferral captured IN the close flow, so it belongs to
  * this visit by construction (STD-016: the vehicle for reporting what was
@@ -70,7 +70,7 @@ export type MissingStep =
 export interface CloseFlow {
   readonly state: CloseFlowState;
   confirmTask(taskId: string): void;
-  captureHours(hours: { startedAt: string; endedAt: string }): void;
+  captureHours(hours: { startedAt: string; endedAt: string; tz?: string }): void;
   addPhoto(photoId: string): void;
   setChangesNoticed(value: string): void;
   addDot(verbatim: string): void;
@@ -176,13 +176,17 @@ export function createCloseFlow({
       if (!state.requiredTaskIds.includes(taskId)) throw new CloseFlowError("unknown task");
       if (!state.completedTaskIds.includes(taskId)) state.completedTaskIds.push(taskId);
     },
-    captureHours({ startedAt: started, endedAt }) {
+    captureHours({ startedAt: started, endedAt, tz }) {
+      // The parse runs in the OPERATOR'S browser, so a zone-less typed
+      // string resolves in their own zone and toISOString stores the TRUE
+      // instant; this path was never the G-116 skew. tz rides along from
+      // the ruling forward so the wage record can show the wall clock.
       const start = new Date(started);
       const end = new Date(endedAt);
       if (Number.isNaN(+start) || Number.isNaN(+end) || end <= start) {
         throw new CloseFlowError("hours must have a valid positive interval");
       }
-      state.hours = { startedAt: start.toISOString(), endedAt: end.toISOString() };
+      state.hours = { startedAt: start.toISOString(), endedAt: end.toISOString(), ...(tz ? { tz } : {}) };
     },
     addPhoto(photoId) {
       if (!nonBlank(photoId)) throw new CloseFlowError("photo id is required");

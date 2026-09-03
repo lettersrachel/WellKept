@@ -66,16 +66,57 @@ export async function getHouseholdAndPrincipal() {
   return { hh, principal: await getPrincipal(hh.id), seeded: true } as const;
 }
 
-/** The HM field surface (/visit) resolves the user's first FIELD-role
- * household (house_manager / backup_hm), not just the first assigned one — so
- * a user who is corporate at one home and an HM at another still lands on the
- * field tool for the home they actually manage. Falls back to the first
- * assigned household (the page then redirects a non-field role away). */
-export async function getFieldHouseholdAndPrincipal() {
+/** The HM field surface (/visit) resolves the user's FIELD-role household
+ * (house_manager / backup_hm), not just the first assigned one, so a user
+ * who is corporate at one home and an HM at another still lands on the field
+ * tool for the home they actually manage. Falls back to the first assigned
+ * household (the page then redirects a non-field role away).
+ *
+ * G-65 ruling (2 September 2026): with MORE THAN ONE field assignment,
+ * selection is REQUIRED and never inferred. The caller passes the chosen
+ * household id (validated here against the user's own field assignments,
+ * never trusted raw); without a valid choice this returns `choices` and no
+ * household, and the page renders the picker instead of any capture
+ * surface. One assignment goes straight through, unchanged.
+ *
+ * Ordering note, recorded where the substitution happens: the ruling asks
+ * for "the household with the next scheduled visit" first, and the system
+ * HOLDS NO SCHEDULE (ADR-004: scheduling is Jobber). The computable proxy
+ * is most-due-first: longest gap since the last APPLIED visit, the same
+ * weekly-rhythm assumption the reconciliation floor already rests on. The
+ * substitution is reported in the register, not silently claimed. */
+export async function getFieldHouseholdAndPrincipal(selectedId?: string) {
   const { getPrincipal } = await import("./session");
   const assigned = await getAssignedHouseholds();
-  const field = assigned.find((a) => a.role === "house_manager" || a.role === "backup_hm");
-  const hh = field?.hh ?? assigned[0]?.hh ?? null;
+  const fieldAssignments = assigned.filter((a) => a.role === "house_manager" || a.role === "backup_hm");
+
+  if (fieldAssignments.length > 1) {
+    const chosen = selectedId ? fieldAssignments.find((a) => a.hh.id === selectedId) : undefined;
+    if (!chosen) {
+      const { visitCommand } = await import("@wellkept/schema");
+      const { and: andOp, inArray: inArrayOp } = await import("drizzle-orm");
+      const ids = fieldAssignments.map((a) => a.hh.id);
+      const applied = await db
+        .select({ householdId: visitCommand.householdId, receivedAt: visitCommand.receivedAt })
+        .from(visitCommand)
+        .where(andOp(inArrayOp(visitCommand.householdId, ids), eq(visitCommand.type, "visit.submit"), eq(visitCommand.status, "applied")));
+      const lastByHh = new Map<string, number>();
+      for (const c of applied) {
+        const prev = lastByHh.get(c.householdId) ?? 0;
+        if (+c.receivedAt > prev) lastByHh.set(c.householdId, +c.receivedAt);
+      }
+      const choices = fieldAssignments
+        .map((a) => ({
+          hh: a.hh,
+          gapDays: Math.floor((Date.now() - (lastByHh.get(a.hh.id) ?? +a.hh.createdAt)) / 86_400_000),
+        }))
+        .sort((x, y) => y.gapDays - x.gapDays);
+      return { hh: null, principal: null, seeded: true, choices } as const;
+    }
+    return { hh: chosen.hh, principal: await getPrincipal(chosen.hh.id), seeded: true } as const;
+  }
+
+  const hh = fieldAssignments[0]?.hh ?? assigned[0]?.hh ?? null;
   if (!hh) {
     const seeded = await anyHouseholdExists();
     return { hh: null, principal: null, seeded } as const;

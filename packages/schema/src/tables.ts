@@ -538,6 +538,14 @@ export const timeEntry = pgTable("time_entry", {
   source: text("source").notNull(), // visit_close (derived from the applied visit) | manual
   visitCommandId: text("visit_command_id"), // the visit.submit this derives from, if any
   note: text("note"), // s2
+  // G-116 ruling (2 Sep 2026, "true instant"): the operator's IANA zone,
+  // captured with every typed interval so started/ended are TRUE UTC
+  // instants and display can be the operator's own wall clock. NULLABLE
+  // only for rows predating the ruling; the backfill migration (its own
+  // session, per the ruling) converts those and tightens this. Written by
+  // both time forms and the visit-close sink; a zone-less NEW write
+  // refuses at the action wall.
+  tz: text("tz"),
 }, (t) => [
   index("time_entry_household_started_idx").on(t.householdId, t.startedAt),
   // The two ruled row shapes, whole or absent (the 0050/0051 discipline):
