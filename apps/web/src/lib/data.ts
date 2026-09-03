@@ -67,7 +67,7 @@ export async function getHouseholdAndPrincipal() {
 }
 
 /** The HM field surface (/visit) resolves the user's FIELD-role household
- * (house_manager / backup_hm), not just the first assigned one — so a user
+ * (house_manager / backup_hm), not just the first assigned one, so a user
  * who is corporate at one home and an HM at another still lands on the field
  * tool for the home they actually manage. Falls back to the first assigned
  * household (the page then redirects a non-field role away).
