@@ -58,6 +58,9 @@ test("the guard files exist where the manifest says they are", () => {
     // known-bad signature, so none of them sees a column that did not
     // exist when it was written. This one reads the key set.
     "packages/schema/src/client-payload-shape.test.ts",
+    // RFC-ATTR-01 step 1: every attribute-shaped column classified in
+    // writing; the eleventh ad-hoc provenance mechanism stops here.
+    "packages/schema/src/field-attributes.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -122,6 +125,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "decline-class-exclusion.test.ts", "client-duration.test.ts",
     "telemetry-discipline.test.ts", "legal-census.test.ts",
     "success-visibility.test.ts", "client-payload-shape.test.ts",
+    "field-attributes.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }

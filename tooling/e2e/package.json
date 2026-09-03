@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.55.1",
     "pg": "8.22.0"
   },
