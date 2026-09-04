@@ -1799,3 +1799,58 @@ export const mailOutcome = pgTable("mail_outcome", {
   index("mail_outcome_household_idx").on(t.householdId, t.createdAt),
   index("mail_outcome_kind_idx").on(t.kind, t.createdAt),
 ]);
+
+// Q-6-1: the DECISION RIGHTS block (Four-Stage Application Spec section
+// 1), one row per household per right. This is the routing TABLE Q-6-2
+// reads: below-threshold auto-executes, above-threshold lands as
+// `decide`, never-decide blocks, and a null threshold (an ABSENT row)
+// sends everything to `decide` and executes nothing. Nothing routes on
+// it yet; Q-6-2 wires that and proves the four directions.
+//
+// Materiality is the SIGNED three-value vocabulary (RFC-ATTR-01
+// Amendment 1 section A1.1) and is NULLABLE, deliberately. Two of the
+// seventeen seed rows carry a materiality the signed enum cannot store
+// (`all`, and one blank); the enum is not widened to fit them and the
+// loader names both with a written reason. NULL here means "the source
+// says something materiality is not", never "unclassified by accident".
+export const materialityEnum = pgEnum("materiality", ["safety_access", "money_legal", "convenience"]);
+
+// Recommended is what a seeded row IS: the company's proposal from the
+// tier defaults, not something the household agreed to. Confirmed
+// requires a person and a time, together.
+export const decisionRightStatusEnum = pgEnum("decision_right_status", ["recommended", "confirmed"]);
+
+export const decisionRight = pgTable("decision_right", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  rightKey: text("right_key").notNull(), // the source's own key, verbatim; never renamed
+  // The value, WHOLE OR ABSENT in exactly one shape. The seed rows carry
+  // two kinds and one column cannot hold both honestly: a spend ceiling
+  // is money (integer cents, the standing rule) and
+  // `approved_substitute_only` is a word. A single text column would
+  // store "15000" beside a phrase and lose the money rule.
+  valueCents: integer("value_cents"),
+  valueText: text("value_text"),
+  materiality: materialityEnum("materiality"), // signed enum; NULL where the source says a non-materiality
+  status: decisionRightStatusEnum("status").notNull(), // no default: nothing becomes recommended silently
+  // Q-5's rule: a column recording WHO SAID SOMETHING is nullable with
+  // no default, so a missing producer and a real answer look different.
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  confirmedBy: text("confirmed_by").references(() => authUser.id),
+  authority: text("authority").notNull(), // where this value came from, in words (the db:capacity posture)
+  note: text("note"), // the source's own note, s2
+}, (t) => [
+  // One row per right per household. A re-run of the loader upserts in
+  // place rather than minting a second opinion.
+  uniqueIndex("decision_right_household_key_unique").on(t.householdId, t.rightKey),
+  index("decision_right_household_idx").on(t.householdId, t.status),
+  check("decision_right_value_is_one_shape",
+    sql`(${t.valueCents} IS NOT NULL AND ${t.valueText} IS NULL) OR (${t.valueCents} IS NULL AND ${t.valueText} IS NOT NULL)`),
+  // ZERO IS MEANINGFUL HERE, unlike estimate_snapshot: a ceiling of zero
+  // says spend nothing without asking, which is a real instruction. The
+  // absent ROW is the unknown, so only a negative ceiling is refused.
+  check("decision_right_ceiling_is_not_negative",
+    sql`${t.valueCents} IS NULL OR ${t.valueCents} >= 0`),
+  check("decision_right_confirmation_is_whole",
+    sql`(${t.status} = 'confirmed' AND ${t.confirmedAt} IS NOT NULL AND ${t.confirmedBy} IS NOT NULL) OR (${t.status} = 'recommended' AND ${t.confirmedAt} IS NULL AND ${t.confirmedBy} IS NULL)`),
+]);

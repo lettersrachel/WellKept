@@ -70,6 +70,11 @@ const DISCLOSED: Record<string, string> = {
 
 // The escape hatch, per the standing pattern: a written reason, reviewed.
 const ALLOWLIST: Record<string, string> = {
+  decision_right:
+    "Q-6-1, 2026-09-04: confirmed_by attributes the person who confirmed a Decision Right, " +
+    "and the surface shipped after the disclosure was approved. The attribution is of a " +
+    "CONFIRMATION rather than of work, which may want its own line rather than the " +
+    "written-work item; a founder line candidate for the next revision either way",
   condition_flag:
     "drift reported 2026-07-28 (W-5): the internal-observations item covers the category " +
     "by plain reading but the examples do not name flags; founder adds 'condition flags " +

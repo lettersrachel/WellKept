@@ -243,6 +243,16 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("proposedClass", "confidence") || has("proposed_class", "confidence_pct")) {
       throw new Error(`SEVERE: a shadow_log row reached a client payload at ${path}`);
     }
+    // Q-6-1: a Decision Rights row. The member-facing surface is
+    // FREEZE-GATED (WK-DEV-007, Part C section 2.2), so NO client
+    // projection exists at all and any recognizable row is the
+    // violation, exactly the paused_decision posture. When the freeze
+    // lifts, the member view ships as a projection and this clause
+    // narrows to the unprojected shape rather than being removed.
+    if (has("rightKey", "authority") || has("right_key", "authority")
+      || has("rightKey", "status") || has("right_key", "status")) {
+      throw new Error(`SEVERE: a decision_right row reached a client payload at ${path}`);
+    }
     // Q-5, the Four-Stage spec's guardrail section 5: "Stage tags are
     // internal; no member surface ever displays the schema." This clause
     // is deliberately NOT a key pair like every clause above it. A pair

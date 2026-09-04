@@ -375,3 +375,24 @@ test("Q-5: an internal pipeline stage tag is refused on its own, at any depth", 
   // vocabulary, so it is not what this clause is about.
   assert.ok(assertNoAnticipationRows([{ stage: "execution" }]));
 });
+
+test("Q-6-1: a decision_right row is refused in a client payload while the member surface is freeze-gated", async () => {
+  const { assertNoAnticipationRows } = await import("./standards");
+
+  assert.throws(
+    () => assertNoAnticipationRows([{ rightKey: "spend_without_asking_per_item_usd", authority: "the frozen CSV" }]),
+    /SEVERE.*decision_right/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows([{ right_key: "open_mail", status: "recommended" }]),
+    /SEVERE.*decision_right/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { rows: [{ rightKey: "travel_prep", status: "confirmed" }] } }),
+    /SEVERE.*decision_right/,
+  );
+
+  // The known-good direction: innocent keys that happen to share a word.
+  assert.ok(assertNoAnticipationRows([{ authority: "the local building authority" }]));
+  assert.ok(assertNoAnticipationRows([{ status: "delivered" }]));
+});
