@@ -2179,6 +2179,37 @@ migration, the erasure-order condition answered yes documents-only
 kinds stay OUTSIDE the family catalog until the Q-18 reconciliation,
 no renames.
 
+**Same day, the values-intake adoption rulings land and Q-4 is BUILT
+(migration 0064).** The founder accepted the intake with five rulings,
+applied as the frozen ADOPTION_RULINGS note beside the package (never
+by editing frozen files): capacity 5 and 6 are TWO quantities (the
+software-enforced operating cap and the workforce-doctrine physical
+maximum; lifting 5 to 6 is an E4 two-key decision); emotional_load_flag
+adopts as `load_concern_raised`, human-recorded only with required
+reported_by, the guard barring the inference and permitting the record;
+status tags map to the shipped hyphenated keys; dead-letter stays at
+the shipped 10; the two extra reconciliation patterns are Q-12b data
+BEHIND the six launch patterns. Then Q-4: migration 0064 adds the
+ruled additive FK `event_outbox.household_id -> household(id)` (local
+census 0 orphans across 61 rows; the production census SQL in the
+migration header, atomic refusal the failure mode; the one
+orphan-seeding suite gained real parent rows, and the un-fixed suite's
+refusal was the FK's own red proof). The `judgment-free.test.ts` guard
+lands with its founder-editable pattern list (judgment-free.ts, a
+written WHY per entry: ranking constructs, stress and emotion,
+cognitive load, health inference, social-content inference,
+person-characterizing words) and the TWO-HOUSEHOLD refusal (no table
+defines a second household column), proven red two ways by name (a
+planted stress_score; a planted other_household_id) and green
+restored; exceptions are written entries, empty at birth. The signed
+2.5/2.6 vocabularies (materiality; consequence class) are PROMOTED out
+of deliberate unexport per Amendment 1 A1.1 with exact-list pins
+proven red on a removed value; attribute COLUMNS still arrive on the
+next primitive that needs them, never as a batch. Typecheck 13/13,
+suite 11/11 uncached. **Owed at the next deploy: 0062, 0063 and 0064
+apply together (migrations 62 to 65), the founder running 0064's
+census first.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
