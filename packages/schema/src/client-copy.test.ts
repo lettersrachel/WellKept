@@ -100,6 +100,26 @@ const COPY_SOURCES = [
 // clients; they carry the same voice rule as the app.
 const DOC_DIRS = ["../../../docs/legal"];
 
+// 4 September 2026 (G-120 follow-up): the ROOT operator documents. These
+// were never scanned by any root above, and DEPLOY.md was carrying
+// thirty-one em dashes while every guard read green. It is the document
+// an operator works line by line during a release, which is exactly the
+// surface the voice rule exists for, and "no scanned root covers it" is
+// the same gap that left the erasure tool's REFUSED message unguarded in
+// August. Listed rather than globbed: the repo root holds vendored and
+// generated markdown (node_modules is excluded by the walk, but a future
+// CHANGELOG or a dependency's README should not silently enter scope).
+const ROOT_DOCS = ["../../../DEPLOY.md", "../../../CLAUDE.md", "../../../README.md"];
+
+// FRAGMENT-scoped excusals, never file-scoped, per the rule CLAUDE.md
+// states for CENSUS_EXCUSALS: a file-level hatch is always wider than the
+// exception it was opened for. A line is exempt only if it CONTAINS one
+// of these exact fragments.
+const ROOT_DOC_EXCUSALS: Record<string, string> = {
+  "The scan also reads entity forms":
+    "CLAUDE.md's guard table documents the entity forms this scan detects, so it must name them literally; a document describing the guard is not a document using an em dash",
+};
+
 // J1 (round five): packName reached HOMs and no guard saw it.
 // Staff surfaces are rendered strings too - pack names, labels, buttons,
 // empty states, error text leak internal vocabulary and machine voice
@@ -209,6 +229,32 @@ test("legal documents contain no em dashes", () => {
   }
   assert.deepEqual(offenders, [],
     `em dash in a legal document (W-13; every document carries the rule): ${offenders.join(", ")}`);
+});
+
+test("root operator documents contain no em dashes", () => {
+  const offenders: string[] = [];
+  let scanned = 0;
+  for (const rel of ROOT_DOCS) {
+    const file = path.join(here, rel);
+    if (!existsSync(file)) continue; // a renamed doc must not silently pass
+    scanned++;
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (!hasEmDash(line)) return;
+      const excusal = Object.entries(ROOT_DOC_EXCUSALS).find(([frag]) => line.includes(frag));
+      if (excusal) {
+        if (excusal[1].trim().length <= 20) throw new Error(`excusal for ${excusal[0]} needs a real reason`);
+        return;
+      }
+      offenders.push(`${path.basename(file)}:${i + 1}`);
+    });
+  }
+  // The inputs doctrine: a guard that computes nothing must not pass
+  // vacuously. If the paths stop resolving, this fails rather than
+  // reporting a clean scan of an empty set.
+  assert.equal(scanned, ROOT_DOCS.length,
+    `root document scan resolved ${scanned} of ${ROOT_DOCS.length} paths; a moved or renamed file drops out of scope silently, which is the failure this asserts against`);
+  assert.deepEqual(offenders, [],
+    `em dash in a root operator document (the rule covers every document; these are the ones an operator reads during a release): ${offenders.join(", ")}`);
 });
 
 test("staff-facing surfaces contain no em dashes outside comments (J1)", () => {

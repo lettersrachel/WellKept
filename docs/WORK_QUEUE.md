@@ -2768,6 +2768,23 @@ which is the depends-on-remembering pattern again.
 Decide before the Phase 0 form creates three more of them: is child data a
 property of a kind, or a named set of kinds with a safe default?
 
+### W-16. DEPLOY.md em dashes and the fifth copy-guard scope (CLOSED 4 September 2026)
+
+The root operator documents were in no scanned root. DEPLOY.md carried
+thirty-one em dashes, CLAUDE.md one and README.md one, while every guard
+read green: the same "no scanned root covers it" gap that left the
+erasure tool refusal message unguarded in August.
+
+**Done.** All thirty-three rewritten for voice rather than swapped for
+hyphens, and `client-copy.test.ts` gained a fifth scope over
+`DEPLOY.md`, `CLAUDE.md` and `README.md`. The scope is a written list
+rather than a glob, so a vendored README cannot enter it silently, and
+it asserts its own path count so a renamed file fails rather than
+dropping out of scan. One fragment-scoped excusal: CLAUDE.md line 106
+documents the HTML entity forms the scan detects, so it must name them.
+Proven red two ways (a real em dash; a path that stops resolving) and
+green on the clean tree.
+
 ### W-15. REQ-076, deletion on request for non-client records (NEW, added 1 August 2026)
 
 WK-DEV-001 adds REQ-076 (P0), governed by WK-STD-026: records about people who

@@ -7442,3 +7442,56 @@ commit shows a bot avatar on its commit-author field. **The initiator
 and the commit author are different fields**, and only the second one
 is what the list renders. Worth keeping because the same confusion
 would otherwise recur on every merge the script performs.
+
+### G-120 fifth addendum, 4 September 2026: three of these in one day, and the class is wider than external systems
+
+**Count for the day, because the rate is the finding.** Three
+stale-external-state defects surfaced within hours of each other, all
+in the same entry:
+
+1. The **opening finding itself**: "does not auto-deploy" had been true
+   in effect for weeks, describing a disconnected GitHub integration
+   rather than a setting. A document asserting a Vercel state nobody
+   had checked.
+2. **`CLAUDE.md` and `DEPLOY.md` still carrying that opening finding**
+   after three addendums moved it. Both asserted "no override is set"
+   hours after the override was set and proven by a controlled pair.
+3. **The fourth addendum generalising one container's limits** into
+   "this session has never run `deploy.sh` and cannot", written as a
+   fact about Claude while a second session on the founder's machine
+   was running it on instruction. The state asserted was another
+   session's capability, which is external to the document in exactly
+   the same way a Vercel setting is.
+
+**The class is wider than it first looked, and this is the correction
+worth keeping.** The rule as first written said: re-read a clause about
+an EXTERNAL system when a register addendum changes that state. Items 2
+and 3 are not about outside systems at all. Item 2 is a document going
+stale **against the register**, and item 3 is a document going stale
+**against another session's environment**. The common shape is not
+"outside the company" but **outside the file, and outside anything a
+test can reach**. A test can catch a document that contradicts the
+code. Nothing catches a document that contradicts a Vercel setting, a
+register addendum written an hour later, or the capabilities of a
+session running in a different container.
+
+**Why the copies read as current, which is the mechanism rather than
+the moral.** Every stale clause carried a date and a gap-register id.
+`CORRECTED 4 September 2026 (G-120)` is exactly what a settled,
+freshly-verified statement looks like, so a reader confirms the
+provenance and stops. **A citation proves where a claim came from and
+says nothing about whether it is still true.** The more rigorous the
+attribution convention, the more convincing a stale copy looks.
+
+**What now enforces it, and what still does not.** The re-read rule is
+in `CLAUDE.md`'s verification section and in the A1 reconciliation
+checklist (the latter by reviewed amendment, hash updated in the same
+commit; the frozen-records guard refused the unreviewed edit first,
+which is that guard working). The em-dash rule gained a fifth scope
+covering `DEPLOY.md`, `CLAUDE.md` and `README.md`, which found
+thirty-three violations on its first run across the three files while
+every existing guard read green. **But no guard checks whether a
+document's claim about an external system is still true**, and none
+can. That half stays with the reader, which is why the rule names the
+grep to run rather than trusting recall.
+

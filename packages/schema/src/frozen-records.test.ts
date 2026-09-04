@@ -48,7 +48,13 @@ const FROZEN: Record<string, string> = {
   "docs/SESSION_LOG_2026-08-05_HOUSEKEEPING.md": "3741d718aedd79f3ff4768945470235c0ce24bf4357accc99c2ee9ed976457a9",
   "docs/SESSION_LOG_2026-08-05_AR_G59.md": "005f7a2dad391339b57c689bc203b3e3b0aa7b0bbd276044d7c4d6d993b34996",
   "docs/DEV_SESSION_RULINGS_2026-08-24.md": "12e42e1aa4d90d704919e4e05c9a1a3faba46992cfef950823de4702b983c1df",
-  "docs/IMPLEMENTATION_HANDOFF_2026-08-24.md": "cd731e14d89aae33243af828dda29728cb27a58638c27c27680318ae149663ac",
+  // REVIEWED HASH UPDATE, 4 September 2026 (founder instruction, G-120).
+  // Previous: cd731e14d89aae33243af828dda29728cb27a58638c27c27680318ae149663ac
+  // One item added to the A1 reconciliation checklist plus the amendment
+  // annotation at the head of the file; nothing else touched and no
+  // August finding revised. This is the sanctioned hatch being used as
+  // designed, not a bypass: the guard refused the unreviewed edit first.
+  "docs/IMPLEMENTATION_HANDOFF_2026-08-24.md": "1daa7af1b0a7bc2fea8c39d77486ab7c088393bb9a61fea6430c8d75e565ba31",
   "docs/FOUNDER_RULINGS_2026-08-24.md": "50fcaefd070054ec33b674d710ad0b6c24e97b50d0d7106db3c69e276bc24c62",
   "docs/DELTA_REPORT_WKDEV003_2026-08-24.md": "c41bc1940c4e7a8aaaacb1dee0bc8e679b643c29aec42699a90830c62358bb1a",
   "docs/SPRINT_HOUSEHOLD_ONE_2026-08-24.md": "5edb003d1a1621f99ac1fbf050a108e669bff515766fa6e99ee19042146f1782",
