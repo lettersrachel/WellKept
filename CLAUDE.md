@@ -286,6 +286,15 @@ and the Q-0b session log records "already stated".
   item, and until it lands no NEW member-facing surface hardcodes the
   name.
 
+- **Household Zero.** The founders' two households are the first cohort
+  for every feature and every AI behavior version. The external test
+  household runs under written informed consent until the E1 security
+  test passes; no other real household data before it. Naming note so
+  two usages do not blur: earlier repository records use "Household
+  Zero" for the held temporal-layer field list; from this adoption
+  forward the term means the founders' first-cohort households, and the
+  older usage stays as written in its dated entries.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
