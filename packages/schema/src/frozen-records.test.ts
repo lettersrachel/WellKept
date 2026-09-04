@@ -61,6 +61,8 @@ const FROZEN: Record<string, string> = {
   // The 3 September build-package intake (Q-0b, founder rulings on PR #282):
   // received bytes frozen verbatim; the stripped hashes equal the Q-0 pins.
   "docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md": "3553b742a532987e50b6dfc507ef74a7ff694b7868ad72ae3b017788ba5dc7d0",
+  // Part C (4 September): the founder's review of Q-0b, same WK-QA-018 entry.
+  "docs/FOUNDER_RULINGS_2026-09-04_PartC_Q0b_Review.md": "1a9d9e4e59b2b4fb65b9558839b46061956b5b662ca0d36d0ebb48e5d8d1e02f",
   "docs/intake/2026-09-03-build-package/PACKAGE_CLAUDE_MD_WITHDRAWN.md": "e9078732e2f10cf1d819b64ed07faa03760e3ea99dc603e4ab218b5fb4231492",
   "docs/intake/2026-09-03-build-package/BENCHMARK_ADOPTION.md": "d9b1db901c57afd51d8132b655b66b697f42a1f1e3a09ac1cebc15c86b80be45",
   "docs/intake/2026-09-03-build-package/BUILD_QUEUE.md": "0a23239fe4f9e13e6ca43e899fd483d50389f01d991368536f970e1aef767521",
