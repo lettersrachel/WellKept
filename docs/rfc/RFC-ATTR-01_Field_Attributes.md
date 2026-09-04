@@ -352,3 +352,92 @@ stop growing while the founder decides about 2.5 and 2.6.
    circumstance. If A213 or the v1.1 text names something else, this RFC still
    stands as Gate 2 item 2 and that other document is a separate thing, which
    would be worth knowing before September rather than after.
+
+---
+
+## Amendment 1 · 4 September 2026, applying the founder rulings of 3 September (Ruling 2, PR #282)
+
+Source of authority: `docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md`,
+frozen, Ruling 2. RFC-001 (the build package's substrate RFC) is
+withdrawn as a document; its frozen copy is
+`docs/intake/2026-09-03-build-package/RFC-001_Schema_Substrate.md`. This
+RFC survives as the substrate RFC because it has migrations and
+production data behind it. What RFC-001 carried that the sixty-two
+migrations do not already provide is absorbed here, per the Q-0 drift
+list, and nowhere else.
+
+### A1.1 The two held vocabularies are SIGNED OFF
+
+Sections 2.5 and 2.6 held their vocabularies for the founder. The
+3 September review is the signature, verbatim:
+
+- **Materiality (2.5):** `safety_access`, `money_legal`, `convenience`.
+  Hard-stop classes map only to the first two. The 2.5 shape stands
+  (text from the fixed vocabulary, nullable, NULL meaning unassessed;
+  a CHECK when the column lands).
+- **Consequence class (2.6):** `editorial`, `behavioral`,
+  `high_consequence`, the same three the training doctrine uses for
+  change propagation (WK-TRN-009 loop), so one enum serves the
+  household record and the HOM development layer. Same shape as 2.5.
+
+Section 7 question 1 is thereby CLOSED. Promoting the two vocabularies
+out of "deliberately unexported" in `packages/schema/src/field-attributes.ts`
+is a code change and is a queue item, not part of this documents-only
+amendment.
+
+### A1.2 The knowing-state mapping (RFC-001's five onto the 2.1 promoted list)
+
+The knowing-state vocabulary IS the 2.1 promoted list:
+`asked` · `observed` · `verified_by_touch` · `client_written` ·
+`unconfirmed`. RFC-001's five map onto it as follows. Two RFC-001 rules
+are preserved in the mapping and bind every row of it: **no state may
+record a system inference as fact, and there is no `assumed`.**
+
+| RFC-001 state | Maps to | Why |
+|---|---|---|
+| `confirmed` (by the household) | `asked` or `client_written` | The promoted list already splits household confirmation by HOW it arrived: told to a person, or written by the member. The split carries more information; collapsing it would lose the distinction 2.1 keeps. |
+| `observed` (by the HOM) | `observed` | Identical. |
+| `expected` (system-inferred) | never recorded as a knowing state | An inference is offered, never recorded as fact (RFC-001's own rule, preserved). A system inference lives as a SUGGESTION (the shadow/attention rail) until an authorized human confirms it individually, at which point the row carries the real state that confirmation produced (`asked`, `observed`, ...). Recording `expected` on a field would be recording the inference as a fact about the field, which both documents refuse. |
+| `estimated` (lookup or derivation) | the 2.2 `derived` class, knowing state `unconfirmed` | Estimation is a statement about HOW the value was produced (2.2/2.3, with its expression beside it), not a sixth epistemic relationship. The knowing state stays `unconfirmed` until a person confirms; 2.4 confidence carries the strength. |
+| `unknown` | `unconfirmed` | 2.1's default already claims the least. |
+
+There is no `assumed` in either vocabulary and none is added.
+
+### A1.3 The RFC-001 consumers and attributes, dispositioned against the drift list
+
+Ruling 2 §4: added here only where the sixty-two migrations do not
+already provide them. Reconciliation objects are CONSUMERS of the
+outbox, never field attributes. Each "absent" lands as its own queue
+item with a single migration, one per session, under the guards
+manifest; the queue items are in the re-cut `docs/BUILD_QUEUE.md`.
+
+| Item | Disposition |
+|---|---|
+| Domain-event catalog with correlation and causation ids | **Partly provided by migration 0046** (`event_outbox` carries `event_version`, `correlation_id`, `object_id`, `actor`, `sensitivity`, `provenance`; kinds are open text with the registered-kinds drain from the A2 ruling). Remaining: `causation_id`, and the family catalog (`capture.*`, `expectation.*`, `changeset.*`, ...) as registered kinds. One migration. |
+| `expected_event` with `reconciliation_status` (`matched`, `missing_expected`, `unexpected`, `changed`, `conflicting`, `stale`, `cannot_determine`) and `candidate_decision_refs[]` | **Absent; new migration required.** Nothing in the tree holds an expectation pattern or a reconciliation status. The six launch patterns come from the intake BENCHMARK_ADOPTION §2. |
+| `changeset` with safe-automatic and review-required sets | **Absent; new migration required.** The nearest existing mechanism (the outbox itself) records what happened, not what a source change invalidates. |
+| `fallback_plan` (`preferred`, `approved_substitute`, `established_backup`, `vetted_bench`, `ask`) | **Absent; new migration required.** `preference_rule` (0057) is adjacent (household operating facts in words) and is NOT this: the five-value vocabulary on repetitive operational choices is structured and evaluated, not prose. The build extends beside 0057 rather than overloading it. |
+| `capture_artifact` states (`captured`, `processing`, `proposed`, `confirmed`, `routed`, `failed`, `needs_review`) | **Partly provided by migration 0044** (`capture_artifact` exists with kind, extraction status `none`/`pending`/`extracted`, and status `captured`/`filed`/`dismissed`, filing whole-or-absent). Remaining: the pipeline states, source identity and authority class, and the quarantine result; the mapping of `filed`/`dismissed` onto `routed`/`needs_review` is that session's stated design question, not silently renamed. One migration. |
+| `validity_class` (`stable`, `review_periodic`, `life_stage_bounded`, `seasonal`, `event_specific`, `temporary`, `reuse_requires_review`, `superseded`) | **Absent; new migration required.** Joins this RFC as attribute 2.7's vocabulary (2.7 named lifecycle and staleness and held the vocabulary open; RFC-001's eight values fill it and are adopted with the ruling). |
+| `ownership_trace` (`conceive`, `plan`, `execute`, a set on registry items and commitments) | **Absent; new migration required.** Feeds M-27; the measurable definition of load transferred. |
+| `latest_safe_start` (derived date) | **Absent; new migration required. Shape RULED, Part C §2.4 (4 September 2026):** a materialized value stamped with its derivation, recomputed by the worker on outbox events, read-only to every actor, never hand-edited, with a corporate-admin recompute action that logs. The repository holds two derived-value precedents (stored-with-stamp: `registry_entry.derived_year` beside `derivation_source`; computed-never-stored: flag promotion, `time_segment` duration); the ruled shape matches the stored-with-stamp precedent, so precedent and ruling agree and the open question this row previously carried is CLOSED. Lands at Q-12 as that session's single migration. |
+| `dueness` (`not_due`, `approaching`, `due`, `overdue`, `condition_triggered`, `unknown`) | **Absent; new migration required, GATED**: ships only after the close flow captures the condition inputs (intake BENCHMARK_ADOPTION §3). Until then recurring work runs on doc-cited intervals with a `launch-calibrated` comment. |
+
+### A1.4 The judgment-free guard extension (Ruling 2 §5)
+
+The CI pattern list is extended, where not already present in the guard
+set, to: ranking constructs over HOMs; stress, emotion and health
+inference; and inference from social content into household truth or
+authority. What already stands: Ruling 1 bars per-person analytics and
+ranking, the section 29 adoption bars sensitive inference from
+household demographics, and `capacity-utilization` refuses by role in
+code; but NO schema-introspecting guard enforces any of it today. The
+guard is a code change and therefore a queue item (single session, no
+migration), not part of this amendment.
+
+### A1.5 What this amendment does not do
+
+No column, table, enum or guard changes in this amendment; it is the
+paper that authorizes them, each as its own queue item and migration.
+Section 7 question 2 (whether WK-OPS-002 v1.1's September RFC is this
+document) remains open and is unaffected.
