@@ -2031,6 +2031,64 @@ UNCLASSIFIED; a ghost classification refused as no-longer-detected)
 and green restored; manifest and CLAUDE.md table extended in the same
 change, the guard count now derived from the manifest as always.
 
+**3-4 September 2026: the build package intake completes and PR #282 is
+MERGED.** The 3 September package went through Q-0 (reconciliation,
+nine ground-truth disagreements) and, on the founder's Part A/B rulings
+(frozen: FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md), Q-0b: the standing
+CLAUDE.md governs and gained the package's genuinely new law in twelve
+by-section commits (tier ruling, quiet hours, the Handled invariant,
+mode logic, fixtures, competitor inputs, brand, Household Zero,
+invariants 16-20 where new, the benchmark record, the intake rule, the
+START_HERE merge with standing wording winning); the package CLAUDE.md
+and RFC-001 are superseded in the register with frozen copies kept;
+RFC-ATTR-01 Amendment 1 signs off the two enums (materiality:
+safety_access, money_legal, convenience; consequence: editorial,
+behavioral, high_consequence), maps RFC-001's knowing-states onto the
+promoted list, and dispositions the nine consumers/attributes;
+docs/BUILD_QUEUE.md is the re-cut forward queue (built stamped, partly
+carrying true remainders, Ruling 2 §4 migrations one per session). The
+founder's Part C review (frozen:
+FOUNDER_RULINGS_2026-09-04_PartC_Q0b_Review.md) accepted Q-0b, ruled
+the four named items (nine not six, with the counts-from-the-tree
+lesson now under the intake rule; the WK-DEV-007 freeze GOVERNS and
+Q-6/Q-8b/Q-9 are split with FREEZE-GATED member halves waiting on the
+25 September two-key decision; mail_outcome is Q-1's migration;
+latest_safe_start is derived-and-materialized), adopted the other
+eleven log dispositions, approved the merge, and started Q-1. Merged
+`f96015b4` through verify-then-merge, gates and airplane green by name.
+
+**Same day, Q-1 is BUILT (migration 0062): mail deliverability stops
+being a silence.** `mail_outcome` exists, one row per provider webhook
+event, written by exactly ONE producer: `/api/webhooks/resend`, which
+verifies the Svix-scheme signature with node:crypto (no new
+dependency), fails closed three ways (no secret 503, bad signature
+401, stale timestamp 400), dedupes provider redeliveries on the
+delivery id, resolves the recipient's household from a real client
+assignment server-side (never from the payload's claims), and beats a
+`mail_webhook_status` heartbeat (plain upsert, the drain-status
+precedent). The fleet board's new Mail deliverability card reads the
+table directly (the acceptance's one-worker-cycle bound met by
+construction), lists the 30-day counts by kind and the recent
+bounce/complaint rows by household, and carries a silence alert on the
+founder-set `mail_webhook_silence` knob, quiet while null (the
+visit_reconciliation shape). Erasure is DELETE, the TENTH documented
+exception (reason in the tool's header; CLAUDE.md's count corrected to
+ten in the same change); both censuses proven red first on the
+untreated table, then green; CHILD_DATA, the legal README, and both
+privacy copies extended same-PR. And the acceptance's lint clause is
+the new `action-permissions.test.ts` guard: every exported server
+action across the COMPUTED "use server" file set calls a sanctioned
+gate or carries a written allowlist reason (one entry at birth: the
+cookie-only mfa dismiss), floors on files AND actions, proven red two
+ways (the unallowlisted mfa action; a planted gate-less action) and
+green restored; manifest and CLAUDE.md table extended. Six webhook
+integration tests on the real database including the SELECT-back.
+Suite 11/11 uncached. **Owed at the next deploy: 0062 applies (62 to
+63). Founder-side after it: create the Resend webhook endpoint
+pointing at the production host's /api/webhooks/resend, subscribe at
+least email.bounced and email.complained, set RESEND_WEBHOOK_SECRET in
+Vercel, and optionally set the silence knob once events flow.**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
