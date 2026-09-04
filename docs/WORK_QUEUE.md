@@ -2768,6 +2768,54 @@ which is the depends-on-remembering pattern again.
 Decide before the Phase 0 form creates three more of them: is child data a
 property of a kind, or a named set of kinds with a safe default?
 
+### W-18. Extend the workspace-link preflight to every package (OPEN, founder-authorized 4 September 2026)
+
+W-17 wired `tooling/check-workspace-links.mjs` to `@wellkept/schema`
+alone, because that is where the failure recurred. **One covered package
+is the kind of partial coverage that reads as done** (founder, this
+item): the exposure is identical everywhere, and the next new workspace
+package will produce the same unreadable collection error in whichever
+package imports it first.
+
+**The census, taken 4 September 2026 rather than assumed:**
+
+| Package | `test` script | `pretest` | workspace deps |
+|---|---|---|---|
+| @wellkept/web | yes | no | 8 |
+| @wellkept/worker | yes | no | 6 |
+| @wellkept/schema | yes | YES | 3 |
+| @wellkept/hm-mobile | no | no | 2 |
+| @wellkept/mail | yes | no | 1 |
+| @wellkept/trigger-engine | yes | no | 1 |
+| @wellkept/close-flow | yes | no | 0 |
+| @wellkept/offline-queue | yes | no | 0 |
+| @wellkept/permissions | yes | no | 0 |
+| @wellkept/totp | yes | no | 0 |
+| @wellkept/vault | yes | no | 0 |
+| @wellkept/config | no | no | 0 |
+
+**Four packages carry the live exposure**: web (8 workspace deps),
+worker (6), mail and trigger-engine (1 each). Five more have a test
+script and no workspace deps today, where the hook would report
+"nothing to verify" and would start working the moment one is added,
+which is the point of wiring it before it is needed. Two have no test
+script at all, so the `pretest` mechanism does not reach them and a
+different hook, or none, is the decision.
+
+**Do:** add `"pretest": "node ../../tooling/check-workspace-links.mjs"`
+to each package that has a `test` script, minding the relative depth
+(`../../` from `packages/*`, `../../` from `apps/*` and `services/*`).
+Decide separately whether `@wellkept/config` and `@wellkept/hm-mobile`
+get a test script or stay uncovered, and say which in the entry rather
+than leaving it to be inferred from the absence.
+
+**Worth checking while there:** the script resolves its own path from
+the caller's cwd, so a package at a different depth needs a different
+prefix, and a wrong prefix fails as "cannot find module" rather than as
+a link problem, which would be the same class of confusing error this
+exists to remove. One proof run per wired package, red then green, is
+cheap and is the only thing that catches it.
+
 ### W-17. The workspace-link preflight (CLOSED 4 September 2026)
 
 `@wellkept/config` landed 3 September as a new workspace package. Any
@@ -2794,7 +2842,9 @@ Proven red on the real broken state (naming `@wellkept/config` and
 **Wiring it to another package is one line in that package's own
 scripts.** Only `@wellkept/schema` carries it today, which is where the
 failure actually recurred; the other packages are exposed to the same
-class and uncovered.
+class and uncovered. **Full coverage is W-18**, opened by founder
+instruction the same day on the ground that one covered package reads
+as done.
 
 ### W-16. DEPLOY.md em dashes and the fifth copy-guard scope (CLOSED 4 September 2026)
 
