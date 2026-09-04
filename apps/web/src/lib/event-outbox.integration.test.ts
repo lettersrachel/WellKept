@@ -1,8 +1,8 @@
-import { test, afterAll } from "vitest";
+import { test, beforeAll, afterAll } from "vitest";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
-import { eventOutbox } from "@wellkept/schema";
+import { eventOutbox, household } from "@wellkept/schema";
 import { drainEventOutbox } from "@wellkept/trigger-engine";
 import { db } from "./db";
 import { outboxFieldEvent } from "./field-events";
@@ -37,8 +37,16 @@ const row = (kind: string, payload: Record<string, unknown>, occurredAt: Date, c
   return { id, householdId: H, kind, payload, occurredAt, createdAt };
 };
 
+// 0064 (Q-4): event_outbox.household_id now carries a real FK, so the
+// suite's household needs a parent row, the causation suite's shape.
+beforeAll(async () => {
+  await db.insert(household).values({ id: H, name: "outbox test household", tier: "essential" }).onConflictDoNothing();
+});
+
 afterAll(async () => {
   if (created.length) await db.delete(eventOutbox).where(inArray(eventOutbox.id, created));
+  await db.delete(eventOutbox).where(eq(eventOutbox.householdId, H));
+  await db.delete(household).where(eq(household.id, H));
 });
 
 test("a registered consumer processes in order; failures spend attempts; unknown kinds wait untouched", async () => {

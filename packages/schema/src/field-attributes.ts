@@ -57,3 +57,29 @@ export function isValidConfidencePct(n: number): boolean {
 export function confidenceAllowedFor(state: KnowingState): boolean {
   return state !== "verified_by_touch" && state !== "client_written";
 }
+
+/**
+ * RFC 2.5 and 2.6, SIGNED OFF by the founder on 3 September 2026
+ * (Ruling 2 section 2, quoted in RFC-ATTR-01 Amendment 1 A1.1: "this
+ * review is the signature"). These were deliberately unexported founder
+ * taxonomy until that signature; Q-4 promotes them per the queue row.
+ * The COLUMNS carrying them still arrive on the next primitive that
+ * needs them (RFC section 6), never as a speculative batch.
+ *
+ * Materiality: how much it matters if the value is wrong. Hard-stop
+ * classes map ONLY to the first two.
+ */
+export const MATERIALITY_VALUES = ["safety_access", "money_legal", "convenience"] as const;
+export type Materiality = (typeof MATERIALITY_VALUES)[number];
+
+/** The classes whose staleness may HARD-STOP a workflow, per the signature. */
+export const HARD_STOP_MATERIALITIES: readonly Materiality[] = ["safety_access", "money_legal"];
+
+/**
+ * Consequence class: what happens downstream if the value is wrong. The
+ * SAME three the training doctrine uses for change propagation
+ * (WK-TRN-009 loop), so one enum serves the household record and the
+ * HOM development layer, by the signature's own words.
+ */
+export const CONSEQUENCE_CLASS_VALUES = ["editorial", "behavioral", "high_consequence"] as const;
+export type ConsequenceClass = (typeof CONSEQUENCE_CLASS_VALUES)[number];

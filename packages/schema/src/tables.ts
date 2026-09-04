@@ -889,7 +889,11 @@ export const objectObservation = pgTable("object_observation", {
 // retries for kinds that DO have a consumer.
 export const eventOutbox = pgTable("event_outbox", {
   id: uuid("id").primaryKey(), // the event_id of the WK-DEV-010 s4 law
-  householdId: uuid("household_id").notNull(),
+  // Q-4 (0064, founder ruling 4 September 2026): the FK was absent from
+  // 0046 (unlike every sibling household column) and lands additively.
+  // The erasure order permits it: households are renamed and archived,
+  // never deleted, so the parent side never vanishes.
+  householdId: uuid("household_id").notNull().references(() => household.id),
   kind: text("kind").notNull(), // e.g. field.changed; work/decision kinds follow
   payload: jsonb("payload").notNull(), // kind-specific; validated by the consumer
   occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
