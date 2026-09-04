@@ -2089,6 +2089,44 @@ pointing at the production host's /api/webhooks/resend, subscribe at
 least email.bounced and email.complained, set RESEND_WEBHOOK_SECRET in
 Vercel, and optionally set the silence knob once events flow.**
 
+**Same day, PR #283 merged (`1dba2467`) and THE RAILWAY WORKER REDEPLOY
+IS NO LONGER OWED (founder confirmation, recorded on her instruction):**
+Railway shows the PR #283 deployment ACTIVE and successful,
+auto-deployed from main; the logs show `repeat:drain-outbox` completing;
+the fleet board's Outbox drain line shows a live run. That closes the
+A2 ruling's "metric visible in production" acceptance and starts the
+first production execution of the August-onward worker features. The
+merge itself waited out an npm registry outage: the only CI red across
+two attempts was the dependency-audit step's own `ERR_SOCKET_TIMEOUT`
+against the audit endpoint, confirmed in the step log and reproduced
+from a second network, with every test step green throughout; the gate
+was left untouched and the merge ran once the endpoint recovered.
+
+**Same day, Q-2 is BUILT (migration-free): brand is one configuration
+value in code, not only in law.** `packages/config` (@wellkept/config)
+now holds the company name, legal entity name, app display name,
+sending address and the FIXED credential names; every member-facing
+surface (root layout title and masthead, sign-in heading, /privacy
+title and entity line, the client playbook line) and every mail-channel
+file (all three send paths, both digests, the client report and watch
+alert, every AUTH_EMAIL_FROM fallback) renders through it, with every
+value byte-identical to before (the founder's instruction: move, never
+change; the case-insensitive survey found three UPPERCASE literals a
+case-sensitive search missed). The `brand-config.test.ts` guard
+computes both input sets (the member page walk, the send-signature
+scan), refuses any display literal outside the config (space-required
+so `@wellkept/...` specifiers never match), and PINS today's exact
+values so the 25 September name decision is a reviewed two-file edit;
+proven red both directions and green, its own first run correcting a
+guessed floor to the derived count of five. The mail package's local
+style const BRAND is renamed PALETTE; the "Tell Well Kept" feature
+name on staff surfaces is deliberately untouched (the law binds
+member-facing surfaces; the name-decision sweep of staff copy is its
+own future session with the config as its source). Q-2's other
+clauses: REQ appends were done 5 August, the sweeps are verified
+running by the redeploy confirmation above, and the Upstash state
+remains the row's one founder-side remainder.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
