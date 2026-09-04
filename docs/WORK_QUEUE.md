@@ -2768,6 +2768,34 @@ which is the depends-on-remembering pattern again.
 Decide before the Phase 0 form creates three more of them: is child data a
 property of a kind, or a named set of kinds with a safe default?
 
+### W-17. The workspace-link preflight (CLOSED 4 September 2026)
+
+`@wellkept/config` landed 3 September as a new workspace package. Any
+checkout that had not re-run `pnpm install` failed the schema suite at
+COLLECTION with `Cannot find package @wellkept/config`, naming a package
+that plainly exists in the tree, so it read as a broken import rather
+than a stale install. **It was reported three times, each report
+re-deriving the same answer**, because nothing in the failure named
+`pnpm install`.
+
+**Done.** `tooling/check-workspace-links.mjs` runs as `pretest` on
+`@wellkept/schema`: it reads that package's own `workspace:` dependencies,
+checks each one has a link, and refuses with the fix in the message
+BEFORE vitest runs, so the actionable error arrives ahead of the
+confusing one. It installs nothing; a test command that silently mutates
+`node_modules` is a worse surprise than the one it replaces. It also
+reports when a package declares no workspace dependencies rather than
+passing silently on an empty set.
+
+Proven red on the real broken state (naming `@wellkept/config` and
+`pnpm install`), then green after the install, with the suite going from
+17 of 18 files to 18 of 18 and 74 tests passing.
+
+**Wiring it to another package is one line in that package's own
+scripts.** Only `@wellkept/schema` carries it today, which is where the
+failure actually recurred; the other packages are exposed to the same
+class and uncovered.
+
 ### W-16. DEPLOY.md em dashes and the fifth copy-guard scope (CLOSED 4 September 2026)
 
 The root operator documents were in no scanned root. DEPLOY.md carried
