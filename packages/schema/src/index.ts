@@ -5,4 +5,5 @@ export * from "./flags.ts";
 export * from "./feature-flags.ts";
 export * from "./telemetry.ts";
 export * from "./events.ts";
+export * from "./event-catalog.ts";
 export * from "./app-config.ts";
