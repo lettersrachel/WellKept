@@ -1,3 +1,4 @@
+import { BRAND } from "@wellkept/config";
 import pg from "pg";
 import { composeClientWeeklyDigest, sendResendEmail, type ClientWeekDigestInput } from "@wellkept/mail";
 
@@ -21,7 +22,7 @@ export async function runClientWeeklyDigest(pool: pg.Pool) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>";
+  const from = process.env.AUTH_EMAIL_FROM ?? BRAND.emailFromFallback;
   const weekOf = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
   const { rows: households } = await pool.query(

@@ -3,15 +3,17 @@
  * support page). Content follows docs/legal/privacy-notice.md; the pilot
  * banner stays until counsel signs off (their open items live in that doc).
  */
-export const metadata = { title: "Privacy · Well Kept" };
+import { BRAND } from "@wellkept/config";
+
+export const metadata = { title: `Privacy · ${BRAND.companyName}` };
 
 export default function PrivacyPage() {
   return (
     <div className="card" style={{ maxWidth: 640, margin: "40px auto" }}>
       <h2>Privacy notice</h2>
       <div className="note">
-        Pilot edition, last updated July 27, 2026. Well Kept Home Operations
-        Management LLC (&ldquo;Well Kept,&rdquo; &ldquo;we&rdquo;). Contact:
+        Pilot edition, last updated July 27, 2026. {BRAND.legalEntityName}{" "}
+        (&ldquo;{BRAND.companyName},&rdquo; &ldquo;we&rdquo;). Contact:
         lettersrachel@gmail.com.
       </div>
 

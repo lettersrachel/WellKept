@@ -1,3 +1,4 @@
+import { BRAND } from "@wellkept/config";
 import type { AuthConfig } from "@auth/core";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type { Adapter } from "@auth/core/adapters";
@@ -85,10 +86,10 @@ async function sendMagicLink({ identifier, url, token }: { identifier: string; u
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>",
+      from: process.env.AUTH_EMAIL_FROM ?? BRAND.emailFromFallback,
       to: [identifier],
-      subject: "Your Well Kept sign-in link",
-      html: `<p>Sign in to Well Kept:</p><p><a href="${url}">Open your household</a></p>`
+      subject: `Your ${BRAND.companyName} sign-in link`,
+      html: `<p>Sign in to ${BRAND.companyName}:</p><p><a href="${url}">Open your household</a></p>`
         // G-70: SAY WHICH ADDRESS. Two identities can share one inbox
         // (plus-addressing, which the one-role index forces when one
         // person covers two roles on a household), and these emails were

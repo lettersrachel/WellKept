@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import { BRAND } from "@wellkept/config";
 import { getHouseholdAndPrincipal, getFieldHouseholdAndPrincipal } from "@/lib/data";
 import { ServiceWorker } from "./ServiceWorker";
 import { SkewWatch } from "@/components/SkewWatch";
 
 export const metadata: Metadata = {
-  title: "Well Kept",
+  title: BRAND.appDisplayName,
   description: "One household record, three permission-filtered projections.",
   // Installable PWA: "Add to Home Screen" gives an app icon + full-screen launch.
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "Well Kept", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: BRAND.appDisplayName, statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -54,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* G-37: version-skew heartbeat — a page from before the last deploy announces itself. */}
         <SkewWatch />
         <header className="masthead">
-          <h1>WELL KEPT{hh && principal ? <> &nbsp;|&nbsp; {hh.name}</> : null}</h1>
+          <h1>{BRAND.companyName.toUpperCase()}{hh && principal ? <> &nbsp;|&nbsp; {hh.name}</> : null}</h1>
           {principal ? (
             <form action="/signout/action" method="post" className="roles">
               <span className="sans" style={{ fontSize: 12, color: "#e4ede4", alignSelf: "center" }}>
