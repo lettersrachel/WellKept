@@ -6,4 +6,5 @@ export * from "./feature-flags.ts";
 export * from "./telemetry.ts";
 export * from "./events.ts";
 export * from "./event-catalog.ts";
+export * from "./pipeline-stage.ts";
 export * from "./app-config.ts";

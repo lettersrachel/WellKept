@@ -2240,6 +2240,79 @@ guard it there.** The engineering read is in G-120 and turns on one
 unverified fact, named not assumed: whether Vercel runs that step for
 CLI deploys, which is what `deploy.sh` performs.
 
+**Q-1 is FULLY ACTIVATED (4 September 2026, founder-confirmed).** The
+Resend endpoint delivered an `email.delivered` event to
+`/api/webhooks/resend` and read **200 OK, one attempt,
+`{"ok":true}`**: the signing secret matches and the route accepted and
+stored it. That is the first end-to-end exercise of the Q-1 path in
+production and the last open clause of that queue row. Two notes kept
+with it. The founder had **two duplicate Resend webhooks pointing at the
+same endpoint** and deleted one; `mail_outcome` dedupes on
+`provider_event_id`, the svix delivery id, so two live webhooks would
+have written TWO rows per email with different delivery ids and the same
+`message_id` rather than deduping, which is worth one grouped query if
+anything was accepted while both were live. And the deploy that picked
+up the secret had to target the CURRENT tip: `fb6fda92` had been
+overtaken by four merges and would have been refused by the currency
+gate, which is G-82 doing its job on a real input rather than a
+sentinel. The `mail_webhook_silence` knob stays null until two weeks of
+delivered events exist (values-intake Ruling 6).
+
+**And Q-5 is BUILT (migration 0065): the pipeline stage tag, with two of
+its three columns deliberately inert and the header that says so.** The
+`pipeline_stage` enum carries the Four-Stage spec's four values
+verbatim, and one column lands on each carrier the queue row names. The
+migration header carries a **producer table PER COLUMN** rather than a
+sentence about the migration, which is the form G-85 exists for and the
+form that makes the shape legible: `prompt_pack_item.stage` is written
+by the trigger engine at both insert sites, stamping `anticipate` (the
+acceptance criterion's first clause); `trigger_rule.stage` and
+`work_item.stage` have NO PRODUCER and ship inert, nullable with no
+default, so no row carries a stage until a person sets one. **The one
+default is not an invented classification**: it backfills rows that
+predate the column, and its value is the spec's own answer, since every
+row in that table is a fired trigger's artifact. Read back by query: the
+enum in order, the two nullable columns with no default, all 9 existing
+prompt rows at `anticipate`.
+
+**The guardrail is enforced positively, in both client-payload
+mechanisms rather than in whichever one a future payload happens to
+call.** Spec section 5: stage tags are internal, no member surface ever
+displays the schema. `assertNoAnticipationRows` gains a **single-key**
+clause, which is the departure worth noting: every other clause in that
+guard is a KEY PAIR and therefore relies on the companion key being
+present, so a projection carrying `stage` alone would have walked
+through. And `assertDeclaredClientKeys` gains `FORBIDDEN_CLIENT_KEYS`,
+which throws even when the key is DECLARED, because a declared list is a
+hatch a person may widen in a reviewed change and widening is exactly
+not the remedy here. Four red proofs, each with the mutation confirmed
+landed first and each anchor asserted unique so an ambiguous replacement
+refuses. **The producer proof is a captured-VALUES test on purpose**: a
+row read back from Postgres says `anticipate` whether the engine wrote
+it or the default did, and only reading the insert's own values tells
+those two claims apart. Suite 11/11 uncached, typecheck green in every
+package.
+
+**REPORTED AND NOT BUILT, per the queue's own report-and-stop rule: the
+routing half of Q-5's acceptance criterion is blocked on Q-6.**
+Below-threshold auto-execution and the decision inbox read against the
+Decision Rights block, which the spec places in the Playbook and the
+queue places in Q-6. **No threshold, column or knob for it exists in
+this tree**, and choosing one is barred in as many words. Two smaller
+reports beside it. The spec's flow sentence names FIVE movements
+(anticipation, identification, decision-routing, **execution**,
+monitoring) against the four-value tag it specifies two paragraphs
+later, with `execution` absent; both are the spec's own text and it is
+reported rather than reconciled. And the roadmap test the tag exists to
+mechanize ("anything tagged `decide` receives the returned-choice design
+review before it ships") governs FEATURES, which live in the
+requirements document and the build queue, not in these three tables:
+the column and the roadmap test share a vocabulary and not a mechanism,
+and reading one as the other would be the G-109 shape.
+
+**Owed at the next deploy: 0065 applies (65 to 66).**
+
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

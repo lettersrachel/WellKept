@@ -5,6 +5,7 @@ import {
   assertDeclaredClientKeys,
   CLIENT_PLAYBOOK_FIELD_KEYS,
   CLIENT_REGISTRY_ENTRY_KEYS,
+  FORBIDDEN_CLIENT_KEYS,
 } from "@wellkept/permissions";
 import { registryEntry } from "./tables.js";
 
@@ -184,4 +185,32 @@ test("the page still calls the assertion at both member-reaching sites", async (
     "the playbook field payload no longer asserts its declared keys");
   assert.ok(page.includes('assertDeclaredClientKeys(entries, CLIENT_REGISTRY_ENTRY_KEYS'),
     "the registry payload no longer asserts its declared keys");
+});
+
+
+/**
+ * Q-5. The declared list is the hatch this guard leaves open on purpose:
+ * a member MAY see a new key if a person writes it down. A forbidden key
+ * is the class that hatch does not reach, so the two are checked against
+ * each other rather than left to agree by habit.
+ */
+test("no declared client list carries a forbidden key", () => {
+  const forbidden = Object.keys(FORBIDDEN_CLIENT_KEYS);
+  assert.ok(forbidden.length > 0, "the forbidden set is empty; this case would pass vacuously");
+  for (const [label, list] of [
+    ["playbook fields", CLIENT_PLAYBOOK_FIELD_KEYS],
+    ["registry entries", CLIENT_REGISTRY_ENTRY_KEYS],
+  ] as const) {
+    const bad = list.filter((k) => forbidden.includes(k));
+    assert.deepEqual(bad, [], `${label} declares a forbidden key: ${bad.join(", ")}`);
+  }
+});
+
+test("registry_entry carries no stage column, so the spread payload cannot acquire one", () => {
+  // The declared registry list is a SPREAD of every column, so a stage
+  // column on that table would reach a member the moment it existed.
+  // 0065 tags trigger_rule, prompt_pack_item and work_item and
+  // deliberately not this one; asserted rather than assumed.
+  assert.ok(!actualRegistryColumns().includes("stage"),
+    "registry_entry gained a stage column; the client spread would carry it");
 });

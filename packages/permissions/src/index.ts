@@ -197,6 +197,30 @@ export function assertClientPayloadSafe(payloadFields: FieldRecord[]): true {
  *     and is deliberately NOT built here, so the reviewed surface stays
  *     exactly the one that was approved.
  */
+/**
+ * Q-5: keys that may NEVER reach a member, whatever a declared list
+ * says. This is the second half of the acknowledgement that the stage
+ * assertion must cover ANY client payload rather than rely on absence.
+ *
+ * `assertNoAnticipationRows` walks the payloads that call it; this set
+ * covers the declared-list family (playbook fields, registry entries,
+ * the client visit report), which calls a different assertion. Between
+ * them every client payload in the tree is reached, and neither depends
+ * on a future author remembering which mechanism applies to the surface
+ * they are writing.
+ *
+ * The reason it lives INSIDE the declared-key check rather than beside
+ * it: a declared list is a hatch a person may widen in a reviewed
+ * change, and the whole point of these keys is that widening is not the
+ * available remedy. A forbidden key throws even when it is declared,
+ * which is why the message says project it out rather than declare it.
+ */
+export const FORBIDDEN_CLIENT_KEYS: Readonly<Record<string, string>> = Object.freeze({
+  // Four-Stage Application Spec section 5: "Stage tags are internal; no
+  // member surface ever displays the schema."
+  stage: "the internal pipeline stage tag (Four-Stage spec section 5: stage tags are internal)",
+});
+
 export function assertDeclaredClientKeys(
   rows: readonly unknown[],
   allowed: readonly string[],
@@ -212,11 +236,29 @@ export function assertDeclaredClientKeys(
     throw new Error(`${label}: declared key list is empty; nothing is being checked`);
   }
   const permitted = new Set(allowed);
+  // A forbidden key is refused before any row is read, because a list
+  // that DECLARES one is already the defect: the row-level check below
+  // would then pass it as permitted.
+  for (const key of allowed) {
+    const reason = FORBIDDEN_CLIENT_KEYS[key];
+    if (reason) {
+      throw new Error(
+        `SEVERE: "${key}" is declared for ${label} and may never reach a member: ${reason}. ` +
+        "Project it out at the boundary; declaring it is not the remedy.",
+      );
+    }
+  }
   for (const [i, row] of rows.entries()) {
     if (!row || typeof row !== "object" || Array.isArray(row)) {
       throw new Error(`${label}[${i}]: payload row is not an object`);
     }
     for (const key of Object.keys(row)) {
+      const forbidden = FORBIDDEN_CLIENT_KEYS[key];
+      if (forbidden) {
+        throw new Error(
+          `SEVERE: forbidden key "${key}" reached a client payload at ${label}[${i}]: ${forbidden}.`,
+        );
+      }
       if (!permitted.has(key)) {
         throw new Error(
           `SEVERE: undeclared key "${key}" reached a client payload at ${label}[${i}]. ` +

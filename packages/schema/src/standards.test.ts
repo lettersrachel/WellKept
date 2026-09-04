@@ -343,3 +343,35 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /time_segment/,
   );
 });
+
+
+test("Q-5: an internal pipeline stage tag is refused on its own, at any depth", async () => {
+  const { assertNoAnticipationRows } = await import("./standards");
+
+  // The point of the clause: a SINGLE key, no companion required. Every
+  // other clause in this guard is a key pair and would let a projection
+  // carrying stage and nothing else walk straight through.
+  assert.throws(
+    () => assertNoAnticipationRows([{ stage: "decide" }]),
+    /SEVERE.*pipeline stage tag.*"decide"/,
+  );
+  // Each of the four, so the clause cannot be satisfied by one value.
+  for (const v of ["anticipate", "identify", "decide", "monitor"]) {
+    assert.throws(() => assertNoAnticipationRows([{ id: "p1", stage: v }]), /SEVERE.*pipeline stage tag/);
+  }
+  // Nested, and inside an array, since the guard's whole value is depth.
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { rows: [{ itemText: "x", stage: "anticipate" }] } }),
+    /SEVERE.*pipeline stage tag/,
+  );
+
+  // The known-good direction, and the stated residue with it: "stage" is
+  // an ordinary English word, so the clause keys on the VALUE being one
+  // of the four. A member-facing record carrying a stage of some other
+  // kind passes, deliberately.
+  assert.ok(assertNoAnticipationRows([{ stage: "the staging area by the back door" }]));
+  assert.ok(assertNoAnticipationRows([{ id: "f1", name: "Life-stage coordination notes", value: "none" }]));
+  // And the fifth movement the spec names in prose is not in the tag
+  // vocabulary, so it is not what this clause is about.
+  assert.ok(assertNoAnticipationRows([{ stage: "execution" }]));
+});
