@@ -35,3 +35,15 @@ substance, numbered as ruled.
 The other five ground truths in the session log carried proposed
 readings inside documents the founder accepted with the intake and
 stand as recorded there.
+
+## Ruling 6, added later the same day (4 September 2026)
+
+**The mail silence knob keeps its shipped field and unit: DAYS.** The
+values CSV's `mail_webhook_silence_hours` recommendation of 72 hours
+converts to **3 days** for adoption; the shipped
+`mail_webhook_silence` knob keeps `{maxQuietDays}` and is NOT
+refactored to hours. **The value stays null until two weeks of
+`email.delivered` events exist**, so the threshold is set against
+observed quiet rather than a guess, and nothing surfaces meanwhile (the
+visit_reconciliation posture). This closes the values-intake session
+log's ground truth 7.

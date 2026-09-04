@@ -141,7 +141,13 @@ to 6 is an E4 two-key decision); ground truth 3's flag adopts as
 the Q-4 guard barring the inference and permitting the record; ground
 truth 4's tags map to the shipped hyphenated keys; ground truth 2's
 dead-letter bound stays at the shipped 10; ground truth 5's two extra
-patterns adopt as Q-12b data BEHIND the six launch patterns.
+patterns adopt as Q-12b data BEHIND the six launch patterns. A SIXTH
+ruling was added to that note later the same day, closing ground truth
+7: the mail silence knob keeps its shipped field and unit (days), the
+values recommendation converts from 72 hours to 3 days, and the value
+stays null until two weeks of delivered events exist. The note is
+authoritative; this line points at it rather than restating it, so the
+two cannot drift.
 
 ## Open items
 

@@ -7290,3 +7290,138 @@ how this entry came to exist. The test is in the next entry's
 sequence: the G-120 docs merge is itself a docs-only production push,
 byte-identical in application code, so the observation costs nothing
 that was not already planned.
+
+### G-120 second addendum, 4 September 2026: the production push created no deployment, and the OUTCOME is established while the MECHANISM is not
+
+**The test ran on a real input: PR #288, docs-only** (four files:
+CLAUDE.md, DEPLOY.md, GAP_REGISTER.md, WORK_QUEUE.md; zero application
+code, verified by `git diff --stat origin/main..HEAD` before the merge),
+merged as `a3b02990` through verify-then-merge with both jobs green by
+name. Three observations, each with the override's state at the moment
+it happened:
+
+| Observation | Target | Override state then | Result |
+|---|---|---|---|
+| CLI probe `vercel --yes` (59m before the reading) | preview | CONFIRMED set | BUILT |
+| Branch push `efb4e70` (1h before the reading) | preview | UNKNOWN, see below | BUILT |
+| Merge `a3b02990` to `main` | production | CONFIRMED set | NO DEPLOYMENT CREATED |
+
+**Established, and enough to act on:** the merge to `main` produced no
+production deployment at all, `/api/build-id` still returns
+`e468066d`, and the production alias did not move. A push to `main` no
+longer ships the web build. CLI deploys are exempt with the override in
+place, proven on a real deploy, so `tooling/deploy.sh` keeps its path
+and the ordered sequence is intact.
+
+**NOT established, and recorded as open rather than rounded up: that
+the override is WHAT stopped it.** Two specific reasons, both from the
+evidence above rather than from doubt in general.
+
+1. **"No entry at all" is not the signature an Ignored Build Step
+   leaves.** A skipped build normally records a deployment and marks it
+   skipped or canceled, which is why the distinction between "created
+   and skipped" and "never created" was worth asking for. The observed
+   shape is the second, which the override does not obviously produce.
+2. **The branch-preview observation is time-ambiguous.** `efb4e70` is
+   dated one hour before the reading and the override is confirmed set
+   as of the CLI probe fifty-nine minutes before it, so that preview
+   may predate the override entirely. It therefore cannot carry the
+   conclusion that git branch previews are exempt.
+
+**Why the seam matters here of all places: it is this entry's own
+lesson.** G-120 exists because a property nothing produced was believed
+to be an invariant for six weeks. Recording "the override closed the
+door" while the real cause is something else would rebuild exactly that
+belief, one layer further in, and the door would reopen silently
+whenever the true cause changed.
+
+**The discriminator is free and already in the dashboard.** The
+addendum commit `63429ef` was pushed to the branch AFTER the override
+was confirmed set. If a Preview deployment exists for it and BUILT,
+then git deployments are not stopped by the ignore step, and the
+production no-show has a different cause that should be found. If no
+preview exists for it, or one exists and was skipped, the ignore step
+is acting on git deployments and "no entry" is simply how it renders
+for a production push.
+
+**Also recorded:** the manual-main deploy hook, the door that shipped
+`e468066d`, was reported as being revoked at this entry, deliberately
+after the override test so the test read cleanly; confirmation of the
+revocation is pending and belongs in the next entry.
+
+### G-120 third addendum, 4 September 2026: the mechanism question CLOSES on a controlled before-and-after pair
+
+**The discriminator the second addendum named came back negative, and
+the ambiguity it carried is resolved by the clock rather than by
+waiting.** `63429ef` was pushed at 14:11:45 UTC and read at 14:56 with
+no Deployments entry: forty-four minutes, where a preview build starts
+within seconds of the webhook and finishes in one to three. "Not yet"
+is not a live reading at that distance. The pagination caveat is
+answered by the observation itself, since the list is newest-first and
+the newest entry is the older commit; pagination hides older entries,
+never newer ones.
+
+**The pair, which is what actually settles it:**
+
+| Commit | Pushed (UTC) | Override | Result |
+|---|---|---|---|
+| `efb4e70` | 13:25:43 | not yet set | preview BUILT |
+| `63429ef` | 14:11:45 | set | no deployment |
+| `a3b02990` (merge to main) | 14:28:45 | set | no deployment |
+
+Same input class, same branch, the override the only variable, built
+before and nothing after. The second addendum's open question is
+therefore CLOSED: **the override is the cause.** With it in place,
+git-triggered deployments create no deployment record at all, on
+branches and on `main` alike, while CLI deploys build normally, which
+`tooling/deploy.sh` depends on and which was separately proven.
+
+**What remains unexplained, and why it no longer matters.** Creating no
+record at all is still an unusual rendering for an ignored build step,
+which normally records a deployment and marks it skipped. The
+attribution no longer rests on that convention, though; it rests on the
+pair above. We know WHAT stops it and not precisely WHY it renders that
+way, and only the first fact carries the invariant.
+
+**One consequence worth stating so it is not discovered as a surprise:
+branch previews no longer build automatically.** Nothing depends on
+them: the airplane e2e runs inside GitHub Actions against its own dev
+server, never against a Vercel preview, so CI is unaffected. A preview
+is still available on demand through `npx vercel --yes`, which is how
+the probe that opened this question was made.
+
+**Status of the invariant after this entry: enforced by a mechanism for
+the first time.** Before today it was a sentence in two documents plus
+the habit of the person reading them. It is now a project setting whose
+effect has been observed in both directions on real pushes.
+
+### G-120 fourth addendum, 4 September 2026: the hook is revoked, and a deployment attribution is corrected
+
+**The manual-main deploy hook is REVOKED** (founder, this entry):
+Vercel now reports no deploy hooks on the project. That closes the
+second door, the one that shipped `e468066d` without migrations. With
+the Ignored Build Step override closing the git-push door and the hook
+gone, `tooling/deploy.sh` is the only remaining path to production, and
+its ordering guarantees are therefore the system's guarantees rather
+than a convention.
+
+**A correction to the deployments record, made because a wrong
+attribution there would outlive the day.** The third Production entry
+against PR #287 was read as "Claude's own deploy.sh CLI run". It was
+not: this session has never run `deploy.sh` and cannot. There is no
+production `DATABASE_URL` in the cloud container (`.neon-connection` is
+the founder's machine only), no `.vercel/project.json` link file, and
+outbound egress to the production host returns 403 at the agent proxy,
+confirmed against the proxy's own status endpoint rather than inferred
+from a failed curl. Every production deployment on that list was
+initiated by the founder.
+
+**What the icon actually reflects, since the observation behind the
+misreading was sound.** The merge commit `a3b02990` is AUTHORED by
+`claude[bot]` (verify-then-merge merges through the REST endpoint with
+the app's token) and COMMITTED by `GitHub`; commits written in session
+carry `Claude <noreply@anthropic.com>`. So a deployment of such a
+commit shows a bot avatar on its commit-author field. **The initiator
+and the commit author are different fields**, and only the second one
+is what the list renders. Worth keeping because the same confusion
+would otherwise recur on every merge the script performs.
