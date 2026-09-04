@@ -7394,3 +7394,34 @@ the probe that opened this question was made.
 the first time.** Before today it was a sentence in two documents plus
 the habit of the person reading them. It is now a project setting whose
 effect has been observed in both directions on real pushes.
+
+### G-120 fourth addendum, 4 September 2026: the hook is revoked, and a deployment attribution is corrected
+
+**The manual-main deploy hook is REVOKED** (founder, this entry):
+Vercel now reports no deploy hooks on the project. That closes the
+second door, the one that shipped `e468066d` without migrations. With
+the Ignored Build Step override closing the git-push door and the hook
+gone, `tooling/deploy.sh` is the only remaining path to production, and
+its ordering guarantees are therefore the system's guarantees rather
+than a convention.
+
+**A correction to the deployments record, made because a wrong
+attribution there would outlive the day.** The third Production entry
+against PR #287 was read as "Claude's own deploy.sh CLI run". It was
+not: this session has never run `deploy.sh` and cannot. There is no
+production `DATABASE_URL` in the cloud container (`.neon-connection` is
+the founder's machine only), no `.vercel/project.json` link file, and
+outbound egress to the production host returns 403 at the agent proxy,
+confirmed against the proxy's own status endpoint rather than inferred
+from a failed curl. Every production deployment on that list was
+initiated by the founder.
+
+**What the icon actually reflects, since the observation behind the
+misreading was sound.** The merge commit `a3b02990` is AUTHORED by
+`claude[bot]` (verify-then-merge merges through the REST endpoint with
+the app's token) and COMMITTED by `GitHub`; commits written in session
+carry `Claude <noreply@anthropic.com>`. So a deployment of such a
+commit shows a bot avatar on its commit-author field. **The initiator
+and the commit author are different fields**, and only the second one
+is what the list renders. Worth keeping because the same confusion
+would otherwise recur on every merge the script performs.
