@@ -7248,3 +7248,45 @@ Vercel runs the Ignored Build Step for CLI deploys, which is what
 `deploy.sh` performs (`npx vercel --prod --yes` from the repo root,
 uploading the working tree). A preview-only probe settles it without
 touching production.
+
+### G-120 addendum, 4 September 2026: the CLI probe answered, with its scope stated
+
+**The probe ran with the override already in place** (Project Settings,
+Behavior Custom, the G-120 echo plus `exit 0`), and the CLI preview
+BUILT: `npx vercel --yes` from the repo root produced
+`wellkept-iajjkq1me-well-kept.vercel.app`, `target: null`, on the
+pinned project `prj_15Q69KLCnnRMQQZp8Ou4tORuZBQq` with no stray
+created, and production stayed at `e468066d` with its alias unmoved.
+So the Ignored Build Step does NOT apply to CLI deploys, and Option A
+is the right shape: git pushes stop building, and the ordered script
+keeps its path.
+
+**The scope of that proof, stated rather than rounded up.** The
+observed deploy targeted PREVIEW. `deploy.sh` runs `npx vercel --prod
+--yes`, which targets PRODUCTION. Whether the exemption follows the
+deployment's SOURCE (CLI, whatever the target) or its TARGET is not
+established by this observation, and the twenty-one earlier production
+runs all predate the override, so they prove nothing about it either.
+Recorded because the difference is exactly the kind that reads as
+settled and is not.
+
+**That gap needs no separate test, because the existing gate is the
+test and it fails closed.** Step 7 of `deploy.sh` reads
+`/api/build-id` three times and refuses unless every read equals the
+deployed sha. If the override ever blocked a CLI production build, the
+alias would not move, the reads would return the previous sha, and the
+script would fail loudly before the smoke checks. **One caveat that
+makes the next run inconclusive rather than reassuring:** the pending
+migration run deploys `e468066d`, which is ALREADY live, so the reads
+return that sha whether the build ran or was skipped. The first
+discriminating run is the next deploy of a NEW sha.
+
+**Open at this addendum: the Production Overrides Command box is
+empty**, and what an empty override means for a Git push to `main`
+(inherit the project command and skip, or no override and build) is
+not confirmed. The expected reading is inherit, which is what an
+override box conventionally means, but asserting it from convention is
+how this entry came to exist. The test is in the next entry's
+sequence: the G-120 docs merge is itself a docs-only production push,
+byte-identical in application code, so the observation costs nothing
+that was not already planned.
