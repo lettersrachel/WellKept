@@ -1713,3 +1713,32 @@ export const timeSegment = pgTable("time_segment", {
   check("time_segment_person_is_whole",
     sql`(${t.source} = 'hom_refinement' AND ${t.recordedBy} IS NOT NULL) OR (${t.source} <> 'hom_refinement' AND ${t.recordedBy} IS NULL)`),
 ]);
+
+// Q-1 (0062): deliverability outcomes from the mail provider's webhooks.
+// One row per provider event (bounce, complaint, and whatever else the
+// endpoint is subscribed to), written by exactly ONE producer: the
+// /api/webhooks/resend route, after signature verification. The KIND is
+// the provider's own event type VERBATIM and deliberately carries no
+// CHECK: a vendor's event vocabulary grows on the vendor's schedule, and
+// an evidence table stores what arrived rather than refusing tomorrow's
+// real event. household_id is resolved at write time from the
+// recipient's client assignment and is NULL for staff mail, sign-in
+// links, and ambiguous addresses; the payload keeps the verbatim event
+// body as the row's own provenance. Erasure is DELETE (the tenth
+// documented exception: delivery plumbing whose payload carries the
+// household's name in a subject line and the member's address; the
+// notification / event_outbox class, no business-record claim).
+export const mailOutcome = pgTable("mail_outcome", {
+  ...stamps,
+  providerEventId: text("provider_event_id").notNull(), // svix delivery id, the dedupe key
+  kind: text("kind").notNull(), // the provider's event type, verbatim (email.bounced, ...)
+  recipient: text("recipient").notNull(), // the address the outcome is about
+  messageId: text("message_id"), // the provider's email id, when the payload carries one
+  householdId: uuid("household_id").references(() => household.id),
+  payload: jsonb("payload").notNull(), // the verbatim event body, evidence
+  occurredAt: timestamp("occurred_at", { withTimezone: true }), // the provider's clock, when parseable
+}, (t) => [
+  uniqueIndex("mail_outcome_provider_event_unique").on(t.providerEventId),
+  index("mail_outcome_household_idx").on(t.householdId, t.createdAt),
+  index("mail_outcome_kind_idx").on(t.kind, t.createdAt),
+]);

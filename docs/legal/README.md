@@ -82,6 +82,14 @@ Four documents, one per audience and direction:
   record for money). Note: time entries are attributed to the staff member
   who worked them, this is also STAFF data, and it belongs in the G-13
   staff-facing disclosure when that is written.
+- **Mail delivery outcomes** (added 2026-09-04, migration 0062):
+  delivery events our email provider reports about mail we sent (a
+  bounce, a spam complaint), each carrying the recipient address, the
+  event type, and the provider's event body, linked to the household
+  where the address is a member's. Exists so a report that never
+  arrived is a record our staff can see instead of a silence.
+  Corporate-only; never rendered to any client; deleted whole on
+  household erasure.
 - **Commercial record** (added 2026-07-27), how the household found Well
   Kept (referral channel, with an optional note), and the membership
   history as dated events: start, tier change, pause, resume, cancellation,

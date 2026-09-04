@@ -77,18 +77,20 @@ fail-closed is deliberate.
 - **Payload guards on every new client-facing route.** They re-assert in the
   page, not only in CI.
 - Nothing hard-deletes by default. Tombstone plus append-only audit is the
-  pattern. **Nine tables are documented, reasoned exceptions that DELETE
+  pattern. **Ten tables are documented, reasoned exceptions that DELETE
   rows** (`apps/web/scripts/erase-household.mjs`'s own header names each):
   `vault_item` (the crypto-shred), `condition_flag`, `object_observation`,
   `paused_decision`, `notification`, `event_outbox` (the CAND-OUTBOX-01
   generalization of `field_event_outbox`, same reason),
   `audit_subject_token` (ADR-006: deleting the mapping IS the audit-identity
   erasure mechanism), `shadow_log` (WK-DEV-007 §3: internal engine
-  output about the household, the condition_flag class), and
+  output about the household, the condition_flag class),
   `capture_artifact` (WK-DEV-009 §8: the HOM's pre-filing words, the
-  condition_flag class). Each reason is written where the deletion
-  happens. A tenth exception needs the same: a reason in the erasure
-  tool, not a silent addition.
+  condition_flag class), and `mail_outcome` (Q-1, 2026-09-04: provider
+  delivery plumbing carrying the household's name and the member's
+  address, the notification class). Each reason is written where the
+  deletion happens. An eleventh exception needs the same: a reason in
+  the erasure tool, not a silent addition.
 
 ## The CI guards, and what they do not cover
 
@@ -116,6 +118,7 @@ row here fails CI, so the table cannot silently go stale.
 | `legal-census.test.ts` | every household-referencing table, computed from the schema, is named in CHILD_DATA.md or excused with a written reason (the G-62 candidate guard) | the legal/README and privacy-notice prose, which name categories not tables and stay on the same-PR rule; whether a named treatment is correct |
 | `success-visibility.test.ts` | every action that changes stored state confirms it, and every page a confirmation can land on renders the banner bound to the redirect's own param (G-68, refusal-visibility's twin) | whether the confirmation is TRUE: a redirect proves the code path ran, never that the write committed; free text a future author interpolates into a message |
 | `field-attributes.test.ts` | every attribute-shaped column (provenance, confidence, derivation, source) computed from the schema resolves against a written classification naming its RFC-ATTR-01 section or stating "different question"; the promoted knowing-state vocabulary and the schema's enum cannot drift apart; the census carries a count floor in COLUMNS, the unit it counts (RFC-ATTR-01 step 1: the eleventh ad-hoc mechanism stops here) | whether a classification is CORRECT, which is the RFC review's job; the RFC's founder sections (materiality, consequence class), deliberately unexported until ruled; columns whose names carry none of the shape words |
+| `action-permissions.test.ts` | every exported server action across the computed "use server" file set calls a sanctioned permission gate (getPrincipal, getStaffIdentity, guardedUser, getSessionUser) or carries a written allowlist reason; both inputs computed, floors on files and on ACTIONS (the unit at risk) | whether the role check BESIDE the gate call is the right one for that action, which stays review; API routes, whose gates live in-route; a gate called and then ignored |
 | `client-payload-shape.test.ts` | every member-reaching payload carries ONLY the keys declared for it, so a column added tomorrow throws instead of publishing; the declared registry list is asserted against the table's own columns, with a written-exclusion hatch (G-78) | **what a permitted key CONTAINS**: a staff-only fact typed into a correctly client-visible column reaches the member, since `playbook_field.value` is gated by ROW sensitivity and an s1 field is client-visible by design, which nothing in this system catches (the copy guard's free-text residue, one layer down); the inside of a jsonb column, which is one permitted key; and whether a value that should be nulled still is, which stays a separate mechanism |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written

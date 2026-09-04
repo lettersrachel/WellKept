@@ -163,6 +163,15 @@
  *    class; anything that mattered was FILED onward (the work item the
  *    filing raised is blanked-and-kept above under work_item). The
  *    ninth documented DELETE exception.
+ *  - mail_outcome (Q-1, 2026-09-04): rows DELETED - delivery plumbing
+ *    from the mail provider's webhooks about mail sent to the
+ *    household: the payload carries the household's name in a subject
+ *    line and the member's address, and once the household is erased
+ *    there is nothing the record serves (the notification /
+ *    event_outbox class, no business-record claim). Null-household
+ *    rows (staff mail, sign-in links) are unreachable here BY
+ *    CONSTRUCTION, the 0059 wage-row precedent. The tenth documented
+ *    DELETE exception.
  *  - household: renamed 'Erased household', archived; consent fields kept
  *    (the record THAT consent existed outlives the data it covered).
  *  - role assignments for the household are deleted and those users'
@@ -229,6 +238,7 @@ const counts = {
   edits: await count("SELECT count(*) n FROM client_edit WHERE household_id=$1"),
   season: await count("SELECT count(*) n FROM season_observation WHERE household_id=$1"),
   captures: await count("SELECT count(*) n FROM capture_artifact WHERE household_id=$1"),
+  mailOutcomes: await count("SELECT count(*) n FROM mail_outcome WHERE household_id=$1"),
   briefSnapshots: await count("SELECT count(*) n FROM visit_brief_snapshot WHERE household_id=$1"),
   taskProfiles: await count("SELECT count(*) n FROM household_task_profile WHERE household_id=$1"),
   workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
@@ -391,6 +401,12 @@ try {
   // filed capture's surviving trace is its blanked work_item skeleton.
   // The ninth documented DELETE exception.
   await c.query("DELETE FROM capture_artifact WHERE household_id=$1", [householdId]);
+  // mail_outcome (Q-1, 2026-09-04): DELETED - provider delivery events
+  // about mail to this household (subject lines carry the household
+  // name, rows carry the member's address); the notification /
+  // event_outbox class. Null-household rows are unreachable by this
+  // WHERE clause by construction. The tenth documented DELETE exception.
+  await c.query("DELETE FROM mail_outcome WHERE household_id=$1", [householdId]);
   // paused_decision (W-7/AD, 2026-07-28): DELETED - internal staff
   // research about the household, the condition_flag class.
   await c.query("DELETE FROM paused_decision WHERE household_id=$1", [householdId]);

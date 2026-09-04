@@ -40,8 +40,10 @@ export default function PrivacyPage() {
         our system surfaces to our staff for attention and the situations our staff
         bundle related items into, choices we route internally for a
         decision, notes a staff member captures in their own words for filing, the
-        pre-visit briefs we show our staff (kept exactly as shown), and what
-        our reminder engine would have suggested while we tune it) to run the service
+        pre-visit briefs we show our staff (kept exactly as shown), what
+        our reminder engine would have suggested while we tune it, and delivery
+        records from our email provider telling us whether a message we sent you
+        arrived) to run the service
         reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product
