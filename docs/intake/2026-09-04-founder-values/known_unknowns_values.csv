@@ -1,0 +1,50 @@
+key,recommended_value,unit,basis,replaced_by_measurement,owner,notes
+household_cap_weekly,6,households per HOM per week,Founder ruling 2 Sep 2026,never (physical cap),CEO,Hard maximum; model reaches 4.25 at E4
+utilization_band_low,75,percent of paid hours billable,WK-SOP-014,First full quarter of time records,COO,
+utilization_band_high,85,percent,WK-SOP-014,First full quarter,COO,Requisition trigger when exceeded four consecutive weeks
+hours_drift_scope_review,15,percent over model for four weeks,WK-APP-002 (existing default),Q3 2027 time records,COO,Fires scope review prompt
+days_since_delight_prompt,45,days,WK-APP-002 (existing default),Retention board data at E2,COO,Delight cadence prompt; suppressed under LIFE-EVENT and pressure
+non_billable_split_coordination,2.0,hours per household per week,v7.0 labor time budget,First quarter observed minutes,CFO,Coordination block
+non_billable_split_admin_close,1.25,hours per household per week,v7.0,First quarter observed minutes,CFO,Admin and close block
+travel_minutes_per_service_hour,13.6,minutes,v7.0 (1.25 travel per 5.5 in-home),Route logs Q3 2027,COO,
+desk_hours_per_household_week,1.15,hours,v7.0,Desk time log at 20 households,COO,
+capture_budget_minutes_per_household_week,45,minutes,Founder recommendation (Portfolio and Team Ops names the budget but not the number),Close-flow capture timestamps after two cohorts,COO,Non-visit capture; alert corporate at 120 percent
+quiet_hours_start,21:00,household local time,Adopted law 3 Sep,never,CEO,
+quiet_hours_end,07:00,household local time,Adopted law 3 Sep,never,CEO,
+quiet_hours_exemptions,"inbound_reply; safety_access_hard_stop; member_initiated_emergency_line",list,Adopted law plus recommendation,never,CEO,Only these three cross quiet hours
+digest_cadence_essential,weekly_friday,cadence,WK-DEV-007 digest; recommendation,Member preference at intake overrides,COO,Freeze-gated surface
+digest_cadence_family_ops,weekly_friday,cadence,recommendation,intake override,COO,
+digest_cadence_concierge,weekly_friday_plus_monthly_horizon,cadence,recommendation,intake override,COO,Monthly far-horizon view for Concierge
+decision_inbox_batch_default,weekly_with_urgent_passthrough,cadence,recommendation,intake override,COO,Urgent = safety_access or money_legal with deadline inside 72 hours
+m25_target_settled_household,2,member decisions per week after 90 days,recommendation,E2 measurement,CEO,Expected to fall as household settles; onboarding weeks exempt
+m25_alert_threshold,5,decisions per week for three consecutive weeks,recommendation,E2,COO,Signals authority too narrow or record too thin
+verification_interval_safety_access,90,days,recommendation (RFC-ATTR-01 materiality),After first quarter of hard-stop data,COO,Keys codes alarms medical allergens
+verification_interval_money_legal,180,days,recommendation,E2,COO,Vendors payment terms insurance renewals
+verification_interval_convenience,365,days,recommendation,E2,COO,Preferences; never hard-stops
+verification_hard_stop_grace,14,days past interval,recommendation,E2,COO,Hard-stop appears on HOM briefing after grace
+validity_review_periodic_default,180,days,recommendation,E2,COO,For review_periodic class without a stated horizon
+validity_life_stage_check,on_birthday_and_school_year_rollover,event,recommendation,never,COO,Re-asks child-bound facts twice a year
+validity_temporary_default_expiry,30,days,recommendation,E2,COO,Renovation contractors visiting relatives etc
+mode_promotion_observed_visits,3,visits with no correction on class,SPEC_MODE_LOGIC,After two cohorts,COO,Guided to Normal
+mode_expert_quarter,1,continuous quarter in Normal with zero high_consequence,SPEC_MODE_LOGIC,After two cohorts,COO,Normal to Expert
+hom_ii_quarters,2,consecutive quarters at 4.0 or above,Founder ruling 3 Sep,never,CEO,SOP-020 and HR-002 amended from four
+expected_event_grace_default,7,days after expected window closes,recommendation,Q-12b shadow data,COO,Before missing_expected opens
+outbox_dead_letter_attempts,8,attempts,RFC-001 adopted into ATTR-01,never,engineer,Matches offline queue
+mail_webhook_silence_hours,72,hours without any delivered event,recommendation,Two weeks of delivered events,CEO,Only meaningful if email.delivered is subscribed; leave null until then
+inference_offers_per_household_week_guided,3,offers,recommendation (altitude two throttle),E2,COO,Guided pairs receive fewer offers
+inference_offers_per_household_week_expert,8,offers,recommendation,E2,COO,
+inference_dismissal_suppression,90,days before a dismissed inference may re-offer,recommendation,E2,COO,Dismissal is doctrine; re-offer only on new evidence
+life_event_suppression_default,30,days,WK-APP-001 (LIFE-EVENT tag) recommendation for default duration,Founder review per case,COO,Founder may extend per household
+watch_tag_review,14,days,recommendation,never,COO,WATCH homes reviewed every two weeks on the retention board
+response_time_sms_business_hours,60,minutes to acknowledgment,WK-STD-028 (confirm against document),Q-10 report,COO,Auto-acknowledgment is immediate; human reply commitment
+response_time_email,4,business hours,WK-STD-028 (confirm),Q-10 report,COO,
+response_time_emergency_line,5,minutes,WK-STD-028 (confirm),Q-10 report,COO,
+booking_race_local_dates,"FCPS first day; Loudoun first day; Arlington first day; camp registration opens (Fairfax RECenter, Loudoun PRCS); Thanksgiving week vendor cutoff; spring break travel booking window",list,DEV-005 known unknown,Refresh each March from district calendars,COO,Source from ICS feeds not PDFs
+recall_match_frequency,daily,cadence,recommendation,never,engineer,CPSC feed against appliance registry
+weather_freeze_trigger_f,28,degrees F forecast low within 48 hours,recommendation,Two winters,COO,Fires hose-bib and pipe checks
+weather_storm_trigger,NWS_watch_or_warning_for_county,event,recommendation,never,COO,
+par_reorder_lead_days,10,days before projected stockout,WK-STD-025 recommendation,Consumption data,COO,Proposed in inbox with one-tap approval
+turnover_target_annual,25,percent,v7.0,April 2028,CFO,
+households_lost_per_departing_hom,0.75,households,v7.0,April 2028,CFO,
+applicants_per_opening,40,applicants,v7.0,First hiring round,COO,
+offer_rate,5,percent of applicants,v7.0,First hiring round,COO,

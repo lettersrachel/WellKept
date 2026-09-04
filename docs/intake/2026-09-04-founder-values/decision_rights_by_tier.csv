@@ -1,0 +1,18 @@
+right,essential,family_operations,concierge,materiality,notes
+spend_without_asking_per_item_usd,150,300,750,money_legal,Standing vendors only; receipts always
+spend_without_asking_monthly_cap_usd,400,900,2500,money_legal,Cumulative auto-executed spend; inbox proposal above cap
+emergency_spend_to_prevent_damage_usd,500,1000,2500,safety_access,Water gas electrical security only; member called immediately after
+vendor_substitution,approved_substitute_only,approved_substitute_or_established_backup,through_vetted_bench,convenience,FallbackPlan steps permitted without asking
+schedule_visit_shift_hours,4,8,24,convenience,HOM may move a visit within this window without asking; outside it is an inbox item
+recurring_service_booking,confirm_each,auto_within_standing_pattern,auto_within_standing_pattern,convenience,Standing pattern = same vendor cadence and price band
+accept_deliveries_and_sign,yes,yes,yes,convenience,Never for controlled items or legal documents
+open_mail,no,no,unless_opted_in,money_legal,Correspondence handling is Concierge opt-in only
+contact_school_or_provider_on_behalf,no,logistics_only,logistics_only,money_legal,Never academic medical or disciplinary matters
+manage_calendar_entries,propose_only,add_logistics_events,add_logistics_events,convenience,Never move a member-owned commitment
+purchase_replacements_for_consumables,par_items_only,par_items_only,par_and_seasonal,convenience,Pars per WK-STD-025
+grant_vendor_access_to_home,never_unattended,attended_or_standing_vendor_with_code,attended_or_standing_vendor_with_code,safety_access,Physical access is never automatic; HOM present or member-authorized standing vendor
+gift_and_occasion_execution,propose_only,propose_and_execute_under_cap,propose_and_execute_under_cap,convenience,Family writes the note; HOM makes it frictionless
+pet_care_decisions,routine_only,routine_and_vet_logistics,routine_and_vet_logistics,safety_access,Medical decisions always the member
+travel_prep,checklist_only,checklist_and_holds,checklist_holds_and_vendor_scheduling,convenience,Bookings always the member unless standing rule
+decisions_that_always_require_member,"any spend above cap; any new vendor; anything touching a child's school medical or activity enrollment; access changes; anything a neighbor or third party asks; any change to a standing rule",same,same,all,Non-negotiable across tiers
+authority_review_cadence,quarterly,quarterly,quarterly,,Decision Rights re-confirmed at each quarterly review and after any LIFE-EVENT

@@ -1,0 +1,9 @@
+pattern,trigger_event,expected_signal,window_days,grace_days,materiality,candidate_decisions,household_asked
+vendor_visit_without_invoice,work.completed by vendor,vendor.invoice_received or receipt captured,14,7,money_legal,"request invoice; mark no-charge visit; flag vendor pattern",never
+registration_without_confirmation,commitment.created (camp school activity),capture.confirmation matched to commitment,3,2,money_legal,"resend or call; treat as not registered and reopen booking race",never
+cancellation_confirmed_then_charged,commitment.cancelled with confirmation,no charge event after cancel date,35,0,money_legal,"dispute; refund request; vendor flag",only to authorize dispute
+return_shipped_without_refund,work.return_shipped,refund event within carrier plus vendor policy,21,7,money_legal,"chase refund; escalate",never
+promised_estimate_overdue,vendor.estimate_promised with date,vendor.estimate_received,promised date,3,convenience,"chase; move to established backup",never
+school_cycle_packet_missing,school year rollover from calendar feed,capture of the expected packet (forms fees supply lists),14 before first day,0,money_legal,"pull from school portal; ask HOM to collect",never
+seasonal_service_not_scheduled,season trigger (HVAC gutters irrigation),commitment.created for the service,30 before window,0,convenience,"schedule with standing vendor",never
+subscription_renewed_unexpectedly,subscription registry shows cancelled,charge event,35,0,money_legal,"dispute; confirm cancellation",only to authorize dispute
