@@ -65,6 +65,35 @@ export default async function FleetBoard({ searchParams }: {
   const companyTime = Array.from(companyByCat, ([category, minutes]) => ({ category, minutes }))
     .sort((a, b) => b.minutes - a.minutes);
 
+  // Q-1: mail deliverability, read straight from the webhook's own
+  // table (no worker between the event and this card). The silence
+  // alert follows the visit_reconciliation shape exactly: nothing
+  // surfaces while the knob is null (founder-set, by design), because
+  // choosing a quiet-hours threshold is a decision, not a default.
+  const { mailOutcome } = await import("@wellkept/schema");
+  const mailWindow = new Date(Date.now() - 30 * 86_400_000);
+  const mailRows = await db
+    .select({ kind: mailOutcome.kind, recipientHousehold: mailOutcome.householdId, createdAt: mailOutcome.createdAt })
+    .from(mailOutcome)
+    .where(gte(mailOutcome.createdAt, mailWindow));
+  const mailByKind = new Map<string, number>();
+  for (const m of mailRows) mailByKind.set(m.kind, (mailByKind.get(m.kind) ?? 0) + 1);
+  const mailTrouble = mailRows
+    .filter((m) => /bounce|complain/i.test(m.kind))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 5);
+  const householdNameById = new Map(corporate.map(({ hh }) => [hh.id, hh.name]));
+  const [mailHeartbeatRow] = await db.select({ value: appSetting.value }).from(appSetting)
+    .where(eq(appSetting.key, "mail_webhook_status"));
+  const mailHeartbeat = mailHeartbeatRow?.value as { lastReceivedAt?: string; lastKind?: string } | undefined;
+  const [mailSilenceKnob] = await db.select({ value: appSetting.value }).from(appSetting)
+    .where(eq(appSetting.key, "mail_webhook_silence"));
+  const maxQuietDays = (mailSilenceKnob?.value as { maxQuietDays?: number | null } | undefined)?.maxQuietDays ?? null;
+  const mailQuietDays = mailHeartbeat?.lastReceivedAt
+    ? Math.floor((Date.now() - Date.parse(mailHeartbeat.lastReceivedAt)) / 86_400_000)
+    : null;
+  const mailSilent = maxQuietDays !== null && (mailQuietDays === null || mailQuietDays > maxQuietDays);
+
   const rowsAll = await Promise.all(
     corporate.map(async ({ hh }) => {
       const [fields, commands, tests, pending, held, openIncidents] = await Promise.all([
@@ -254,6 +283,50 @@ export default async function FleetBoard({ searchParams }: {
           </span>
           <button className="act subtle">Log company time</button>
         </form>
+      </div>
+
+      <div className="card">
+        <div className="eyebrow">Mail deliverability; trailing 30 days</div>
+        <div className="note">
+          What our email provider reports back about mail we sent. A bounce or a
+          complaint here is a member who did not get their report.
+        </div>
+        {mailRows.length === 0 ? (
+          <div className="prov">No delivery events recorded in the last 30 days.</div>
+        ) : (
+          <div className="prov">
+            {Array.from(mailByKind, ([kind, n]) => `${kind}: ${n}`).join("; ")}
+          </div>
+        )}
+        {mailTrouble.length > 0 && (
+          <ul className="note" style={{ marginTop: 6 }}>
+            {mailTrouble.map((m, i) => (
+              <li key={i}>
+                {m.kind} for {m.recipientHousehold
+                  ? (householdNameById.get(m.recipientHousehold) ?? "a household")
+                  : "an unlinked address"}{" "}
+                on {m.createdAt.toISOString().slice(0, 10)} (UTC)
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="prov" style={{ marginTop: 6 }}>
+          {mailHeartbeat?.lastReceivedAt ? (
+            <>
+              Last webhook received {mailQuietDays === 0 ? "today" : `${mailQuietDays} day(s) ago`}
+              {" "}({mailHeartbeat.lastKind ?? "unknown kind"}).
+            </>
+          ) : (
+            "No webhook has ever been received. Until the provider endpoint is configured, this card can only show silence."
+          )}
+          {maxQuietDays === null ? (
+            <> Silence alerting is quiet: the mail_webhook_silence knob is unset (founder-set, by design).</>
+          ) : mailSilent ? (
+            <> <span className="tag CRITICAL">WEBHOOK SILENT past the {maxQuietDays}-day knob; the endpoint, the secret, or the provider subscription may be broken</span></>
+          ) : (
+            <> Within the {maxQuietDays}-day silence knob.</>
+          )}
+        </div>
       </div>
     </>
   );
