@@ -265,6 +265,15 @@ and the Q-0b session log records "already stated".
   the existing `is_fixture` flag at build time, not a second flag to
   add by default.
 
+- **The twelve competitor-derived inputs and the not-copied list**
+  (frozen source: the intake COMPETITIVE_FEATURE_INPUTS.md) are adopted
+  as inputs to the re-cut queue, each landing where its row says. The
+  not-copied list is law of the same weight as the inputs: no shared
+  family calendar as the product, no chores or meal planning, no chat
+  as the front door, nothing the household must run, no engagement
+  streaks, no vendor marketplace, no separate travel or maintenance
+  source of truth.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
