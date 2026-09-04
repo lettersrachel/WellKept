@@ -274,6 +274,18 @@ and the Q-0b session log records "already stated".
   streaks, no vendor marketplace, no separate travel or maintenance
   source of truth.
 
+- **Brand is one configuration value.** The company name, sending
+  domain, app display name and credential wording resolve from one
+  place; nothing member-facing hardcodes the company name. The name
+  decision lands 25 September 2026. The credential names "Household
+  Operations Manager" and "Certified Household Operations Manager,
+  Level I / II" are FIXED and independent of the company name. Stated
+  as adopted law ahead of the code: today "Well Kept" is hardcoded on
+  member-reaching surfaces (sign-in, the client report email among
+  them) and no config package exists; the consolidation is a queue
+  item, and until it lands no NEW member-facing surface hardcodes the
+  name.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
