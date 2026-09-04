@@ -1,0 +1,65 @@
+-- Q-5, the pipeline stage tag. Four-Stage Application Spec (2 August
+-- 2026, A121; stamped plan-of-record in docs/SPEC_REGISTER.md) section
+-- 3: "Every trigger, prompt-pack item, requirement, and queue item
+-- carries its stage as an enum: anticipate, identify, decide, monitor."
+-- The queue row names three carriers and this migration adds one column
+-- to each.
+--
+-- PRODUCER PER COLUMN (the per-column rule, G-85). Stated per column
+-- rather than per table, because a table-level answer is exactly what
+-- would conceal that two of these three have no writer:
+--
+--   trigger_rule.stage       NO PRODUCER YET. A rule's stage is a
+--                            corporate-authored classification of what
+--                            the rule is FOR. Nothing computes it and
+--                            no surface writes it. Nullable with no
+--                            default, so no row carries a stage until a
+--                            person sets one. SHIPS INERT, deliberately;
+--                            the authoring surface is a later session.
+--
+--   prompt_pack_item.stage   WRITTEN BY packages/trigger-engine/src/run.ts,
+--                            both insert sites (runTriggerPass and
+--                            runRegistrySweep), which stamp 'anticipate'
+--                            explicitly. This is the acceptance
+--                            criterion's first clause: a fired trigger
+--                            lands in anticipate.
+--
+--   work_item.stage          NO PRODUCER YET. A work item arrives from
+--                            hm_capture, corporate or system, and none
+--                            of those three determines a stage without a
+--                            taxonomy nobody has ruled. Nullable with no
+--                            default. SHIPS INERT, deliberately.
+--
+-- THE ONE DEFAULT, and why it is not an invented classification: the
+-- prompt_pack_item default backfills rows that predate the column, and
+-- its value is the spec's own answer rather than a chosen one, since
+-- every row in that table is a fired trigger's artifact. The engine
+-- still writes the value explicitly at both sites, so the producer is
+-- real code a test can prove and not the database standing in for one.
+--
+-- NOT TAGGED, deliberately: decision_record. It is not among the three
+-- carriers the queue row names, and a decide-stage column on the table
+-- whose every row IS a decision would be a stored constant.
+--
+-- NOT BUILT HERE, gated rather than skipped: the routing half of the
+-- acceptance criterion. Below-threshold auto-execution and
+-- propose-first routing read against the Decision Rights block, which
+-- is Q-6. No threshold exists in this tree to route on, and choosing
+-- one is barred.
+--
+-- READ BEFORE APPLYING (the standing rule): drizzle-kit emitted CREATE
+-- TYPE first and the three ALTER TABLEs after, which is the order
+-- Postgres requires; no reorder was needed. Purely additive: three
+-- ALTER TABLE ADD COLUMN, one CREATE TYPE, no DROP, no ALTER COLUMN, no
+-- RENAME, no existing column made NOT NULL. The old build ignores
+-- columns it does not know, so the migrate-then-deploy window is safe.
+--
+-- Stage tags are INTERNAL (spec section 5): no member surface ever
+-- displays the schema. Enforced positively in assertNoAnticipationRows
+-- and assertDeclaredClientKeys, not by these columns happening to be
+-- absent from today's payloads.
+
+CREATE TYPE "public"."pipeline_stage" AS ENUM('anticipate', 'identify', 'decide', 'monitor');--> statement-breakpoint
+ALTER TABLE "prompt_pack_item" ADD COLUMN "stage" "pipeline_stage" DEFAULT 'anticipate' NOT NULL;--> statement-breakpoint
+ALTER TABLE "trigger_rule" ADD COLUMN "stage" "pipeline_stage";--> statement-breakpoint
+ALTER TABLE "work_item" ADD COLUMN "stage" "pipeline_stage";

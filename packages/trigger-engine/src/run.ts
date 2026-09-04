@@ -76,7 +76,10 @@ export async function runTriggerPass(db: any, event: FieldChangeEvent) {
     const { methodRef: _ref, ...values } = draft; // not a prompt_pack_item column
     const inserted = await db
       .insert(promptPackItem)
-      .values({ id, ...values })
+      // Q-5: the stage tag, written HERE rather than left to the column
+      // default, so the producer is code a test can prove. A fired
+      // trigger lands in anticipate (Four-Stage spec section 3).
+      .values({ id, ...values, stage: "anticipate" })
       .onConflictDoNothing({ target: promptPackItem.id })
       .returning({ id: promptPackItem.id });
     emitted += inserted.length;
@@ -127,7 +130,9 @@ export async function runRegistrySweep(db: any, opts: { householdId?: string; no
       const { occurrence, ...values } = draft;
       const inserted = await db.insert(promptPackItem)
         // occurrence becomes target_date (A2/REQ-055 lead-time calibration).
-        .values({ id, ...values, targetDate: occurrence.slice(0, 10) })
+        // Q-5: the sweep's items are fired triggers too, so they land in
+        // anticipate by the same rule and the same explicit write.
+        .values({ id, ...values, targetDate: occurrence.slice(0, 10), stage: "anticipate" })
         .onConflictDoNothing({ target: promptPackItem.id })
         .returning({ id: promptPackItem.id });
       emitted += inserted.length;

@@ -199,6 +199,13 @@ export const gesture = pgTable("gesture", {
   costCents: integer("cost_cents"), // money in integer cents (DEV-004 S3)
 }, (t) => [index("gesture_household_idx").on(t.householdId)]);
 
+// Q-5, the Four-Stage Application Spec section 3: the stage tag. The
+// vocabulary lives in pipeline-stage.ts and is pinned against this enum
+// by pipeline-stage.test.ts, so the two cannot drift. Stage tags are
+// INTERNAL (spec section 5); no member surface ever displays the schema,
+// and that is enforced positively rather than by absence.
+export const pipelineStageEnum = pgEnum("pipeline_stage", ["anticipate", "identify", "decide", "monitor"]);
+
 // REQ-050/052: triggers bind to fields; packs are scheduled instances, not live queries.
 export const triggerRule = pgTable("trigger_rule", {
   ...stamps,
@@ -207,6 +214,14 @@ export const triggerRule = pgTable("trigger_rule", {
   bindsToFieldName: text("binds_to_field_name"),
   definition: jsonb("definition").notNull(), // versioned library content (corporate_admin editable)
   enabled: boolean("enabled").notNull().default(true),
+  // Q-5: NO PRODUCER YET, deliberately. A rule's stage is a
+  // corporate-authored classification of what the rule is FOR; nothing
+  // computes it and no surface writes it, so it is nullable with no
+  // default and no row carries a stage until a person sets one. The
+  // authoring surface is a later session. Recorded here as well as in
+  // the 0065 header because schema ahead of its writer and schema
+  // nobody noticed are indistinguishable after the fact (G-85).
+  stage: pipelineStageEnum("stage"),
 });
 
 // Direction 3b (PLACEHOLDER_DIRECTIONS.md, 1 August 2026, G-58): the WATCH
@@ -242,6 +257,13 @@ export const promptPackItem = pgTable("prompt_pack_item", {
   // null for event-driven items. lead_days calibration reads this.
   targetDate: date("target_date"),
   routedTo: promptItemRoutingEnum("routed_to").notNull().default("hm"),
+  // Q-5: WRITTEN BY packages/trigger-engine/src/run.ts, both insert
+  // sites, which stamp "anticipate" explicitly. The acceptance
+  // criterion's first clause: a fired trigger lands in anticipate. The
+  // default exists for the backfill of rows that predate the column,
+  // and its value is the spec's own answer rather than a chosen one,
+  // since every row here is a fired trigger's artifact.
+  stage: pipelineStageEnum("stage").notNull().default("anticipate"),
 }, (t) => [index("prompt_pack_item_household_idx").on(t.householdId)]);
 
 // REQ-022: client edits land in review state, merge only on HM approval, full diff kept.
@@ -1211,6 +1233,11 @@ export const workItem = pgTable("work_item", {
   resolution: text("resolution"),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   resolvedBy: text("resolved_by").references(() => authUser.id),
+  // Q-5: NO PRODUCER YET, deliberately. A work item arrives from
+  // hm_capture, corporate or system, and none of those three
+  // determines a stage without a taxonomy nobody has ruled. Nullable,
+  // no default; the classifying surface is a later session.
+  stage: pipelineStageEnum("stage"),
 }, (t) => [
   index("work_item_household_idx").on(t.householdId, t.status),
   check("work_item_kind_known",

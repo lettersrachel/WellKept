@@ -3,6 +3,7 @@
 // editable in-app; tier assignments are policy and take founder sign-off.
 import { z } from "zod";
 import { tierSchema } from "./enums.ts";
+import { isPipelineStage } from "./pipeline-stage.ts";
 
 export const provisionTierSchema = z.enum([
   "floor_1", "floor_2", "process", "method", "preference",
@@ -241,6 +242,26 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
     if (has("triggerKey", "inputsHash") || has("trigger_key", "inputs_hash")
       || has("proposedClass", "confidence") || has("proposed_class", "confidence_pct")) {
       throw new Error(`SEVERE: a shadow_log row reached a client payload at ${path}`);
+    }
+    // Q-5, the Four-Stage spec's guardrail section 5: "Stage tags are
+    // internal; no member surface ever displays the schema." This clause
+    // is deliberately NOT a key pair like every clause above it. A pair
+    // catches a whole recognizable ROW and therefore relies on the
+    // companion key being present, so a projection carrying stage and
+    // nothing else would walk straight through. The stage tag is refused
+    // ON ITS OWN, at any depth, in any client payload.
+    //
+    // It keys on the VALUE being one of the four, which is the precision
+    // that makes a single-key clause safe: "stage" is an ordinary English
+    // word and a member-facing record could legitimately carry one whose
+    // value is not a pipeline stage. RESIDUE, stated rather than left to
+    // be discovered: a key named stage holding a value outside the
+    // vocabulary passes here. Note also that stage has no snake_case
+    // variant, so the camelCase/snake_case double-check every clause
+    // above carries collapses to one form.
+    const stageValue = (payload as Record<string, unknown>).stage;
+    if (keys.has("stage") && isPipelineStage(stageValue)) {
+      throw new Error(`SEVERE: an internal pipeline stage tag ("${stageValue}") reached a client payload at ${path}`);
     }
     for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
       assertNoAnticipationRows(v, `${path}.${k}`);

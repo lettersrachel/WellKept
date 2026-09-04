@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import {
   ROLES, SENSITIVITIES, readDecision, filterFields, filterFieldsForRole,
   revealS3, assertClientPayloadSafe, assertDeclaredClientKeys,
+  FORBIDDEN_CLIENT_KEYS,
   CLIENT_PLAYBOOK_FIELD_KEYS, CLIENT_REGISTRY_ENTRY_KEYS,
   type FieldRecord, type Decision,
 } from "./index";
@@ -245,4 +246,42 @@ test("assertDeclaredClientKeys refuses a row that is not an object rather than s
       () => assertDeclaredClientKeys([bad], CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"),
       /playbook fields\[0\]: payload row is not an object/);
   }
+});
+
+
+test("Q-5: a forbidden key is refused in a payload, whatever the declared list says", () => {
+  // The acknowledgement this exists for: the stage assertion covers ANY
+  // client payload rather than relying on today's payloads not carrying
+  // one. assertNoAnticipationRows walks the payloads that call it; this
+  // covers the declared-list family, which calls a different assertion.
+  assert.ok(Object.keys(FORBIDDEN_CLIENT_KEYS).length > 0,
+    "the forbidden set is empty; every case below would pass vacuously");
+  assert.ok("stage" in FORBIDDEN_CLIENT_KEYS, "stage is not in the forbidden set");
+
+  assert.throws(
+    () => assertDeclaredClientKeys([{ id: "f1", stage: "decide" }], CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"),
+    /SEVERE: forbidden key "stage" reached a client payload/,
+  );
+});
+
+test("Q-5: declaring a forbidden key is refused, so the hatch cannot publish one", () => {
+  // A declared list is a hatch a person may widen in a reviewed change.
+  // The whole point of a forbidden key is that widening is not the
+  // available remedy, so the refusal fires on the LIST, before any row.
+  assert.throws(
+    () => assertDeclaredClientKeys([], [...CLIENT_PLAYBOOK_FIELD_KEYS, "stage"], "playbook fields"),
+    /SEVERE: "stage" is declared for playbook fields and may never reach a member/,
+  );
+  // And it fires on an empty payload too, which is the case a row-level
+  // check alone would miss entirely.
+  assert.throws(
+    () => assertDeclaredClientKeys([{ id: "f1" }], ["id", "stage"], "some future payload"),
+    /may never reach a member/,
+  );
+});
+
+test("Q-5: the forbidden check does not disturb the real client payloads", () => {
+  const fields = [{ id: "f1", section: "Household", name: "Front door", value: "blue", flag: null, sensitivity: "s1" }];
+  assert.equal(assertDeclaredClientKeys(fields, CLIENT_PLAYBOOK_FIELD_KEYS, "playbook fields"), true);
+  assert.equal(assertDeclaredClientKeys([{ report: ["a", "b", "c"], photoCount: 2 }], ["report", "photoCount"], "client visit report"), true);
 });

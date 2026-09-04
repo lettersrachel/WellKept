@@ -1,6 +1,6 @@
 import { test, expect, vi, beforeEach, afterEach } from "vitest";
 import { projectClientReport, CLIENT_REPORT_KEYS } from "./client-report";
-import { assertDeclaredClientKeys } from "@wellkept/permissions";
+import { assertDeclaredClientKeys, FORBIDDEN_CLIENT_KEYS } from "@wellkept/permissions";
 
 /**
  * Step 5a: the client visit report is a LIVE member-reaching surface, sent
@@ -144,4 +144,14 @@ test("G-81: the route routes a refusal to the corporate queue and still returns"
   expect(notice).not.toContain("report.join");
   // Best-effort: a failure to record must not throw out of the handler.
   expect(notice).toMatch(/catch \(err\)[\s\S]*console\.error/);
+});
+
+
+test("Q-5: the client report's declared list carries no forbidden key", () => {
+  // The third declared-list payload, in a different package from the
+  // other two, which is exactly why it is checked here rather than
+  // trusted to be covered by the guard that checks those.
+  const forbidden = Object.keys(FORBIDDEN_CLIENT_KEYS);
+  expect(forbidden.length).toBeGreaterThan(0);
+  expect(CLIENT_REPORT_KEYS.filter((k) => forbidden.includes(k))).toEqual([]);
 });
