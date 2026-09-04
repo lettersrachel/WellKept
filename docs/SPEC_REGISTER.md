@@ -16,7 +16,11 @@ mirror). Reconciliation sessions update this file.
 **The authority caveat, until the Ground truth 1 ruling lands:** stamps
 here describe what the repository holds; they do not settle which
 document governs where the package and the standing WK-DEV-006..011 law
-disagree. The Q-0 log carries the conflicts.
+disagree. The Q-0 log carries the conflicts. **RESOLVED 3 September
+2026 (founder rulings on PR #282, frozen as
+FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md): the standing CLAUDE.md
+governs; the package's genuinely new law was merged by section at Q-0b.
+The caveat above is kept as the record of the interval it covered.**
 
 | Spec | Status | Notes |
 |---|---|---|
@@ -49,9 +53,11 @@ disagree. The Q-0 log carries the conflicts.
 | WELL_KEPT.md (PantriApp revision) | not-in-repository | |
 | SESSION_COMMISSIONING_BRIEF.md | verified@d01abc3ed | PRESENT AND FROZEN here since 5 August; the package treats it as an external source. |
 | AQ run report | verified@d01abc3ed | PRESENT AND FROZEN as docs/AQ_RECONCILIATION_REPORT.md since 5 August; docs/reports/README.md points at it. Q-0's retrieval resolves to already-here. |
-| docs/COMPETITIVE_FEATURE_INPUTS.md | received, hash-pinned, NOT installed | Package file; awaits the Ground truth 1 authority ruling, then the intake pattern (frozen, manifested). |
-| docs/BENCHMARK_ADOPTION.md | received, hash-pinned, NOT installed | Same. |
-| RFC-001 (amended 3 Sep) | received, hash-pinned, NOT installed | CONFLICTS with the repo's own RFC-ATTR-01 on the knowing-state vocabulary and decides the two enums ATTR-01 holds for the founder; Q-0 log Ground truth 3. |
-| SPEC_MODE_LOGIC.md | received, hash-pinned, NOT installed | New law; no repo conflict found beyond the Ruling 1 adjacency it already respects. |
-| FIXTURES.md | received, hash-pinned, NOT installed | Content founder-supplied before Q-8; the repo's three fixtures do not map to F-1/2/3 (Q-0 log Ground truth 8). |
-| BUILD_RULING_2026-09-03 / BUILD_QUEUE / START_HERE / package CLAUDE.md | received, hash-pinned, NOT installed | The authority question itself; the package CLAUDE.md cannot replace the repo's as-is (guards-manifest CI asserts the guard table it lacks). |
+| docs/intake/.../COMPETITIVE_FEATURE_INPUTS.md | verified@Q-0b (frozen, adopted) | Intaken 4 September per Ruling 1; adopted into the standing CLAUDE.md by pointer (merge 6/12); inputs land through the re-cut BUILD_QUEUE. |
+| docs/intake/.../BENCHMARK_ADOPTION.md | verified@Q-0b (frozen, adopted) | Intaken 4 September; adopted by pointer (merge 10/12); the Handled invariant merged (3/12); reconciliation objects enter through the ATTR-01 amendment. |
+| RFC-001 (amended 3 Sep) | superseded | Withdrawn as a document by Ruling 2 (RFC-ATTR-01 survives as the substrate RFC). Its enum sign-offs, knowing-state mapping, consumers and attributes live in the RFC-ATTR-01 amendment (docs/rfc/RFC-ATTR-01_Field_Attributes.md, Amendment 1). Frozen copy kept: docs/intake/2026-09-03-build-package/RFC-001_Schema_Substrate.md. Not a session input. |
+| docs/intake/.../SPEC_MODE_LOGIC.md | verified@Q-0b (frozen, adopted) | Intaken 4 September; sections 1-3 and 4a adopted as written into the standing CLAUDE.md (merge 4/12). No mode or certification tables exist in the tree yet; builds enter through the re-cut queue. |
+| docs/intake/.../FIXTURES.md | verified@Q-0b (frozen, adopted) | Intaken 4 September; adopted with the extend-not-duplicate reconciliation (merge 5/12): Fernbrook, Smoke Test Fixture and Trainor already exist, Trainor is the Synthetic Training Household base, the training=true flag reconciles with is_fixture at build time. Content founder-supplied before Q-8. |
+| package CLAUDE.md | superseded | Withdrawn by Ruling 1 and NEVER installed. The standing CLAUDE.md governs; the package's new law was merged into it by section at Q-0b (commits 1/12 to 12/12). Frozen copy kept: docs/intake/2026-09-03-build-package/PACKAGE_CLAUDE_MD_WITHDRAWN.md. Not a session input. |
+| BUILD_RULING_2026-09-03 / START_HERE | verified@Q-0b (frozen, adopted) | Intaken 4 September; the tier ruling merged (1/12), the standing instruction merged into Session discipline with standing wording winning (11/12, 12/12). |
+| package BUILD_QUEUE.md | superseded | Replaced by the re-cut docs/BUILD_QUEUE.md per Ruling 1 section 3 (built items stamped and closed, partly-built carry true remaining size, new items keep the package acceptance criteria). Frozen copy kept in the intake directory. |
