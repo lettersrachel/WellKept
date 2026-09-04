@@ -1,3 +1,4 @@
+import { BRAND } from "@wellkept/config";
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { householdRoleAssignment, authUser, household } from "@wellkept/schema";
@@ -48,7 +49,7 @@ async function deliverClientReport(householdId: string, payload: { report?: stri
         // household name never reaches this email's MARKUP; only the
         // sentences do, and those are escaped above.
         subject: `This week's visit at ${hh?.name ?? "your household"}`,
-        html: `<div style="max-width:560px;margin:0 auto"><h2 style="font-family:Georgia,serif;color:#1c3d2e">This week&rsquo;s visit</h2>${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">${projected.photoCount} photo(s) attached &middot; photo-supported report &middot; Well Kept</p></div>`,
+        html: `<div style="max-width:560px;margin:0 auto"><h2 style="font-family:Georgia,serif;color:#1c3d2e">This week&rsquo;s visit</h2>${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">${projected.photoCount} photo(s) attached &middot; photo-supported report &middot; ${BRAND.companyName}</p></div>`,
       });
     } catch (err) {
       console.error("[visit-report] delivery failed (visit stays applied):", err instanceof Error ? err.message : err);
@@ -84,7 +85,7 @@ async function alertCorporateOnWatch(
       await sendMail({
         to: c.email,
         subject: `[${hh.statusTag}] Visit closed — ${hh.name}`,
-        html: `<div style="max-width:560px;margin:0 auto"><p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.1em;color:#b08d2a;font-weight:700">${escapeHtml(hh.statusTag)} HOUSEHOLD · VISIT CLOSED</p><h2 style="font-family:Georgia,serif;color:#1c3d2e">${escapeHtml(hh.name)}</h2>${signal}${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">Open the fleet board to review. Well Kept</p></div>`,
+        html: `<div style="max-width:560px;margin:0 auto"><p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.1em;color:#b08d2a;font-weight:700">${escapeHtml(hh.statusTag)} HOUSEHOLD · VISIT CLOSED</p><h2 style="font-family:Georgia,serif;color:#1c3d2e">${escapeHtml(hh.name)}</h2>${signal}${sentences}<p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6b6b6b">Open the fleet board to review. ${BRAND.companyName}</p></div>`,
       });
     } catch (err) {
       console.error("[watch-alert] delivery failed:", err instanceof Error ? err.message : err);

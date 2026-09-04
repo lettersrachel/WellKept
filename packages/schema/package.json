@@ -35,6 +35,7 @@
   "devDependencies": {
     "@types/node": "26.1.1",
     "@types/pg": "8.20.0",
+    "@wellkept/config": "workspace:*",
     "@wellkept/permissions": "workspace:*",
     "drizzle-kit": "0.31.10",
     "pg": "8.22.0",

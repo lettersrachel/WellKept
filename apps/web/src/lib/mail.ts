@@ -23,6 +23,8 @@
  * SOURCE, never the escaped output**, because escaping is a transform a
  * scan on the far side of it cannot see through.
  */
+import { BRAND } from "@wellkept/config";
+
 export function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")   // first, or it double-escapes the rest
@@ -54,7 +56,7 @@ export async function sendMail({ to, subject, html }: { to: string; subject: str
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>",
+      from: process.env.AUTH_EMAIL_FROM ?? BRAND.emailFromFallback,
       to: [to],
       subject,
       html,

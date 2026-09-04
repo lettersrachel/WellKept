@@ -10,14 +10,15 @@
   },
   "dependencies": {
     "@sentry/node": "9.46.0",
-    "bullmq": "5.80.8",
-    "@wellkept/schema": "workspace:*",
-    "@wellkept/permissions": "workspace:*",
-    "drizzle-orm": "0.45.2",
-    "pg": "8.22.0",
-    "@wellkept/trigger-engine": "workspace:*",
     "@wellkept/close-flow": "workspace:*",
-    "@wellkept/mail": "workspace:*"
+    "@wellkept/config": "workspace:*",
+    "@wellkept/mail": "workspace:*",
+    "@wellkept/permissions": "workspace:*",
+    "@wellkept/schema": "workspace:*",
+    "@wellkept/trigger-engine": "workspace:*",
+    "bullmq": "5.80.8",
+    "drizzle-orm": "0.45.2",
+    "pg": "8.22.0"
   },
   "devDependencies": {
     "typescript": "5.8.3",

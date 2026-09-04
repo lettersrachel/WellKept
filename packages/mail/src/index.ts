@@ -5,6 +5,8 @@
  * state and is trivially testable. Non-2xx throws, so a failed send is
  * never a silent success.
  */
+import { BRAND } from "@wellkept/config";
+
 export interface SendOptions {
   apiKey: string;
   from: string;
@@ -50,7 +52,7 @@ export interface DigestHousehold {
   missingVisit?: boolean;
 }
 
-const BRAND = { green: "#1c3d2e", gold: "#b08d2a", grey: "#6b6b6b", brick: "#8c2f22" };
+const PALETTE = { green: "#1c3d2e", gold: "#b08d2a", grey: "#6b6b6b", brick: "#8c2f22" };
 
 /** A corporate recipient's Monday digest across their assigned households. */
 export function composeFleetDigest(
@@ -62,41 +64,41 @@ export function composeFleetDigest(
   const missing = households.filter((h) => h.missingVisit);
   const rows = households
     .map((h) => {
-      const tagColor = h.statusTag === "LIFE-EVENT" ? BRAND.brick : h.statusTag === "WATCH" ? BRAND.gold : BRAND.grey;
+      const tagColor = h.statusTag === "LIFE-EVENT" ? PALETTE.brick : h.statusTag === "WATCH" ? PALETTE.gold : PALETTE.grey;
       return `<tr>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Georgia,serif">${h.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${tagColor};font-weight:700">${h.statusTag}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.total - h.unconfirmed}/${h.total} confirmed</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts${h.openFlags ? ` · ${h.openFlags} flag${h.openFlags === 1 ? "" : "s"}` : ""}${h.promotedFlags ? ` <span style="color:${BRAND.brick};font-weight:700">(${h.promotedFlags} moving fast)</span>` : ""}${h.missingVisit ? ` <span style="color:${BRAND.brick};font-weight:700">(no visit in ${h.visitGapDays}d)</span>` : ""}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.pendingEdits} edits · ${h.upcomingPrompts} prompts${h.openFlags ? ` · ${h.openFlags} flag${h.openFlags === 1 ? "" : "s"}` : ""}${h.promotedFlags ? ` <span style="color:${PALETTE.brick};font-weight:700">(${h.promotedFlags} moving fast)</span>` : ""}${h.missingVisit ? ` <span style="color:${PALETTE.brick};font-weight:700">(no visit in ${h.visitGapDays}d)</span>` : ""}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;font-family:Helvetica,Arial,sans-serif;font-size:13px">${h.lastStranger}</td>
       </tr>`;
     })
     .join("");
   const attention = needsEyes.length
-    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${needsEyes.length} household(s) need eyes this week: ${needsEyes.map((h) => h.name).join(", ")}.</p>`
-    : `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.grey}">No households flagged for special attention this week.</p>`;
+    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${PALETTE.brick};font-weight:700">${needsEyes.length} household(s) need eyes this week: ${needsEyes.map((h) => h.name).join(", ")}.</p>`
+    : `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${PALETTE.grey}">No households flagged for special attention this week.</p>`;
   // AH: a household whose record shows no applied visit inside the set
   // window gets its own line; the record not knowing about a visit is
   // exactly what a stuck client cannot report about itself.
   const missingLine = missing.length
-    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.brick};font-weight:700">${missing.length} household(s) may be missing a visit record: ${missing.map((h) => `${h.name} (${h.visitGapDays}d)`).join(", ")}. Check with the HOM; a device may be holding unsynced work.</p>`
+    ? `<p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${PALETTE.brick};font-weight:700">${missing.length} household(s) may be missing a visit record: ${missing.map((h) => `${h.name} (${h.visitGapDays}d)`).join(", ")}. Check with the HOM; a device may be holding unsynced work.</p>`
     : "";
   const html = `<div style="max-width:620px;margin:0 auto">
-    <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.14em;color:${BRAND.gold};font-weight:700">WELL KEPT · FLEET DIGEST · WEEK OF ${weekOf}</p>
-    <h2 style="font-family:Georgia,serif;color:${BRAND.green};margin:6px 0 12px">${households.length} household${households.length === 1 ? "" : "s"}${recipientName ? `, ${recipientName}` : ""}</h2>
+    <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.14em;color:${PALETTE.gold};font-weight:700">${BRAND.companyName.toUpperCase()} · FLEET DIGEST · WEEK OF ${weekOf}</p>
+    <h2 style="font-family:Georgia,serif;color:${PALETTE.green};margin:6px 0 12px">${households.length} household${households.length === 1 ? "" : "s"}${recipientName ? `, ${recipientName}` : ""}</h2>
     ${attention}
     ${missingLine}
     <table style="width:100%;border-collapse:collapse;margin-top:10px">
       <thead><tr>
-        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.06em;color:${BRAND.grey};text-transform:uppercase">Household</th>
-        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${BRAND.grey};text-transform:uppercase">Status</th>
-        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${BRAND.grey};text-transform:uppercase">Playbook</th>
-        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${BRAND.grey};text-transform:uppercase">Queues</th>
-        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${BRAND.grey};text-transform:uppercase">Stranger Test</th>
+        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.06em;color:${PALETTE.grey};text-transform:uppercase">Household</th>
+        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${PALETTE.grey};text-transform:uppercase">Status</th>
+        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${PALETTE.grey};text-transform:uppercase">Playbook</th>
+        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${PALETTE.grey};text-transform:uppercase">Queues</th>
+        <th style="text-align:left;padding:6px 10px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${PALETTE.grey};text-transform:uppercase">Stranger Test</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${BRAND.grey};margin-top:14px">Open the fleet board to act on any of these. Well Kept</p>
+    <p style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${PALETTE.grey};margin-top:14px">Open the fleet board to act on any of these. ${BRAND.companyName}</p>
   </div>`;
   // AH: a possibly-missing visit is attention, same as WATCH/LIFE-EVENT.
   const attentionCount = new Set([...needsEyes, ...missing].map((h) => h.name)).size;
@@ -150,12 +152,12 @@ export function composeClientWeeklyDigest(input: ClientWeekDigestInput): { subje
     : "";
 
   const html = `<div style="max-width:560px;margin:0 auto">
-    <p style="${sans};font-size:11px;letter-spacing:.14em;color:#b08d2a;font-weight:700">WELL KEPT &middot; YOUR WEEK &middot; ${weekOf}</p>
+    <p style="${sans};font-size:11px;letter-spacing:.14em;color:#b08d2a;font-weight:700">${BRAND.companyName.toUpperCase()} &middot; YOUR WEEK &middot; ${weekOf}</p>
     <h2 style="${serif};color:#1c3d2e;margin:6px 0 12px">This week at ${householdName}</h2>
     ${visitBlocks}
     ${taken}
     ${planned}
-    <p style="${sans};font-size:12px;color:#6b6b6b;margin-top:20px">Well Kept &middot; your home, looked after</p>
+    <p style="${sans};font-size:12px;color:#6b6b6b;margin-top:20px">${BRAND.companyName} &middot; your home, looked after</p>
   </div>`;
   return { subject: `This week at ${householdName}`, html };
 }

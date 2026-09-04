@@ -1,3 +1,4 @@
+import { BRAND } from "@wellkept/config";
 import { filterFields, assertClientPayloadSafe, assertDeclaredClientKeys,
   CLIENT_PLAYBOOK_FIELD_KEYS, CLIENT_REGISTRY_ENTRY_KEYS, type FieldRecord } from "@wellkept/permissions";
 import { SECTION_NAMES, assertNoProvisionRows, assertNoAnticipationRows } from "@wellkept/schema";
@@ -26,7 +27,7 @@ async function StewardshipCard({ householdId }: { householdId: string }) {
     <div className="card">
       <h2>What we hold for you</h2>
       <div className="note">
-        Everything Well Kept keeps about your household, by category. Your working details and every
+        Everything {BRAND.companyName} keeps about your household, by category. Your working details and every
         secured item stay behind the protections the app enforces, shown here as counts and never
         printed.
       </div>

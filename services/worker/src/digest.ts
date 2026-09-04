@@ -4,6 +4,7 @@
  * recipient. In dev (no RESEND_API_KEY) it logs the composed subject
  * instead of sending, so the run is verifiable without a provider.
  */
+import { BRAND } from "@wellkept/config";
 import pg from "pg";
 import { composeFleetDigest, sendResendEmail, type DigestHousehold } from "@wellkept/mail";
 import { DEFAULT_FLAG_PROMOTION, isPromotionCandidate, type FlagLook } from "@wellkept/schema";
@@ -12,7 +13,7 @@ const CORP_ROLES = new Set(["corporate_admin"]);
 
 export async function runFleetDigest(pool: pg.Pool) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.AUTH_EMAIL_FROM ?? "Well Kept <onboarding@resend.dev>";
+  const from = process.env.AUTH_EMAIL_FROM ?? BRAND.emailFromFallback;
   const weekOf = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
   const { rows: admins } = await pool.query(

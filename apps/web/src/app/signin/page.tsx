@@ -1,3 +1,5 @@
+import { BRAND } from "@wellkept/config";
+
 export const dynamic = "force-dynamic";
 
 export default async function SignIn({
@@ -8,7 +10,7 @@ export default async function SignIn({
   const { error } = await searchParams;
   return (
     <div className="card" style={{ maxWidth: 460, margin: "60px auto" }}>
-      <h2>Sign in to Well Kept</h2>
+      <h2>Sign in to {BRAND.companyName}</h2>
       {error === "rate-limited" ? (
         <div className="banner">
           Too many sign-in requests. Wait an hour and try again, or use a link already in your

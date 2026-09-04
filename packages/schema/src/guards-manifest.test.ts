@@ -64,6 +64,9 @@ test("the guard files exist where the manifest says they are", () => {
     // Q-1: every exported server action calls a permission gate or
     // carries a written allowlist reason; both inputs computed.
     "apps/web/src/lib/action-permissions.test.ts",
+    // Q-2: brand is one configuration value; no member-facing string
+    // carries the literal, and the config pin holds the value.
+    "packages/schema/src/brand-config.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -129,6 +132,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "telemetry-discipline.test.ts", "legal-census.test.ts",
     "success-visibility.test.ts", "client-payload-shape.test.ts",
     "field-attributes.test.ts", "action-permissions.test.ts",
+    "brand-config.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }
