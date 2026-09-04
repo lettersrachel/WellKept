@@ -457,6 +457,25 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   writer" is a valid state, so the guard would fire on every intentional
   case and be allowlisted into silence. It stays a sentence a person
   writes at the only moment the answer is known.
+- **A column that records WHO SAID SOMETHING ships nullable, never with
+  a default.** A default erases the observable difference between the
+  producer writing a value and nobody writing one: both leave the same
+  bytes in the row, so the per-column producer answer above stops being
+  checkable against the data the moment a default exists. NULL is what a
+  missing producer is supposed to look like, and it is also the true
+  statement about a row that predates the column. **The instance that
+  proved it:** 0065 first shipped `prompt_pack_item.stage` as
+  `NOT NULL DEFAULT 'anticipate'`, argued from the spec's own sentence
+  that a fired trigger lands in anticipate, and it was amended to
+  nullable before it applied. Making the amendment surfaced a THIRD
+  writer the producer table had not named, the raw INSERT at
+  `demo-hom-view.ts:179`, which under the default was silently receiving
+  a stage nobody had decided for it. **The default was not merely
+  redundant with the producer; it was writing a claim on behalf of a
+  writer nobody had accounted for**, and removing it is what made that
+  writer visible. The rule is narrow on purpose: a default that
+  expresses a real invariant every row satisfies by construction is
+  fine. This is about columns whose value is an assertion someone made.
 - **Generated migration SQL is READ before it is applied.** `drizzle-kit`
   emitted 0058's two composite foreign keys BEFORE the unique index they
   reference; Postgres refused with "there is no unique constraint
