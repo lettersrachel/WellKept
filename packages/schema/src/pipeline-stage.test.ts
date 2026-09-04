@@ -34,8 +34,10 @@ test("the vocabulary is exactly the Four-Stage spec's four values", () => {
 test("isPipelineStage accepts the four and refuses everything else", () => {
   for (const s of PIPELINE_STAGES) assert.equal(isPipelineStage(s), true, `${s} should be a stage`);
   // The near misses that matter: the spec's own flow sentence names a
-  // fifth movement, "execution", which is NOT in the tag vocabulary
-  // (reported in the Q-5 session log, not reconciled).
+  // fifth movement, "execution", which is NOT in the tag vocabulary.
+  // This assertion PINS that absence so a later session cannot add a
+  // fifth value believing it was always meant to be there. The
+  // discrepancy is G-121, a spec defect routed to Q-18, not a bug here.
   assert.equal(isPipelineStage("execution"), false);
   assert.equal(isPipelineStage("Anticipate"), false);
   assert.equal(isPipelineStage(""), false);

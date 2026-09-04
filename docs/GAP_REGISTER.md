@@ -7495,3 +7495,66 @@ document's claim about an external system is still true**, and none
 can. That half stays with the reader, which is why the rule names the
 grep to run rather than trusting recall.
 
+
+---
+
+### G-121 OPEN, 4 September 2026: the Four-Stage spec names five movements and specifies a four-value tag, two paragraphs apart
+
+**Filed by founder ruling at the Q-5 acceptance, as a SPEC DEFECT rather
+than an engineering question.** The instruction was explicit and is the
+reason this is an entry and not a code change: log it, do not reconcile
+it in code, and send it to the Q-18 reconciliation alongside the
+s4-kind mapping.
+
+**The two sentences, both from `WK_Four_Stage_Application_Spec_2026-08-02.docx`
+section 3 (stamped plan-of-record, `docs/SPEC_REGISTER.md:41`).**
+
+The pipeline sentence names FIVE movements:
+
+> Every household need flows anticipation, identification,
+> decision-routing, EXECUTION, monitoring as explicit states.
+
+The stage-tag sentence, two paragraphs later, specifies FOUR values:
+
+> Every trigger, prompt-pack item, requirement, and queue item carries
+> its stage as an enum: anticipate, identify, decide, monitor.
+
+**`execution` is in the first list and absent from the second.** Both
+are the document's own text, so this is the document disagreeing with
+itself rather than the document disagreeing with the code, and the
+standing rule covers that case in as many words: report both and stop,
+do not pick the more recent, do not reconcile.
+
+**What Q-5 built, so the shape of the exposure is exact.** Migration
+0065 ships the FOUR-value list, because the queue row and the tag
+sentence agree on exactly those four and the tag sentence is the one
+that specifies the column. `packages/schema/src/pipeline-stage.ts`
+records the discrepancy at the site rather than only here, and
+`pipeline-stage.test.ts` asserts `isPipelineStage("execution")` is
+false, so the absence is pinned rather than incidental: a later session
+cannot quietly add a fifth value believing it was always meant to be
+there.
+
+**Why this is worth an entry rather than a shrug.** The two readings
+are not stylistic. Under the four-value reading, execution is not a
+stage at all and work in flight carries whatever stage it entered with,
+which makes `monitor` the state a completed thing sits in. Under the
+five-movement reading there is a state between `decide` and `monitor`
+that nothing can currently represent, and any future surface asking
+"what is happening to this right now" would have no value to render.
+That is a schema question wearing a vocabulary question's clothes, and
+it gets more expensive once rows carry stages.
+
+**Routed to Q-18**, the reconciliation that already owns the other
+open vocabulary question of this class: the shipped s4 event kinds
+(`work_item.*`, `decision_record.*`) sitting outside the RFC-001
+family catalog, held there by the 4 September ruling that no kind is
+renamed before that reconciliation. Both are "two written vocabularies
+for one set of things, neither wrong, neither reconciled", so they
+should be answered by one person at one sitting rather than
+separately.
+
+**Not to be fixed in code before then.** Adding `execution` is a
+migration and a semantics decision; removing the word from the spec is
+an edit to a stamped document. Neither is an engineering call, and the
+four-value column is not blocked on the answer.

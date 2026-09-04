@@ -2258,6 +2258,34 @@ gate, which is G-82 doing its job on a real input rather than a
 sentinel. The `mail_webhook_silence` knob stays null until two weeks of
 delivered events exist (values-intake Ruling 6).
 
+**The card's own reading, recorded (founder, same day): `email.delivered:
+2`, "Last webhook received today (email.delivered)", and the silence
+alert quiet because `mail_webhook_silence` is unset, which is the
+designed null state and not a fault.** The heartbeat and the by-kind
+count are both live, so every piece of Q-1's surface has now rendered
+real data.
+
+**OPEN, and founder-side by necessity: the count is 2 and one magic
+link was sent.** The card counts ROWS in `mail_outcome` over 30 days
+(`oversight/page.tsx`, a group-by over the window), so two rows is
+either one email counted twice or two emails counted once each. The
+query that discriminates is `select message_id, count(*) from
+mail_outcome group by 1 having count(*) > 1;` and it must run against
+PRODUCTION, which this session cannot reach: no production
+`DATABASE_URL`, and the proxy blocks egress to the host. **Two readings,
+and the ordering makes the second the likelier one.** If it returns a
+row, that is the duplicate-webhook window: two live endpoints delivered
+the same email under two svix ids, `provider_event_id` deduped neither
+because they differ, and the 30-day count is inflated by one. If it
+returns nothing, the two rows are two genuinely different emails and
+the count is correct. **The founder's own ordering argues for the
+second**: she deleted the duplicate BEFORE setting
+`RESEND_WEBHOOK_SECRET`, so during the window when both webhooks
+existed the route was answering 503 and storing nothing. Stated as a
+reading of the sequence rather than as the answer, because the query is
+what settles it and it has not run.
+
+
 **And Q-5 is BUILT (migration 0065): the pipeline stage tag, with two of
 its three columns deliberately inert and the header that says so.** The
 `pipeline_stage` enum carries the Four-Stage spec's four values
