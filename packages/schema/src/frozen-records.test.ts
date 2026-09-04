@@ -71,6 +71,7 @@ const FROZEN: Record<string, string> = {
   "docs/intake/2026-09-04-founder-values/surface_copy.md": "58cf3a6d1f7e66c6ca00c6999e7e0c310e3d05682e317524f028579eeee289e8",
   "docs/intake/2026-09-04-founder-values/fcps_calendar_extraction_test.md": "9dd8e175ea65e6aea3ec4d7ccc2fcb1b253e3fa93227f0596137b023cf0ca940",
   "docs/intake/2026-09-04-founder-values/vendor_decisions_and_gap_triage.md": "5bcfd219c1d63bea11b7b4c6152dda6dbfc7ba9abfc25128babdb424448e12bb",
+  "docs/intake/2026-09-04-founder-values/ADOPTION_RULINGS_2026-09-04.md": "aa0dbd30206a5cf820ab5c5a0a386a411abec5bdda8bba667910b73d16269415",
   // The package's five .csv/.yaml files cannot carry status frontmatter,
   // so they are pinned by whole-file sha256 in docs/SPEC_REGISTER.md and
   // the session log instead (the TASK_INVENTORY csv precedent). This

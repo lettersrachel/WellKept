@@ -128,6 +128,21 @@ rulings, recorded below where they bind.
     FUTURE document-only session whose input (the marked list) is the
     founder's to produce; nothing of it was started here.
 
+## Adoption rulings applied (same day, at the founder's acceptance)
+
+The founder accepted the intake and ruled on the ground truths; the
+rulings are applied as
+`docs/intake/2026-09-04-founder-values/ADOPTION_RULINGS_2026-09-04.md`
+(frozen, manifested), never by editing the frozen files. In brief:
+ground truth 1 resolves as TWO quantities (operating cap 5 enforced by
+the software; physical hard maximum 6 in workforce doctrine; lifting 5
+to 6 is an E4 two-key decision); ground truth 3's flag adopts as
+`load_concern_raised`, human-recorded only with required reported_by,
+the Q-4 guard barring the inference and permitting the record; ground
+truth 4's tags map to the shipped hyphenated keys; ground truth 2's
+dead-letter bound stays at the shipped 10; ground truth 5's two extra
+patterns adopt as Q-12b data BEHIND the six launch patterns.
+
 ## Open items
 
 - Founder review of this intake; Q-4 is pre-authorized and starts on
