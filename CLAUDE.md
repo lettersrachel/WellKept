@@ -222,6 +222,17 @@ and the Q-0b session log records "already stated".
   exists; today the client side is frozen at the digest, so the digest
   scheduler is the first surface this binds.
 
+- **The Handled invariant is the definition of closed.** A thing is
+  closed only when an accountable owner exists AND no required member
+  decision is unresolved AND a follow-up or watch exists where external
+  completion is pending AND verification requirements are satisfied or
+  explicitly pending. Activity is never closure: "vendor contacted",
+  "provider says done" and "email sent" are intermediate events. This
+  is the same posture the standing section 29 adoption already holds
+  ("no false closure because provider activity ended"); the Handled
+  invariant is its positive definition and governs any future closed
+  state a surface renders.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
