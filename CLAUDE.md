@@ -401,7 +401,11 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   manifest, registered, reconciled against what the tree actually holds,
   and merged by section with the standing wording winning where both
   speak. A document handed to a session raw is input to an intake, not
-  an instruction to build.
+  an instruction to build. **And counts and lists come from the tree,
+  never from a document about the tree** (Part C ruling, 4 September
+  2026, from the six-versus-nine erasure count: the intaken document's
+  count of a repository fact was stale the day it was written, and the
+  CI-enforced list was authoritative the whole time).
 - **Queue discipline (from the package's START_HERE, merged 4 September
   2026; standing wording wins where both speak).** New here: one queue
   item per session, in `docs/BUILD_QUEUE.md` order, never reordered,
