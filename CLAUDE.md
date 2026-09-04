@@ -233,6 +233,21 @@ and the Q-0b session log records "already stated".
   invariant is its positive definition and governs any future closed
   state a surface renders.
 
+- **Guided / Normal / Expert mode** is a property of ONE HOM on ONE
+  household on ONE workflow class, never of a person. The promotion,
+  demotion, two-signature and mode-history rules are
+  `docs/intake/2026-09-03-build-package/SPEC_MODE_LOGIC.md` sections 1
+  to 3, and the AI release governance (ai_behavior_version, the
+  evidence envelope, reversibility classes, the handoff packet) is its
+  section 4a; both adopted as written. Load-bearing edges: mode is
+  never shown to a member; mode changes are never automatic upward;
+  demotion to Guided is automatic on a high_consequence error; the
+  trainer and second observer are distinct users, enforced in schema
+  (signer_1 != signer_2); and no leaderboard is ever computed from
+  competence, speed, cognitive-load or process-mining data, which is
+  Ruling 1's bar restated where the mode data would tempt it. Nothing
+  of this exists in the tree yet; it enters through the re-cut queue.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
