@@ -624,8 +624,17 @@ sha confirmed before `db:migrate`. **The named sha must also carry a green
 `ci` run**, checked by the preflight against the runs API and failing closed
 on every unclear answer (no run, still running, any non-success conclusion,
 an unreachable or unparseable response). Being on `origin/main` proves
-provenance and nothing about verification: `main` carries no branch
-protection, so a merge never implied a passing check (G-73). Vercel does not auto-deploy on push. From
+provenance and nothing about verification (G-73: when that gate was
+built `main` carried no protection at all; protection landed 27 August
+as a RULESET, which the classic branch endpoint still reports as
+`protected: false`, so the gate stays and the two-endpoint read stays
+the way to check).
+**Vercel DOES auto-deploy on push (corrected 4 September 2026, G-120).**
+The long-standing "does not auto-deploy" line was never a setting: the
+project's Ignored Build Step is Behavior Automatic with no override, and
+the quiet was only the GitHub integration being disconnected. Until an
+override is set, a push to `main` ships the web build with no migration
+step, which is the unsafe skew direction (code ahead of schema). From
 `apps/web`, `--yes` suppresses the only confirmation and silently creates a
 third project. Then work `DEPLOY.md` §4 against the Smoke Test Fixture.
 A docs-only merge still moves the build id, so the skew banner firing after one

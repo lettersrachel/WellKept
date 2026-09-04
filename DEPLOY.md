@@ -49,8 +49,15 @@ zero env vars, auto-deploys on every push) — the live project is
 `wellkept`, the one holding all ten env vars. Don't debug against the
 wrong one.
 
-**Deploying** (the live project does NOT auto-deploy; every production
-deploy is manual): `bash tooling/deploy.sh <sha-from-the-merged-PR>`
+**Deploying.** CORRECTED 4 September 2026 (G-120): the live project's
+Ignored Build Step is Behavior Automatic with no override, so it DOES
+auto-deploy on push. Every earlier version of this line ("does NOT
+auto-deploy; every production deploy is manual") described the effect
+of a disconnected GitHub integration, not a setting. Auto-deploy ships
+the web build with NO migration step, which is the unsafe skew
+direction; the ordered path below is the only one that migrates first,
+and it stays the only sanctioned way to ship.
+`bash tooling/deploy.sh <sha-from-the-merged-PR>`
 runs the whole mechanical sequence as a gate - named-sha check, its own
 cd to the repo root, migrate, three-way migration-count assertion,
 required-env-presence check (names only, never values; added 2026-07-29

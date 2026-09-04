@@ -2210,6 +2210,36 @@ suite 11/11 uncached. **Owed at the next deploy: 0062, 0063 and 0064
 apply together (migrations 62 to 65), the founder running 0064's
 census first.**
 
+**Same day, G-120: the migrations-first invariant was NEVER ENFORCED,
+only accidentally true, and production is live at `e468066d` with its
+schema three migrations behind.** The founder reconnected the lost
+GitHub integration and deployed PR #287 through a deploy hook; the
+build log carried no migration lines and a Neon check found
+`mail_outcome` and `event_outbox.causation_id` absent, so 0062 to 0064
+have not applied. She then read the Vercel Git settings directly:
+**Ignored Build Step is Behavior Automatic with no override**, so
+nothing there ever blocked auto-deploy. The standing claim in
+CLAUDE.md and DEPLOY.md that "Vercel does not auto-deploy on push"
+described the effect of a DISCONNECTED integration, not a setting; the
+protection was a side effect of a break and ended when the break was
+repaired. Both documents are corrected in place, and the same CLAUDE.md
+sentence's second stale claim (that `main` carries no branch
+protection, false since 27 August when protection landed as a ruleset)
+is corrected with the reason the CI gate stays. **The skew is the
+unsafe direction**: code ahead of schema means `emitOutboxEvent` names
+a column that is not there on every event write, and the fleet board's
+Mail deliverability card selects from a missing table; an old build
+ignoring new columns would have been harmless, which is exactly why
+the order is migrate-then-deploy. The founder's 0064 census returned 0,
+so the ordered run applies all three cleanly:
+`DATABASE_URL=... bash tooling/deploy.sh --preflight e468066d` (expect
+`3 migration(s) PENDING (database 62, disk 65). NOTHING was applied.`)
+then the same command without `--preflight`. **OPEN and founder-side:
+whether to disable auto-deploy by an Ignored Build Step override, or to
+guard it there.** The engineering read is in G-120 and turns on one
+unverified fact, named not assumed: whether Vercel runs that step for
+CLI deploys, which is what `deploy.sh` performs.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record
