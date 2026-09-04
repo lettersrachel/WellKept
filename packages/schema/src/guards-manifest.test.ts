@@ -67,6 +67,9 @@ test("the guard files exist where the manifest says they are", () => {
     // Q-2: brand is one configuration value; no member-facing string
     // carries the literal, and the config pin holds the value.
     "packages/schema/src/brand-config.test.ts",
+    // Q-4: the judgment-free schema census (Ruling 2 s5 patterns) and
+    // the two-household refusal; the pattern list is founder-editable.
+    "packages/schema/src/judgment-free.test.ts",
   ];
   for (const f of files) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
@@ -132,7 +135,7 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
     "telemetry-discipline.test.ts", "legal-census.test.ts",
     "success-visibility.test.ts", "client-payload-shape.test.ts",
     "field-attributes.test.ts", "action-permissions.test.ts",
-    "brand-config.test.ts",
+    "brand-config.test.ts", "judgment-free.test.ts",
   ]) {
     assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
   }

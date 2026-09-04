@@ -1,0 +1,24 @@
+-- 0064: Q-4, the ruled additive FK (founder ruling, 4 September 2026,
+-- the Q-3b acceptance; erasure-order condition answered at the values
+-- intake: households are renamed and archived, NEVER deleted, so the
+-- parent side of this constraint never vanishes, and event_outbox
+-- children delete first under erasure, which an FK never objects to).
+--
+-- PRODUCER, PER COLUMN (the G-85 rule): no column is added; the
+-- ALTERED column household_id keeps its one write path (emitOutboxEvent
+-- and the test harness), every production caller passing a real
+-- household id. The constraint changes what the column REFUSES, not
+-- who writes it.
+--
+-- PRECONDITION: every existing event_outbox.household_id resolves to a
+-- household row. Local census at write time: 0 orphans across 61 rows.
+-- PRODUCTION census, to run before the deploy applies this (the 0059
+-- fresh-read rule; the header's claim is legitimate and will be stale):
+--   SELECT count(*) FROM event_outbox e
+--     LEFT JOIN household h ON h.id = e.household_id
+--     WHERE h.id IS NULL;
+-- Expected 0. A non-zero count means the ALTER refuses ATOMICALLY and
+-- nothing is applied, which is the safe failure mode.
+--
+-- READ before applying: one statement, one additive constraint.
+ALTER TABLE "event_outbox" ADD CONSTRAINT "event_outbox_household_id_household_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."household"("id") ON DELETE no action ON UPDATE no action;

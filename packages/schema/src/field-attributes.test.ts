@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
-import { KNOWING_STATES, VALUE_CLASSES, isValidConfidencePct, confidenceAllowedFor, knowingStateEnum } from "./field-attributes.ts";
+import { KNOWING_STATES, VALUE_CLASSES, MATERIALITY_VALUES, HARD_STOP_MATERIALITIES, CONSEQUENCE_CLASS_VALUES, isValidConfidencePct, confidenceAllowedFor, knowingStateEnum } from "./field-attributes.ts";
 
 /**
  * RFC-ATTR-01 step 1's guard (the count lives in the manifest, never in
@@ -105,5 +105,13 @@ describe("RFC-ATTR-01 guard: attribute-shaped columns resolve against a written 
     expect(confidenceAllowedFor("client_written")).toBe(false);
     expect(confidenceAllowedFor("observed")).toBe(true);
     expect(confidenceAllowedFor("unconfirmed")).toBe(true);
+  });
+
+  test("the signed 2.5/2.6 vocabularies are exactly the signature's lists (Ruling 2 s2, A1.1)", () => {
+    expect([...MATERIALITY_VALUES]).toEqual(["safety_access", "money_legal", "convenience"]);
+    expect([...CONSEQUENCE_CLASS_VALUES]).toEqual(["editorial", "behavioral", "high_consequence"]);
+    // Hard-stop classes map ONLY to the first two, by the signature.
+    expect([...HARD_STOP_MATERIALITIES]).toEqual(["safety_access", "money_legal"]);
+    expect(HARD_STOP_MATERIALITIES).not.toContain("convenience");
   });
 });
