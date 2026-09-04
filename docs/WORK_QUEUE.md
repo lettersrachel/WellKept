@@ -2127,6 +2127,34 @@ clauses: REQ appends were done 5 August, the sweeps are verified
 running by the redeploy confirmation above, and the Upstash state
 remains the row's one founder-side remainder.
 
+**Same day, Q-2's last clause closes and Q-3b is BUILT (migration
+0063): the s4 envelope gains its causation half.** Upstash confirmed
+active by the founder (the Q-2 row is fully closed). Q-3b, per
+RFC-ATTR-01 Amendment 1 A1.3: `event_outbox.causation_id` exists with
+the composite self-FK (household_id, causation_id) referencing
+(household_id, id), the 0056 situation pattern turned inward, so a
+cross-tenant causation link is UNREPRESENTABLE, proven refused in SQL
+beside the no-such-parent refusal, the accepting shapes, and the
+erasure shape (one household-keyed DELETE removes parent and child
+together, FK enforcement being end-of-statement). **drizzle-kit
+emitted the FK before its unique index, the 0058 failure shape
+EXACTLY, caught by the read-before-apply rule and reordered by hand
+with the do-not-regenerate note.** `emitOutboxEvent` carries the
+plumbing; NO production site writes a non-null causation yet (per
+column, G-85: the first producers are the Q-12b reconciliation
+consumers). The eleven RFC-001 section 3a families land VERBATIM in
+`event-catalog.ts` as a FORWARD namespace: the live s4 kinds
+(`work_item.*`, `decision_record.*`, ...) are deliberately outside it,
+because `work_item` is not the `work` family and renaming shipped
+kinds is a semantics change nobody ruled; `delight.*` is a reserved
+name, not a build (the epic stays held post-E4). The acceptance's
+drain clause proven end to end: a family kind emitted with a causation
+chain drains through a registered consumer with the chain read back by
+SELECT, the unconsumed parent keeping its left-waiting semantics.
+Catalog exact-list test proven red on a removed family, green
+restored. Typecheck 13/13, suite 11/11 uncached. **Owed at the next
+deploy: 0063 applies (63 to 64).**
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

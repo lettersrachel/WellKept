@@ -30,6 +30,14 @@ export async function emitOutboxEvent(
     actor?: string | null;
     /** Ties a chain together (a visit command, a slice); omit when none exists. */
     correlationId?: string | null;
+    /**
+     * The event that CAUSED this one (Q-3b, 0063): the direct parent,
+     * where correlationId is the whole chain. Must name an event in the
+     * SAME household; the composite self-FK refuses anything else. No
+     * production site passes this yet; the first producers are the
+     * Q-12b reconciliation consumers.
+     */
+    causationId?: string | null;
     sensitivity?: "s1" | "s2" | "s3";
     occurredAt?: Date;
   },
@@ -43,6 +51,7 @@ export async function emitOutboxEvent(
     occurredAt: event.occurredAt ?? new Date(),
     eventVersion: 1,
     correlationId: event.correlationId ?? null,
+    causationId: event.causationId ?? null,
     objectId: event.objectId,
     actor: event.actor ?? null,
     sensitivity: event.sensitivity ?? "s1",

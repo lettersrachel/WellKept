@@ -908,7 +908,27 @@ export const eventOutbox = pgTable("event_outbox", {
   actor: text("actor").references(() => authUser.id), // null = the system's own act
   sensitivity: sensitivityEnum("sensitivity").notNull().default("s1"),
   provenance: text("provenance").notNull().default("pre_event_law"),
-}, (t) => [index("event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt)]);
+  // Q-3b (0063, RFC-ATTR-01 Amendment 1 A1.3): the event that CAUSED
+  // this one, where correlation_id ties a chain and causation_id names
+  // the direct parent. Nullable: most events have no cause and legacy
+  // rows never will. The composite self-FK below pins the parent to the
+  // SAME household (the 0056 situation pattern turned inward), so a
+  // cross-tenant causation link is unrepresentable. No production site
+  // writes a non-null value yet; the first producers are the Q-12b
+  // reconciliation consumers.
+  causationId: uuid("causation_id"),
+}, (t) => [
+  index("event_outbox_unprocessed_idx").on(t.processedAt, t.createdAt),
+  // The composite-FK target for the self-reference; the pair is already
+  // unique (id is the primary key), so this index adds no constraint on
+  // data, only the referenceable key Postgres requires.
+  uniqueIndex("event_outbox_household_id_key").on(t.householdId, t.id),
+  foreignKey({
+    name: "event_outbox_causation_same_household_fk",
+    columns: [t.householdId, t.causationId],
+    foreignColumns: [t.householdId, t.id],
+  }),
+]);
 
 // ---------------------------------------------------------------------------
 // The standards store (WK-APP-003 Addendum A1): the fourth top-level shape.
