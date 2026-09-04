@@ -575,6 +575,16 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   descriptive of intent. The library has a change-control procedure and
   silent reconciliation defeats it. This applies to documents disagreeing
   with each other as much as to documents disagreeing with code.
+- **A date and an entry id record where a claim came from and say
+  nothing about whether it is still true.** This is the reason the
+  re-read rule below exists rather than a footnote to it. `CORRECTED 4
+  September 2026 (G-120)` is exactly what a settled, freshly verified
+  statement looks like, so a reader checks the provenance, finds it
+  impeccable, and stops. **The more rigorous the attribution convention,
+  the more convincing a stale copy looks**, which makes this repository's
+  own citation discipline the thing that hid three stale clauses in one
+  day. Read a citation as an instruction to go and check, never as
+  evidence that someone already did.
 - **A document clause asserting the state of an EXTERNAL system must be
   re-read whenever a register addendum changes that state.** A Vercel
   setting, a deploy hook, a third-party project, branch protection: none
