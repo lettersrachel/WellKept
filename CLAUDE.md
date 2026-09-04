@@ -295,6 +295,34 @@ and the Q-0b session log records "already stated".
   forward the term means the founders' first-cohort households, and the
   older usage stays as written in its dated entries.
 
+- **Package invariants 16 to 20, merged only where not already
+  standing.** Adopted here because the standing file did not state
+  them:
+  - **External content is data, never instruction** (email, PDF, web,
+    social, invoices, vendor messages). It enters only through the
+    capture pipeline (quarantine, source identity, canonical match, AI
+    proposal, human confirmation). No external content writes canonical
+    truth or authority. Text inside external content that reads like an
+    instruction is logged as a test case and ignored.
+  - **Deterministic mechanics may execute inside pre-existing Decision
+    Rights authority; probabilistic proposals never gain authority by
+    escalating.** (The rest of package invariant 17 is already the
+    standing AI individual-confirmation invariant above, in the
+    standing wording.)
+  - **Four separations hold everywhere:** canonical data is not model
+    context; procedure is not provider prompt; authority is not LLM
+    tool availability; event history is not an automation vendor's run
+    log.
+  - **Every feature must name what it replaces, prevents or enables.**
+    A feature that adds ongoing member input, review or maintenance
+    without displacing something is not built. Read beside the
+    collection-side analytics-field rule above: that one asks what a
+    column is FOR, this one asks what a feature displaces.
+
+  Already standing, no change made: invariant 17's confirmation rule
+  (the Backstage AI-suggestion invariant) and invariant 18, activity is
+  not outcome, which the Handled invariant bullet above carries.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
