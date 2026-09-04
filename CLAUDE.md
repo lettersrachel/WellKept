@@ -194,6 +194,28 @@ built it.
   second. The inference one is a boundary of the same class as the
   per-person analytics ban and should be read beside it.
 
+## Adopted law from the 3 September 2026 build package (Q-0b intake, founder rulings on PR #282)
+
+The package's CLAUDE.md is withdrawn and never installed; THIS file governs
+(Ruling 1). What follows is the package's genuinely new law, exactly the
+Ruling 1 section 2 list, merged by section under the standing intake
+pattern. The frozen sources are in `docs/intake/2026-09-03-build-package/`
+and the ruling itself is `docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md`.
+Where a package item duplicated standing law, the standing wording stands
+and the Q-0b session log records "already stated".
+
+- **The tier ruling (3 September 2026).** The launch-critical tier and the
+  year-two tier are both built before the E1 software gate (May 2027);
+  the year-three tier waits for after E4. E1 is gated on the
+  launch-critical tier ONLY. Year-two features ship behind a `shadow`
+  flag: they compute, log and are visible in the corporate portal, and
+  do not surface to members or alter HOM briefings until promoted at E2,
+  so the E2 measurement is the promotion delta. Fallback: if the queue
+  is not through Q-11 by the end of February 2027, the year-two items
+  move behind E1; E1 does not move. The name decision is excluded and
+  lands 25 September 2026. The design arc stays closed (A133); a feature
+  enters a higher tier only if a milestone test would fail without it.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
