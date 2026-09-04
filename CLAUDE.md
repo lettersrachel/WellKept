@@ -323,6 +323,16 @@ and the Q-0b session log records "already stated".
   (the Backstage AI-suggestion invariant) and invariant 18, activity is
   not outcome, which the Handled invariant bullet above carries.
 
+- **The benchmark adoption record** (frozen source: the intake
+  BENCHMARK_ADOPTION.md) is the build authority for what the 101-product
+  Engineering Benchmark brief changed: what is adopted as written, what
+  is adopted with a change, what is held post-E4, and the corrections.
+  The design arc remains CLOSED under A133; the held list stays held.
+  The reconciliation layer it introduces (expected_event, changeset,
+  the six launch patterns, portability, source revision intelligence)
+  is a consumer of the outbox, never a field attribute, and enters
+  through the RFC-ATTR-01 amendment and the re-cut queue.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
