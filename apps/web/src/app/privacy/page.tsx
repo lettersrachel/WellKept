@@ -21,7 +21,8 @@ export default function PrivacyPage() {
       <div className="fval">
         Household operating details (routines, preferences, standards, layout, how each
         standing task is done in your home, and your stated preference rules kept one
-        fact per line with a review date) to run your
+        fact per line with a review date, and the Decision Rights block that
+        records what you want decided on your behalf and what always comes to you) to run your
         household; secured details (access codes, alarm info) to care for the home, held
         encrypted with every access logged; visit records (tasks, hours, notes, photos, and
         what we noticed but deliberately set aside for later, with the reason and the

@@ -45,6 +45,13 @@ Four documents, one per audience and direction:
 - **Household operating details**, organized by sensitivity: **s1** (safe to
   show the client), **s2** (internal ops), **s3** (secured; e.g. alarm codes,
   access instructions, where valuables are kept).
+- **The Decision Rights block** (Q-6-1, 2026-09-04): what the household wants
+  decided on its behalf and what always comes back to it, one row per right,
+  with spend ceilings in integer cents. Seeded from the tier defaults as a
+  RECOMMENDATION and marked as one until the household confirms it, so the
+  record always says whether a right is the company's proposal or the
+  household's own answer. Internal today: the member-facing surface is
+  freeze-gated and no client projection exists.
 - **s3 items are encrypted at rest** (AES-256-GCM) and only shown after an
   authorized, **audited** reveal.
 - **Visit records**; tasks completed, hours, a three-sentence report, and

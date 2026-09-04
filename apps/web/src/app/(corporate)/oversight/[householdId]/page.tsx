@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -104,6 +104,14 @@ export default async function Oversight({ params, searchParams }: {
     .sort((a, b) => Number(a.status === "resolved") - Number(b.status === "resolved"));
   const openSituations = situations.filter((s) => s.status === "open");
   // 0057: how this household wants things done, active first.
+  // Q-6-1: the Decision Rights block. Read corporate-side only; the
+  // member-facing surface is FREEZE-GATED and no client projection
+  // exists (WK-DEV-007, Part C section 2.2).
+  const rights = await db.select().from(decisionRight)
+    .where(eq(decisionRight.householdId, hh.id))
+    .orderBy(decisionRight.rightKey);
+  const unconfirmedRights = rights.filter((r) => r.status !== "confirmed").length;
+
   const preferences = (await db.select().from(preferenceRule)
     .where(eq(preferenceRule.householdId, hh.id))
     .orderBy(desc(preferenceRule.createdAt)).limit(50))
@@ -825,6 +833,38 @@ export default async function Oversight({ params, searchParams }: {
             <button className="act">Open situation</button>
           </form>
         )}
+      </div>
+
+      <div className="card">
+        <h2>Decision Rights (Four-Stage spec §1)</h2>
+        <div className="note">
+          What this household wants decided on its behalf, and what always comes back
+          to it. Nothing routes on these yet. Every right seeded from the tier defaults
+          is the company&apos;s RECOMMENDATION until the household confirms it, and each
+          row says which it is, so nobody has to remember. A spend ceiling is stored in
+          integer cents; a ceiling of zero means spend nothing without asking, which is
+          a real instruction rather than a missing value.
+        </div>
+        {rights.length === 0 && <div className="prov">No Decision Rights on record. Seed them with pnpm db:decision-rights.</div>}
+        {rights.length > 0 && unconfirmedRights > 0 && (
+          <div className="prov">
+            {unconfirmedRights} of {rights.length} still RECOMMENDED, NOT YET CONFIRMED.
+          </div>
+        )}
+        {rights.map((r) => (
+          <div key={r.id} className="field">
+            <span className="fname">
+              {r.rightKey}
+              <span className="prov" style={{ marginLeft: 8 }}>
+                {r.valueCents !== null ? `$${(r.valueCents / 100).toFixed(2)}` : r.valueText}
+                {r.materiality ? ` · ${r.materiality}` : ""}
+                {r.status === "confirmed" ? " · CONFIRMED" : " · RECOMMENDED, NOT YET CONFIRMED"}
+              </span>
+            </span>
+            {r.note ? <div className="prov">{r.note}</div> : null}
+          </div>
+        ))}
+        <div className="prov">Source: {rights[0]?.authority ?? "none loaded"}</div>
       </div>
 
       <div className="card">

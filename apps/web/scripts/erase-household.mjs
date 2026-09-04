@@ -106,6 +106,21 @@
  *    exactly: THAT noticing was bundled and closed is operational
  *    history; what the bundle was about is the household's. Blanking
  *    preserves the resolution whole-or-absent CHECK.
+ *  - decision_right (0066, Q-6-1, 2026-09-04): free text BLANKED (the
+ *    value in words, the note, and the authority string), the CEILING
+ *    and the skeleton KEPT - the preference_rule posture with one
+ *    deliberate difference. What a household told us it wanted decided
+ *    on its behalf is the household's own words and goes; THAT a
+ *    Decision Rights block existed, which rights it covered, and
+ *    whether each was the company's recommendation or the household's
+ *    confirmed answer is operational history of what we were authorized
+ *    to do, which is exactly the record an erased household might later
+ *    need us to be able to answer from. The value_cents ceiling stays
+ *    for the same reason a time_entry stays: it is the authority a
+ *    spend was made under. Blanking uses a marker rather than NULL so
+ *    the whole-or-absent value CHECK survives erasure (the W-6
+ *    precedent), and the confirmation pair is untouched so the
+ *    confirmation CHECK survives too.
  *  - preference_rule (0057, 2026-08-25): free text BLANKED (rule and
  *    retirement reason to markers; a confidence value, where one ever
  *    exists on a non-explicit row, to a marker too so the
@@ -333,6 +348,10 @@ try {
   await c.query("UPDATE attention_record SET reason=$2, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // situation: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE situation SET label=$2, resolution=CASE WHEN resolution IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // decision_right: blank the household's words, keep the ceiling and
+  // the skeleton (see header). value_text goes to a MARKER rather than
+  // NULL so decision_right_value_is_one_shape survives erasure.
+  await c.query("UPDATE decision_right SET value_text=CASE WHEN value_text IS NULL THEN NULL ELSE $2 END, note=CASE WHEN note IS NULL THEN NULL ELSE $2 END, authority=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // preference_rule: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE preference_rule SET rule=$2, confidence=CASE WHEN confidence IS NULL THEN NULL ELSE $2 END, retired_reason=CASE WHEN retired_reason IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // work_item: blank the words, keep the lifecycle (see header).
