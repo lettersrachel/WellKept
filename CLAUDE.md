@@ -216,6 +216,12 @@ and the Q-0b session log records "already stated".
   lands 25 September 2026. The design arc stays closed (A133); a feature
   enters a higher tier only if a milestone test would fail without it.
 
+- **Quiet hours.** No client-facing notification between 21:00 and 07:00
+  household time. Replies to inbound member messages are exempt
+  (REQ-079). Applies to every member-reaching channel the moment one
+  exists; today the client side is frozen at the digest, so the digest
+  scheduler is the first surface this binds.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
