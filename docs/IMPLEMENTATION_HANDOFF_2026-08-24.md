@@ -10,6 +10,19 @@ Final library and research reconciliation
 **Prepared 24 August 2026  
 CONFIDENTIAL - INTERNAL IMPLEMENTATION USE**
 
+> **AMENDED 4 September 2026, by founder instruction, one item only.** A
+> frozen record is dated evidence and is normally never edited; this is a
+> reviewed amendment with its manifest hash updated in the same commit,
+> the sanctioned hatch rather than a bypass. **What changed:** one item
+> added to the A1 repository reconciliation checklist, requiring that a
+> document clause about the state of something outside the repository be
+> re-read whenever the register entry covering it moves. **Why it is here
+> rather than only in CLAUDE.md:** a rule that lives only there is
+> invisible to whoever works from this handoff, and this checklist is
+> what a reconciliation is actually worked against. Nothing else in this
+> document was touched, and no August finding was revised. The instance
+> that produced the rule is GAP_REGISTER G-120 and its addendums.
+
 <table>
 <colgroup>
 <col style="width: 100%" />
@@ -1330,6 +1343,19 @@ The GitHub organization, hosting, database, object store, and every billing acco
 
 - Current repo docs reconciled against DEV-003/004/005 and authority
   page.
+
+- **Every document clause asserting the state of something OUTSIDE the
+  repository re-read whenever the register entry covering it moves.**
+  A Vercel setting, a deploy hook, a third-party project, branch
+  protection: no test can catch a document that describes these wrongly,
+  because the thing described is not in the tree. The register is the
+  moving record; a document quoting it is a snapshot, and every snapshot
+  is stale the moment the register moves. Grep the entry id across
+  `CLAUDE.md`, `DEPLOY.md` and `docs/` before treating such a clause as
+  current, and when an addendum lands, fix every copy in the same change.
+  (Added by reviewed amendment 4 September 2026; see the annotation at
+  the head of this file. The full reasoning and the instance that
+  produced it are in GAP_REGISTER G-120 and its addendums.)
 
 - Unknowns reported without guessing.
 
