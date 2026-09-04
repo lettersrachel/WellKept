@@ -7182,3 +7182,69 @@ migration, releasable once no pre-0060 offline command can still be
 queued on any field device (every device has synced on a post-cafd9f8
 build). Until then the visit-close sink's legacy grandfather stands and
 the constraint would turn that sync into a stuck queue head.
+
+---
+
+### G-120 OPEN, 4 September 2026: the migrations-first invariant was never enforced, only accidentally true
+
+**The founder read the Vercel project's Git settings directly: Ignored
+Build Step is Behavior Automatic with NO override.** Nothing in Vercel
+has ever blocked an auto-deploy on push. The standing claim, carried in
+CLAUDE.md's Deploying section and DEPLOY.md since 27 July, that "Vercel
+does not auto-deploy on push" and "every production deploy is manual",
+described the effect of a DISCONNECTED GitHub integration. The
+protection was a side effect of a broken connection, and it ended the
+moment the connection was repaired.
+
+**How it surfaced, which is the useful part.** Production reached
+`e468066d` (PR #287) through a deploy hook after the integration was
+reconnected, and the build log carried no migration lines. A Neon check
+found `mail_outcome` and `event_outbox.causation_id` both absent, so
+0062 through 0064 had not applied. The web build was live against a
+schema three migrations behind it.
+
+**That is the unsafe skew direction, and it is not symmetric.** The
+migrate-then-deploy order exists because an OLD build ignores columns
+it does not know, while a NEW build writes columns that do not exist.
+With code ahead of schema: `emitOutboxEvent` names `causation_id` in
+every insert, so every action that emits an event fails its write, and
+the fleet board's Mail deliverability card selects from a table that is
+not there. The window ran from the hook's deploy until the ordered run
+that follows this entry.
+
+**What was actually protecting the invariant, enumerated, because the
+answer is nothing.** No Vercel setting. No branch-protection rule (that
+gates merges, not deploys). No CI step. `tooling/deploy.sh` enforces
+the order beautifully for deploys that go THROUGH it, and has no
+opinion about deploys that do not. The invariant lived in a sentence in
+two documents and in the habit of the person who read them.
+
+**The class this belongs to, stated plainly: a control that was never a
+control.** It is G-73 exactly, one layer over: there, branch protection
+was believed present for a month and was absent, and the belief lived
+in a DONE line nobody re-read against the endpoint. Here the belief
+lived in a premise line that loads into every session. Both were
+"verified" only by the absence of the failure they were supposed to
+prevent, and in both cases the absence had another cause. **A property
+that no mechanism produces is not an invariant; it is a coincidence
+with good manners.**
+
+**The correction, made in the same change:** CLAUDE.md's Deploying
+section and DEPLOY.md now state that the project DOES auto-deploy, why
+the old line read as true, and that auto-deploy skips the migration
+step. The same CLAUDE.md sentence carried a second stale claim, that
+`main` carries no branch protection, true when the CI gate was built
+and false since 27 August when protection landed as a RULESET; that is
+corrected in place too, with the reason the gate stays (the classic
+branch endpoint still reports `protected: false`, the trap G-73
+recorded).
+
+**OPEN, and the decision is the founder's:** whether to disable
+auto-deploy with an Ignored Build Step override that always exits 0, so
+the ordered script remains the only path, or to put a migrations-ahead
+check in that field. The engineering read is recorded with the options
+and turns on one unverified fact, named rather than assumed: whether
+Vercel runs the Ignored Build Step for CLI deploys, which is what
+`deploy.sh` performs (`npx vercel --prod --yes` from the repo root,
+uploading the working tree). A preview-only probe settles it without
+touching production.
