@@ -248,6 +248,23 @@ and the Q-0b session log records "already stated".
   Ruling 1's bar restated where the mode data would tempt it. Nothing
   of this exists in the tree yet; it enters through the re-cut queue.
 
+- **The fixtures plan** (frozen source: the intake FIXTURES.md): three
+  fixture households F-1 Essential, F-2 Family Operations, F-3
+  Concierge, each with the deliberate traps; the Synthetic Training
+  Household as a 30-scenario simulated household built on F-2; and the
+  eleven AI abuse and reconciliation scenarios. ONE bank serves the
+  test suite, the training classroom and AI release testing. Content is
+  founder-supplied; names, addresses and images synthetic, never a real
+  person or property (the standing fixtures rule already says this and
+  stands). EXTENDS, does not duplicate, what the tree holds: Fernbrook
+  DEMO, the Smoke Test Fixture and the Trainor training household
+  (`pnpm db:training`, resettable, `is_fixture` flagged) already exist
+  and do not map to F-1/2/3; the Trainor household is the natural base
+  the Synthetic Training Household grows from; and the package's
+  household-level `training=true` flag is a decision to reconcile with
+  the existing `is_fixture` flag at build time, not a second flag to
+  add by default.
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
