@@ -1,5 +1,5 @@
 {
-  "id": "df52ea12-6af6-4a15-bac5-02ebf7746621",
+  "id": "82ca04ad-1129-459f-a60b-0e1f4087be04",
   "prevId": "07ebff41-8979-4d21-9392-92ba00e30158",
   "version": "7",
   "dialect": "postgresql",
@@ -4475,8 +4475,7 @@
           "type": "pipeline_stage",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'anticipate'"
+          "notNull": false
         }
       },
       "indexes": {

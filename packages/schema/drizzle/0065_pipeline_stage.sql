@@ -5,6 +5,26 @@
 -- The queue row names three carriers and this migration adds one column
 -- to each.
 --
+-- AMENDED BEFORE IT APPLIED, founder ruling 4 September 2026. The first
+-- version of this file carried NOT NULL DEFAULT 'anticipate' on
+-- prompt_pack_item.stage, to backfill rows predating the column, argued
+-- from the spec's own sentence that a fired trigger lands in anticipate.
+-- THE RULING: nullable with no default, existing rows left NULL. A stage
+-- on a row that predates the stage is a claim nobody made; NULL is the
+-- true statement; and all three carriers then behave the same way
+-- instead of one of them behaving differently for a reason a later
+-- reader would have to reconstruct. Editing an unapplied migration was
+-- the cheap moment, which is why the call was held for it.
+--
+-- WHAT THE AMENDMENT ALSO FIXED, found while making it: prompt_pack_item
+-- has a THIRD writer the producer table did not name, the raw INSERT at
+-- packages/schema/src/demo-hom-view.ts:179, which does not name stage.
+-- Under the default it silently received 'anticipate'; under the ruling
+-- it receives NULL. So the default was writing a claim onto rows created
+-- by a writer nobody had accounted for, which is the exact failure the
+-- per-column producer discipline exists to surface. The producer below
+-- is now the ONLY thing that puts a value in this column.
+--
 -- PRODUCER PER COLUMN (the per-column rule, G-85). Stated per column
 -- rather than per table, because a table-level answer is exactly what
 -- would conceal that two of these three have no writer:
@@ -12,47 +32,46 @@
 --   trigger_rule.stage       NO PRODUCER YET. A rule's stage is a
 --                            corporate-authored classification of what
 --                            the rule is FOR. Nothing computes it and
---                            no surface writes it. Nullable with no
---                            default, so no row carries a stage until a
---                            person sets one. SHIPS INERT, deliberately;
---                            the authoring surface is a later session.
+--                            no surface writes it. SHIPS INERT,
+--                            deliberately; the authoring surface is a
+--                            later session.
 --
 --   prompt_pack_item.stage   WRITTEN BY packages/trigger-engine/src/run.ts,
 --                            both insert sites (runTriggerPass and
 --                            runRegistrySweep), which stamp 'anticipate'
 --                            explicitly. This is the acceptance
 --                            criterion's first clause: a fired trigger
---                            lands in anticipate.
+--                            lands in anticipate. NOT written by the
+--                            demo seed's raw INSERT, which leaves it
+--                            NULL and is correct to.
 --
 --   work_item.stage          NO PRODUCER YET. A work item arrives from
 --                            hm_capture, corporate or system, and none
 --                            of those three determines a stage without a
---                            taxonomy nobody has ruled. Nullable with no
---                            default. SHIPS INERT, deliberately.
+--                            taxonomy nobody has ruled. SHIPS INERT,
+--                            deliberately.
 --
--- THE ONE DEFAULT, and why it is not an invented classification: the
--- prompt_pack_item default backfills rows that predate the column, and
--- its value is the spec's own answer rather than a chosen one, since
--- every row in that table is a fired trigger's artifact. The engine
--- still writes the value explicitly at both sites, so the producer is
--- real code a test can prove and not the database standing in for one.
+-- All three nullable with no default, so no row carries a stage until
+-- something deliberately writes one.
 --
 -- NOT TAGGED, deliberately: decision_record. It is not among the three
 -- carriers the queue row names, and a decide-stage column on the table
 -- whose every row IS a decision would be a stored constant.
 --
--- NOT BUILT HERE, gated rather than skipped: the routing half of the
--- acceptance criterion. Below-threshold auto-execution and
--- propose-first routing read against the Decision Rights block, which
--- is Q-6. No threshold exists in this tree to route on, and choosing
--- one is barred.
+-- NOT BUILT HERE: the routing half of the acceptance criterion, which
+-- MOVED TO THE Q-6 ROW by founder ruling 4 September 2026 rather than
+-- staying on a closed Q-5. Below-threshold auto-execution and
+-- propose-first routing read against the Decision Rights block, which is
+-- Q-6. No threshold exists in this tree to route on, and choosing one is
+-- barred.
 --
--- READ BEFORE APPLYING (the standing rule): drizzle-kit emitted CREATE
--- TYPE first and the three ALTER TABLEs after, which is the order
--- Postgres requires; no reorder was needed. Purely additive: three
--- ALTER TABLE ADD COLUMN, one CREATE TYPE, no DROP, no ALTER COLUMN, no
--- RENAME, no existing column made NOT NULL. The old build ignores
--- columns it does not know, so the migrate-then-deploy window is safe.
+-- READ BEFORE APPLYING (the standing rule), on the regenerated file as
+-- well as the first: drizzle-kit emitted CREATE TYPE first and the three
+-- ALTER TABLEs after, which is the order Postgres requires; no reorder
+-- was needed. Purely additive: one CREATE TYPE, three ADD COLUMN, no
+-- DROP, no ALTER COLUMN, no RENAME, nothing made NOT NULL. The old build
+-- ignores columns it does not know, so the migrate-then-deploy window is
+-- safe.
 --
 -- Stage tags are INTERNAL (spec section 5): no member surface ever
 -- displays the schema. Enforced positively in assertNoAnticipationRows
@@ -60,6 +79,6 @@
 -- absent from today's payloads.
 
 CREATE TYPE "public"."pipeline_stage" AS ENUM('anticipate', 'identify', 'decide', 'monitor');--> statement-breakpoint
-ALTER TABLE "prompt_pack_item" ADD COLUMN "stage" "pipeline_stage" DEFAULT 'anticipate' NOT NULL;--> statement-breakpoint
+ALTER TABLE "prompt_pack_item" ADD COLUMN "stage" "pipeline_stage";--> statement-breakpoint
 ALTER TABLE "trigger_rule" ADD COLUMN "stage" "pipeline_stage";--> statement-breakpoint
 ALTER TABLE "work_item" ADD COLUMN "stage" "pipeline_stage";

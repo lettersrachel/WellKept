@@ -2295,13 +2295,46 @@ sentence about the migration, which is the form G-85 exists for and the
 form that makes the shape legible: `prompt_pack_item.stage` is written
 by the trigger engine at both insert sites, stamping `anticipate` (the
 acceptance criterion's first clause); `trigger_rule.stage` and
-`work_item.stage` have NO PRODUCER and ship inert, nullable with no
-default, so no row carries a stage until a person sets one. **The one
-default is not an invented classification**: it backfills rows that
-predate the column, and its value is the spec's own answer, since every
-row in that table is a fired trigger's artifact. Read back by query: the
-enum in order, the two nullable columns with no default, all 9 existing
-prompt rows at `anticipate`.
+`work_item.stage` have NO PRODUCER and ship inert.
+
+**AMENDED BEFORE IT APPLIED, founder ruling 4 September 2026: ALL THREE
+columns are nullable with no default, and the nine existing prompt rows
+stay NULL.** The first version carried `NOT NULL DEFAULT 'anticipate'`
+on `prompt_pack_item.stage` to backfill those rows, argued from the
+spec's own sentence that a fired trigger lands in anticipate. The
+ruling's reasoning is better than the reasoning it replaced: **a stage on
+a row that predates the stage is a claim nobody made**, NULL is the true
+statement, and all three carriers then behave the same way instead of
+one behaving differently for a reason a later reader would have to
+reconstruct. Editing an unapplied migration was the cheap moment, which
+is why the call was held for it rather than deployed and fixed after.
+Read back by query on the amended file: the enum in the spec's order,
+all three columns nullable with no default, all 9 prompt rows NULL.
+
+**And the amendment found what the default had been hiding.**
+`prompt_pack_item` has a THIRD writer the producer table did not name,
+the raw INSERT at `packages/schema/src/demo-hom-view.ts:179`, which does
+not name `stage`. Under the default it silently received `anticipate`;
+under the ruling it receives NULL. So the default was writing a claim
+onto rows created by a writer nobody had accounted for, which is exactly
+the failure the per-column producer discipline exists to surface and was
+invisible while the default covered it. The header now names that writer
+as a deliberate non-writer.
+
+**The premise correction that produced the ruling, worth keeping because
+the mechanism will recur.** A review from another session reported the
+NOT NULL choice as an unauthorized deviation from an option (a) the
+founder had chosen, alongside a placeholder knob and a routing build.
+None of that was in this session's instructions, and a check of the TREE
+found no record of it either: zero hits for the knob, and the only
+option (a)/(b) records are the August Ruling 1 question and the Task
+Inventory commercial gap. **The founder confirmed the exchange happened
+in a chat session and never reached the repository, so under the intake
+rule it had no force.** The review was wrong about the authorization and
+right that the column deserved a decision, which is why the answer was
+to ask rather than to edit. Two of its factual claims were also wrong
+and were corrected against the tree: production is at `e468066d`, and
+`origin/main` was at `d4026c7`, not `f400938`.
 
 **The guardrail is enforced positively, in both client-payload
 mechanisms rather than in whichever one a future payload happens to
