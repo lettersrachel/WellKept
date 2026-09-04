@@ -9,13 +9,16 @@ import type { FieldChangeEvent } from "./engine.ts";
  * Q-5, the acceptance criterion's first clause: a fired trigger lands in
  * `anticipate`.
  *
- * WHY THIS IS A CAPTURED-VALUES TEST AND NOT A DATABASE ONE. The column
- * carries `DEFAULT 'anticipate'` for the backfill of rows that predate
- * it, so a row read back from Postgres says `anticipate` whether the
- * engine wrote it or the database did. Those are two different claims
- * and only one of them is the producer requirement. Reading the insert's
- * own VALUES is what tells them apart, and it is the direction that goes
- * red when the explicit write is removed.
+ * WHY THIS IS A CAPTURED-VALUES TEST. It was written when the column
+ * carried `DEFAULT 'anticipate'`, where a row read back from Postgres
+ * said `anticipate` whether the engine wrote it or the database did, so
+ * only the insert's own VALUES could tell those two claims apart. The
+ * founder's 4 September ruling removed that default, which makes the
+ * database read honest as well: a missing producer now leaves NULL. The
+ * test stays as it is, because it still fails FIRST and for the right
+ * reason, and because it names the producer requirement directly rather
+ * than inferring it from a stored value. Kept with its history because
+ * the reasoning is what a later reader needs, not the conclusion.
  *
  * NO DATABASE IS INVOLVED, said plainly so a green run here is not read
  * as evidence about one.

@@ -259,11 +259,17 @@ export const promptPackItem = pgTable("prompt_pack_item", {
   routedTo: promptItemRoutingEnum("routed_to").notNull().default("hm"),
   // Q-5: WRITTEN BY packages/trigger-engine/src/run.ts, both insert
   // sites, which stamp "anticipate" explicitly. The acceptance
-  // criterion's first clause: a fired trigger lands in anticipate. The
-  // default exists for the backfill of rows that predate the column,
-  // and its value is the spec's own answer rather than a chosen one,
-  // since every row here is a fired trigger's artifact.
-  stage: pipelineStageEnum("stage").notNull().default("anticipate"),
+  // criterion's first clause: a fired trigger lands in anticipate.
+  //
+  // NULLABLE WITH NO DEFAULT, by founder ruling 4 September 2026,
+  // amending this column before 0065 applied. The first version carried
+  // NOT NULL DEFAULT 'anticipate' to backfill rows predating the
+  // column, and the ruling is that a stage on a row that predates the
+  // stage is a claim nobody made: NULL is the true statement, and all
+  // three carriers then behave identically. The producer is now the
+  // ONLY thing that writes a value here, which is what the producer
+  // table was claiming all along.
+  stage: pipelineStageEnum("stage"),
 }, (t) => [index("prompt_pack_item_household_idx").on(t.householdId)]);
 
 // REQ-022: client edits land in review state, merge only on HM approval, full diff kept.
