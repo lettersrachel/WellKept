@@ -16,9 +16,10 @@
  *    movements (anticipation, identification, decision-routing,
  *    EXECUTION, monitoring) against this four-value tag, with
  *    `execution` absent from the tag. That is the spec disagreeing with
- *    itself two paragraphs apart; it is reported in the Q-5 session log
- *    and not reconciled here. A transition table would have to choose
- *    which of the two readings is right, and it would have no consumer.
+ *    itself two paragraphs apart, filed as the SPEC DEFECT G-121 and
+ *    routed to the Q-18 reconciliation by founder ruling; deliberately
+ *    not reconciled here. A transition table would have to choose which
+ *    of the two readings is right, and it would have no consumer.
  *  - **The routing rule.** Below-threshold auto-execution and
  *    propose-first routing read against the Decision Rights block,
  *    which is Q-6. No threshold exists in this tree to route on, and
