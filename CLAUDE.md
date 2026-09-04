@@ -575,6 +575,20 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   descriptive of intent. The library has a change-control procedure and
   silent reconciliation defeats it. This applies to documents disagreeing
   with each other as much as to documents disagreeing with code.
+- **A document clause asserting the state of an EXTERNAL system must be
+  re-read whenever a register addendum changes that state.** A Vercel
+  setting, a deploy hook, a third-party project, branch protection: none
+  of these live in the repository, so no test can catch a document that
+  describes them wrongly. G-120 opened with a finding and then moved
+  three times across its addendums; this file and `DEPLOY.md` each held
+  a copy of the OPENING finding, and neither was revised, so both
+  asserted "no override is set" hours after the override was set and
+  proven by a controlled pair. Both copies read as current, because a
+  dated correction looks settled. **The register is the moving record;
+  a document quoting it is a snapshot, and every snapshot is stale the
+  moment the register moves.** Grep the entry id across `CLAUDE.md`,
+  `DEPLOY.md` and `docs/` before treating any such clause as current,
+  and when an addendum lands, fix every copy in the same change.
 - **Log-before-do is correct in the vault and nowhere else.** In the vault,
   no row must mean no value. At every other surface it produces an
   optimistic row that claims something happened before anything did, which
@@ -629,12 +643,23 @@ built `main` carried no protection at all; protection landed 27 August
 as a RULESET, which the classic branch endpoint still reports as
 `protected: false`, so the gate stays and the two-endpoint read stays
 the way to check).
-**Vercel DOES auto-deploy on push (corrected 4 September 2026, G-120).**
-The long-standing "does not auto-deploy" line was never a setting: the
-project's Ignored Build Step is Behavior Automatic with no override, and
-the quiet was only the GitHub integration being disconnected. Until an
-override is set, a push to `main` ships the web build with no migration
-step, which is the unsafe skew direction (code ahead of schema). From
+**`tooling/deploy.sh` is the SOLE path to production (G-120, settled 4
+September 2026 across four addendums; read the register before editing
+this paragraph).** Auto-deploy on push was real, and the earlier "does
+not auto-deploy" line described a disconnected GitHub integration rather
+than a setting. Both doors are now shut by mechanism: the project's
+Ignored Build Step carries a Behavior Custom override (the G-120 echo
+plus `exit 0`), and the manual-main deploy hook is revoked. The override
+is proven by a controlled pair, same input class and branch with the
+override as the only variable: `efb4e70` (13:25:43, no override) BUILT,
+`63429ef` (14:11:45, override set) and the `a3b02990` merge to `main`
+(14:28:45, override set) created no deployment at all. So a git push
+ships nothing, on branches and on `main` alike, while CLI deploys build
+normally. **Branch previews therefore no longer build automatically**;
+`npx vercel --yes` from the repo root is the on-demand path, and CI is
+unaffected because the airplane e2e runs against its own dev server
+inside GitHub Actions, never a Vercel preview. The migrations-first
+ordering is now the system's guarantee rather than a convention. From
 `apps/web`, `--yes` suppresses the only confirmation and silently creates a
 third project. Then work `DEPLOY.md` §4 against the Smoke Test Fixture.
 A docs-only merge still moves the build id, so the skew banner firing after one

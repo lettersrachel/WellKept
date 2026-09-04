@@ -43,20 +43,35 @@ Project settings:
 
 Then point your domain at the Vercel project — when you have one. As of
 2026-07-27 NO custom domain is configured (`vercel domains ls` shows zero);
-production is served at the project's `*.vercel.app` alias. Note the team
-carries a second, dormant Vercel project (`well-kept-web`, git-connected,
-zero env vars, auto-deploys on every push) — the live project is
-`wellkept`, the one holding all ten env vars. Don't debug against the
-wrong one.
+production is served at the project's `*.vercel.app` alias. `wellkept` is
+the only Vercel project; the second one (`well-kept-web`) was deleted by
+the founder on 26 August 2026 when G-35 was answered, so a reference to
+it anywhere else is stale.
 
-**Deploying.** CORRECTED 4 September 2026 (G-120): the live project's
-Ignored Build Step is Behavior Automatic with no override, so it DOES
-auto-deploy on push. Every earlier version of this line ("does NOT
-auto-deploy; every production deploy is manual") described the effect
-of a disconnected GitHub integration, not a setting. Auto-deploy ships
-the web build with NO migration step, which is the unsafe skew
-direction; the ordered path below is the only one that migrates first,
-and it stays the only sanctioned way to ship.
+**Deploying.** SETTLED 4 September 2026 (G-120, four addendums; read the
+register before editing this paragraph). Auto-deploy on push was real,
+and the pre-G-120 line ("does NOT auto-deploy; every production deploy
+is manual") described a disconnected GitHub integration rather than a
+setting. Both doors are now shut by mechanism, not by habit: the
+project's Ignored Build Step carries a Behavior Custom override (the
+G-120 echo plus `exit 0`), and the manual-main deploy hook is revoked.
+The override is proven by a controlled before-and-after pair, same input
+class and branch with the override the only variable: `efb4e70`
+(13:25:43 UTC, no override) BUILT; `63429ef` (14:11:45, override set)
+and the `a3b02990` merge to `main` (14:28:45, override set) created no
+deployment at all. A git push therefore ships nothing, on branches and
+on `main` alike, while CLI deploys build normally, which the script
+below depends on.
+
+**One consequence, so it is not met as a surprise: branch previews no
+longer build automatically.** Nothing depends on them (the airplane e2e
+runs against its own dev server inside GitHub Actions, never a Vercel
+preview). A preview is available on demand with `npx vercel --yes` from
+the REPO ROOT.
+
+`tooling/deploy.sh` is now the only path to production, so its ordering
+guarantees, migrations before the web build, are the system's guarantees
+rather than a convention.
 `bash tooling/deploy.sh <sha-from-the-merged-PR>`
 runs the whole mechanical sequence as a gate - named-sha check, its own
 cd to the repo root, migrate, three-way migration-count assertion,
