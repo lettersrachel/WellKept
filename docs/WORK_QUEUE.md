@@ -2155,6 +2155,30 @@ Catalog exact-list test proven red on a removed family, green
 restored. Typecheck 13/13, suite 11/11 uncached. **Owed at the next
 deploy: 0063 applies (63 to 64).**
 
+**Same day, the founder values package is INTAKEN (document-only, the
+Q-0b shape) and two rulings land from the Q-3b acceptance.** The nine
+files (values, decision rights by tier, reconciliation patterns, rubric
+anchors, enums, the FCPS extraction test, freeze-gated surface copy,
+vendor decisions, the README) are frozen verbatim under
+`docs/intake/2026-09-04-founder-values/`, manifested (.md) or
+hash-pinned in the register (.csv/.yaml, the manifest being .md-scoped
+by the L guard's own contract), and stamped plan-of-record: planning
+proxies until each row's named measurement replaces it, per the
+package's own framing. Ten ground truths in
+`docs/sessions/2026-09-04_values-intake.md`, none reconciled silently;
+the four that block naive adoption: household_cap_weekly 6 against the
+two-key capacity_gate cap 5 (the G-109 shape unless deliberately two
+quantities), the emotional_load_flag row against Ruling 2 §5's
+stress/emotion-inference bar, the underscore status tags against the
+shipped hyphenated keyed enum (adoption maps, never renames), and the
+dead-letter 8 against the shipped drain default 10 (the A2 family).
+The two rulings, recorded where they bind: the additive
+`event_outbox.household_id -> household` FK lands INSIDE Q-4's
+migration, the erasure-order condition answered yes documents-only
+(households are renamed, never deleted); and the shipped s4 event
+kinds stay OUTSIDE the family catalog until the Q-18 reconciliation,
+no renames.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

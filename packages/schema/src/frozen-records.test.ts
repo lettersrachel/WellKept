@@ -63,6 +63,19 @@ const FROZEN: Record<string, string> = {
   "docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md": "3553b742a532987e50b6dfc507ef74a7ff694b7868ad72ae3b017788ba5dc7d0",
   // Part C (4 September): the founder's review of Q-0b, same WK-QA-018 entry.
   "docs/FOUNDER_RULINGS_2026-09-04_PartC_Q0b_Review.md": "1a9d9e4e59b2b4fb65b9558839b46061956b5b662ca0d36d0ebb48e5d8d1e02f",
+  // The 4 September founder values package (document-only intake, the
+  // Q-0b shape): received bytes frozen verbatim; .md hashes are
+  // frontmatter-stripped, .csv/.yaml hashes are whole-file (no
+  // frontmatter exists to strip, and stripFrontmatter no-ops).
+  "docs/intake/2026-09-04-founder-values/README.md": "3d3f5605192fd1d7e55745c452b9d36d8c8cf571db239c170bc3174f69fe14b3",
+  "docs/intake/2026-09-04-founder-values/surface_copy.md": "58cf3a6d1f7e66c6ca00c6999e7e0c310e3d05682e317524f028579eeee289e8",
+  "docs/intake/2026-09-04-founder-values/fcps_calendar_extraction_test.md": "9dd8e175ea65e6aea3ec4d7ccc2fcb1b253e3fa93227f0596137b023cf0ca940",
+  "docs/intake/2026-09-04-founder-values/vendor_decisions_and_gap_triage.md": "5bcfd219c1d63bea11b7b4c6152dda6dbfc7ba9abfc25128babdb424448e12bb",
+  // The package's five .csv/.yaml files cannot carry status frontmatter,
+  // so they are pinned by whole-file sha256 in docs/SPEC_REGISTER.md and
+  // the session log instead (the TASK_INVENTORY csv precedent). This
+  // manifest stays .md-scoped by the L guard's own contract; widening it
+  // to non-.md files is a guard change and belongs to its own session.
   "docs/intake/2026-09-03-build-package/PACKAGE_CLAUDE_MD_WITHDRAWN.md": "e9078732e2f10cf1d819b64ed07faa03760e3ea99dc603e4ab218b5fb4231492",
   "docs/intake/2026-09-03-build-package/BENCHMARK_ADOPTION.md": "d9b1db901c57afd51d8132b655b66b697f42a1f1e3a09ac1cebc15c86b80be45",
   "docs/intake/2026-09-03-build-package/BUILD_QUEUE.md": "0a23239fe4f9e13e6ca43e899fd483d50389f01d991368536f970e1aef767521",

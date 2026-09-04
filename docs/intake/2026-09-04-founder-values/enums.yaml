@@ -1,0 +1,81 @@
+# Enums for the people layer and telemetry. Values are stable identifiers; labels are display text.
+exit_reason_codes:
+  - {id: better_pay_elsewhere, label: Left for higher pay}
+  - {id: schedule_fit, label: Schedule or track did not fit life}
+  - {id: commute_route, label: Commute or route burden}
+  - {id: physical_demands, label: Physical demands of the role}
+  - {id: member_relationship, label: Difficulty with a member relationship}
+  - {id: role_expectations, label: Role differed from expectations}
+  - {id: career_change, label: Career change or return to prior field}
+  - {id: family_life_event, label: Family or life event}
+  - {id: relocation, label: Relocation}
+  - {id: performance_separation, label: Performance separation after PIP}
+  - {id: conduct_separation, label: Conduct separation}
+  - {id: did_not_certify, label: Did not certify after remediation}
+  - {id: other, label: Other with note}
+stay_reason_codes:
+  - {id: schedule_control, label: Schedule control}
+  - {id: pay_and_benefits, label: Pay and benefits}
+  - {id: member_relationships, label: Member relationships}
+  - {id: team_and_coverage, label: Team and backup coverage}
+  - {id: progression, label: Progression and certification}
+  - {id: purpose, label: The work matters}
+  - {id: proximity, label: Compact routes near home}
+stay_risk_signals:
+  - {id: track_change_request, label: Requested a track change}
+  - {id: coverage_overuse, label: Used backup coverage above pattern}
+  - {id: capture_over_budget, label: Capture budget exceeded three weeks}
+  - {id: two_way_review_drop, label: Two-way review score fell}
+  - {id: emotional_load_flag, label: Emotional-load flag on senior heatmap}
+schedule_tracks:
+  - {id: track_25, hours: 25, health_eligible: true}
+  - {id: track_30_32, hours: 30-32, health_eligible: true}
+  - {id: track_40, hours: 40, health_eligible: true, scheduled_max: 38}
+workflow_classes:
+  - visit_sequence
+  - close_flow
+  - vendor_coordination
+  - property_observation
+  - prepared_decisions
+  - safety_access
+  - privacy_record
+source_occupations:
+  - {id: hospitality_ops_supervisor, soc: [35-1012, 43-1011]}
+  - {id: school_front_office, soc: [43-6014, 43-4199]}
+  - {id: teaching_assistant, soc: [25-9045]}
+  - {id: resident_services_property_ops, soc: [41-9022, 11-9141]}
+  - {id: preschool_lead_educator, soc: [25-2011]}
+  - {id: medical_admin_care_coordination, soc: [43-6013, 29-2072]}
+  - {id: social_human_service_assistant, soc: [21-1093]}
+  - {id: airport_premium_service, soc: [43-4181]}
+  - {id: nanny_family_assistant, soc: [39-9011]}
+  - {id: general_admin_professional, soc: [43-6011, 43-6014]}
+  - {id: teacher_leaving_classroom, soc: [25-2021, 25-2031]}
+  - {id: military_spouse, soc: []}
+  - {id: referral, soc: []}
+  - {id: other, soc: []}
+sourcing_channels:
+  - workforce_board
+  - university_alumni
+  - hospitality_alumni
+  - school_and_county_hr
+  - military_spouse_network
+  - referral_employee
+  - referral_founder
+  - referral_member
+  - job_board
+  - direct_outreach
+certification_outcomes:
+  - pass
+  - repeat
+  - module_review
+  - extended_week
+  - remediation_plan
+  - ceo_decision
+household_status_tags:
+  - ONBOARDING_90
+  - STEADY
+  - WATCH
+  - LIFE_EVENT
+  - RENEWAL_WINDOW
+  - CHAMPION
