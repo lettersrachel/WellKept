@@ -7406,15 +7406,32 @@ its ordering guarantees are therefore the system's guarantees rather
 than a convention.
 
 **A correction to the deployments record, made because a wrong
-attribution there would outlive the day.** The third Production entry
-against PR #287 was read as "Claude's own deploy.sh CLI run". It was
-not: this session has never run `deploy.sh` and cannot. There is no
-production `DATABASE_URL` in the cloud container (`.neon-connection` is
-the founder's machine only), no `.vercel/project.json` link file, and
-outbound egress to the production host returns 403 at the agent proxy,
-confirmed against the proxy's own status endpoint rather than inferred
-from a failed curl. Every production deployment on that list was
-initiated by the founder.
+attribution there would outlive the day. AMENDED 4 September 2026: the
+original wording generalised one container's limits into a fact about
+Claude, and was wrong for a second session running the same day.**
+
+What is verifiable, stated per session, which is the only way this can
+be stated:
+
+- **The cloud container that wrote this entry cannot deploy.** It
+  reported no production `DATABASE_URL` (`.neon-connection` absent), no
+  `.vercel/project.json` link file, and outbound egress to the
+  production host returning 403 at the agent proxy, confirmed against
+  the proxy's own status endpoint rather than inferred from a failed
+  curl. Nothing it did reached production.
+- **A second session, running on the founder's machine, does have all
+  three** and has run `tooling/deploy.sh` repeatedly on the founder's
+  explicit instruction, each run verifying its build id three times
+  against the named sha. `e468066` and `fb6fda92` are both that
+  session's runs.
+
+**So deploy capability differs by session and must be stated per
+session, never as a general fact about Claude.** "Claude cannot deploy"
+is false as written; "this container has no credentials and no egress"
+is true and checkable. The original claim that every production
+deployment on the list was founder-initiated is corrected accordingly:
+the founder authorised each one, and a session on the founder's machine
+executed several of them, including the two named above.
 
 **What the icon actually reflects, since the observation behind the
 misreading was sound.** The merge commit `a3b02990` is AUTHORED by
