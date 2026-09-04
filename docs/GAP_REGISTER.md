@@ -7290,3 +7290,61 @@ how this entry came to exist. The test is in the next entry's
 sequence: the G-120 docs merge is itself a docs-only production push,
 byte-identical in application code, so the observation costs nothing
 that was not already planned.
+
+### G-120 second addendum, 4 September 2026: the production push created no deployment, and the OUTCOME is established while the MECHANISM is not
+
+**The test ran on a real input: PR #288, docs-only** (four files:
+CLAUDE.md, DEPLOY.md, GAP_REGISTER.md, WORK_QUEUE.md; zero application
+code, verified by `git diff --stat origin/main..HEAD` before the merge),
+merged as `a3b02990` through verify-then-merge with both jobs green by
+name. Three observations, each with the override's state at the moment
+it happened:
+
+| Observation | Target | Override state then | Result |
+|---|---|---|---|
+| CLI probe `vercel --yes` (59m before the reading) | preview | CONFIRMED set | BUILT |
+| Branch push `efb4e70` (1h before the reading) | preview | UNKNOWN, see below | BUILT |
+| Merge `a3b02990` to `main` | production | CONFIRMED set | NO DEPLOYMENT CREATED |
+
+**Established, and enough to act on:** the merge to `main` produced no
+production deployment at all, `/api/build-id` still returns
+`e468066d`, and the production alias did not move. A push to `main` no
+longer ships the web build. CLI deploys are exempt with the override in
+place, proven on a real deploy, so `tooling/deploy.sh` keeps its path
+and the ordered sequence is intact.
+
+**NOT established, and recorded as open rather than rounded up: that
+the override is WHAT stopped it.** Two specific reasons, both from the
+evidence above rather than from doubt in general.
+
+1. **"No entry at all" is not the signature an Ignored Build Step
+   leaves.** A skipped build normally records a deployment and marks it
+   skipped or canceled, which is why the distinction between "created
+   and skipped" and "never created" was worth asking for. The observed
+   shape is the second, which the override does not obviously produce.
+2. **The branch-preview observation is time-ambiguous.** `efb4e70` is
+   dated one hour before the reading and the override is confirmed set
+   as of the CLI probe fifty-nine minutes before it, so that preview
+   may predate the override entirely. It therefore cannot carry the
+   conclusion that git branch previews are exempt.
+
+**Why the seam matters here of all places: it is this entry's own
+lesson.** G-120 exists because a property nothing produced was believed
+to be an invariant for six weeks. Recording "the override closed the
+door" while the real cause is something else would rebuild exactly that
+belief, one layer further in, and the door would reopen silently
+whenever the true cause changed.
+
+**The discriminator is free and already in the dashboard.** The
+addendum commit `63429ef` was pushed to the branch AFTER the override
+was confirmed set. If a Preview deployment exists for it and BUILT,
+then git deployments are not stopped by the ignore step, and the
+production no-show has a different cause that should be found. If no
+preview exists for it, or one exists and was skipped, the ignore step
+is acting on git deployments and "no entry" is simply how it renders
+for a production push.
+
+**Also recorded:** the manual-main deploy hook, the door that shipped
+`e468066d`, was reported as being revoked at this entry, deliberately
+after the override test so the test read cleanly; confirmation of the
+revocation is pending and belongs in the next entry.
