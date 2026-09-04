@@ -7348,3 +7348,49 @@ for a production push.
 `e468066d`, was reported as being revoked at this entry, deliberately
 after the override test so the test read cleanly; confirmation of the
 revocation is pending and belongs in the next entry.
+
+### G-120 third addendum, 4 September 2026: the mechanism question CLOSES on a controlled before-and-after pair
+
+**The discriminator the second addendum named came back negative, and
+the ambiguity it carried is resolved by the clock rather than by
+waiting.** `63429ef` was pushed at 14:11:45 UTC and read at 14:56 with
+no Deployments entry: forty-four minutes, where a preview build starts
+within seconds of the webhook and finishes in one to three. "Not yet"
+is not a live reading at that distance. The pagination caveat is
+answered by the observation itself, since the list is newest-first and
+the newest entry is the older commit; pagination hides older entries,
+never newer ones.
+
+**The pair, which is what actually settles it:**
+
+| Commit | Pushed (UTC) | Override | Result |
+|---|---|---|---|
+| `efb4e70` | 13:25:43 | not yet set | preview BUILT |
+| `63429ef` | 14:11:45 | set | no deployment |
+| `a3b02990` (merge to main) | 14:28:45 | set | no deployment |
+
+Same input class, same branch, the override the only variable, built
+before and nothing after. The second addendum's open question is
+therefore CLOSED: **the override is the cause.** With it in place,
+git-triggered deployments create no deployment record at all, on
+branches and on `main` alike, while CLI deploys build normally, which
+`tooling/deploy.sh` depends on and which was separately proven.
+
+**What remains unexplained, and why it no longer matters.** Creating no
+record at all is still an unusual rendering for an ignored build step,
+which normally records a deployment and marks it skipped. The
+attribution no longer rests on that convention, though; it rests on the
+pair above. We know WHAT stops it and not precisely WHY it renders that
+way, and only the first fact carries the invariant.
+
+**One consequence worth stating so it is not discovered as a surprise:
+branch previews no longer build automatically.** Nothing depends on
+them: the airplane e2e runs inside GitHub Actions against its own dev
+server, never against a Vercel preview, so CI is unaffected. A preview
+is still available on demand through `npx vercel --yes`, which is how
+the probe that opened this question was made.
+
+**Status of the invariant after this entry: enforced by a mechanism for
+the first time.** Before today it was a sentence in two documents plus
+the habit of the person reading them. It is now a project setting whose
+effect has been observed in both directions on real pushes.
