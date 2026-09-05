@@ -16,15 +16,42 @@ rather than an instance, the guard is named rather than the patch.
 
 ---
 
+## CORRECTION, 5 September 2026, before the fixes landed
+
+**Finding 1 as first written was FALSE, and finding 4 miscounted by
+one.** Both are corrected below, in place and marked, rather than
+rewritten away.
+
+**Finding 1 said "the web magic-link entry point carries no rate
+limit". It does.** `/signin/action` throttles issuance by IP and address
+on exactly the mobile keys, and `/signin/code` throttles the typed code
+on its own pair. I found neither because I enumerated
+`apps/web/src/app/api` and the web sign-in routes live under
+`apps/web/src/app/signin`. **That is G-106's mechanism exactly: a
+negative result that was the shape of the query rather than evidence**,
+committed inside an audit whose whole job was to look. Filed as G-124.
+
+**What survives is narrower and sharper**, and is the thing that got
+fixed: the token has TWO entry paths and only one was throttled. The
+corrected finding is below.
+
+**Finding 4 said "the other seven enter through `apps/hm-mobile`".**
+Six do. The seventh, `esbuild`, enters through `packages/schema` as
+test tooling. The conclusion is unchanged and the sentence was wrong.
+
+---
+
+---
+
 ## Verdict summary
 
 | # | Finding | Verdict | Changes behaviour? |
 |---|---|---|---|
-| 1 | The WEB magic-link entry point has no rate limit | **REAL** | yes |
-| 2 | `rateLimit` fails OPEN by design | **REAL, and deliberate** | yes if changed |
-| 3 | Photo bytes are never validated as JPEG, so the metadata-strip promise is conditional | **REAL** | yes |
-| 4 | Nine dependency advisories, two of them in shipped runtime code | **REAL, low** | yes |
-| 5 | Upload returns `ok: true` on a silent no-op | **REAL, not security** | yes |
+| 1 | ~~The WEB magic-link entry point has no rate limit~~ **CORRECTED: the token had two doors and only one was throttled** | **REAL, FIXED** | done |
+| 2 | `rateLimit` fails OPEN by design | **REAL, RULED, FIXED** | done |
+| 3 | Photo bytes are never validated as JPEG, so the metadata-strip promise is conditional | **REAL, FIXED** | done |
+| 4 | Nine dependency advisories, two of them in shipped runtime code | **REAL, low, FIXED** | done |
+| 5 | Upload returns `ok: true` on a silent no-op | **REAL, not security, FIXED** | done |
 | 6 | Object-level authorization on id-taking routes | **VERIFIED GOOD** | n/a |
 | 7 | The offline queue replaying a stale write after a permission change | **VERIFIED GOOD, already built** | n/a |
 | 8 | Security headers and CSP | **VERIFIED GOOD** | n/a |
@@ -35,46 +62,72 @@ rather than an instance, the guard is named rather than the patch.
 
 ---
 
-## 1. The web magic-link entry point is not rate limited. REAL.
+## 1. CORRECTED. The sign-in token had two doors and only one was throttled. REAL, and FIXED.
 
-**The evidence.** Both mobile sign-in routes throttle by IP and by email
-(`api/mobile/signin/route.ts:19-20`, `api/mobile/signin/verify/route.ts:18-19`).
-`api/auth/[...auth]/route.ts`, the Auth.js catch-all that handles the WEB
-issuance and callback, contains no `rateLimit` call at all.
+**What I first wrote was false**, and the correction banner above says
+why. The web sign-in surface a person uses was always throttled:
+`signin/action/route.ts` on `signin:ip` and `signin:email`, and
+`signin/code/route.ts` on `signincode:ip` and `signincode:email`.
 
-**Why it matters more than it looks.** The token is deliberately short so
-it can be typed into the installed PWA: eight characters, base31, which
-`auth/config.ts:139-142` states as about 40 bits. The same comment
-justifies that choice with three legs: "Single-use + short expiry +
-rate-limited entry keep the shorter token safe." **On the web path the
-third leg does not exist.** The control is named in the code's own
-reasoning and absent on the primary surface.
+**The real finding, which is narrower and worse.** The sign-in token has
+TWO entry paths. A person types the code into `/signin/code`, which
+throttles and then calls `Auth()` in process. Or a person clicks the
+emailed link and lands on `GET /api/auth/callback/email?token=...`,
+which was a pure pass-through with **no throttle at all**. The same
+token, accepted at both doors, disciplined at one. **A guesser would
+simply have used the other door**, which makes this a BYPASS of an
+existing control rather than a missing one.
 
-**Honest bounding.** 31^8 is about 8.5e11, so online guessing against a
-known email address is not a practical attack at any plausible request
-rate. The finding is not "this is exploitable today"; it is that a
-stated control is missing where the document says it is present, and
-that email-bombing an address through the web form is unthrottled while
-the mobile form is.
+**Why the token's size makes this worth fixing rather than urgent.**
+`auth/config.ts:139-142` deliberately uses a short typeable token, eight
+characters of base31, about 40 bits, and justifies it with three legs:
+"Single-use + short expiry + rate-limited entry". 31^8 is about 8.5e11,
+so online guessing was never practical. The finding is that one of the
+three named legs did not hold on the door an attacker would choose.
 
-**The fix is small** (the same `rateLimit` calls, keyed on IP and on the
-submitted identifier, inside the route's POST path before delegating to
-Auth.js) and it changes behaviour, so it waits on your word.
+**FIXED, 5 September 2026.** `api/auth/[...auth]/route.ts` now throttles
+the email callback and nothing else (session and csrf are read on every
+page render, and limiting those would be an outage rather than a
+control). **It uses the SAME KEYS as `/signin/code`**, deliberately:
+separate budgets would have handed a guesser five attempts at one door
+and five more at the other, which is how two controls end up weaker than
+one.
 
-## 2. `rateLimit` fails OPEN. REAL, and it is a decision already made.
+## 2. `rateLimit` fails OPEN. REAL, and RULED: the split is clean and built.
 
 `lib/rate-limit.ts:22-31` catches every error and returns `true`. The
 header says why: "fail OPEN on Redis trouble: sign-in availability beats
 a perfect limiter". That is a defensible call and it is written down,
 which is the right posture.
 
-**Raised because an assessor will raise it**, and because the tradeoff's
-inputs change: when the reasoning was written there were no real
-households. Anyone who can degrade Redis removes every throttle in the
-system at once, including the one protecting the token in finding 1.
-**Your call, not an engineering one**; the alternative is failing closed
-on the sign-in path only, which trades a sign-in outage for a throttle
-that cannot be shrugged off.
+**RULED 5 September 2026: fail closed on the sign-in path, fail open
+elsewhere only where blocking would be worse than allowing, and report
+first if that split is not clean.** It is clean, so it is built.
+
+**The failure mode is now a REQUIRED ARGUMENT**, not a default. A
+default would be the producer rule's own failure: whichever answer were
+the default, a later call site would inherit it silently and nobody
+could tell an inherited answer from a decided one.
+
+**Every call site now declares, and there is exactly ONE `open`:**
+`/api/reveal`, because that is an already-authenticated,
+already-authorized, already-audited vault reveal, and refusing one
+because Redis is unreachable would withhold an alarm code from a HOM
+standing at a door. Blocking is worse than allowing there, which is the
+ruling's own test.
+
+**Closed** everywhere else: both web sign-in routes, the new callback
+throttle, all three mobile auth routes, and BOTH MFA sites. The MFA pair
+is the clearest case in the set and was not in the original finding: a
+six-digit TOTP is a million-value space and genuinely brute-forceable
+without a limiter, far more so than the 40-bit link token.
+
+**What fail-closed costs, stated at the implementation rather than only
+here:** an unreachable Redis means no new sign-in succeeds, on web or
+mobile. **The bound that makes that acceptable is that the session
+strategy is DATABASE**, so every already-signed-in session keeps
+working. An outage blocks new entry and evicts nobody, including the
+founder mid-incident.
 
 ## 3. Photo bytes are never validated as JPEG. REAL.
 
@@ -98,9 +151,13 @@ second factor (`api/mobile/photo/route.ts:25-27`), and
 `X-Content-Type-Options: nosniff` is set globally
 (`next.config.ts`), so no browser sniffs a stored blob into script.
 
-**The fix is two lines** (refuse when the first two bytes are not
-`FF D8`), and it is the kind of change that could reject a real photo
-from a client we have not met, so it waits on your word.
+**FIXED, 5 September 2026.** The route now reads the bytes and refuses
+a non-JPEG with 415 before stripping. That is what makes the comment's
+promise unconditional rather than true-for-real-JPEGs. The accepted
+tradeoff, stated because it is a real one: a client we have not met that
+sends a valid photo in another container is now refused rather than
+silently stored unstripped, and refusing is the correct half of that
+trade.
 
 ## 4. Dependency advisories. REAL, low.
 
@@ -115,15 +172,19 @@ the table.
 - `postcss`, patched at >=8.5.23; the existing override pins >=8.5.18,
   so the pin is stale rather than absent.
 
-**The other seven enter through `apps/hm-mobile`** (the Expo toolchain:
-`uuid`, `undici` three times, `@xmldom/xmldom` twice), which is
-build-and-development tooling for an app that cannot ship until the
-Apple Developer enrollment. Real, and not on any path a member or an
-attacker reaches today.
+**SIX of the other seven enter through `apps/hm-mobile`** (the Expo
+toolchain: `uuid`, `undici` three times, `@xmldom/xmldom` twice), which
+is build-and-development tooling for an app that cannot ship until the
+Apple Developer enrollment. **The seventh is `esbuild` through
+`packages/schema`**, which is test tooling; the first version of this
+paragraph said all seven were Expo and was wrong by one.
 
-**Recommendation:** bump the two runtime ones by override, leave the
-Expo chain to Expo's own upgrade, and say so in the assessor packet
-rather than letting the raw `pnpm audit` output imply eleven live
+**FIXED, 5 September 2026:** the two runtime advisories are closed by
+override (`postcss` re-pinned from >=8.5.18 to >=8.5.23,
+`@opentelemetry/core` added at >=2.8.0). Re-audited after the install:
+**nine advisories down to seven, and neither runtime one remains.** The
+Expo chain is left to Expo's own upgrade and says so in the assessor
+packet, rather than letting a raw `pnpm audit` imply eleven live
 problems.
 
 ## 5. The upload's silent no-op. REAL, not a security finding.
@@ -136,8 +197,13 @@ photo id overwrites nothing. But the caller is told the upload
 succeeded when nothing was written.
 
 This is the G-68 class one layer down: a confirmation that proves the
-code path ran and not that the row landed. Reported here because it was
-found here; it belongs in the register rather than in the assessment.
+code path ran and not that the row landed.
+
+**FIXED, 5 September 2026.** The insert returns, and the three real
+outcomes are now distinguishable: `stored: "written"`, `stored:
+"already"` when the same household's earlier sync placed it, and a 409
+when the id belongs to someone else. The security behaviour is
+unchanged; what changed is that the caller is told the truth.
 
 ---
 

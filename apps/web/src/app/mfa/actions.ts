@@ -23,7 +23,7 @@ async function guardedUser(): Promise<{ userId: string; token: string } | null> 
 export async function confirmEnrollmentAction(formData: FormData): Promise<void> {
   const ctx = await guardedUser();
   if (!ctx) redirect("/signin");
-  if (!(await rateLimit(`mfa:${ctx.userId}`, 8, 300))) redirect("/mfa?error=throttled");
+  if (!(await rateLimit(`mfa:${ctx.userId}`, 8, 300, "closed"))) redirect("/mfa?error=throttled");
   const code = String(formData.get("code") ?? "");
   const backupCodes = await confirmEnrollment(ctx.userId, code);
   if (backupCodes) {
@@ -49,7 +49,7 @@ export async function dismissRecoveryCodesAction(): Promise<void> {
 export async function challengeAction(formData: FormData): Promise<void> {
   const ctx = await guardedUser();
   if (!ctx) redirect("/signin");
-  if (!(await rateLimit(`mfa:${ctx.userId}`, 8, 300))) redirect("/mfa?error=throttled");
+  if (!(await rateLimit(`mfa:${ctx.userId}`, 8, 300, "closed"))) redirect("/mfa?error=throttled");
   const code = String(formData.get("code") ?? "");
   if (await verifyChallenge(ctx.userId, code)) {
     await markSessionMfaSatisfied(ctx.token);

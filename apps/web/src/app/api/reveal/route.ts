@@ -37,7 +37,12 @@ export async function POST(req: NextRequest) {
   // Cap it per user (bulk exfiltration guard) even for authorized roles —
   // 40/hour is far above any legitimate in-context reveal rhythm. Every
   // attempt is still individually audited below.
-  if (!(await rateLimit(`reveal:${principal.userId}`, 40, 3600))) {
+  if (!(await // FAIL OPEN, deliberately and narrowly: this is an already-authenticated,
+  // already-authorized, already-audited vault reveal, and refusing one
+  // because Redis is unreachable would withhold an alarm code from a HOM
+  // standing at a door. Blocking is worse than allowing here, which is the
+  // exact test the 5 September ruling sets for staying open.
+  rateLimit(`reveal:${principal.userId}`, 40, 3600, "open"))) {
     return NextResponse.json({ ok: false, reason: "reveal rate limit reached" }, { status: 429 });
   }
 

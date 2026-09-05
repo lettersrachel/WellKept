@@ -20,11 +20,15 @@ export async function POST(request: Request) {
   }
 
   // Throttle guesses hard: the code is short enough to type, so entry gets
-  // the same discipline as TOTP challenges. Fails open on Redis trouble.
+  // the same discipline as TOTP challenges. FAILS CLOSED since the 5
+  // September ruling. The SAME KEYS are used by the emailed link's own
+  // callback (api/auth/[...auth]), deliberately: the token has two entry
+  // paths and one shared budget, so an attacker cannot get five guesses
+  // here and five more there.
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const [ipOk, emailOk] = await Promise.all([
-    rateLimit(`signincode:ip:${ip}`, 10, 900),
-    rateLimit(`signincode:email:${email.toLowerCase()}`, 5, 900),
+    rateLimit(`signincode:ip:${ip}`, 10, 900, "closed"),
+    rateLimit(`signincode:email:${email.toLowerCase()}`, 5, 900, "closed"),
   ]);
   if (!ipOk || !emailOk) {
     return Response.redirect(new URL(`/verify-request?error=rate-limited&email=${encodeURIComponent(email)}`, request.url), 303);

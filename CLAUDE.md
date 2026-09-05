@@ -43,6 +43,21 @@ premise found here.
   close.
 - **Never load real household data into fixtures or tests.** Fernbrook DEMO and
   the Smoke Test Fixture only.
+- **Certification and training stay INTERNAL, and if they ever go
+  external they go BESIDE the staff application, never inside it**
+  (founder ruling, 5 September 2026, on
+  `docs/EXTERNAL_CERTIFICATION_FEASIBILITY.md`). Recorded as doctrine
+  rather than as a preference so nobody designs toward the foreclosed
+  path. **The path that is foreclosed, named so it is recognisable:**
+  `getStaffIdentity` derives staff identity from
+  `household_role_assignment` and returns null for a person who holds
+  none, so belonging to a household is how this system knows who anyone
+  is. Making an external trainee work INSIDE the app therefore means
+  giving a stranger a household assignment, which puts them inside the
+  mechanism tenant isolation rests on. That is not a cost to weigh; it
+  is the thing not to do. A future Q-16 credential object must not
+  assume a household, and any training surface for a non-employee is a
+  separate application consuming the scenario bank as data.
 
 ## The audit invariant
 

@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing email" }, { status: 400 });
   }
   const [ipOk, emailOk] = await Promise.all([
-    rateLimit(`signin:ip:${ip}`, 10, 3600),
-    rateLimit(`signin:email:${email.toLowerCase()}`, 5, 3600),
+    rateLimit(`signin:ip:${ip}`, 10, 3600, "closed"),
+    rateLimit(`signin:email:${email.toLowerCase()}`, 5, 3600, "closed"),
   ]);
   if (!ipOk || !emailOk) {
     return NextResponse.json({ error: "too many attempts" }, { status: 429 });

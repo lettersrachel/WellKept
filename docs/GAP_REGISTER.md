@@ -7677,3 +7677,45 @@ full.**
 **Founder-side to settle, in one sentence:** whether the intended date is
 4 or 5 September. If 5, the fix is a reviewed hash update on the frozen
 file and a rename; if 4, this entry is the explanation and nothing moves.
+
+### G-124 CLOSED on arrival, 5 September 2026: the security audit's own first finding was the shape of its query
+
+**What happened.** The 5 September self-audit reported, as its lead
+finding, that "the web magic-link entry point carries no rate limit".
+**It does, and always has.** `apps/web/src/app/signin/action/route.ts`
+throttles issuance by IP and address on the same keys the mobile routes
+use, and `apps/web/src/app/signin/code/route.ts` throttles the typed
+code on its own pair.
+
+**The mechanism, which is the only reason this is filed.** The audit
+enumerated route handlers with `find apps/web/src/app/api -name
+route.ts`. The web sign-in routes are route handlers that do not live
+under `api/`; they are at `app/signin/action` and `app/signin/code`.
+So the search could not see them, and the empty result was read as
+evidence of absence.
+
+**That is G-106 exactly**, committed inside an audit whose entire
+purpose was to look, by the session holding the rule. G-106 was filed
+when `ls docs` plus a grep over `docs/*.md` could not see a `.docx` one
+directory down. Same class, three weeks later, in a document about
+being thorough.
+
+**What survived the correction is not nothing, and is sharper than what
+was reported.** The sign-in token has TWO entry paths, `/signin/code`
+and the emailed link's own `GET /api/auth/callback/email`, and only the
+first was throttled. So the true finding was a BYPASS of an existing
+control rather than a missing control, which is a worse shape and a
+smaller fix. Both are now throttled, on deliberately SHARED keys.
+
+**The lesson, stated so it is usable rather than merely chastening: an
+enumeration is a claim about the enumerator, and a negative result
+inherits every limit of the pattern that produced it.** The cheap
+remedy that would have caught this is the one used to correct it:
+before reporting an absence, search for the CALL rather than for the
+location. `grep -rn "rateLimit(" apps/web/src` found all twelve sites
+in one command and needed no assumption about where a route lives.
+
+**Recorded as closed rather than open** because the false half is
+corrected in place in the audit document with the correction visible,
+the true half is fixed in code, and the lesson is written here. Nothing
+is left to do.
