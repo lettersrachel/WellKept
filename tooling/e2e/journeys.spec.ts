@@ -1568,3 +1568,59 @@ test("commitment ledger: closing refuses until the Handled invariant is met, the
     await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
   }
 });
+
+test("reconciliation: an expectation is recorded corporate-side, and none of it reaches the member", async ({ context, page }) => {
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+
+    // Refusing direction first: three characters is not an expectation,
+    // and the server wall is what refuses (the field carries no minlength).
+    await page.getByLabel("What we are expecting").fill("hm");
+    await page.getByLabel("Expected by").fill("2027-01-15T09:00");
+    await page.getByRole("button", { name: "Record expectation" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM expected_event WHERE household_id=$1")).toBe(0);
+
+    // A window with no date is refused too: an expectation that can never
+    // be reconciled would sit forever looking live.
+    await page.getByLabel("What we are expecting").fill("invoice from the gutter vendor");
+    await page.getByLabel("Expected by").fill("");
+    await page.getByRole("button", { name: "Record expectation" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM expected_event WHERE household_id=$1")).toBe(0);
+
+    // The accepting direction, with the materiality left unclassified,
+    // which is the honest blank rather than a class nobody chose.
+    await page.getByLabel("What we are expecting").fill("invoice from the gutter vendor");
+    await page.getByLabel("Expected by").fill("2027-01-15T09:00");
+    await page.getByRole("button", { name: "Record expectation" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM expected_event WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='expected_event.recorded'")).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM expected_event WHERE household_id=$1 AND materiality IS NULL AND reconciliation_status IS NULL")).toBe(1);
+    // Located on the ROW's own provenance line rather than by text
+    // anywhere on the page: "materiality not classified" is also the
+    // select's blank option, so a bare getByText matches two elements and
+    // would be asserting about the form rather than about the row.
+    const expectationRow = page.locator(".prov").filter({ hasText: "still inside its window, not yet reconciled" });
+    await expect(expectationRow).toBeVisible({ timeout: 15_000 });
+    await expect(expectationRow).toContainText("materiality not classified");
+
+    // SHADOW, asserted against the EMITTED MARKUP rather than the
+    // rendered text (the RSC boundary rule): a prop passed and discarded
+    // would still fail here. The member sees no expectation, no pattern
+    // vocabulary and no routing.
+    const clientPage = await context.newPage();
+    await clientPage.goto(`/oversight/${synId}/preview/client`);
+    const html = await clientPage.content();
+    expect(html).not.toContain("invoice from the gutter vendor");
+    expect(html).not.toContain("missing_expected");
+    expect(html).not.toContain("vendor_visit_without_invoice_or_report");
+    await clientPage.close();
+  } finally {
+    await pool.query("DELETE FROM expected_event WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});

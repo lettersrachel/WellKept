@@ -477,6 +477,20 @@
       "when": 1788622518694,
       "tag": "0067_commitment_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1788629404757,
+      "tag": "0068_vault_reveal_outcome",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1788636093360,
+      "tag": "0069_expected_event",
+      "breakpoints": true
     }
   ]
 }

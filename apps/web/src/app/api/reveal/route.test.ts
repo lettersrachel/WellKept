@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
  * permission core runs for real. That is the finding: this route was
  * testable all along; it simply had nowhere to be tested from.
  */
-const audited: { kind: string; detail: Record<string, unknown> }[] = [];
+const audited: { kind: string; detail: Record<string, unknown>; revealOutcome?: string }[] = [];
 let vaultResult: { value: string | null } | { throws: true };
 
 const FIELD = {
@@ -25,7 +25,7 @@ const FIELD = {
 vi.mock("@/lib/db", () => ({
   db: {
     select: () => ({ from: (t: unknown) => ({ where: () => (String(t).includes("household") ? [{ id: "h-1", isNda: false }] : [FIELD]) }) }),
-    insert: () => ({ values: (row: { kind: string; detail: Record<string, unknown> }) => { audited.push(row); return Promise.resolve(); } }),
+    insert: () => ({ values: (row: { kind: string; detail: Record<string, unknown>; revealOutcome?: string }) => { audited.push(row); return Promise.resolve(); } }),
   },
 }));
 vi.mock("@/lib/session", () => ({
@@ -55,11 +55,14 @@ test("AP/G-53: delivered - the value is returned and the outcome row says so", a
   assert.equal(status, 200);
   assert.equal(body.value, "0000 (smoke-test value)");
   assert.deepEqual(audited.map((a) => a.kind), ["s3_corporate_view", "s3_reveal_outcome"]);
-  assert.equal(audited[1]!.detail.outcome, "delivered");
-  assert.equal(audited[1]!.detail.delivered, true);
+  assert.equal(audited[1]!.revealOutcome, "delivered");
+  // Q-11l: the outcome is the TYPED column now. `detail` no longer carries a
+  // second copy, because two copies of one fact drift and only the column is
+  // closed by the 0068 CHECK.
+  assert.equal(audited[1]!.detail.outcome, undefined);
 });
 
-test("AP/G-53: no_vault_item - the placeholder is returned and the outcome row does NOT claim delivery", async () => {
+test("Q-11l: not_found - the placeholder is returned and the outcome row does NOT claim delivery", async () => {
   vaultResult = { value: null };
   const { status, body } = await reveal();
   assert.equal(status, 200);
@@ -67,19 +70,17 @@ test("AP/G-53: no_vault_item - the placeholder is returned and the outcome row d
   // The whole point of the entry: the attempt row alone would be
   // indistinguishable from the delivered case above.
   assert.deepEqual(audited.map((a) => a.kind), ["s3_corporate_view", "s3_reveal_outcome"]);
-  assert.equal(audited[1]!.detail.outcome, "no_vault_item");
-  assert.equal(audited[1]!.detail.delivered, false);
+  assert.equal(audited[1]!.revealOutcome, "not_found");
 });
 
-test("AP/G-53: decrypt_failed - refuses with a reason instead of throwing, and records the failure", async () => {
+test("Q-11l: failed - refuses with a reason instead of throwing, and records the failure", async () => {
   vaultResult = { throws: true };
   const { status, body } = await reveal();
   assert.equal(status, 500);
   assert.equal(body.ok, false);
   assert.match(String(body.reason), /could not be opened/);
   assert.deepEqual(audited.map((a) => a.kind), ["s3_corporate_view", "s3_reveal_outcome"]);
-  assert.equal(audited[1]!.detail.outcome, "decrypt_failed");
-  assert.equal(audited[1]!.detail.delivered, false);
+  assert.equal(audited[1]!.revealOutcome, "failed");
 });
 
 test("AP: the attempt row is written BEFORE the decrypt, in every outcome", async () => {
@@ -94,4 +95,32 @@ test("AP: the attempt row is written BEFORE the decrypt, in every outcome", asyn
     assert.equal(audited[0]!.kind, "s3_corporate_view", "the attempt row must come first");
     assert.equal(audited.length, 2, "exactly two rows: the attempt and its outcome");
   }
+});
+
+/**
+ * Q-11l: the fourth value, and the hole it closes.
+ *
+ * An authorization refusal used to return 403 and write NOTHING, so the trail
+ * could say who attempted and never who was TURNED AWAY. `denied` is the only
+ * one of the four ruled values whose producer did not exist.
+ */
+test("Q-11l: denied - a refusal is recorded as an outcome, alone, with nothing decrypted", async () => {
+  vaultResult = { value: "never reached" };
+  vi.resetModules();
+  vi.doMock("@/lib/session", () => ({
+    // A client can never reveal an s3 field: the permission core refuses.
+    getPrincipal: async () => ({ userId: "u-9", role: "client", householdId: "h-1", ndaApproved: false }),
+  }));
+  const { POST } = await import("./route");
+  const req = { json: async () => ({ fieldId: "f-1" }) } as unknown as Parameters<typeof POST>[0];
+  const res = await POST(req);
+  assert.equal(res.status, 403);
+
+  // ONE row, and it is the outcome. There is no attempt row because nothing
+  // was attempted: the refusal came before any decryption, which is what
+  // `denied` means in the ruled vocabulary.
+  assert.deepEqual(audited.map((a) => a.kind), ["s3_reveal_outcome"]);
+  assert.equal(audited[0]!.revealOutcome, "denied");
+  vi.doUnmock("@/lib/session");
+  vi.resetModules();
 });

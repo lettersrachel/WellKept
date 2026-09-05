@@ -171,10 +171,15 @@ export function createWorker() {
         // RFC-PRIM-01 build 2: the overdue surfaces write attention
         // records on the same daily pass. Idempotent by the
         // one-per-source index; only genuine inserts emit events.
-        const { sweepAttentionRecords, sweepDecisionExpiry } = await import("@wellkept/trigger-engine");
+        const { sweepAttentionRecords, sweepDecisionExpiry, sweepExpectedEvents } = await import("@wellkept/trigger-engine");
         const attention = await sweepAttentionRecords(db);
         const expiry = await sweepDecisionExpiry(db);
-        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged, attentionRaised: attention.raised, decisionsExpired: expiry.expired };
+        // Q-12b-1: reconciliation runs on the same daily pass. SHADOW:
+        // it writes only on the expectation row and the outbox, so it
+        // reaches no member and changes no HOM briefing. Idempotent by
+        // the status column: a second run finds no NULL status to claim.
+        const reconciliation = await sweepExpectedEvents(db);
+        return { ...sweep, loadSignals: load.signals, seasonRows: season.inserted, photosPurged: purged, attentionRaised: attention.raised, decisionsExpired: expiry.expired, expectationsMissed: reconciliation.missed };
       }
       if (job.name === "fleet-digest") { const { runFleetDigest } = await import("./digest.ts"); return runFleetDigest(pool); }
       if (job.name === "client-digest") { const { runClientWeeklyDigest } = await import("./client-digest.ts"); return runClientWeeklyDigest(pool); }

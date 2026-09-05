@@ -159,7 +159,7 @@ row here fails CI, so the table cannot silently go stale.
 | `refusal-visibility.test.ts` | every page an action can refuse onto renders the banner, wired to the redirect's own param | whether the operator reads it; a refusal that never redirects at all |
 | `provisional-markers.test.ts` | every `counsel-pending` marker parses, resolves in `docs/PROVISIONAL.md`, and fails the build past 90 days unresolved | whether the marked assumption is still accurate; `pilot-calibrated` markers, which are counted but never fail |
 | `decline-class-exclusion.test.ts` | no trigger rule reads a decline-class field without a reviewed exclusion; no new Section 1/3 field ships unclassified | fields predating the 1 August 2026 baseline, grandfathered rather than classified; the taxonomy's own completeness |
-| `client-duration.test.ts` | no client route or client-reaching copy builder carries a duration-typed schema column or D7 staffing-wall quantity (WK-DEV-006 D7, register A564) | prose copy stating a duration without touching an identifier; surfaces outside the walked set |
+| `client-duration.test.ts` | no client route or client-reaching copy builder carries a duration-typed schema column or D7 staffing-wall quantity (WK-DEV-006 D7, register A564); and, since Q-11k, that no DURATION-CARRYING TABLE is in the member archive's `MEMBER_SCOPE`, computed on both sides so a duration column added to a member-scope table tomorrow fails without anyone remembering the rule | prose copy stating a duration without touching an identifier; surfaces outside the walked set. **And the inside of a jsonb payload**: `visit_command.payload` carries the hours the HOM typed and no column name says so, so the member-scope check reads that table as duration-free. Admitting it under a key-dropping projection is freeze-packet item A shape (b), whose dropped-key list is a written reviewed list precisely because no schema-derived check can read it |
 | `telemetry-discipline.test.ts` | the Sentry scrubber cuts row-value leak shapes and stays wired in both inits with sendDefaultPii false; no shipped console call interpolates a sensitive-value identifier (CAND-PRIV-01) | free text a developer writes into a message; telemetry channels other than Sentry and console |
 | `legal-census.test.ts` | every household-referencing table, computed from the schema, is named in CHILD_DATA.md or excused with a written reason (the G-62 candidate guard) | the legal/README and privacy-notice prose, which name categories not tables and stay on the same-PR rule; whether a named treatment is correct |
 | `success-visibility.test.ts` | every action that changes stored state confirms it, and every page a confirmation can land on renders the banner bound to the redirect's own param (G-68, refusal-visibility's twin) | whether the confirmation is TRUE: a redirect proves the code path ran, never that the write committed; free text a future author interpolates into a message |
@@ -168,6 +168,7 @@ row here fails CI, so the table cannot silently go stale.
 | `brand-config.test.ts` | brand is one configuration value: the computed member-facing page set and the computed mail-channel file set carry no company-name display literal (comment-stripped, space-required so module specifiers never match), and the config pins today's exact values so a name change is a reviewed two-file edit | staff-only pages, which the law permits to carry the name; the "Tell Well Kept" feature name on staff surfaces; documents, which are prose not code; whether a surface RENDERS the brand where it should |
 | `judgment-free.test.ts` | no schema column name matches the founder-editable judgment-free pattern list (ranking constructs over HOMs; stress, emotion, cognitive-load and health inference; social-content inference; person-characterizing words) without a written exception, and no table defines two household columns; both censuses computed with floors (Ruling 2 §5 via RFC-ATTR-01 Amendment 1 §A1.4; bars the INFERENCE, permits the human record per the load_concern_raised adoption ruling) | free text and stored VALUES, which no name census reads; inference living in code rather than schema, which stays review; the pattern list's own completeness, which is the founder's to grow |
 | `client-payload-shape.test.ts` | every member-reaching payload carries ONLY the keys declared for it, so a column added tomorrow throws instead of publishing; the declared registry list is asserted against the table's own columns, with a written-exclusion hatch (G-78) | **what a permitted key CONTAINS**: a staff-only fact typed into a correctly client-visible column reaches the member, since `playbook_field.value` is gated by ROW sensitivity and an s1 field is client-visible by design, which nothing in this system catches (the copy guard's free-text residue, one layer down); the inside of a jsonb column, which is one permitted key; and whether a value that should be nulled still is, which stays a separate mechanism |
+| `queue-row-consistency.test.ts` | a build-queue row read against ITSELF (G-133): where the prerequisite cell names an input as absent, the status must say what the row does about it, by a status marker, by naming the input, or by a disposition in the prerequisite cell; both vocabularies are asserted to be in live use so the lists cannot accumulate dead patterns, and a row that does not parse into six cells fails rather than being skipped | whether the DISPOSITION is true, which no text comparison can weigh; a prerequisite that is absent and not SAID to be absent, which is most of the ways a row can be wrong; and `(bundle)`, deliberately not read as an absence phrasing because it names a document's origin rather than asserting it is missing |
 
 Every guard carries a sanctioned escape hatch (an allowlist with a written
 reason, a reviewed manifest edit, or a reviewed migration); the first
@@ -677,6 +678,21 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   airplane job, so the gate would have caught this only AFTER the merge,
   and with no branch protection on `main` that means the default branch
   carries a broken migration until a person reads a log.
+  **AND THE SAME REVIEWER'S JOB HAS A POSITIVE FORM: WHERE A BACKFILL AND A
+  CONSTRAINT LAND IN ONE MIGRATION, THE BACKFILL GOES BETWEEN THE COLUMN AND
+  THE CONSTRAINT, BY HAND** (founder note, 5 September 2026). A generator
+  emits the column and the constraint and nothing in between, so a
+  constraint that every EXISTING row must satisfy will refuse the whole file
+  at apply time unless a person puts the classification of those rows where
+  it belongs. **The placement is what makes the refusal atomic and useful**:
+  a row nobody can classify stops the migration inside its own transaction,
+  with nothing applied and the unclassifiable row still there to look at,
+  rather than being handed a guessed value that would then be
+  indistinguishable from a decided one (the nullable-no-default reasoning,
+  arriving at apply time). **The instance is 0068**: the reveal-outcome
+  column, then the backfill of existing `s3_reveal_outcome` rows, then the
+  CHECK binding outcome to kind. A guess there would have written a claim
+  about what happened on a reveal nobody watched.
 - **Migration numbers and gap register IDs are allocated at write time, never
   reserved in advance.** Read the current maximum first. Two documents both
   claiming the next number will collide.
@@ -787,6 +803,32 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   cost of the omission. This is the G-129 family arriving as a PASS FROM THE
   WRONG HARNESS rather than as a count of the wrong unit: say which harness ran,
   and say what it does not reach.
+  **The rule caught the person who set it, within the hour** (5 September 2026,
+  recorded by the founder's instruction because that is where its value shows).
+  A commit message written the same afternoon claimed "local suite 11/11
+  uncached" for a docs-only change; the suite had in fact just FAILED, because
+  Postgres stops under load in the development container, and the commit was
+  chained behind it without the result being read. Re-run, it was green, so the
+  claim became true after being made, which is the worst of the three
+  possibilities: a false statement that repairs itself leaves nothing to find
+  later. **A convention that only catches other people is a preference; this one
+  is worth keeping because it caught its own author on the day it was
+  adopted.**
+  **THE SHARPER FORM, folded in rather than left adjacent (founder ruling, the
+  same day, after the second instance): A RESULT MUST BE READ BEFORE IT CAN BE
+  DESCRIBED, AND A REPORT CHAINED BEHIND AN UNREAD COMMAND IS A CLAIM ABOUT
+  INTENTION.** Naming what one meant to do is not reporting what happened, and
+  the two are indistinguishable in a commit message.
+  **The mechanism is the CHAINING rather than carelessness**, and it is stated
+  as a mechanism because that is what can be avoided: both of the day's
+  instances put a claim and the command it describes in one shell chain, so the
+  claim was composed before the outcome existed. `cmd; git commit -m "did X"`
+  writes the message whether or not `cmd` did X, and `a && b` skips `b` on
+  failure while any later chained step still runs. The two instances, both the
+  author's: a suite reported 11/11 that had just failed on a stopped Postgres,
+  and a commit that said a queue row was corrected when the edit had thrown on a
+  wrong cell index. **Read the result, then write the sentence**: separate
+  steps, or a command whose own output is quoted into the claim.
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**
@@ -890,6 +932,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   own citation discipline the thing that hid three stale clauses in one
   day. Read a citation as an instruction to go and check, never as
   evidence that someone already did.
+  **AND THE REGISTER ITSELF IS NOT EXEMPT** (founder note, 5 September
+  2026). The stale-document class was written about documents QUOTING the
+  register; the register is the moving record everything else is checked
+  against, and it goes stale the same way. **The instance is G-53**, whose
+  entry described the reveal route as having no outcome vocabulary and
+  ended "until the fix lands"; the append had shipped in `42176a9` and the
+  entry had not moved. A session that built on the entry would have built
+  a second time what already existed. **Only reading the ROUTE could have
+  surfaced it**, because nothing in the entry looks stale from the inside:
+  it is dated, attributed and internally consistent, and the fact it is
+  wrong about lives in a file it does not name. Read the code the entry is
+  about, not the entry about the code.
 - **A comment block may hold a DECISION, not only a description, so read
   the header before reporting an assertion as a defect.** Same shape as
   the citation rule above, pointed at code instead of documents: an

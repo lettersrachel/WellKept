@@ -27,6 +27,14 @@
  * notification-firewall posture, where five destinations shipped and the
  * policy produced two.
  *
+ * MOVED from `apps/web/src/lib/` to `@wellkept/schema` on 5 September
+ * 2026 (Q-12b-1), unchanged line for line, because the reconciliation
+ * sweep runs in `@wellkept/trigger-engine` and a worker package cannot
+ * import from the web app. The move is a relocation and not a semantics
+ * change: its only importer at the time was its own test, which moved
+ * with it. Stated here so a later reader does not read the new location
+ * as a second opinion on where routing belongs.
+ *
  * THE CALLER NAMES THE RIGHT. Mapping an arbitrary commitment to one of
  * the seventeen rights is itself a taxonomy, so this function takes the
  * `rightKey` verbatim rather than guessing it from a title.
@@ -73,4 +81,56 @@ export function routeByDecisionRights(args: {
     return { outcome: "auto_execute", why: `at or below the household's ceiling for ${right.rightKey}` };
   }
   return { outcome: "propose", why: `above the household's ceiling for ${right.rightKey}` };
+}
+
+/**
+ * Q-12b-1: routing a reconciliation CANDIDATE by materiality.
+ *
+ * The spec's phrase is "candidate decisions routed by materiality", and
+ * the mapping is DERIVED rather than chosen: `decision_right.materiality`
+ * already carries the signed three-value classification from the source
+ * sheet, so the rights of a given materiality are a fact on record and
+ * not a taxonomy invented here.
+ *
+ * ONE COMPOSITION CALL IS MINE, reported under the standing tiebreak
+ * rather than asked: where SEVERAL rights share a materiality, a
+ * candidate auto-executes only if EVERY one of them would permit it.
+ * That keeps `auto_execute`'s existing meaning (at or below the
+ * household's ceiling) intact under each applicable ceiling, rather than
+ * minting a new meaning such as "below the highest ceiling". Picking one
+ * right instead would need a precedence rule nobody has ruled.
+ *
+ * EVERYTHING ELSE FALLS TO `propose`, which is this module's own
+ * null-threshold default and the doctrine's safe direction. In
+ * particular an UNCLASSIFIED expectation proposes: a miss whose
+ * materiality nobody set is not below any ceiling, and treating NULL as
+ * a permissive class would let an unmade judgment act.
+ */
+export function routeCandidateByMateriality(args: {
+  rights: Array<RoutingRight & { materiality: string | null }>;
+  materiality: string | null;
+  amountCents: number | null;
+}): RoutingResult {
+  if (args.materiality === null) {
+    return {
+      outcome: "propose",
+      why: "the expectation carries no materiality, and an unclassified miss is not below any ceiling",
+    };
+  }
+  const applicable = args.rights.filter((r) => r.materiality === args.materiality);
+  if (applicable.length === 0) {
+    return {
+      outcome: "propose",
+      why: `no decision right of materiality ${args.materiality} on record for this household, so it is asked rather than assumed`,
+    };
+  }
+  const results = applicable.map((r) =>
+    routeByDecisionRights({ rights: [r], rightKey: r.rightKey, amountCents: args.amountCents }),
+  );
+  const blocking = results.find((r) => r.outcome !== "auto_execute");
+  if (blocking) return blocking;
+  return {
+    outcome: "auto_execute",
+    why: `at or below every ${args.materiality} ceiling on record (${applicable.length} right(s) checked)`,
+  };
 }

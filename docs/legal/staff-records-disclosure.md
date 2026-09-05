@@ -12,6 +12,22 @@ status: living
 > may prefer to fold this into the confidentiality acknowledgment (counsel
 > packet, section 7), and sets the retention bracket. Fill the ⟨brackets⟩.
 
+> **NOTE FOR COUNSEL, 5 September 2026, and NOT part of the text a staff
+> member signs.** The software's staff-attribution surface is wider than the
+> numbered items below. Computed from the schema rather than counted by hand,
+> and asserted in CI (`staff-disclosure.test.ts`) so this paragraph cannot go
+> stale. The system carries 45 staff-attributed tables. Of those,
+> 19 are covered by the numbered items in this document, and
+> 26 are not yet named here and stand on written engineering reasons in the
+> guard's allowlist.
+>
+> Most of the unnamed ones record the WRITING of something (who entered a work
+> item, who recorded an estimate) rather than the doing of it, and several were
+> deliberately built to hold no performer at all. That distinction is
+> engineering's view and not a legal one, which is why the number is put in
+> front of counsel rather than resolved here. The founder's revision collapses
+> the allowlist; until then the gap is on the record rather than in it.
+
 **Name:** ⟨staff member⟩   **Role:** ⟨house manager / corporate⟩   **Date:** ⟨date⟩
 
 The confidentiality acknowledgment covers what you owe the business. This

@@ -2410,6 +2410,46 @@ and reading one as the other would be the G-109 shape.
 **Owed at the next deploy: 0065 applies (65 to 66).**
 
 
+**5 September 2026: production serves `c972b2f` (the TWENTY-SEVENTH clean run),
+and migration 0067 is applied: the Commitment Ledger is live.** Sha current as
+the origin/main tip, migrations agree three ways at 68, build id verified three
+times and confirmed independently, health ok, mechanical checks 1/4a/4b/12/15
+PASS. The founder ran it; the merge carried a member-facing change (the flag
+vocabulary fix) so the deploy was hers rather than under the standing
+server-only authority.
+
+**The table landed complete**, read back from production rather than from the
+migration file: four CHECKs by name (`close_is_whole`,
+`closed_only_when_handled`, `member_decision_is_whole`,
+`verification_is_one_shape`), five foreign keys, three indexes, zero rows.
+
+**And the Handled invariant refused in production, proven rather than
+assumed.** The founder attempted a close with no accountable owner inside a
+transaction and rolled it back: the database refused by name
+(`commitment_ledger_item_closed_only_when_handled`) and the table was still at
+zero rows afterwards. Adopted law enforced by the database rather than by a
+service layer something could bypass, and the attempt-then-rollback shape is
+worth keeping as the pattern for exercising a constraint against a live system
+without writing to it.
+
+**A precision on what that proves, because the two claims are close enough to
+blur.** ONE of the four clauses has now fired in PRODUCTION. All four were
+proven refusing INDIVIDUALLY during the build, in SQL on a real Postgres, with
+the constraints printed from `pg_constraint` before any case ran (nine refusals
+by name and four accepting shapes; `docs/sessions/2026-09-05_Q-6-2.md`), and
+the same CHECK text is what production now carries, confirmed by name in the
+read above. So the other three are proven LOGIC on a real database and are
+unexercised in production. The distinction is small and real, and the remedy is
+cheap: the same transaction-and-rollback shape, three more times.
+
+**Q-6 is complete across both halves**: 0066 built the routing table and 0067
+built what routes into it. NEITHER ROUTES YET. What remains of the row is the
+four routing directions and M-25 wired to a surface, and the member decision
+inbox stays freeze-gated until the 25 September two-key decision. Also still
+inert and NOT closed by 0067: `decision_right.confirmed_at` and `confirmed_by`,
+which have no producer because confirming a right belongs with the member-facing
+half.
+
 **Same day, the five follow-ups.** All report-only except the CAND column.
 
 - **`DOCUMENT_AUTHORITY_2026-08-28.md`**: the library is the system of record

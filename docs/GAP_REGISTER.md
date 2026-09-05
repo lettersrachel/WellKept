@@ -1388,6 +1388,8 @@ and the trail keeps assuming they saw it.
 rather than built ahead of it. Frozen ruling:
 `docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
 
+**BUILT 5 September 2026 as migration 0068, and this entry was ITSELF STALE**, which is recorded because the entry is the thing a later reader trusts. The text above says "until the fix lands"; the fix had partly landed already, in commit `42176a9` earlier the same run, which added the second append with a provisional vocabulary. So the register described a state the code had moved past, and the session working the queue row found it by reading the route rather than the entry. **What was genuinely open** was narrower and worse than the entry claimed: the vocabulary was not the ruled one, nothing closed the set, and **`denied` had no producer because an authorization refusal returned 403 without writing anything**, so the trail could say who attempted and never who was turned away. All three are closed by 0068 and its route changes; see `docs/sessions/2026-09-05_Q-11l.md`.
+
 ### G-54. A KEK rotation locks out every enrolled staff user, backup codes included, because the TOTP decrypt throws before the fallback is reached
 
 Hit in production 2026-07-29 (digest 2073677018) minutes after the KEK
@@ -8317,3 +8319,229 @@ surfaced this five commits earlier.** The claim that was made was true and
 answered a different question from the one she was asking, which is the G-129
 family arriving as a PASS FROM THE WRONG HARNESS rather than as a count of the
 wrong unit.
+
+---
+
+### G-133 REPORTED, 5 September 2026: a queue row that disagreed with itself passed every reading until somebody tried to build from it
+
+**Found by** working Q-10 in queue order. Its PREREQUISITE column read
+`WK-STD-028 (not in repository)` and its STATUS column read `**NEW.**`, three
+cells apart on one line. **Both are readable, neither is false on its own, and
+together they say a row is ready to build whose named input does not exist.**
+
+**The shape, which is the reason this is an entry rather than a note.** Every
+other check in this repository compares one artefact against another: the
+schema against the erasure tool, the guard set against the manifest, the
+disclosure against the computed surface set. **Nothing checks a queue row
+against itself.** A row is read a cell at a time by a person who is looking for
+one thing, so an internal contradiction survives every reading until the
+sentence that matters is the one being acted on. Q-10's row had been in that
+state since the queue was re-cut on 3 September, read past by several sessions
+including the one that opened the rows beside it.
+
+**It cost nothing here because the row was blocked for three other reasons
+too**, all found by reading the tree: no inbound-message table exists, REQ-080's
+own text ends `GATE: with REQ-078`, and the WK-STD-028 commitment table is a
+library `.docx` the standards store does not hold as data. **That is luck rather
+than a control.** A row whose only defect was the contradiction would have been
+built from.
+
+**Guardable, cheaply, and opened as queue row Q-11q rather than built here**
+(the standing rule that a guard finding is a row). The detection is a
+same-row comparison rather than a judgment: where a prerequisite cell says a
+named input is not in the repository, the status cell must say the row is
+blocked, gated or corrected, or carry a written allowlist reason. Both the
+marker words and the not-in-repository phrasings are drawn from the file's own
+existing text rather than invented, which is what keeps it a consistency check
+and not a new vocabulary. The honest limit belongs on the row: it reads PROSE,
+so it catches the stated contradiction and not an unstated one, and a row can
+still be wrong in ways no same-row comparison can see.
+
+### G-133 ADDENDUM, 5 September 2026: the guard built, and what it found that the entry did not predict
+
+**Built as Q-11q** (`packages/schema/src/queue-row-consistency.test.ts`). Three
+things it found on its first run, none of them the thing it was written for.
+
+**1. Two rows were MIS-SPLIT, and one of them made my own census read the
+wrong cell.** The parse asserts six cells per row, and two rows had seven.
+Q-8b carried an unescaped `|` inside the code span `--scope corporate|member`,
+which markdown tables do not allow. Q-16 was worse and it was mine: the 5
+September item 9 note had been inserted as a spurious extra CELL rather than
+appended to the Standing cell, so every column after it shifted by one. **A
+cell-indexed read of that row returned the note as its status and never saw the
+real status**, which is why the pre-run prediction written into the session log
+listed Q-16 as contradicting itself. It does not: its Standing cell says
+`Gated in part on the WK-TRN-009 document existing`. **The prediction was wrong
+for exactly the reason the guard exists**, and the guard's own parse assertion
+is what corrected it. Both rows fixed.
+
+**2. Three rows genuinely contradicted themselves**, corrected under the
+standing queue-row authority with the original claim left visible: Q-7
+(`PARTLY.` beside an absent A129), Q-12 (`NEW` beside an absent Inference
+Cascade Spec), Q-14 (`PARTLY.` beside two absent specs). **Q-7 is the one worth
+naming: this row was REPORTED blocked on 5 September when it came up in queue
+order, and the report never reached the row.** That is the G-133 shape
+committed by the session that filed G-133, hours later, which is the same
+knowing-the-rule-is-not-applying-it pattern the section 4 ledger already
+carries. Q-14 gained something as well: `WK Task Stacking & Errand
+Optimization` is summarised in one line inside the adopted Workload Forecasting
+brief, which sizes that half of the row without unblocking it.
+
+**3. The absence vocabulary caught itself on the first run.** `not in the
+repository` occurs four times in the file and never in a Spec cell, so it was
+dead vocabulary that would have made the guard read wider than it reaches. The
+in-use assertion refused it; both spellings are now one pattern.
+
+### G-134 FOUND AND FIXED, 5 September 2026: the guard manifest's CLAUDE.md coupling was a second hand-written list
+
+**CLAUDE.md says its guard table "is asserted against the guard manifest
+(guards-manifest.test.ts): a guard added or moved without a row here fails CI,
+so the table cannot silently go stale."** That was FALSE, and it was found by
+testing it rather than by reading it: the new guard was added to the manifest's
+file list, its CLAUDE.md row was deleted, and the manifest stayed GREEN.
+
+**The cause is the class this repository already names.** The table check
+carried its OWN literal array of twenty-one names, hand-maintained beside the
+file list it was supposed to be derived from. Adding a guard to one list did
+not require adding it to the other, so the coupling held only as long as
+somebody remembered it. **A hand-maintained second list, inside the guard whose
+entire job is to stop guards becoming memories.**
+
+**Fixed by derivation**, which is the standing remedy for a count or a list
+that can be computed: the file list is hoisted to `GUARD_FILES` and the table
+check maps it to basenames, with a small `NON_FILE_GUARDS` list carrying the
+two entries that are not files and the reason each is there (this file does not
+list itself; the `sizes` CHECK is a database constraint). Proven both
+directions on the real tree: red naming `queue-row-consistency.test.ts` with
+the row deleted and the deletion confirmed landed first, green with it
+restored.
+
+**What it means for the month behind it:** every guard added since the second
+list was written could have reached the manifest without reaching the table.
+None did, checked by deriving the names and finding the table already complete,
+so the drift never happened. That is the same standing as branch protection's
+missing month: nothing broke, and nothing would have said so.
+
+### G-134 ADDENDUM, 5 September 2026 (founder instruction): what made it dangerous, stated plainly
+
+**A claim of enforcement that nobody could see was false.** CLAUDE.md said the
+guard table "is asserted against the guard manifest", and that sentence is
+exactly the kind a reader stops at. It loads as premise into every session, it
+names the mechanism, and it names the file the mechanism lives in. Nothing
+about it invites a check. **So the harm is not that the coupling was missing;
+it is that the missing coupling had a sentence standing in for it**, and
+everyone downstream stopped looking because the sentence said someone already
+had.
+
+**And nothing had drifted, which was luck rather than the control working.**
+The table was complete when the derivation was written, checked by deriving the
+names and comparing. That is the same standing as branch protection's missing
+month: the outcome was fine, the control was absent, and no reading of the
+outcome could tell those two apart. **A guard that has never been needed and a
+guard that does not exist look identical from the outside**, and the only way
+to tell them apart is to break something on purpose and watch.
+
+### G-133 ADDENDUM 2, 5 September 2026 (founder instruction): Q-7 is an instance in its own right, and it is the entry demonstrating itself
+
+**The session that filed this finding then committed the same shape, hours
+later.** Working the queue in order on 5 September, Q-7 was read, found to
+depend on the Pre-Populated Intake Spec (A129), reported BLOCKED in the turn
+report to the founder, and the row was left reading `**PARTLY.**` with its
+remaining work listed as if it were buildable. **The report existed and never
+reached the row.**
+
+**That is a second failure mode of the same class, and it is worth separating
+from the first.** G-133 opened on a row that contradicted its own prerequisite
+cell. This is a row that contradicts the REPORT ABOUT IT, which is worse in one
+specific way: the contradiction is not visible anywhere on the row at all. A
+reader of the queue sees `PARTLY` and a list of work; a reader of the session
+report sees BLOCKED; **and no artefact in the repository holds both**, so there
+is nothing to compare and nothing to find.
+
+**It is the strongest evidence the entry could have.** Every check in this
+repository compares an artefact against another artefact. **Nothing checks a
+queue row against its own report**, and the Q-11q guard does not either: it
+reads the row, so it caught Q-7 only because the row's own two cells happened
+to disagree as well. Had the prerequisite cell said nothing about A129, the
+report would have stayed lost and the guard would have passed the row.
+
+**Kept as the entry demonstrating itself, rather than as an embarrassment to be
+noted once.** The finding was fresh, filed by the same session, and the rule was
+being actively held in mind, and the shape still recurred within hours. That is
+the same knowing-the-rule-is-not-applying-it evidence the section 4 ledger
+carries about carried-forward check results, and it argues the remedy has to be
+procedural rather than attentional: **a report that names a row updates the
+row in the same change, or it is a claim about intention.**
+
+### G-129 ADDENDUM, 5 September 2026: a sixth instance, and it produced ten correct-looking answers at once
+
+**The class arriving in a CONSTRAINT PROOF, which is the one place this
+repository already knew to be careful.** Q-12b-1's first proof run opened a
+transaction, inserted its fixtures, and ran ten cases: seven meant to be
+REFUSED by a named constraint and three meant to be ACCEPTED. A setup INSERT
+failed first, on `event_outbox.occurred_at` being NOT NULL, which ABORTED the
+transaction. Every one of the ten cases then returned
+`ERROR: current transaction is aborted, commands ignored until end of
+transaction block`.
+
+**Ten errors, and seven of them were exactly what a passing refusal looks like
+to anyone reading for the presence of an error.** The unit the check returned
+was "a statement failed"; the unit the question was about was "the constraint
+refused this row". The three ACCEPT cases would have failed loudly, which is
+the only reason this was caught rather than filed as a clean proof; had the
+proof contained refusals alone, it would have reported seven passes and been
+believed. That is the selftest lesson from the deploy gate arriving in a new
+place: **a proof made only of refusals cannot tell a working constraint from a
+broken harness.**
+
+**THE REMEDY IS A RULE, not care, and it is stated as a procedure because the
+founder's own reasoning on this class is that care was already present:**
+
+> **Each refusal case runs in its OWN transaction, and is asserted by
+> CONSTRAINT NAME, never by the presence of an error.**
+
+The rerun does exactly that: one `psql` invocation per case wrapped in its own
+`BEGIN ... ROLLBACK`, with the constraint name extracted from the message and
+printed beside the case. Seven refusals then named seven different
+constraints, which is a stronger statement than "seven errors occurred", and
+it is a statement the aborted-transaction shape cannot produce: an aborted
+transaction has no constraint name to give.
+
+The preconditions rule already said to print the constraints from
+`pg_constraint` before any case runs, and that half was done and passed. **It
+did not help**, because the precondition was true and the harness broke
+afterwards. So the two rules are complementary rather than overlapping: one
+proves the constraint exists, the other proves this case reached it.
+
+### G-133 ADDENDUM 3, 5 September 2026: a second instance, and two makes it structural
+
+**WKT-017.** The founder ruled it earlier the same day, and the verdict was
+recorded on `docs/TASK_INVENTORY_UNCERTAIN_SHEET_2026-09-05.md`, the sheet
+where the question was asked. **The draft catalog's own row still read
+`UNCERTAIN (T-052)`**, and the catalog is the document a build reads from: the
+freeze, the provisional flip and the Inventory loader all key off the draft,
+not off the sheet. Found the next day, while applying the other seven
+verdicts, because applying them meant opening the row.
+
+**Read beside Q-7, which is the same shape one day earlier**, the pattern is
+not a lapse. Both times the ruling LANDED, correctly and in writing, in the
+place where the question had been asked; both times nothing carried it to the
+place where the answer gets used. That is a property of how this repository
+records decisions rather than a failure of attention: **a question is asked in
+one artefact and answered in another, and no mechanism connects the two.**
+Q-7's report lived in a turn report, WKT-017's in a review sheet; neither has
+a link to the row it settles.
+
+**A CHEAP CHECK EXISTS FOR THE DOCUMENT HALF, and it is opened as queue row
+Q-12c** (the standing rule that a guard finding is a row). The two Task
+Inventory documents are machine-comparable: the sheet marks a row RULED and
+states its verdict, and the draft carries that row's `MAPS_TO` cell. A guard
+can assert that no row the sheet marks RULED still reads `UNCERTAIN` in the
+draft. That catches this exact instance and nothing wider.
+
+**What no guard reaches, stated so the row is not mistaken for a fix:** Q-7's
+half. A ruling delivered in conversation and never written into any artefact
+leaves nothing to compare, and the remedy there is procedural rather than
+mechanical: **a report that names a queue row updates that row in the same
+change, or it is a claim about intention** (the reporting convention's own
+wording, pointed at rows instead of at commands).

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, expectedEvent, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment, recordExpectedEvent } from "@/lib/actions";
 import { requirementCalibration } from "@/lib/estimate-calibration";
 import { displayState, m25, unmetClauses } from "@/lib/commitment-ledger";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
@@ -26,6 +26,18 @@ export const dynamic = "force-dynamic";
 // page silently truncates instead of erroring. 60s keeps a slow render
 // alive; the real fix is batching the queries (gap register).
 export const maxDuration = 60;
+
+// The spec's own sentences for the six patterns. The enum key is the
+// identifier; this is the display text (the pack_key lesson), so a
+// rename here changes nothing about which rows match.
+const PATTERN_LABELS: Record<string, string> = {
+  vendor_visit_without_invoice_or_report: "Vendor visit without invoice or report",
+  registration_without_confirmation: "Registration without confirmation",
+  cancellation_confirmed_then_charged_again: "Cancellation confirmed then charged again",
+  return_shipped_without_refund: "Return shipped without refund",
+  promised_estimate_overdue: "Promised estimate overdue",
+  annual_school_cycle_packet_missing: "Annual school-cycle packet missing",
+};
 
 const TAGS = ["STEADY", "ONBOARDING-90", "LIFE-EVENT", "WATCH", "RENEWAL-WINDOW", "CHAMPION"];
 
@@ -113,6 +125,9 @@ export default async function Oversight({ params, searchParams }: {
     .orderBy(decisionRight.rightKey);
   const unconfirmedRights = rights.filter((r) => r.status !== "confirmed").length;
 
+  const expectations = await db.select().from(expectedEvent)
+    .where(eq(expectedEvent.householdId, householdId))
+    .orderBy(desc(expectedEvent.expectedBy)).limit(25);
   const ledger = await db.select().from(commitmentLedgerItem)
     .where(eq(commitmentLedgerItem.householdId, hh.id))
     .orderBy(desc(commitmentLedgerItem.createdAt)).limit(50);
@@ -874,6 +889,64 @@ export default async function Oversight({ params, searchParams }: {
           </div>
         ))}
         <div className="prov">Source: {rights[0]?.authority ?? "none loaded"}</div>
+      </div>
+
+      <div className="card">
+        <h2>Reconciliation (Q-12b-1, shadow)</h2>
+        <div className="note">
+          Anticipation answers what should happen. Reconciliation answers whether it
+          did. An expectation recorded here is checked by the nightly sweep once its
+          window passes: if nothing matched it, the sweep records the miss and opens a
+          candidate decision with the route it computed. This is a SHADOW surface, so
+          it is visible here and nowhere else. Nothing on it reaches the member, and
+          nothing on it changes a HOM briefing. The member is never made to check.
+        </div>
+        <form action={recordExpectedEvent} className="stack">
+          <input type="hidden" name="householdId" value={householdId} />
+          <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+          <select name="pattern" defaultValue={EXPECTED_EVENT_PATTERNS[0]} aria-label="Pattern">
+            {EXPECTED_EVENT_PATTERNS.map((p) => (
+              <option key={p} value={p}>{PATTERN_LABELS[p]}</option>
+            ))}
+          </select>
+          <input name="expectation" aria-label="What we are expecting" placeholder="What is expected, in your words" maxLength={500} />
+          <input name="expectedBy" type="datetime-local" aria-label="Expected by" />
+          <select name="materiality" defaultValue="" aria-label="Materiality">
+            <option value="">Materiality not classified</option>
+            {MATERIALITY_VALUES.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <input name="amountCents" aria-label="Amount in cents" placeholder="Amount in cents (blank if unknown)" inputMode="numeric" />
+          <input name="decisionRightKey" aria-label="Decision right key" placeholder="Decision right key, verbatim (optional)" maxLength={120} />
+          <button type="submit">Record expectation</button>
+        </form>
+        {expectations.length === 0 && <div className="prov">No expectations recorded for this household.</div>}
+        {expectations.map((x) => (
+          <div key={x.id} className="field">
+            <span className="fname">{PATTERN_LABELS[x.pattern] ?? x.pattern}</span>
+            <span className="fval">{x.expectation}</span>
+            <div className="prov">
+              Expected by {x.expectedBy.toISOString().replace("T", " ").slice(0, 16)} UTC
+              {" · "}
+              {x.reconciliationStatus
+                ? `${x.reconciliationStatus} (checked ${x.reconciledAt?.toISOString().slice(0, 10)})`
+                : "still inside its window, not yet reconciled"}
+              {x.materiality ? ` · ${x.materiality}` : " · materiality not classified"}
+            </div>
+            {x.candidateDecision && (
+              <div className="prov">
+                Candidate: {x.candidateDecision}. Route: {x.candidateRouting}, because{" "}
+                {x.candidateRoutingWhy}. Nobody has acted on this; turning a candidate
+                into a decision is a person&apos;s act.
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="prov">
+          Six launch patterns, adopted verbatim. A seventh is a founder decision.
+          `matched` is never written yet: nothing here emits a signal that matches an
+          expectation, which is the next queue row&apos;s work, so today every
+          reconciled row reads `missing_expected`.
+        </div>
       </div>
 
       <div className="card">
@@ -1680,7 +1753,18 @@ export default async function Oversight({ params, searchParams }: {
               a.kind === "membership_event" ? `recorded a membership ${typeof aDetail.eventKind === "string" ? aDetail.eventKind.replace(/_/g, " ") : "event"}` :
               a.kind === "incident_logged" ? "logged an incident" :
               a.kind === "incident_resolved" ? "resolved an incident" :
-              a.kind === "s3_reveal_outcome" ? (aDetail.delivered === true ? (field ? `the reveal of “${field}” delivered` : "the reveal delivered") : (field ? `the reveal of “${field}” did NOT deliver` : "the reveal did NOT deliver")) :
+              a.kind === "s3_reveal_outcome" ? (() => {
+                // Q-11l: the trail says WHICH outcome, from the typed column
+                // rather than from a boolean in `detail`. The four readings are
+                // the ruled vocabulary in a reader's words, and they are the
+                // reason four values exist: a refusal and a broken record are
+                // different facts and used to read identically here.
+                const of = field ? `the reveal of “${field}”` : "the reveal";
+                if (a.revealOutcome === "delivered") return `${of} delivered the value`;
+                if (a.revealOutcome === "denied") return `${of} was refused on authorization, nothing decrypted`;
+                if (a.revealOutcome === "not_found") return `${of} found no stored value`;
+                return `${of} could not be opened`;
+              })() :
               a.kind === "photo_reuse_change" ? "changed a photo's reuse permission" :
               a.kind === "photo_hold_change" ? "changed a photo's retention hold" :
               a.kind === "rate_change" ? "changed the monthly rate" :

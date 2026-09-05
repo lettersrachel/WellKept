@@ -47,6 +47,18 @@ Sources: STD-001.1.4, STD-002.4. Candidate: **T-011**.
   and what actually happened as separate objects, and that pattern leans toward
   **inside**: the audit is the recurring unit and portioning is what it produces.
 
+
+**RULED 5 September 2026 (founder): `NO-MAP: portioning is execution, the audit is
+inspection`.** Recorded with its reasoning because this is the ONE row where she goes
+AGAINST the sheet's stated lean, and a verdict that contradicts the precedent beside it
+needs its reason on the page or it reads as an oversight. **Rows 1 and 6 are one
+inspect-versus-execute shape and the sheet itself says they should be answered the same
+way**; row 6 has a safety reason to separate, and consistency then forces both to
+NO-MAP. The deeper reason, which is the part that generalizes: **a HOM who finds nothing
+on a fridge audit has completed the audit; a HOM who finds three containers has done a
+second thing.** Folding execution into inspection makes the audit's duration
+unpredictable and hides work on a forecast, which is the same defect row 6 names.
+
 ## 2. WKT-017, Bathroom hazard-storage check
 Sources: STD-004.8. Candidate: **T-052**.
 
@@ -84,6 +96,11 @@ Sources: STD-006.6. Candidate: **T-085**.
   in-home hand-washing and a drop-off run are different executions. That leans
   **NO-MAP**, and it is the clearest of the six "inside or beside" rows.
 
+
+**RULED 5 September 2026 (founder): `NO-MAP: T-085 is a courier circuit; in-home
+delicates care shares the garments and not the work`.** Follows the precedent as
+written: execution is the grain, and hand-washing at a sink is not a drop-off run.
+
 ## 4. WKT-025, Laundry machine upkeep
 Sources: STD-006.5, STD-006.7. Candidate: **T-025**.
 
@@ -96,6 +113,14 @@ Sources: STD-006.5, STD-006.7. Candidate: **T-025**.
   checking against T-025's actual wording, which I cannot read: the commercial
   extract in the repository is figure-free and I have its id and label, not its
   full definition.
+
+
+**RULED 5 September 2026 (founder): `NO-MAP: laundry machine upkeep is its own
+cadence`**, following the registry's per-appliance clock. **Flagged on the row as
+REVISITABLE ON A FACT rather than on taxonomy:** T-025's full definition could not be
+read from this repository, so if its wording turns out to be appliance-general the
+verdict reopens on that reading. That is a different standing from a verdict someone
+might simply disagree with, and it is recorded so the difference survives.
 
 ## 5. WKT-036, Unhomed-item landing and pattern watch
 Sources: STD-003.7. Candidate: **T-281**.
@@ -112,6 +137,12 @@ Sources: STD-003.7. Candidate: **T-281**.
   NO-MAP** and would keep the catalog consistent with how the software already
   thinks.
 
+
+**RULED 5 September 2026 (founder): `NO-MAP: T-281 is an event, the landing is a
+standing habit`**, taken without hesitation as the strongest row in the sheet. The tree
+keeps noticing and resolving structurally apart, and a catalog that fused them would
+contradict the software.
+
 ## 6. WKT-042, Ice and snow same-day clearing
 Sources: STD-013.2. Candidate: **T-006**.
 
@@ -125,6 +156,12 @@ Sources: STD-013.2. Candidate: **T-006**.
   shaped**, so a mapping that hides clearing inside a scheduled check could
   make an urgent task look routine on a forecast.
 
+
+**RULED 5 September 2026 (founder): `NO-MAP: clearing is same-day time-critical work,
+the check is scheduled`**, on precedent and on the row's own safety argument: a mapping
+that hides urgent clearing inside a scheduled check makes it look routine on a
+forecast.
+
 ## 7. WKT-047, Linen closet upkeep
 Sources: STD-015.2, STD-000.4. Candidate: **T-021**.
 
@@ -135,6 +172,13 @@ Sources: STD-015.2, STD-000.4. Candidate: **T-021**.
 - **Precedent:** cadence is the operational catalog's organising idea, and two
   different cadences are usually two rows. **Leans NO-MAP**, though this is the
   weakest signal of the eight and would be defensible either way.
+
+
+**RULED 5 September 2026 (founder): `NO-MAP: the closet has its own cadence, longer
+than the linen change`**, taken on CONSISTENCY rather than conviction. Two cadences, two
+rows, as with rows 4 and 5. **Recorded as decided on the cadence rule rather than on a
+strong reading, so a later reader knows this is the row most open to revision** rather
+than having to infer it from the sheet's own "weakest signal" line.
 
 ## 8. WKT-055, Subscription observation and proposal
 Sources: STD-017.5. Candidates: **T-092, T-115** (each half).
@@ -149,7 +193,27 @@ Sources: STD-017.5. Candidates: **T-092, T-115** (each half).
   `T-092, T-115`**, and it is the one row of the eight I would call close to
   settled by convention rather than by judgment.
 
+
+**RULED 5 September 2026 (founder): `T-092, T-115`.** Settled by the join's own
+one-to-many rule: mapping to both is the shape MAPS_TO was built for, not a
+compromise.
+
 ---
+
+## ALL EIGHT VERDICTS ARE IN, 5 September 2026
+
+**Seven of the eight terminate at NO-MAP, and the founder's reason for the pattern is
+recorded WITH the verdicts rather than left to be read off them.** The operational
+catalog's grain is EXECUTION and CADENCE; the commercial catalog's grain is what a
+household BUYS. Where those disagree, **the operational catalog stays honest about what
+a HOM actually does, because it is the one the workforce model and the time standards
+are built on.** If that leaves the commercial catalog untidy, that is the correct
+direction for the untidiness to fall.
+
+Two verdicts carry their own revision conditions and they are different in kind: WKT-025
+reopens on a FACT (T-025's unreadable wording), and WKT-047 was decided on the cadence
+rule rather than on a strong reading. Neither is an open question; both are decisions
+with their weak points named.
 
 ## What happens when the verdicts come back
 
