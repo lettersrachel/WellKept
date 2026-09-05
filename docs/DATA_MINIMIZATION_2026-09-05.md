@@ -193,8 +193,8 @@ expectations rather than about columns.
 it is a hand-maintained list sitting next to the thing it counts, which is the
 drift shape this repository has caught five times.
 
-**Opened as a queue row rather than fixed here** (guard findings are rows, per
-the 4 September standing authority): a computed person-column census in the
+**Opened as queue row Q-11m rather than fixed here** (guard findings are rows,
+per the 4 September standing authority): a computed person-column census in the
 pattern of the four existing ones, with a count floor on COLUMNS, failing when a
 person-shaped column appears that this page does not name. The four negatives in
 section 4 are already guarded; the POSITIVE list in section 2 is the half held

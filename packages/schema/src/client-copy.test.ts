@@ -97,6 +97,13 @@ const COPY_SOURCES = [
   // traffic place it could have been.
   "../../../apps/web/src/lib/auth/config.ts",
   "../../../apps/web/src/lib/push.ts",
+  // 5 Sep 2026: the member's reading of the field flags moved into a shared
+  // module so the client page and the corporate client-preview cannot drift.
+  // MEMBER-FACING LABELS IN A `.ts` SIT OUTSIDE THE CENSUS, which derives from
+  // the `.tsx` the app renders, so extracting them would have quietly removed
+  // them from the scan. Added in the same change that created the file, which
+  // is the only moment anybody would think of it.
+  "../../../apps/web/src/lib/member-flag.ts",
   // 25 Aug 2026, from the section 4 sitting: the operator CLI scripts
   // print user-facing copy too (the erasure tool's REFUSED message is
   // the most consequential sentence the tooling prints), and no scanned

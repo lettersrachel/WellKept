@@ -10,6 +10,7 @@ import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { getRegistries, getStewardship, getClientDeferrals } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { RecordedBanner } from "@/components/RecordedBanner";
+import { memberFlag, type MemberFlag } from "@/lib/member-flag";
 
 export const dynamic = "force-dynamic";
 
@@ -83,37 +84,6 @@ async function VisitReportCard({ householdId }: { householdId: string }) {
 }
 
 /**
- * THE MEMBER NEVER SEES THE MACHINERY (founder doctrine, Part One item 3,
- * `docs/DOCTRINE_CLIENT_AND_HOM.md`), and until 5 September 2026 this page
- * broke that rule: it rendered `fieldFlagEnum` verbatim, so a member saw
- * `CRITICAL`, `CAUTION` or `DELIGHT` stamped in capitals on their own
- * record.
- *
- * The founder's ruling, applied here exactly: CRITICAL becomes "Needs
- * attention", CAUTION becomes "Worth knowing", and DELIGHT DOES NOT REACH
- * A MEMBER AT ALL, because it is the company's word for how it categorises
- * pleasing them.
- *
- * THE CLASS NAMES CHANGE TOO, not only the text. The staff pages
- * legitimately style on `.field.CRITICAL` and keep doing so; a member's
- * page carrying that class would put the vocabulary in the document even
- * though nobody reads it aloud. These two class names are member-only.
- *
- * A map with no entry means the flag reaches the member as nothing: no
- * label, no styling, no grouping. That is the DELIGHT case, and making
- * absence the default is what stops a flag added tomorrow appearing here
- * by accident.
- */
-const MEMBER_FLAG: Record<string, { label: string; cls: string }> = {
-  CRITICAL: { label: "Needs attention", cls: "flag-attention" },
-  CAUTION: { label: "Worth knowing", cls: "flag-know" },
-};
-
-function memberFlag(flag: unknown): { label: string; cls: string } | null {
-  return (typeof flag === "string" && MEMBER_FLAG[flag]) || null;
-}
-
-/**
  * And the vocabulary is PROJECTED OUT, not merely left unrendered.
  *
  * The first version of this fix stopped `CRITICAL` appearing on the page
@@ -132,7 +102,7 @@ type MemberField = {
   id: unknown;
   name: unknown;
   value: unknown;
-  flag: { label: string; cls: string } | null;
+  flag: MemberFlag | null;
 };
 
 function toMemberField(f: FieldRecord): MemberField {
