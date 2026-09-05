@@ -367,6 +367,66 @@ and the Q-0b session log records "already stated".
   is a consumer of the outbox, never a field attribute, and enters
   through the RFC-ATTR-01 amendment and the re-cut queue.
 
+## Client-side and HOM-side doctrine (founder rulings, 4 September 2026)
+
+Ruled before any member surface is built. **The full text, with the
+current contradictions reported beside each item, is
+`docs/DOCTRINE_CLIENT_AND_HOM.md`**; the load-bearing edges are here
+because a constraint that forecloses a build has to be met by the
+session that would have built it.
+
+- **The member is never asked** to categorize their own tasks, to check
+  whether something happened, to rate a visit, to confirm what the
+  record already knows, or nudged to engage. **The refusal is the
+  differentiator.** Correcting a fact and granting authority are
+  different acts and are permitted; being asked to do the product's
+  work is not.
+- **A weekly contact ceiling of THREE across every channel**: the
+  digest plus up to two decisions, with urgent sends under the
+  materiality rules exempt. **Live contradiction, Q-11c:** two
+  member-reaching channels exist (the digest, and the client report on
+  every applied visit) and neither is counted.
+- **The member never sees the machinery.** No stages, modes, confidence
+  scores, inference labels, capture artifacts or knowing-states.
+  **Live contradiction, small and specific:** the client playbook
+  renders the internal field flag verbatim, so a member sees
+  `CRITICAL`, `CAUTION` or `DELIGHT` on their own record.
+- **A member may always correct a fact about themselves and always
+  change a standing instruction.** Everything else goes through their
+  HOM, because the relationship is the product rather than the
+  interface. The second half has no member path today; the freeze
+  covers that, and this is the reason it must exist when the freeze
+  lifts.
+- **The voice rule, substantively:** plain, brief, never cheerful,
+  never apologetic, never "we noticed", never a phrase that implies the
+  household is being watched. It sits beside the copy guard in that
+  file's header, so the guard has a stated intent rather than only a
+  pattern.
+- **The software never asks a HOM** to justify her time in the app, to
+  rate her own performance, to explain a gap, or to compete with
+  another HOM. The judgment-free guard bars the schema fields; this
+  bars the interactions. A reason attached to WORK is a record; the
+  same field attached to a PERSON is a justification.
+- **Never measured about her, corporate-only included:** speed per
+  task, idle time, app dwell, location outside a visit. **A measure
+  which exists is eventually used**, which is why the schema holds the
+  hardest part structurally (`task_occurrence` stores no performer at
+  all).
+- **Dissent is a first-class action, not a note field**, and it reaches
+  corporate. **A system that records only compliance trains its
+  operators to stop noticing.** Built for prompts, absent everywhere
+  else (Q-11f).
+- **She sees the full permitted record for her assigned households,
+  standing**, not need-to-know per visit. Judgment requires context.
+- **A mode demotion is developmental.** The software never initiates a
+  performance action. Read beside the adopted mode-logic law below:
+  automatic DEMOTION is permitted, an automatic PERFORMANCE ACTION is
+  not, and this is what keeps the two apart when one event could be
+  read either way.
+- **Her own data is hers**: visible, exportable when she leaves, and
+  retained afterwards only as far as the household's continuity
+  requires (Q-11h; one third built).
+
 ## Boundary (ADR-004)
 
 Billing and payroll are QuickBooks. Scheduling is the Jobber stack. The app
