@@ -677,6 +677,21 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   airplane job, so the gate would have caught this only AFTER the merge,
   and with no branch protection on `main` that means the default branch
   carries a broken migration until a person reads a log.
+  **AND THE SAME REVIEWER'S JOB HAS A POSITIVE FORM: WHERE A BACKFILL AND A
+  CONSTRAINT LAND IN ONE MIGRATION, THE BACKFILL GOES BETWEEN THE COLUMN AND
+  THE CONSTRAINT, BY HAND** (founder note, 5 September 2026). A generator
+  emits the column and the constraint and nothing in between, so a
+  constraint that every EXISTING row must satisfy will refuse the whole file
+  at apply time unless a person puts the classification of those rows where
+  it belongs. **The placement is what makes the refusal atomic and useful**:
+  a row nobody can classify stops the migration inside its own transaction,
+  with nothing applied and the unclassifiable row still there to look at,
+  rather than being handed a guessed value that would then be
+  indistinguishable from a decided one (the nullable-no-default reasoning,
+  arriving at apply time). **The instance is 0068**: the reveal-outcome
+  column, then the backfill of existing `s3_reveal_outcome` rows, then the
+  CHECK binding outcome to kind. A guess there would have written a claim
+  about what happened on a reveal nobody watched.
 - **Migration numbers and gap register IDs are allocated at write time, never
   reserved in advance.** Read the current maximum first. Two documents both
   claiming the next number will collide.
@@ -916,6 +931,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   own citation discipline the thing that hid three stale clauses in one
   day. Read a citation as an instruction to go and check, never as
   evidence that someone already did.
+  **AND THE REGISTER ITSELF IS NOT EXEMPT** (founder note, 5 September
+  2026). The stale-document class was written about documents QUOTING the
+  register; the register is the moving record everything else is checked
+  against, and it goes stale the same way. **The instance is G-53**, whose
+  entry described the reveal route as having no outcome vocabulary and
+  ended "until the fix lands"; the append had shipped in `42176a9` and the
+  entry had not moved. A session that built on the entry would have built
+  a second time what already existed. **Only reading the ROUTE could have
+  surfaced it**, because nothing in the entry looks stale from the inside:
+  it is dated, attributed and internally consistent, and the fact it is
+  wrong about lives in a file it does not name. Read the code the entry is
+  about, not the entry about the code.
 - **A comment block may hold a DECISION, not only a description, so read
   the header before reporting an assertion as a defect.** Same shape as
   the citation rule above, pointed at code instead of documents: an
