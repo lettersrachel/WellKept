@@ -1388,6 +1388,8 @@ and the trail keeps assuming they saw it.
 rather than built ahead of it. Frozen ruling:
 `docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
 
+**BUILT 5 September 2026 as migration 0068, and this entry was ITSELF STALE**, which is recorded because the entry is the thing a later reader trusts. The text above says "until the fix lands"; the fix had partly landed already, in commit `42176a9` earlier the same run, which added the second append with a provisional vocabulary. So the register described a state the code had moved past, and the session working the queue row found it by reading the route rather than the entry. **What was genuinely open** was narrower and worse than the entry claimed: the vocabulary was not the ruled one, nothing closed the set, and **`denied` had no producer because an authorization refusal returned 403 without writing anything**, so the trail could say who attempted and never who was turned away. All three are closed by 0068 and its route changes; see `docs/sessions/2026-09-05_Q-11l.md`.
+
 ### G-54. A KEK rotation locks out every enrolled staff user, backup codes included, because the TOTP decrypt throws before the fallback is reached
 
 Hit in production 2026-07-29 (digest 2073677018) minutes after the KEK

@@ -146,6 +146,37 @@ export const vaultItem = pgTable("vault_item", {
   keyRef: text("key_ref").notNull(), // wrapped data-key reference (KMS)
 }, (t) => [index("vault_item_household_idx").on(t.householdId)]);
 
+/**
+ * Q-11l (0068): the vault reveal's OUTCOME, as a closed vocabulary.
+ *
+ * FOUR VALUES RATHER THAN THE MINIMUM TWO, and the reason belongs here beside
+ * the enum rather than only in the register (founder instruction, 5 September
+ * 2026): **"who viewed this" is a question counsel asks and a member asks**,
+ * and the honest answer separates a person who SAW a value from a person who
+ * tried and got nothing, then separates an authorization refusal from a broken
+ * record.
+ *
+ * - `delivered`  the value was decrypted and returned.
+ * - `denied`     refused on authorization, before any decryption was attempted.
+ * - `not_found`  no vault item existed for the reference.
+ * - `failed`     decryption was attempted and did not succeed.
+ *
+ * **Collapsing `not_found` into `failed` would hide a DATA-INTEGRITY problem
+ * inside an ACCESS log**, where nobody reading it is looking for one.
+ * **Collapsing `denied` into either would make a REFUSAL look like an ERROR**,
+ * which is the opposite of what the trail is for.
+ *
+ * **THE VOCABULARY IS CLOSED. A fifth outcome is a REPORT to the founder,
+ * never an addition**, because an audit vocabulary that grows silently makes
+ * old rows mean something different from new ones, and the whole value of the
+ * trail is that a row from last year and a row from today mean the same thing.
+ * An implementer meeting a fifth case reports it rather than extending this
+ * enum, and the CHECK below is what makes that a refusal rather than a
+ * convention.
+ */
+export const vaultRevealOutcomeEnum = pgEnum("vault_reveal_outcome",
+  ["delivered", "denied", "not_found", "failed"]);
+
 // REQ-005: append-only audit. Every s3 read and every field write.
 export const auditEvent = pgTable("audit_event", {
   ...stamps,
@@ -157,7 +188,19 @@ export const auditEvent = pgTable("audit_event", {
   oldValueHash: text("old_value_hash"),
   newValueHash: text("new_value_hash"),
   detail: jsonb("detail"),
-}, (t) => [index("audit_event_household_idx").on(t.householdId)]);
+  // Q-11l: typed and CLOSED, unlike the `detail.outcome` string it replaces,
+  // where a fifth value was one keystroke and nothing objected. Nullable
+  // because it belongs to exactly one kind of row.
+  revealOutcome: vaultRevealOutcomeEnum("reveal_outcome"),
+}, (t) => [
+  index("audit_event_household_idx").on(t.householdId),
+  // The column and the kind are whole or absent TOGETHER: an outcome row must
+  // carry a typed outcome, and no other row may carry one. Without this the
+  // column is optional decoration and an outcome row with no outcome reads
+  // exactly like the attempt row it is supposed to resolve.
+  check("audit_event_reveal_outcome_belongs_to_its_kind",
+    sql`(${t.kind} = 's3_reveal_outcome') = (${t.revealOutcome} IS NOT NULL)`),
+]);
 
 // REQ-031/032: one row per visit; the close flow fills it and it syncs as a unit.
 export const visit = pgTable("visit", {

@@ -57,7 +57,31 @@ export async function POST(req: NextRequest) {
     (e) => entries.push(e),
     { ndaMode },
   );
-  if (!result.ok) return NextResponse.json(result, { status: 403 });
+  // Q-11l: an authorization refusal is an OUTCOME and is recorded as one.
+  // Until now this line returned 403 and wrote nothing, so the trail could say
+  // who attempted and never who was TURNED AWAY. A `denied` row stands alone,
+  // with no attempt row before it, and that is correct rather than an
+  // asymmetry: no decryption was attempted, so there is nothing to have
+  // attempted. The audit invariant is untouched, because it governs the path
+  // where a value is about to be decrypted; here none ever will be, so a
+  // failed write must not turn a refusal into an error.
+  if (!result.ok) {
+    try {
+      await db.insert(auditEvent).values({
+        id: randomUUID(),
+        householdId: f.householdId,
+        actorUser: principal.userId,
+        actorRole: principal.role,
+        kind: "s3_reveal_outcome",
+        fieldId: f.id,
+        detail: { field: f.name, ndaMode },
+        revealOutcome: "denied",
+      });
+    } catch {
+      console.error(`[reveal] denied-outcome row failed for field ${f.id}; the refusal stands`);
+    }
+    return NextResponse.json(result, { status: 403 });
+  }
 
   const entry = entries[0]!;
   try {
@@ -91,15 +115,18 @@ export async function POST(req: NextRequest) {
   // reversed (CLAUDE.md): if this second write fails, the attempt row still
   // stands, so the trail stays conservative - it may claim an exposure that
   // did not happen, never hide one that did.
+  // The vocabulary is the founder's four, ruled 5 September 2026 and closed by
+  // the 0068 enum: a fifth outcome is a report to her, never an addition. The
+  // reasoning lives beside the enum in tables.ts.
   let vaultValue: string | null = null;
-  let outcome: "delivered" | "no_vault_item" | "decrypt_failed";
+  let outcome: "delivered" | "not_found" | "failed";
   try {
     vaultValue = await vaultOpen(f.id);
-    outcome = vaultValue === null ? "no_vault_item" : "delivered";
+    outcome = vaultValue === null ? "not_found" : "delivered";
   } catch {
     // Sealed under a different key, or corrupt. Previously this threw and
     // the route answered with an unhandled 500 (the G-54 class).
-    outcome = "decrypt_failed";
+    outcome = "failed";
   }
   try {
     await db.insert(auditEvent).values({
@@ -109,12 +136,15 @@ export async function POST(req: NextRequest) {
       actorRole: entry.role,
       kind: "s3_reveal_outcome",
       fieldId: f.id,
-      detail: { field: entry.field, outcome, delivered: outcome === "delivered" },
+      // The outcome is the TYPED column now, not a string in `detail`. Two
+      // copies of one fact drift, and the column is the one the CHECK closes.
+      detail: { field: entry.field },
+      revealOutcome: outcome,
     });
   } catch {
     console.error(`[reveal] outcome row failed for field ${f.id} (${outcome}); the attempt row stands`);
   }
-  if (outcome === "decrypt_failed") {
+  if (outcome === "failed") {
     return NextResponse.json(
       { ok: false, reason: "the stored value could not be opened (key mismatch or corrupt ciphertext)" },
       { status: 500 },

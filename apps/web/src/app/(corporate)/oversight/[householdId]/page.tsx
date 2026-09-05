@@ -1680,7 +1680,18 @@ export default async function Oversight({ params, searchParams }: {
               a.kind === "membership_event" ? `recorded a membership ${typeof aDetail.eventKind === "string" ? aDetail.eventKind.replace(/_/g, " ") : "event"}` :
               a.kind === "incident_logged" ? "logged an incident" :
               a.kind === "incident_resolved" ? "resolved an incident" :
-              a.kind === "s3_reveal_outcome" ? (aDetail.delivered === true ? (field ? `the reveal of “${field}” delivered` : "the reveal delivered") : (field ? `the reveal of “${field}” did NOT deliver` : "the reveal did NOT deliver")) :
+              a.kind === "s3_reveal_outcome" ? (() => {
+                // Q-11l: the trail says WHICH outcome, from the typed column
+                // rather than from a boolean in `detail`. The four readings are
+                // the ruled vocabulary in a reader's words, and they are the
+                // reason four values exist: a refusal and a broken record are
+                // different facts and used to read identically here.
+                const of = field ? `the reveal of “${field}”` : "the reveal";
+                if (a.revealOutcome === "delivered") return `${of} delivered the value`;
+                if (a.revealOutcome === "denied") return `${of} was refused on authorization, nothing decrypted`;
+                if (a.revealOutcome === "not_found") return `${of} found no stored value`;
+                return `${of} could not be opened`;
+              })() :
               a.kind === "photo_reuse_change" ? "changed a photo's reuse permission" :
               a.kind === "photo_hold_change" ? "changed a photo's retention hold" :
               a.kind === "rate_change" ? "changed the monthly rate" :
