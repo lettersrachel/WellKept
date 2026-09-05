@@ -3,7 +3,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, inArray } from "drizzle-orm";
 import { household, playbookField, clientEdit, auditEvent, strangerTest, gesture, dot, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, emitOutboxEvent } from "@wellkept/schema";
 import { readDecision } from "@wellkept/permissions";
 import { db } from "./db";
@@ -2629,4 +2629,162 @@ export async function recordExpectedEvent(formData: FormData) {
   });
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, "expectation recorded");
+}
+
+/**
+ * Q-12b-2: the changeset's three corporate acts. RECORDING a source
+ * change, CLASSIFYING it, and APPLYING it are three separate acts with
+ * three separate authors, because collapsing them would make "somebody
+ * decided this was safe" and "somebody wrote it down" the same event.
+ *
+ * NO AUTOMATIC CLASSIFIER EXISTS and none is written here. Which changes
+ * are safe to act on without asking is a safety taxonomy and therefore
+ * the founder's; the candidates are laid out for her in
+ * `docs/DECISION_CHANGESET_CLASSIFIER_2026-09-05.md`. Until she rules,
+ * every changeset is classified by a person or not at all, and the
+ * database refuses an application on anything not classified
+ * `safe_automatic`.
+ */
+/**
+ * The lock horizon, read from `app_setting`. SHIPS NULL and stays null
+ * until observed data sets it (founder instruction, 5 September 2026),
+ * the `mail_webhook_silence` posture: a threshold chosen before there is
+ * anything to measure is a number nobody measured. Null is quiet, not
+ * permissive: with no horizon nothing is near-term, so nothing locks.
+ */
+async function readLockHorizonDays(): Promise<number | null> {
+  const { appSetting } = await import("@wellkept/schema");
+  const [row] = await db.select().from(appSetting).where(eq(appSetting.key, "changeset_lock_horizon"));
+  const value = row?.value as { days?: number } | null | undefined;
+  return typeof value?.days === "number" ? value.days : null;
+}
+
+export async function recordChangeset(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const sourceKind = String(formData.get("sourceKind") ?? "").trim().slice(0, 60);
+  if (sourceKind.length < 3) refuseTo(returnTo, "bad-input");
+  const whatChanged = String(formData.get("whatChanged") ?? "").trim().slice(0, 500);
+  if (whatChanged.length < 4) refuseTo(returnTo, "bad-input");
+  const { changeset } = await import("@wellkept/schema");
+  const id = randomUUID();
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.insert(changeset).values({
+      id, householdId, sourceKind, sourceId: null, whatChanged,
+      detectedAt: now, recordedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "changeset.recorded",
+      payload: { changesetId: id, sourceKind },
+      provenance: "action:recordChangeset", objectId: id, actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "changeset", detail: { changesetId: id, sourceKind, action: "recorded" },
+    });
+  });
+  const { propagateChangeset } = await import("@wellkept/trigger-engine");
+  const { effects } = await propagateChangeset(db as never, { changesetId: id, householdId });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `change recorded, ${effects} dependent(s) marked invalidated`);
+}
+
+export async function classifyChangeset(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const changesetId = String(formData.get("changesetId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(changesetId)) refuseTo(returnTo, "bad-input");
+  const classification = String(formData.get("classification") ?? "");
+  if (!["safe_automatic", "review_required"].includes(classification)) refuseTo(returnTo, "bad-input");
+  const { changeset } = await import("@wellkept/schema");
+  const [cs] = await db.select().from(changeset).where(eq(changeset.id, changesetId));
+  if (!cs || cs.householdId !== householdId) refuseTo(returnTo, "missing");
+  // Classifying twice would overwrite one person's judgment with
+  // another's and leave no trace of the first, which is the
+  // never-silently-convert posture preference_rule already holds.
+  if (cs.classification !== null) refuseTo(returnTo, "gate-unmet");
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.update(changeset).set({
+      classification: classification as never, classifiedAt: now,
+      classifiedBy: principal.userId, updatedAt: now,
+    }).where(and(eq(changeset.id, changesetId), isNull(changeset.classification)));
+    await emitOutboxEvent(tx, {
+      householdId, kind: "changeset.classified",
+      payload: { changesetId, classification },
+      provenance: "action:classifyChangeset", objectId: changesetId, actor: principal.userId,
+      correlationId: changesetId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "changeset", detail: { changesetId, classification, action: "classified" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `change classified ${classification.replace("_", " ")}`);
+}
+
+/**
+ * Applying. The database refuses anything not classified
+ * `safe_automatic`; this action refuses first so the operator reads a
+ * banner rather than a constraint violation, and the CHECK is the wall
+ * behind it rather than the only one.
+ *
+ * THE LOCK HORIZON is read here and ships NULL, so nothing locks today.
+ * Per the founder's instruction it stays null until observed data sets
+ * it, the `mail_webhook_silence` posture: a threshold chosen before there
+ * is anything to measure is a number nobody measured.
+ */
+export async function applyChangeset(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const changesetId = String(formData.get("changesetId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(changesetId)) refuseTo(returnTo, "bad-input");
+  const { changeset, changesetEffect, workRequirement } = await import("@wellkept/schema");
+  const [cs] = await db.select().from(changeset).where(eq(changeset.id, changesetId));
+  if (!cs || cs.householdId !== householdId) refuseTo(returnTo, "missing");
+  if (cs.classification !== "safe_automatic") refuseTo(returnTo, "gate-unmet");
+  if (cs.appliedAt !== null) refuseTo(returnTo, "gate-unmet");
+
+  const horizon = await readLockHorizonDays();
+  if (horizon !== null) {
+    const { lockedDependents } = await import("@wellkept/trigger-engine");
+    const effects = await db.select().from(changesetEffect)
+      .where(and(eq(changesetEffect.changesetId, changesetId), eq(changesetEffect.householdId, householdId)));
+    const ids = effects.map((e) => e.dependentId);
+    const deps = ids.length === 0 ? [] : await db.select().from(workRequirement)
+      .where(inArray(workRequirement.id, ids));
+    const locked = lockedDependents({
+      horizonDays: horizon, today: new Date(),
+      dependents: deps.map((d) => ({ id: d.id, dueOn: d.dueOn })),
+    });
+    if (locked.length > 0) refuseTo(returnTo, "gate-unmet");
+  }
+
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.update(changeset).set({ appliedAt: now, appliedBy: principal.userId, updatedAt: now })
+      .where(and(eq(changeset.id, changesetId), isNull(changeset.appliedAt)));
+    await emitOutboxEvent(tx, {
+      householdId, kind: "changeset.applied", payload: { changesetId },
+      provenance: "action:applyChangeset", objectId: changesetId, actor: principal.userId,
+      correlationId: changesetId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "changeset", detail: { changesetId, action: "applied" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "change applied");
 }

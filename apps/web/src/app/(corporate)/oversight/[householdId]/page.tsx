@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, expectedEvent, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, expectedEvent, changeset, changesetEffect, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment, recordExpectedEvent } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment, recordExpectedEvent, recordChangeset, classifyChangeset, applyChangeset } from "@/lib/actions";
 import { requirementCalibration } from "@/lib/estimate-calibration";
 import { displayState, m25, unmetClauses } from "@/lib/commitment-ledger";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
@@ -125,6 +125,11 @@ export default async function Oversight({ params, searchParams }: {
     .orderBy(decisionRight.rightKey);
   const unconfirmedRights = rights.filter((r) => r.status !== "confirmed").length;
 
+  const changesets = await db.select().from(changeset)
+    .where(eq(changeset.householdId, householdId))
+    .orderBy(desc(changeset.detectedAt)).limit(15);
+  const changesetEffects = changesets.length === 0 ? [] : await db.select().from(changesetEffect)
+    .where(eq(changesetEffect.householdId, householdId));
   const expectations = await db.select().from(expectedEvent)
     .where(eq(expectedEvent.householdId, householdId))
     .orderBy(desc(expectedEvent.expectedBy)).limit(25);
@@ -889,6 +894,82 @@ export default async function Oversight({ params, searchParams }: {
           </div>
         ))}
         <div className="prov">Source: {rights[0]?.authority ?? "none loaded"}</div>
+      </div>
+
+      <div className="card">
+        <h2>Source changes (Q-12b-2, shadow)</h2>
+        <div className="note">
+          When something the household&apos;s work depends on changes, record it here.
+          Open work dated on or after the change is marked as possibly wrong, with the
+          reason on each one. Nothing is applied until a person classifies the change,
+          and only a change classified safe can be applied at all: the database refuses
+          the rest. There is no automatic classifier, and that is deliberate. Shadow, so
+          none of this reaches a member or a briefing.
+        </div>
+        <form action={recordChangeset} className="stack">
+          <input type="hidden" name="householdId" value={householdId} />
+          <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+          <input name="sourceKind" aria-label="What kind of thing changed" placeholder="What kind of thing changed (a schedule, a vendor, a standing rule)" maxLength={60} />
+          <input name="whatChanged" aria-label="What changed" placeholder="What changed, in your words" maxLength={500} />
+          <button type="submit">Record the change</button>
+        </form>
+        {changesets.length === 0 && <div className="prov">No source changes recorded for this household.</div>}
+        {changesets.map((c) => {
+          const mine = changesetEffects.filter((e) => e.changesetId === c.id);
+          return (
+            <div key={c.id} className="field">
+              <span className="fname">{c.sourceKind}</span>
+              <span className="fval">{c.whatChanged}</span>
+              <div className="prov">
+                Detected {c.detectedAt.toISOString().replace("T", " ").slice(0, 16)} UTC
+                {" · "}
+                {c.classification
+                  ? `classified ${c.classification.replace("_", " ")}`
+                  : "not classified yet, so nothing can be applied"}
+                {" · "}
+                {mine.length} dependent(s) marked invalidated
+                {c.appliedAt ? ` · applied ${c.appliedAt.toISOString().slice(0, 10)}` : ""}
+              </div>
+              {mine.map((e) => (
+                <div key={e.id} className="prov">
+                  {e.dependentKind}: {e.reason}
+                </div>
+              ))}
+              {c.classification === null && (
+                <form action={classifyChangeset} className="row" style={{ gap: 6 }}>
+                  <input type="hidden" name="householdId" value={householdId} />
+                  <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+                  <input type="hidden" name="changesetId" value={c.id} />
+                  <select name="classification" defaultValue="review_required" aria-label="Classification">
+                    <option value="review_required">Needs review</option>
+                    <option value="safe_automatic">Safe to apply</option>
+                  </select>
+                  <button type="submit">Classify</button>
+                </form>
+              )}
+              {c.classification === "safe_automatic" && c.appliedAt === null && (
+                <form action={applyChangeset} className="row" style={{ gap: 6 }}>
+                  <input type="hidden" name="householdId" value={householdId} />
+                  <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+                  <input type="hidden" name="changesetId" value={c.id} />
+                  <button type="submit">Apply</button>
+                </form>
+              )}
+              {c.memberTradeoff && (
+                <div className="prov">
+                  A tradeoff for the household was identified and is NOT delivered: the
+                  member side is frozen at the digest. {c.memberTradeoff}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div className="prov">
+          Marking a dependent invalidated records that it may now be wrong; RETIRING it
+          would need a tenth work-requirement status, which is a change to a shipped
+          vocabulary and is the founder&apos;s. `recomputed` has no producer: nothing
+          here recomputes work, so claiming it did would be false.
+        </div>
       </div>
 
       <div className="card">

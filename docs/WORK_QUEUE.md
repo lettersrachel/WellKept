@@ -2410,6 +2410,46 @@ and reading one as the other would be the G-109 shape.
 **Owed at the next deploy: 0065 applies (65 to 66).**
 
 
+**5 September 2026: production serves `7df4511` (the TWENTY-EIGHTH clean run),
+and migrations 0068 and 0069 are applied together.** Sha current as the
+origin/main tip, migrations agree three ways at 70 (the read-only preflight
+reported `2 migration(s) PENDING (database 68, disk 70). NOTHING was applied.`),
+build id verified and confirmed independently, the five required env vars
+present by name. Verified by query after the fact rather than taken from the
+deploy output: `reveal_outcome` reads `delivered | 4` with zero non-outcome
+rows carrying an outcome, and `expected_event` is present with zero rows and
+its vocabularies as specified.
+
+**0068's precondition was re-read against production rather than inherited,
+and that is the part worth keeping.** The migration header's census said ZERO
+rows at authoring time; the founder's fresh read returned FOUR, all
+`delivered`, all mapping cleanly. Those four are the reveals from the 6 and 25
+August checklist sittings. Had one carried an unrecognised value the migration
+would have refused atomically inside its own transaction, with nothing applied
+and the unclassifiable row still there to look at, which is exactly what the
+backfill-between-the-column-and-the-constraint placement is for. This is the
+G-82 legitimacy-versus-currency rule in its accepting direction: the header's
+claim was legitimate and stale, and the check that mattered was the fresh read.
+
+**TWO PATHS ARE LIVE AND UNEXERCISED, and they are recorded as STATED rather
+than left to be discovered** (founder instruction, the same day):
+
+- **`denied` HAS A PRODUCER AND NO ROW.** `/api/reveal/route.ts` writes it on
+  the authorization-refusal path, and no such row exists in production because
+  no reveal has been refused. Its first row arrives on a real refusal and
+  cannot be staged without one. Before 0068 that path wrote nothing at all, so
+  the trail could say who attempted and never who was turned away; a `denied`
+  row therefore STANDS ALONE with no attempt row before it, which is correct
+  and is not an asymmetry to report later.
+- **`matched_event_id` HAS NO PRODUCER AT ALL, until Q-12b-2.** Nothing in the
+  tree emits a signal that MATCHES an expectation, so `matched` is a status the
+  sweep never writes today. The column and its composite tenancy FK ship so the
+  match lands without a migration.
+
+Two migrations in one deploy is within the rule: one-migration-per-session
+governs AUTHORING, and these came from two sessions.
+
+
 **5 September 2026: production serves `c972b2f` (the TWENTY-SEVENTH clean run),
 and migration 0067 is applied: the Commitment Ledger is live.** Sha current as
 the origin/main tip, migrations agree three ways at 68, build id verified three
