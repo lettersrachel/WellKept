@@ -1355,20 +1355,19 @@ test("client doctrine: the member reads the labels and never the flag vocabulary
       expect(html).not.toContain(word);
     }
 
-    // And on the rendered text, with ONE thing set aside by name: section 1
-    // of the playbook instrument is called "Critical Flags & Household
-    // Summary" (SECTION_NAMES, canonical from WK-PLAY-001, and REQ-011
-    // says the 24 sections are never renamed), and a stylesheet uppercases
-    // it. That is an instrument section title reaching a member, which is
-    // a real finding and a DIFFERENT question from the flag vocabulary:
-    // renaming a canonical section is a library decision, not this
-    // session's. It is set aside here explicitly, in one line, so a
-    // second leak cannot hide behind it, and it is reported to the
-    // founder rather than fixed. Everything else must be clean.
-    const SECTION_1 = "Critical Flags & Household Summary";
-    const body = (await page.locator("body").innerText())
-      .split(SECTION_1.toUpperCase()).join("")
-      .split(SECTION_1).join("");
+    // And on the rendered TEXT, with nothing set aside.
+    //
+    // The first version of this assertion carried one written exclusion:
+    // section 1 of the instrument was called "Critical Flags & Household
+    // Summary" and a stylesheet uppercased it, so a member read CRITICAL
+    // FLAGS as a heading. That was reported rather than fixed, because
+    // renaming a canonical section is a library decision. **The founder
+    // ruled it on 5 September and renamed the section to "Household
+    // summary"**, so the exclusion is GONE rather than grandfathered, and
+    // this assertion is now unconditional. Recorded because an exclusion
+    // that outlives its reason is how an allowlist grows: the cheap moment
+    // to remove one is the moment the thing it excused stops existing.
+    const body = await page.locator("body").innerText();
     for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) {
       expect(body).not.toContain(word);
     }

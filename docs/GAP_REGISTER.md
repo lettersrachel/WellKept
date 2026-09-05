@@ -7719,3 +7719,123 @@ in one command and needed no assumption about where a route lives.
 corrected in place in the audit document with the correction visible,
 the true half is fixed in code, and the lesson is written here. Nothing
 is left to do.
+
+---
+
+### G-125 CLOSED, 5 September 2026: the erasure tool's first real run failed on a column it had never written to
+
+**Authorization.** Founder ruling, 5 September 2026: one `--commit` run against
+a disposable database, seeded solely from fixture archives, before-and-after
+counts recorded, destroyed afterwards, never against production or any database
+holding a real household at any scope. **The second authorized exception in the
+history of the never-commit rule**, and the first was a throwaway Neon branch at
+the custody sitting. Her reason, recorded in `CLAUDE.md` beside the exception:
+an irreversible path that has never executed anywhere is not a proven
+capability, and the first real run must not be the first run.
+
+**It was vindicated on the first attempt.** The run printed its complete plan
+and then died inside the transaction:
+
+```
+FAILED - rolled back, nothing changed:
+column "updated_at" of relation "anticipation_exclusion" does not exist
+```
+
+`erase-household.mjs` stamps `updated_at=now()` on twenty-five tables.
+`anticipation_exclusion` is the one that has no such column. A census over every
+UPDATE the tool issues confirmed it is the only instance.
+
+**Why no dry run could ever have caught it.** The failing statement sits PAST
+the plan the dry run prints and INSIDE the transaction the dry run does not
+open. So every dry run ever performed against this tool printed a correct plan
+that this statement could not carry out, and the plan and the outcome were
+indistinguishable from the outside. **The class is wider than the instance: a
+tool with a rehearsal mode can be rehearsed indefinitely and still fail at the
+one step the rehearsal is defined not to take.**
+
+**The consolation, which is real and was observed rather than assumed:** the
+rollback held. Nothing changed, and the whole-or-nothing property was proven by
+a genuine failure rather than by a sentinel.
+
+**Fixed** at the line with the reason written there. The run then completed and
+its results are in `docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section
+4: content cleared and tombstoned, `paused_decision` deleted, role assignments
+deleted, the household renamed rather than removed, and the audit count going
+**up** by one, because the erasure is itself an audited event.
+
+**Two branches remain unexercised and are named rather than implied**: the vault
+crypto-shred and the photo purge. Both are unreachable from an archive-seeded
+database, because `vault_item` is excluded from every archive and photo bytes do
+not restore. Exercising them needs seeding outside an archive, which the
+authorization does not cover.
+
+---
+
+### G-126 CLOSED, 5 September 2026: the household archive could not restore a jsonb ARRAY, and the portability proof had passed without noticing
+
+**Found by** the G-125 run's precondition check, which reported two households
+where three were expected. The third restore had refused and the loop that ran
+it had not surfaced the error. **A proof asserting its own preconditions caught
+what a proof reading its own summary would have missed.**
+
+```
+REFUSED and rolled back: invalid input syntax for type json
+```
+
+**Cause.** `node-postgres` serializes a JS OBJECT to JSON and a JS ARRAY to a
+POSTGRES ARRAY LITERAL. The importer passed archive values straight through, so
+`registry_entry.detail` (an object) round-tripped and
+`decision_record.alternatives` (an array) arrived as `{Ask each visit,Batch a
+weekly confirmation}`, which Postgres refuses as invalid json.
+
+**The asymmetry is the whole lesson.** Two shapes go into the same column type
+through the same code path, one works and one cannot, and the working one is
+the common one. **Every archive restored before this date happened to carry
+objects only**, including the one used hours earlier in
+`DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 3. That result was true
+and its SCOPE was narrower than it read: "an archive restores whole" had been
+demonstrated for one of the two structured shapes.
+
+Corrected in place in that document rather than left to stand.
+
+**Fixed** by computing the json and jsonb columns from `information_schema`, the
+same way the importer already computes its nullable columns, and stringifying
+explicitly rather than leaving the driver to guess. Stringifying is correct for
+every json value and not only for arrays: an object arrives as the same JSON
+text the driver would have produced, and a bare string arrives as a quoted json
+string rather than as invalid json, which is the third shape nobody had hit
+either.
+
+**Verified by reading the value back as jsonb**, not by watching the insert
+succeed: `jsonb_typeof` returns `array`, length 2, first element intact.
+
+---
+
+### G-127 CLOSED, 5 September 2026: playbook section 1 was named in the company's triage vocabulary and rendered on the member's own page
+
+**Founder ruling**, following the flag-vocabulary fix of the same day.
+
+Section 1 of the playbook instrument was called **"Critical Flags & Household
+Summary"**. `SECTION_NAMES` renders on the client playbook, and a stylesheet
+uppercases section titles, so a member read **CRITICAL FLAGS** as a heading on
+their own record. "Critical flags" is the company's internal triage vocabulary,
+which puts this in the same class as the `field_flag` enum the same day's ruling
+removed: **the member-never-sees-the-machinery doctrine reaches instrument
+NAMES, not only field values.**
+
+**Ruled a library change with this entry as its register record**, and renamed
+to **"Household summary"**. WK-PLAY-001 takes the same edit library-side, which
+is founder-side and is the half this repository cannot do.
+
+**REQ-011 is not touched.** It forbids deleting and RENUMBERING the 24 sections,
+and the NUMBERS are the public API. A section name is display copy. Checked
+before the change rather than assumed: every reader in the tree keys on the
+integer and nothing matches on the string, so no behaviour depends on it. That
+check is the packName lesson applied before a rename rather than after.
+
+**And a test exclusion came out with it.** The flag-vocabulary journey had
+carried one written exclusion for exactly this heading, added that morning when
+it was reported-not-fixed. The exclusion is **removed** rather than
+grandfathered, and the assertion is now unconditional. **The cheap moment to
+remove an exclusion is the moment the thing it excused stops existing**, and an
+exclusion that outlives its reason is how an allowlist grows.

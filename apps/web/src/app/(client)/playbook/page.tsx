@@ -333,7 +333,7 @@ export default async function ClientPlaybook({
 
       {flagged.length > 0 && (
         <div className="card">
-          <h2>Worth knowing</h2>
+          <h2>Things to keep an eye on</h2>
           {flagged.map((f) => (
             <ClientField key={String(f.id)} f={toMemberField(f)} pending={pendingByField.has(String(f.id))} />
           ))}

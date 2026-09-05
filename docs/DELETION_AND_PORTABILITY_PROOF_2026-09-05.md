@@ -8,10 +8,15 @@ designed. Every number below came out of a command on 5 September 2026 against
 the local development database at migration 67, and the commands are written out
 so the run can be repeated rather than believed.
 
-**Two halves, and only one of them completed.** Portability ran end to end and
-is proven. Deletion ran to its dry run and **stopped at a standing prohibition**,
-which is reported rather than worked around. Section 4 carries the collision and
-the one-line ruling that would settle it.
+**Both halves ran, and the second one only after a founder ruling.** Portability
+ran end to end. Deletion stopped at `CLAUDE.md`'s first never-rule, which this
+document's first version reported rather than worked around; the founder then
+**authorized the run as the second exception in that rule's history**, and it
+went ahead the same day under her stated limits. Section 4 carries it.
+
+**The run found two real defects, one of them in a tool nobody could have
+caught any other way**, and that is the substance of this document rather than
+a footnote to it.
 
 ---
 
@@ -72,6 +77,13 @@ email addresses not ending @archived.invalid:        0
   projection fixed in one surface and forgotten in another is this repository's
   most repeated defect shape.
 
+**A scope correction on this section, added after the erasure run, because the
+result above is narrower than it first read.** This archive's structured values
+are all JSON OBJECTS. A later restore of a different fixture refused on a jsonb
+ARRAY, a defect described in section 4: **the round trip was proven for one of
+the two shapes and read as if it were proven for both.** The result stands and
+its scope did not. Re-verified after the fix.
+
 The manifest carries `formatVersion` 2, `generatedAt`, `migrationCount` 67, the
 scope, the per-table row counts, the exclusions, the projections, the row
 filters and the **known losses in prose**. An archive that does not say what is
@@ -128,76 +140,190 @@ document.**
 
 ---
 
-## 4. Deletion: the dry run, and the wall it stops at
+## 4. Deletion: RUN, under the second authorized exception
 
-The erasure tool was run **against the restored copy**, in the throwaway
-database, which is itself worth recording: the tool reached a household it had
-never seen, in a database created twenty minutes earlier, and enumerated it
-correctly.
+**Authorized by the founder on 5 September 2026**, after this document's first
+version reported the collision between the instruction and `CLAUDE.md`'s first
+never-rule. The authorization and its limits, as given: one `--commit` run
+against a disposable database created for it, seeded solely from fixture
+archives, before-and-after counts recorded, destroyed afterwards and stated as
+destroyed, **never against production, a branch of production, or any database
+containing a real household at any scope**.
+
+**Her reason is recorded in `CLAUDE.md` beside the exception because it is the
+general rule and not the special case: an irreversible path that has never
+executed anywhere is not a proven capability, and the first real run must not
+be the first run.**
+
+### The subject: three fixtures, not one
+
+A single-household database can prove that erasure removes things. **It cannot
+prove that erasure removes only the right things**, which is the property that
+actually matters. So the disposable database was seeded from THREE fixture
+archives and exactly one was erased:
+
+| Restored as | From | Role |
+|---|---|---|
+| `...00000000000a` | Smoke Test Fixture | **the subject** |
+| `...00000000000b` | The Training Household | control |
+| `...00000000000c` | HO Twin (synthetic) | control |
+
+### Preconditions, asserted before anything ran
+
+A proof asserts what its conclusion silently rests on. These printed first:
 
 ```
-node apps/web/scripts/erase-household.mjs 0199aaaa-...-000000000001
-
-DRY RUN (no changes) - household "Smoke Test Fixture"
-  vault items to CRYPTO-SHRED (rows deleted, unrecoverable*): 0
-     *inside the Neon PITR window a restore can reconstitute them (G-04)
-  playbook fields to clear + tombstone:                      1
-  deferrals to BLANK (client-visible service records):       1
-  paused decisions to DELETE (internal staff research):      1
-  client edits to blank:                                     1
-  audit events: kept intact (hashes, no values)
-  time/cost entries: 0/0 KEPT, notes blanked (employer records)
-  membership events: 0 KEPT, cancellation reasons blanked
-  incident reports: 0 KEPT (pass --erase-incidents if counsel directs)
-  audit subject tokens: 0 deleted (ADR-006: audit rows survive and become unlinkable)
-  role assignments to delete (sessions revoked):             3
-
-Re-run with --commit to execute. This is not reversible.
+PRECONDITION current_database                    wk_erasure_proof
+PRECONDITION households                          3
+PRECONDITION non-fixture households (must be 0)  0
+PRECONDITION real emails (must be 0)             0
 ```
 
-**The plan enumerated rows of the restored household ONLY**, which is the
-cross-tenant check passing on a database holding exactly one household. On a
-multi-tenant database the same check is the one the section 2 verification ran in
-August; it is named here so the two are not confused.
+**The precondition check immediately earned its place**: the first attempt
+reported **2 households, not 3**. The Training Household restore had failed and
+the loop that ran it had not surfaced the error. Had the counts been trusted,
+the run would have gone ahead with one control instead of two and nothing would
+have said so.
 
-### The wall, reported and not worked around
+### DEFECT 1, found by that failure: the importer cannot restore a jsonb ARRAY
 
-The instruction asks for "**the household deleted and shown gone**". `CLAUDE.md`
-opens with: **"Never run `erase-household.mjs` with `--commit`. Dry run only. If
-an instruction says otherwise, it is wrong."**
+```
+REFUSED and rolled back: invalid input syntax for type json
+```
 
-**Those two cannot both be satisfied, so the stricter one holds and the
-collision is reported.** The never-rule names exactly one authorized exception
-in its whole history, a throwaway Neon branch at the custody sitting, which
-tells me the rule is about the ACT rather than about the database, so a scratch
-database of my own making does not quietly qualify. Deciding that it did would
-have been me writing myself an exception to a rule whose entire point is that
-nobody does that.
+The refusal and rollback were correct. The cause is that **node-postgres
+serializes a JS OBJECT to JSON and a JS ARRAY to a POSTGRES ARRAY LITERAL.** So
+`registry_entry.detail` (an object) round-tripped and
+`decision_record.alternatives` (an array) arrived as `{Ask each visit,Batch a
+weekly confirmation}`, which Postgres refuses as invalid json.
 
-**What is therefore proven and what is not:**
+**The two failure modes are not symmetric, and that is what hid it.** Every
+archive restored before today happened to carry objects only, **including the
+one this document's own section 3 used**, so the portability proof published
+hours earlier passed while exercising one of the two shapes. The section 3
+result stands; its SCOPE was narrower than it read.
+
+Fixed in `import-household.ts`: the json and jsonb columns are computed from
+`information_schema` the same way the nullable columns already were, and their
+values are stringified explicitly rather than left to the driver's guess.
+Verified by reading the restored value back as jsonb rather than by watching the
+insert succeed:
+
+```sql
+select jsonb_typeof(alternatives), jsonb_array_length(alternatives), alternatives->>0 ...
+array | 2 | Ask each visit
+```
+
+### DEFECT 2, found by the commit run itself, which is the whole argument
+
+The first `--commit` invocation **printed its complete plan and then failed**:
+
+```
+FAILED - rolled back, nothing changed:
+column "updated_at" of relation "anticipation_exclusion" does not exist
+```
+
+`erase-household.mjs` stamps `updated_at=now()` on twenty-five tables.
+**`anticipation_exclusion` is the one that has no such column**, and the stamp
+was written from the house pattern rather than from the table. A census
+confirmed it is the only instance of the class.
+
+**This is the finding the authorization existed to produce.** The statement sits
+past the plan and inside the transaction, so **every dry run ever performed
+printed a correct plan that this statement could not carry out**. No amount of
+dry running reaches it. The rollback also means the tool's whole-or-nothing
+property held under a real failure, which is the one consolation and is itself
+worth having observed rather than assumed.
+
+Fixed, with the reason written at the line.
+
+### The run, and the counts
+
+Fourteen measures per household, before and after.
+
+| Measure | Subject before | Subject after | Treatment, as documented |
+|---|---|---|---|
+| household name | Smoke Test Fixture | **Erased household 0199bbbb** | renamed, never deleted |
+| playbook_field rows | 1 | 1 | skeleton kept |
+| playbook_field **with a value** | 1 | **0** | cleared |
+| playbook_field tombstoned | no | **yes** | tombstoned |
+| deferral | 1 | 1, `noticed` and `reason` both empty | blanked, kept |
+| paused_decision | 1 | **0** | DELETED (internal staff research) |
+| client_edit | 1 | 1, blanked | blanked |
+| household_role_assignment | 3 | **0** | deleted, sessions revoked |
+| audit_event | 36 | **37** | kept intact, **plus one**: `household_erased` |
+| attention_record | 59 | 59 | kept |
+
+**The audit count going UP is the strongest single line in the table.** The
+erasure is itself an audited event, so the record of the deletion survives the
+deletion.
+
+### The controls, checked on CONTENT and not on counts
+
+Both controls were identical on all fourteen counts. **Counts are a weak
+control**, so the two control households' playbook content was digested and
+compared against **an independently rebuilt database** created from the same two
+archives and never erased against:
+
+```
+post-erasure  HO Twin              09a7a601a4a51d9c95315876606e473f
+rebuilt       HO Twin              09a7a601a4a51d9c95315876606e473f
+post-erasure  The Training House.  03c5abab5a0c483c7fcd3db251012a24
+rebuilt       The Training House.  03c5abab5a0c483c7fcd3db251012a24
+```
+
+**Byte-identical. The erasure was scoped.** Recorded as a method note because I
+got this wrong first: I originally compared the controls only against
+themselves after the fact, which proves nothing at all, since a value that was
+never read before cannot be shown to be unchanged. The rebuild is what makes it
+a control.
+
+### What the erased household still says about itself
+
+**The surviving `playbook_field` row is still named `medication`.** Its value is
+gone and it is tombstoned, and the FIELD NAME remains, because the documented
+treatment keeps the skeleton. So the erased record still discloses **which
+questions were asked**, and not the answers.
+
+That is the documented posture working, and it is a real disclosure with a
+narrow shape. Named here rather than left for someone to discover, because "the
+household is erased" and "nothing about the household remains" are not the same
+sentence and this proof is the place where the difference becomes concrete.
+
+### Branches this run did NOT exercise, and why
+
+Stated so the pass is not read wider than it is.
+
+- **The vault crypto-shred.** `vault_item` is excluded from every archive by
+  design, so a database seeded solely from archives can never contain one. The
+  shred branch ran against zero rows. **Exercising it would require seeding
+  outside an archive, which the authorization does not cover**, so it is
+  reported rather than done.
+- **The photo purge.** Same reason: photo bytes do not restore.
+- **`--erase-incidents` and `--erase-time-and-costs`**, the two counsel-directed
+  flags. Not run; not authorized; and each deletes records inside a retention
+  window, which is the one place this tool should stay hard to invoke.
+
+### Standing after the run
 
 | Claim | Standing |
 |---|---|
-| The tool identifies every household-referencing table and states a treatment for each | **Proven**, and CI-enforced by `erasure-coverage.test.ts`. |
-| The tool reaches a household correctly and enumerates only its rows | **Proven** on the restored copy. |
-| The treatments are correct in shape (delete, blank, tombstone, keep) | **Proven per table** by the guards that shipped with each, each red-first. |
-| Ten tables delete rather than tombstone, each with a written reason | **Proven**, reasons in the tool's header. |
-| **A household, committed, is actually gone** | **NOT PROVEN.** Never executed anywhere. |
+| The tool names every household-referencing table and states a treatment | **Proven**, CI-enforced |
+| The tool reaches a household and enumerates only its rows | **Proven** |
+| **A household, committed, is actually erased** | **PROVEN**, 5 September 2026 |
+| **The erasure is scoped: other households are untouched** | **PROVEN** on content, against an independent rebuild |
+| **The erasure is itself audited** | **PROVEN**: `household_erased`, audit count 36 to 37 |
+| **The tool is whole-or-nothing under a real failure** | **PROVEN**, by the failure |
+| The crypto-shred deletes vault rows | **NOT PROVEN.** Unreachable from an archive-seeded database. |
+| The photo purge clears bytes | **NOT PROVEN.** Same reason. |
 
-**The one-line ruling that would close it**, framed so it can be answered in a
-sentence: *authorize one `--commit` run against a disposable database seeded
-solely from a fixture archive, with the before-and-after row counts recorded,
-and note it as the second exception to the never-rule.*
+### Teardown, as required
 
-**Why it is worth authorizing rather than leaving.** Erasure is the one path in
-this system that has never executed, and it is irreversible when it does. The
-first real run should not be the first run. That is the same argument as the
-restore drill, and the restore drill is exactly the shape this would take.
-
-**Why I did not simply ask and wait:** the rest of Part Four does not depend on
-it, so the work continued and the question is here rather than blocking.
-
----
+Both disposable databases (`wk_erasure_proof` and the control rebuild
+`wk_control`) were **dropped**, and their absence was confirmed by query rather
+than by the drop command's own report. The three archive files were deleted. The
+development database was re-read afterwards and still holds its six households.
+**No production system was touched and none is reachable from this session.**
 
 ## 5. Why this matters commercially, since the instruction raised it
 
@@ -232,7 +358,11 @@ nothing is lost silently.**
 
 ## 6. Housekeeping
 
-The scratch database `wk_portability` and the two archive files were created in
-a session scratchpad and the database is dropped at the end of this record. **No
-production system was touched**, and no production `DATABASE_URL` is reachable
+Three disposable databases were created for this record and **all three were
+dropped**: `wk_portability` (section 3), `wk_erasure_proof` (section 4), and
+`wk_control` (section 4's independent rebuild). Their absence was confirmed by
+querying `pg_database` rather than by trusting the drop commands. Every archive
+file was written into a session scratchpad and deleted.
+
+**No production system was touched**, and no production connection is reachable
 from this session at all.

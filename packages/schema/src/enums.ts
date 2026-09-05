@@ -30,9 +30,21 @@ export type FieldFlag = z.infer<typeof fieldFlagSchema>;
 export const NA_CONFIRMED = "N/A-confirmed" as const;
 
 /** The 24 fixed sections (REQ-011: never deleted, never renumbered).
- * Canonical names from WK-PLAY-001 via the verified export tool. */
+ * Canonical names from WK-PLAY-001 via the verified export tool.
+ *
+ * SECTION 1 WAS RENAMED 5 September 2026 by founder ruling, from "Critical
+ * Flags & Household Summary" to "Household summary", as a LIBRARY change with
+ * a register entry: "critical flags" is the company's internal triage
+ * vocabulary and section titles render on the member's own playbook, where a
+ * stylesheet uppercased it into CRITICAL FLAGS. The member-never-sees-the-
+ * machinery doctrine reaches instrument names as well as field flags.
+ *
+ * REQ-011 is not touched: it forbids deleting and RENUMBERING sections, and
+ * the numbers are the public API. A section name is display copy, and nothing
+ * in the tree matches on it (every reader keys on the integer, checked before
+ * this change). WK-PLAY-001 takes the same edit library-side. */
 export const SECTION_NAMES: Record<number, string> = {
-  1: "Critical Flags & Household Summary", 2: "The Household's People & Rhythm",
+  1: "Household summary", 2: "The Household's People & Rhythm",
   3: "Children", 4: "Pets & Animals", 5: "Residents, Staff & Regular Visitors",
   6: "The Property", 7: "Access & Vehicles", 8: "Privacy & Boundaries",
   9: "Safety & Emergency Readiness", 10: "Systems", 11: "Appliances & Equipment",

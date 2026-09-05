@@ -14,8 +14,22 @@ premise found here.
 ## Never, without exception
 
 - **Never run `erase-household.mjs` with `--commit`.** Dry run only. If an
-  instruction says otherwise, it is wrong. The one authorized exception was a
-  throwaway Neon branch at the custody sitting.
+  instruction says otherwise, it is wrong. **Two authorized exceptions in the
+  whole history of this rule**, both named so a third has to be granted rather
+  than inferred: a throwaway Neon branch at the custody sitting, and the
+  5 September 2026 proof run (founder authorization, recorded in
+  `docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md`) against a disposable
+  database created for it, seeded solely from fixture archives, destroyed
+  afterwards. **Never against production, a branch of production, or any
+  database containing a real household at any scope.** The founder's reason,
+  kept because it is the general rule behind the exception: **an irreversible
+  path that has never executed anywhere is not a proven capability, and the
+  first real run must not be the first run.** It earned that on the first
+  attempt: the run FAILED and rolled back on a real defect (a stamp of
+  `updated_at` on the one table of twenty-five that has no such column), after
+  the plan had printed. **Every dry run ever performed printed a correct plan
+  the statement could not carry out**, which is exactly the class a dry run
+  cannot catch.
 - **Never echo `DATABASE_URL`, `WK_KMS_KEY`, `AUTH_SECRET`, or the contents of
   `.neon-connection`.** Refer to them by name.
 - **Never build per-person analytics.** No performance scoring, productivity
@@ -779,6 +793,24 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   moment the register moves.** Grep the entry id across `CLAUDE.md`,
   `DEPLOY.md` and `docs/` before treating any such clause as current,
   and when an addendum lands, fix every copy in the same change.
+- **On a member surface, NOT RENDERING IS NOT THE SAME AS NOT SENDING**
+  (founder ruling, 5 September 2026). The RSC flight payload carries what a
+  COMPONENT RECEIVES, not what it draws, so a prop that is read and discarded
+  still travels to the member's browser and sits in view-source. **Member
+  projections are therefore shaped at the BOUNDARY, never filtered at the
+  view**: the component is handed an object that has no field capable of
+  carrying the thing being withheld, rather than an object it politely declines
+  to render. **The instance:** the fix removing the internal `field_flag`
+  vocabulary from the client playbook resolved `CRITICAL` to "Needs attention"
+  in `ClientField` and passed the WHOLE field row in, so the word shipped
+  anyway under `"flag":"CRITICAL"`. The page looked right. **"The label no
+  longer renders" and "the word no longer reaches the member" are two different
+  claims and only the second is the doctrine**, and they are
+  indistinguishable on screen, which is why this is a rule and not a review
+  note. It was caught by a journey reading `page.content()` rather than
+  `innerText`, and that is the test shape for any member-facing withholding:
+  **assert against the emitted markup, because the rendered text cannot see
+  the payload.**
 - **Log-before-do is correct in the vault and nowhere else.** In the vault,
   no row must mean no value. At every other surface it produces an
   optimistic row that claims something happened before anything did, which

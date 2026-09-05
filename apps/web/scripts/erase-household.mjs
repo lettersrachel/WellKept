@@ -377,7 +377,15 @@ try {
   }
   // Coverage guard additions (2026-07-27): the four tables the mechanical
   // check found missing the day it was written (G-40 addendum).
-  await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // NO updated_at HERE, and it is not an omission: anticipation_exclusion is
+  // the ONE table this tool writes that has no such column (25 others have it).
+  // The stamp was written from the house pattern rather than from the table,
+  // and it made the whole erasure fail at this line, AFTER the plan printed
+  // and inside the transaction. Found by the first authorized --commit run,
+  // 5 September 2026, which is the argument for that run in one sentence:
+  // a path that has never executed is not a capability, and every dry run
+  // ever performed printed a correct plan this statement could not carry out.
+  await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END WHERE household_id=$1", [householdId, E]);
   await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
   await c.query("DELETE FROM event_outbox WHERE household_id=$1", [householdId]);
   // shadow_log: internal engine output about the household (see header).
