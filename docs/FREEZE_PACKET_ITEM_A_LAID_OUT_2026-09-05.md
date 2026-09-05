@@ -57,11 +57,29 @@ and only it moves under this ruling. "Vendor history" is empty because the
 data does not exist, and no shape below fills it. Crediting this ruling with
 both would be a claim about a question it never asked.
 
-**One asymmetry worth seeing before ruling.** `visit_photo` is IN the member
-scope by founder ruling B of 4 September. So the archive today can carry the
-manifest of a photograph taken during a visit while carrying nothing about the
-visit it was taken during. That is a consequence of two rulings made
-separately, not a decision anybody made.
+**The photo asymmetry: RULED 5 September 2026, and it is no longer a finding
+for the room.** `visit_photo` is IN the member scope by founder ruling B of
+4 September, and every duration-carrying table is held out, so the archive can
+carry the manifest of a photograph taken during a visit while carrying nothing
+about the visit it was taken during.
+
+**The manifest stays.** The founder ruled the asymmetry rather than carrying it
+into the session: it is not an argument for removing photo references, and
+**shape (b) resolves it by giving the photo a visit to belong to**, which is
+recorded below as a consequence of that shape rather than as a separate item.
+
+**Until item A is ruled, the archive says so.** The member scope's
+`knownLosses` now carries the asymmetry in plain words: visits are absent,
+photo references are present, so an archive can name a photograph taken during
+a visit and carry nothing about the visit. **Ugly and honest is the right
+order** (the founder's phrase, kept because it is the rule and not a
+description of this one line): an artifact whose point is completeness states
+its own gaps, and a gap nobody wrote down reads as a system that had nothing to
+say.
+
+Verified as EMITTED rather than as written: a member-scope export of the
+Fernbrook Demo household carries six known losses, the sixth being that one,
+and seven tables, none of them a visit.
 
 ## A finding that holds under ALL THREE shapes, and it is the reason to read this page before the room
 
@@ -75,8 +93,11 @@ enforced by the archive's own written member-scope list, and shape (b)'s
 key-drop would be enforced by review alone.
 
 **Queue row Q-11k**, opened for it under the standing authority that a guard
-finding is a row rather than a question: extend the walk to the member-scope
-archive path, proven both directions. **Today this is not a live leak**, and
+finding is a row rather than a question, and **ruled 5 September 2026 to build
+in queue order rather than to wait on Ruling A**: extend the walk to the
+member-scope archive path, proven both directions. The founder's reason is the
+general form of the finding, and it is worth carrying past this page: **a rule
+enforced only by the list that defines it is restated, not enforced.** **Today this is not a live leak**, and
 the row says so: the archive holds every duration-carrying table out through
 `CORPORATE_ONLY`, and the archive's own tests assert that list. What is missing
 is the second opinion, since the list and its assertion are the same decision
@@ -101,7 +122,7 @@ point is completeness must say what it does not carry.
 
 | File | Change |
 |---|---|
-| `packages/schema/src/export-household.ts:144-148` | add to the member-scope `knownLosses` push a sentence naming work history as deliberately empty and D7 as the reason |
+| `packages/schema/src/export-household.ts:144-157` | the member-scope `knownLosses` push already carries the absence, added 5 September. Under this shape it becomes PERMANENT rather than an interim statement, and the sentence should lose its "the question is open" clause |
 
 **What does not change:** the directive, the guard, the legal documents, the
 archive's held list, the client surfaces.
@@ -133,6 +154,14 @@ and has to know it was considered rather than overlooked.
 | `packages/schema/src/household-archive.ts:70-75` | a second `ARCHIVE_PROJECTIONS` entry for `visit_command`, dropping the duration keys from the payload |
 | `docs/legal/README.md` | the visit-records category gains a sentence saying the member archive carries visits without durations |
 | both privacy-notice copies | the same sentence, same PR (the standing rule) |
+| `packages/schema/src/export-household.ts:144-157` | the asymmetry sentence comes OUT, because it is no longer true |
+
+**This shape RESOLVES THE PHOTO ASYMMETRY**, and that is a consequence of it
+rather than an argument for it. A photo reference in the archive currently
+belongs to nothing; under (b) it belongs to a visit that names what was done
+and when, without how long it took. Shape (a) leaves the asymmetry standing
+permanently, and shape (c) resolves it the same way (b) does, with the hours
+included.
 
 **The engineering consequence, stated because it is the whole risk of this
 shape:** `ARCHIVE_PROJECTIONS` today drops a whole COLUMN (`visit_photo.data`)
@@ -232,6 +261,9 @@ citing D7 as the reason they are in.
 **File:** `docs/legal/README.md`, the visit-records category, plus both
 privacy-notice copies in the same PR.
 
+**And `packages/schema/src/export-household.ts:144-157`**: the asymmetry
+sentence comes out under this shape too, for the same reason as under (b).
+
 **Not to be touched by this shape:** README lines 194, 202 and 214 read
 "durations never reach any client surface (the D7 wall, guard-enforced)" about
 `estimate_snapshot`, `task_occurrence` and `time_segment`. Those three stay
@@ -263,7 +295,8 @@ left to be noticed.
 
 The ruling that closes this is one of:
 
-- **(a)** D7 holds as written; visits stay out; the artifact says so.
+- **(a)** D7 holds as written; visits stay out; the artifact says so
+  permanently, and the photo asymmetry stands.
 - **(b)** Visits travel with the hours removed; D7 is satisfied, not amended;
   the dropped-key list is written and reviewed.
 - **(c)** Visits travel whole; D7 is amended by name in the five places above.

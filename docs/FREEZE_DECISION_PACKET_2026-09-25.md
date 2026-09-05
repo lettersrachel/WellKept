@@ -105,10 +105,16 @@ walk the export.** `client-duration.test.ts` walks the `(client)` route
 group and three named copy builders; `household-archive.ts` and
 `export-household.ts` are in neither set, so today's holding-out is
 enforced by the archive's own written list and shape (b)'s key-drop
-would be enforced by review alone. And one asymmetry nobody decided:
-`visit_photo` is in the member scope by founder ruling B, so the archive
-can carry the manifest of a photograph taken during a visit while
-carrying nothing about the visit.
+would be enforced by review alone. **The photo asymmetry is RULED and off this agenda** (founder, 5
+September 2026), rather than being carried into the room: `visit_photo`
+is in the member scope by founder ruling B, so the archive can carry the
+manifest of a photograph taken during a visit while carrying nothing
+about the visit. **The manifest stays**, and **shape (b) resolves the
+asymmetry by giving the photo a visit to belong to**, which is a
+consequence of that shape rather than a finding of its own. Until item A
+is ruled the archive states the gap itself: the member scope's
+`knownLosses` now says in plain words that visits are absent and photo
+references are present. Ugly and honest is the right order.
 
 ### Items B and C are CLOSED and off the agenda (founder rulings, 4 September 2026)
 
