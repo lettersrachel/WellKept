@@ -79,3 +79,27 @@ be exercised from a container rather than from the founder's own session:
 
 Option 3 is the one that sounds safest and is the one that would produce a
 false pass.
+
+## RULED 5 September 2026: no key is minted for this container
+
+**The founder's decision, and her reason is the finding rather than caution:**
+**a role without INSERT would refuse on PERMISSIONS and print a refusal that
+looks like a pass**, which is the class named this morning (G-129). The
+cautious-sounding grant is the one that produces the false result. The proofs
+stay in her own session, which needs no new credential and already has the
+privilege the proof requires.
+
+**Recorded here deliberately, because "just give it read-only access" is the
+obvious future suggestion and it is wrong for a NON-OBVIOUS reason.** Read-only
+is the correct instinct for almost every other agent task against a production
+database, and it is exactly wrong for this one, because the proof's whole
+content is which mechanism refuses. A refusal on permissions and a refusal on a
+CHECK are both refusals, both print, both look like the constraint holding, and
+only one of them says anything about the constraint. Anyone reaching for
+read-only here is reaching for the right tool for a different job.
+
+**The general form, worth carrying past this document:** when the thing being
+proven is a REFUSAL, the proof must be able to reach the mechanism that
+refuses. Narrowing the privilege narrows what can be reached, so a narrower
+grant does not make the proof safer, it makes it answer a different question and
+say nothing about the original one.
