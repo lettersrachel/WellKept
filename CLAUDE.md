@@ -689,6 +689,48 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 ## Verification, learned the hard way
 
+- **A CHECK THAT COUNTS, MATCHES OR SEARCHES THE WRONG UNIT REPORTS A
+  CONFIDENT NUMBER ABOUT A QUESTION IT NEVER ASKED** (founder ruling,
+  5 September 2026, naming the class after its fourth instance in one day).
+  Every one of these produced a clean, plausible answer. None of them was an
+  error in the check; each was an error in what the check was pointed at, which
+  is why none of them looked wrong.
+
+  **The four instances, all 5 September 2026 except where noted:**
+  1. **A count of the wrong rows.** The Task Inventory's UNCERTAIN rows were
+     reported as FIFTEEN by counting LINES containing the word; there are
+     EIGHT, and the document says "the eight UNCERTAIN rows" two screens above
+     the number reported. Seven of the fifteen were the document's own prose
+     explaining what the word means.
+  2. **An assertion that only counted.** The operational-health restore drill
+     re-inserted a row hashed `operational-health-proof-restore`, which put the
+     migration COUNT back and left the table asserting that a migration nobody
+     wrote had been applied. **It passed its own assertion, because the
+     assertion counted rows rather than reading them.**
+  3. **A guard matching a comment.** `erasure-coverage` matches a table NAME
+     anywhere in the tool, so a comment satisfies it exactly as a query does.
+     That one is a DECISION written in the guard's own header (the floor is
+     being NAMED), and it belongs in this list anyway, because the unit the
+     guard matches and the unit a reader assumes it matches are different, and
+     Q-6-1 reported the difference as a defect before reading the header.
+  4. **An audit searching by location** (G-124). The security self-audit
+     enumerated `apps/web/src/app/api -name route.ts` and concluded the web
+     magic-link path had no rate limit. The sign-in routes are route handlers
+     that do not live under `api/`. **The empty result was read as evidence of
+     absence**, inside an audit whose entire purpose was to look. Itself a
+     repeat of G-106, where `ls docs` plus a grep over `docs/*.md` could not
+     see a `.docx` one directory down.
+
+  **The remedy was the same in all four and it is the rule: READ THE THING
+  ITSELF.** Open the document and count its rows; read the restored value and
+  not the row count; read the guard's header before reporting its behaviour;
+  find the routes by what they DO rather than by where they sit. **Before
+  trusting any count, match or search, say out loud what unit it returns and
+  what unit the question is about**, and if those two sentences are not the
+  same sentence, the number is about something else. This is the sharper form
+  of the standing state-the-UNIT convention: that one is about reporting a
+  count honestly, this one is about the count being an answer to the question
+  at all.
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**

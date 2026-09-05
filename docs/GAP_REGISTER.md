@@ -7922,3 +7922,60 @@ placeholder-shaped ships; the sentence is incomplete rather than wrong.
 **Considered and deliberately NOT changed:** `docs/SECURITY.md`'s "KEK loss =
 vault data unrecoverable". That is a true statement about losing the key, not a
 claim about erasure, and weakening it would be the opposite error.
+
+---
+
+### G-129 CLASS NAMED, 5 September 2026: a check that counts, matches or searches the wrong unit
+
+**Founder ruling**, naming the class after its fourth instance in a single day.
+The rule is in `CLAUDE.md` beside the verification section; this entry is the
+evidence behind it.
+
+**What the four have in common, and it is not carelessness.** Every one produced
+a clean, plausible, confident answer. None was an error in the check itself.
+Each was an error in what the check was POINTED AT, which is precisely why none
+of them looked wrong: a count returns a number whether or not it counted the
+right thing, a match returns green whether or not it matched the right thing,
+and a search returns empty whether or not it could see.
+
+**The four:**
+
+1. **A count of the wrong rows.** The Task Inventory's UNCERTAIN rows were
+   reported as FIFTEEN, from counting lines containing the word. There are
+   EIGHT. Seven of the fifteen were the draft's own prose explaining what
+   UNCERTAIN means, and the document states "the eight UNCERTAIN rows" two
+   screens above the number that was reported. Delivered inside a list of
+   blockers the founder was about to act on, so the wrong number would have set
+   the size of her afternoon.
+2. **An assertion that only counted** (the operational-health restore drill).
+   Its restore re-inserted a row hashed `operational-health-proof-restore`,
+   which put the migration COUNT back while leaving the table asserting that a
+   migration nobody wrote had been applied. **It passed its own assertion,
+   because the assertion counted rows rather than reading them.** Fixed by
+   capturing the row before the delete and asserting the HASH.
+3. **A guard matching a comment.** `erasure-coverage` matches a table NAME
+   anywhere in the tool, so a comment satisfies it exactly as an executable
+   query does. **That is a DECISION, written in the guard's own header**, and it
+   belongs in this list anyway: the unit the guard matches and the unit a reader
+   assumes it matches are different, and Q-6-1 reported that difference as a
+   defect before reading the header two screens above the line it was reading.
+4. **An audit searching by location** (G-124). The security self-audit
+   enumerated `apps/web/src/app/api -name route.ts` and concluded the web
+   magic-link path carried no rate limit. The sign-in routes are route handlers
+   that do not live under `api/`. The empty result was read as evidence of
+   absence, inside an audit whose whole purpose was to look, and it was itself a
+   repeat of G-106.
+
+**The remedy was the same in all four, which is what makes it a rule rather than
+four lessons: READ THE THING ITSELF.** Open the document and count its rows.
+Read the restored value, not the row count. Read the guard's header before
+reporting its behaviour. Find the routes by what they DO, not by where they sit.
+
+**The cheap pre-check that would have caught every one:** say out loud what unit
+the check returns and what unit the question is about. If those are not the same
+sentence, the number is an answer to a different question. **Note that three of
+the four were committed by a session that already held the standing
+state-the-UNIT convention**, which is why the founder named the class rather
+than adding a fifth instance to that convention: the existing rule is about
+reporting a count honestly, and this one is about whether the count answers the
+question at all.

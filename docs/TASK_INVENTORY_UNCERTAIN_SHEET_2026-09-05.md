@@ -62,6 +62,16 @@ Sources: STD-004.8. Candidate: **T-052**.
   mapping were tidier**, and it is the row worth spending the most of your
   twenty minutes on.
 
+**RULED 5 September 2026 (founder): `NO-MAP`. WKT-017 stands alone as a
+universal check and does not sit under T-052.** Her reasoning, recorded with the
+verdict because under R18 the reason is the point and not a formality: **a
+universal safety check mapped under a child-specific task makes the check
+contingent on a household characteristic, which runs at the standing
+invariant.** So the near miss was considered and rejected on doctrine rather
+than on fit, which is a different and stronger reason than "the work does not
+match", and a later reader reopening this row needs to meet the invariant rather
+than re-argue the taxonomy. **One verdict in, seven to go.**
+
 ## 3. WKT-024, Delicates and specialty garment care
 Sources: STD-006.6. Candidate: **T-085**.
 
