@@ -1,0 +1,31 @@
+# WORKED EXAMPLE, and nothing more.
+#
+# This is NOT a WK-APP-002 section and does not claim to be one. It exists so
+# the shape has one complete instance to read against, and it is built from a
+# rule pattern the engine already runs. When the real sections arrive this file
+# stays as the example and is never loaded.
+#
+# The five judgment fields are present and null, which is the delivered state.
+section: "0.0"
+section_title: "Worked example, not a real section"
+
+rules:
+  - family: example_seasonal
+    binds_to_field_name: >
+      Heating system: last service date
+    household_id: null
+    enabled: true
+    definition:
+      pack_name: "Example: heating season"
+      pack_key: example_heating_season
+      items:
+        - text: "Confirm the heating service is booked"
+          offset_days: -30
+          method_ref: STD-011.4.2
+        - text: "Check the filter stock before the first cold week"
+          offset_days: -7
+    lead_time: null
+    stage: null
+    consequence_class: null
+    suppression_class: null
+    materiality: null

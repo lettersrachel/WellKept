@@ -20,7 +20,7 @@ status: living
 | Service records | incident and complaint records (including, noted at resolution, whether a service reminder could have prevented one), staff responses to service prompts (including whether a prompt helped and why one was set aside), your "please don't raise this" preferences | accountability + service quality |
 | Practical data | important dates, vendors, appliances, subscriptions, and the condition of items we care for, observed over time, including conditions we flag to revisit and research we do toward household decisions, paused with a plan to return to it, and for equipment we care for the serial number as printed, the install date with a note of how precisely we know it, and photographs of a unit linked to that unit so a home with two of something has a record that says which is which | to anticipate needs |
 | Service time & costs | time spent serving your household by activity, including the phases of a visit derived automatically from visit events, and costs incurred in serving it (supplies, materials, mileage); a receipt photo, where one is captured, is stored and retained exactly like a visit photo | accurate cost and quality of your service |
-| Operational records | follow-up work we track on your household's behalf and the planned instances of your standing tasks with our internal working estimates for planning them and a record of how each actually went, items our system surfaces to our staff for attention and the situations our staff bundle related items into, choices we route internally for a decision, notes a staff member captures in their own words for filing, the pre-visit briefs we show our staff (kept exactly as shown), what our reminder engine would have suggested while we tune it, and delivery records from our email provider telling us whether a message we sent you arrived | to run the service reliably |
+| Operational records | the commitments we track for your household with the person here who is accountable for each, any question we have put to you and whether it has been answered, and the check we make before calling one finished, follow-up work we track on your household's behalf and the planned instances of your standing tasks with our internal working estimates for planning them and a record of how each actually went, items our system surfaces to our staff for attention and the situations our staff bundle related items into, choices we route internally for a decision, notes a staff member captures in their own words for filing, the pre-visit briefs we show our staff (kept exactly as shown), what our reminder engine would have suggested while we tune it, and delivery records from our email provider telling us whether a message we sent you arrived | to run the service reliably |
 | Account & activity | name, email, role, sign-in and access logs | to run and secure accounts |
 | Membership record | how you found us, your membership tier and its history (start, pauses, changes, cancellation) | to run your membership |
 
@@ -59,9 +59,22 @@ log, incident and complaint records, records of the time our staff spent
 serving your household and the costs of doing so, your membership history,
 and the general category of how you found us. When we act on a deletion
 request, the free-text notes those retained records carry are removed along
-with everything else personal to your household. ⟨State your
-concrete retention period and your erasure process; reconcile the tombstone
-model with any legal right to deletion; this needs counsel.⟩
+with everything else personal to your household.
+
+**When we delete, it is immediate in the system and not yet immediate in our
+backups.** The moment we act on a deletion request, nothing we hold can reach
+the information: it is gone from the record, from every screen, and from
+anything we could export. For a limited period afterwards our database backups
+still contain it, because that is what a backup is. Reaching into one is a
+deliberate, controlled and logged act, not something that happens in the course
+of ordinary work, and after ⟨STATE THE BACKUP RETENTION WINDOW; it depends on
+the database plan and is not a figure this repository holds⟩ the information is
+no longer in the backups either. We would rather tell you this than say
+"deleted" and mean something narrower than you would.
+
+⟨Counsel: reconcile the tombstone model with any legal right to deletion, and
+confirm the wording above. The substance is ruled (founder, 5 September 2026,
+on gap register G-128) and the phrasing is yours.⟩
 
 ## Your rights
 

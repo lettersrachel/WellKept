@@ -101,6 +101,16 @@ main { max-width: 880px; margin: 22px auto; padding: 0 16px; }
 .field.CRITICAL { background: #fbeded; border-left: 4px solid var(--brick); padding-left: 10px; }
 .field.CAUTION { background: var(--cream); border-left: 4px solid var(--gold); padding-left: 10px; }
 
+/* Member-only flag styling. The staff pages style on .CRITICAL/.CAUTION and
+   keep doing so; the client playbook uses these instead, so the internal
+   vocabulary is not in a member's document even as a class name. There is
+   deliberately no DELIGHT equivalent: that flag reaches a member as
+   nothing at all. */
+.tag.flag-attention { background: var(--brick); color: #fff; }
+.tag.flag-know { background: var(--gold); color: var(--ink); }
+.field.flag-attention { background: #fbeded; border-left: 4px solid var(--brick); padding-left: 10px; }
+.field.flag-know { background: var(--cream); border-left: 4px solid var(--gold); padding-left: 10px; }
+
 /* The standards store beneath a field (Addendum A1 T4): collapsed by default;
    floors carry the red-block convention, method renders quiet. */
 .provisions { margin-top: 4px; }

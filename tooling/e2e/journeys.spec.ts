@@ -1293,3 +1293,278 @@ test("G-65: a second field assignment forces the picker, a forged selection is i
     await pool.query("DELETE FROM household WHERE id = $1", [hh2]); // assignment cascades
   }
 });
+
+/**
+ * Founder ruling, 5 September 2026 (client-side doctrine, Part One item 3:
+ * the member never sees the machinery). The playbook page rendered
+ * `field_flag` VERBATIM, so a member read `CRITICAL`, `CAUTION` or
+ * `DELIGHT` on their own record. CRITICAL becomes "Needs attention",
+ * CAUTION becomes "Worth knowing", and DELIGHT reaches a member not at
+ * all, because it is the company's word for how it categorises pleasing
+ * them.
+ *
+ * BOTH DIRECTIONS IN ONE JOURNEY, because a page that renders the two new
+ * labels and still leaks the enum somewhere else would pass a
+ * label-only assertion. So: the labels render (accepting), the three raw
+ * words appear NOWHERE in the page body (refusing), and the DELIGHT
+ * field's own VALUE still renders, which is the part a careless fix would
+ * break by hiding the field along with its word.
+ */
+test("client doctrine: the member reads the labels and never the flag vocabulary", async ({ context, page }) => {
+  const hh = randomUUID();
+  const client = randomUUID();
+  const token = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [hh, "SYN-01 flag vocabulary journey"]);
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [client, `syn-flag-${client.slice(0, 8)}@journeys.test`, "SYN-01 member"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'client',false)",
+    [randomUUID(), client, hh]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+    [token, client, new Date(Date.now() + 3600_000)]);
+  // One s1 field per flag the enum carries, so the projection this page
+  // renders contains all three and the refusing assertion has something
+  // to refuse.
+  await pool.query(
+    "INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, flag) VALUES " +
+    "($1,$4,1,'Gas shutoff location','Behind the garage door','s1','CRITICAL'), " +
+    "($2,$4,1,'Recycling day','Thursday','s1','CAUTION'), " +
+    "($3,$4,1,'Favourite flowers','Ranunculus, in the blue jug','s1','DELIGHT')",
+    [randomUUID(), randomUUID(), randomUUID(), hh]);
+
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: token, url: BASE }]);
+    await page.goto("/playbook");
+    await expect(page.getByRole("heading", { name: "What we hold for you" })).toBeVisible({ timeout: 30_000 });
+
+    // Accepting: the two member labels are on the page.
+    await expect(page.getByText("Needs attention").first()).toBeVisible();
+    await expect(page.getByText("Worth knowing").first()).toBeVisible();
+
+    // The DELIGHT field is not hidden; only the word is. Its value renders
+    // like any other, which is what separates "the label is gone" from
+    // "the field is gone".
+    await expect(page.getByText("Ranunculus, in the blue jug")).toBeVisible();
+
+    // Refusing, on the MARKUP rather than the rendered text, because those
+    // are two different claims and only one of them is this page's doing.
+    // The HTML is what the application emitted, so it catches the word
+    // whether it comes back as a label, as a class name, or as a value.
+    const html = await page.content();
+    for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) {
+      expect(html).not.toContain(word);
+    }
+
+    // And on the rendered TEXT, with nothing set aside.
+    //
+    // The first version of this assertion carried one written exclusion:
+    // section 1 of the instrument was called "Critical Flags & Household
+    // Summary" and a stylesheet uppercased it, so a member read CRITICAL
+    // FLAGS as a heading. That was reported rather than fixed, because
+    // renaming a canonical section is a library decision. **The founder
+    // ruled it on 5 September and renamed the section to "Household
+    // summary"**, so the exclusion is GONE rather than grandfathered, and
+    // this assertion is now unconditional. Recorded because an exclusion
+    // that outlives its reason is how an allowlist grows: the cheap moment
+    // to remove one is the moment the thing it excused stops existing.
+    const body = await page.locator("body").innerText();
+    for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) {
+      expect(body).not.toContain(word);
+    }
+  } finally {
+    await pool.query("DELETE FROM auth_session WHERE session_token = $1", [token]);
+    await pool.query("DELETE FROM playbook_field WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM household WHERE id = $1", [hh]); // assignment cascades
+    await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
+  }
+});
+
+/**
+ * Q-11v, the fidelity check (founder instruction, 5 September 2026: close it
+ * before the COO begins testing).
+ *
+ * The corporate "preview as client" exists to show what a member sees. On
+ * 5 September the member flag labels landed on the real client page and the
+ * preview kept rendering the raw enum for a few hours, so the surface whose
+ * only purpose is to show the member's view was showing something else.
+ * Nothing leaked, since the preview is corporate-only. It is worse in a
+ * quieter way: **a section 4 check reads that preview to confirm the client
+ * projection, so a divergence turns a passing check into one that has stopped
+ * checking its own subject.**
+ *
+ * So this asserts THE TWO SURFACES AGAINST EACH OTHER rather than each against
+ * a fixture. A fixture-based assertion on each page would have passed happily
+ * on the day they disagreed, because each was internally consistent; only
+ * comparing them catches it. The comparison is the member-visible pairing of a
+ * field's title with the tag it carries, which is exactly where the drift was.
+ */
+test("Q-11v: the corporate client-preview renders what the member actually sees", async ({ context, page }) => {
+  const hh = randomUUID();
+  const client = randomUUID();
+  const clientTok = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [hh, "SYN-01 preview fidelity"]);
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [client, `syn-fid-${client.slice(0, 8)}@journeys.test`, "SYN-01 fidelity member"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'client',false)",
+    [randomUUID(), client, hh]);
+  // The corporate seat that opens the preview. The master view is the CEO's,
+  // so this is corporate_admin by requirement, not by convenience.
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'corporate_admin',true)",
+    [randomUUID(), rachelId, hh]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+    [clientTok, client, new Date(Date.now() + 3600_000)]);
+  // One field per member-visible flag, plus a DELIGHT field, which must be
+  // absent from the tagged set on BOTH surfaces rather than present on one.
+  await pool.query(
+    "INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, flag) VALUES " +
+    "($1,$4,1,'Gas shutoff location','Behind the garage door','s1','CRITICAL'), " +
+    "($2,$4,1,'Recycling day','Thursday','s1','CAUTION'), " +
+    "($3,$4,1,'Favourite flowers','Ranunculus, in the blue jug','s1','DELIGHT')",
+    [randomUUID(), randomUUID(), randomUUID(), hh]);
+
+  // The member-visible pairing of field title to tag, read the same way from
+  // whichever surface is loaded. Sorted, so ORDER is not asserted: the two
+  // pages lay fields out differently by design and that is not a fidelity
+  // question.
+  const taggedPairs = async () =>
+    (await page.locator(".field").evaluateAll((els) =>
+      els
+        .map((el) => {
+          const tag = el.querySelector(".tag");
+          if (!tag) return null;
+          const name = el.querySelector(".fname");
+          const title = (name?.textContent ?? "").replace(tag.textContent ?? "", "").trim();
+          return `${title} => ${(tag.textContent ?? "").trim()}`;
+        })
+        .filter((x): x is string => x !== null),
+    )).sort();
+
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: clientTok, url: BASE }]);
+    await page.goto("/playbook");
+    await expect(page.getByRole("heading", { name: "What we hold for you" })).toBeVisible({ timeout: 30_000 });
+    const asMember = await taggedPairs();
+
+    await context.clearCookies();
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${hh}/preview/client`);
+    await expect(page.getByRole("heading", { name: "Your Playbook" })).toBeVisible({ timeout: 30_000 });
+    const asPreview = await taggedPairs();
+
+    // The detection must not be vacuous: a comparison of two empty sets is
+    // equality and proves nothing at all, which is how a fidelity check
+    // silently stops checking. Assert the input is non-trivial FIRST.
+    expect(asMember.length).toBe(2); // CRITICAL and CAUTION; DELIGHT carries no tag
+    expect(asMember).toEqual(asPreview);
+    expect(asMember.join(" ")).toContain("Needs attention");
+    expect(asMember.join(" ")).toContain("Worth knowing");
+    // And the withheld one is withheld on both, not merely on the real page.
+    expect(asPreview.join(" ")).not.toContain("Ranunculus");
+    for (const s of [asMember.join(" "), asPreview.join(" ")]) {
+      for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) expect(s).not.toContain(word);
+    }
+  } finally {
+    await pool.query("DELETE FROM auth_session WHERE session_token = $1", [clientTok]);
+    await pool.query("DELETE FROM playbook_field WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM household WHERE id = $1", [hh]);
+    await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
+  }
+});
+
+/**
+ * Q-6-2: the Commitment Ledger, with the Handled invariant as the
+ * definition of closed.
+ *
+ * The journey that matters is the REFUSAL: an operator tries to close an
+ * item that is not handled and the system says which clause is unmet.
+ * The database refuses it too (0067's CHECK), so this proves the pair,
+ * and it proves the refusal on the exact control rather than on a
+ * constraint violation nobody would read.
+ */
+test("commitment ledger: closing refuses until the Handled invariant is met, then the four clauses let it through", async ({ context, page }) => {
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+
+    // Refusing direction first: three characters is not a commitment.
+    await page.getByLabel("What we committed to").fill("hm");
+    await page.getByRole("button", { name: "Record commitment" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    const title = "Replace the water heater anode before the winter service";
+    await page.getByLabel("What we committed to").fill(title);
+    await page.getByRole("button", { name: "Record commitment" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='commitment_ledger_item.recorded'")).toBe(1);
+    // A fresh item is APPROACHING and the page names both unmet clauses.
+    await expect(page.getByText("not handled yet: an accountable owner exists; verification is satisfied or explicitly pending")).toBeVisible({ timeout: 15_000 });
+
+    // THE INVARIANT REFUSES A CLOSE. Two clauses are unmet, and the
+    // action says so before the CHECK has to.
+    await page.getByLabel("How it ended").fill("done");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL")).toBe(0);
+
+    // Clause 1: an accountable owner.
+    await page.getByRole("button", { name: "Take ownership" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND accountable_owner IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    // ADR-006: the audit row carries a TOKEN for the owner, never an address.
+    const { rows: [ownerAudit] } = await pool.query(
+      "SELECT detail FROM audit_event WHERE household_id=$1 AND detail->>'action'='owner_assigned'", [synId]);
+    expect(ownerAudit.detail.subjectToken).toBeTruthy();
+    expect(JSON.stringify(ownerAudit.detail)).not.toContain("@");
+
+    // Clause 2: an asked member decision blocks the close until answered,
+    // and M-25 counts the ASK. Nothing is delivered to a member: the
+    // inbox is the freeze-gated half and this records the ask only.
+    await page.getByLabel("What we are asking the household").fill("Which of the two vendors would you prefer?");
+    await page.getByRole("button", { name: "Record the ask" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND member_decision_asked_at IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    await expect(page.getByText("M-25, decisions surfaced to this household in the last 7 days: 1.")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByLabel("How it ended").fill("done");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL")).toBe(0);
+
+    await page.getByRole("button", { name: "They answered" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND member_decision_resolved_at IS NOT NULL AND member_decision_resolved_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+
+    // Clause 4: verification. Clause 3 is satisfied by construction here,
+    // since nothing external is pending on this item.
+    await page.getByRole("button", { name: "Verified" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND verified_at IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    // The word "handled" appears in this card's own explanatory note, so
+    // asserting it would pass on the prose rather than on the item (the
+    // wrong-unit class). The item's state is asserted by the DISAPPEARANCE
+    // of its unmet-clause line, which only the invariant can cause.
+    await expect.poll(async () => await page.getByText("not handled yet").count(), { timeout: 20_000 }).toBe(0);
+
+    // Now the close lands, and the confirmation names it.
+    await page.getByLabel("How it ended").fill("anode replaced and photographed");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL AND closed_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='commitment_ledger_item.closed'")).toBe(1);
+    await expect(page.getByText("closed: anode replaced and photographed")).toBeVisible({ timeout: 15_000 });
+
+    // The member never sees any of this: no client projection exists.
+    // Asserted against the EMITTED MARKUP rather than the rendered text,
+    // per the RSC boundary rule, so a prop that is passed and discarded
+    // would still fail here.
+    const clientPage = await context.newPage();
+    await clientPage.goto(`/oversight/${synId}/preview/client`);
+    const html = await clientPage.content();
+    expect(html).not.toContain("accountableOwner");
+    expect(html).not.toContain("Which of the two vendors");
+    await clientPage.close();
+  } finally {
+    await pool.query("DELETE FROM commitment_ledger_item WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_subject_token WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});

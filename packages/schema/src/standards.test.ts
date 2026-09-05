@@ -332,6 +332,32 @@ test("A2 payload guard: recall and outcome rows never reach a client payload", a
     /task_occurrence/,
   );
 
+  // Q-6-2: a commitment ledger item never reaches a client. The member
+  // decision inbox is freeze-gated, so no projection exists at all.
+  // SINGLE-KEY clauses, unlike the pairs above: a projection carrying
+  // `accountableOwner` alone would name a staff member to a member, and
+  // one carrying `memberDecisionQuestion` alone would be the ask itself.
+  assert.throws(
+    () => assertNoAnticipationRows([{ accountableOwner: "u-1" }]),
+    /commitment_ledger_item/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { member_decision_question: "which vendor?" } }),
+    /commitment_ledger_item/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows([{ externalCompletionOn: "the plumber returns", followUpAt: "2026-09-20" }]),
+    /commitment_ledger_item/,
+  );
+  assert.throws(
+    () => assertNoAnticipationRows({ deep: { verification_pending_reason: "invoice not yet received" } }),
+    /commitment_ledger_item/,
+  );
+  // The accepting direction: an innocent client row carrying none of
+  // those keys still passes, so the signature has not been widened into
+  // a blanket refusal.
+  assertNoAnticipationRows([{ id: "f1", name: "Gate code", value: "1234" }]);
+
   // WL Gate 1: a time segment never reaches a client (the D7 wall
   // covers the window a duration computes from).
   assert.throws(

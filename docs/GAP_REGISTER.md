@@ -270,6 +270,41 @@ learns it exists.
 **Disposition.** A short staff-facing paragraph, either inside the
 confidentiality acknowledgment or beside it. Cheap now, awkward later.
 
+**RECORDED 5 September 2026 (founder instruction): G-13 is a HIRING
+PRECONDITION, not a document.** It is on the founder's list today for counsel
+review and on the 25 September agenda in that form.
+
+**The reframing is the content**, and it is the same shape as the WK-TRN-009
+ruling: a document to chase gets fitted around the build, and a precondition
+gets met before the thing it precedes. Nobody is hired into a system that
+records their every action until they have been told what it records.
+
+**Nothing in CI can enforce it**, which is why it is written here rather than
+left to a guard. `staff-disclosure.test.ts` computes the staff-attributed
+surface set and demands each one be NAMED in the disclosure or excused in
+writing, which is a completeness check on a document's CONTENTS. It cannot see
+whether that document has been reviewed by counsel, or whether any person has
+acknowledged it. **The gate is reached by the FOUNDING COHORT rather than by a
+queue row**, so no build session will ever arrive at it, and the merge rule it
+governs (no capture surface attributing data to a named HOM ships before the
+disclosure is approved and acknowledged) has already been passed twice:
+`time_entry` and `object_observation` both exist under it.
+
+**The disclosure is owed against surfaces that SHIPPED, not surfaces being
+planned** (the ruling's own sentence, recorded plainly because it changes what
+kind of debt this is). `time_entry` and `object_observation` are live tables
+attributing data to a named HOM. This is not a gate standing in front of future
+work; it is a rule two shipped surfaces are already past.
+
+**Why it sat since August, in the founder's words:** nothing in CI can enforce
+it AND it is reached by the founding cohort rather than by a queue row. That
+combination is also why it would otherwise be discovered in the week offers are
+being made.
+
+**Surfaced by** the 5 September gap-register triage (preparation batch item
+11), which the batch item had guessed would find exactly one such gate. Frozen
+ruling: `docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
+
 ### G-14. The Apple review account conflicts with staff clause 3
 
 The listing kit's review notes plan to hand a reviewer a working staff account
@@ -1310,6 +1345,48 @@ the candidate reasons are no-vault-item and decrypt-failed.
 
 Until the fix lands, any audit export answering "who viewed this" must
 be read as "who was authorized to view this and attempted it".
+
+**RULED 5 September 2026 (founder). The outcome vocabulary is four closed
+values, and G-53 is unblocked for build.**
+
+| Value | Meaning |
+|---|---|
+| `delivered` | decrypted and returned |
+| `denied` | refused on authorization, before any decryption was attempted |
+| `not_found` | no vault item exists for the reference |
+| `failed` | decryption was attempted and was unsuccessful |
+
+**Four rather than the minimum two, in the founder's own reasoning**, which is
+the part worth keeping because it is what makes the vocabulary the right size
+rather than a matter of taste: **"who viewed this" is asked by counsel and by
+members**, and the honest answer has to separate someone who SAW a value from
+someone who tried and got nothing, and separate an AUTHORIZATION refusal from a
+BROKEN record. **Collapsing `not_found` into `failed` would hide a
+data-integrity problem inside an access log**, where nobody reading it is
+looking for one, and **collapsing `denied` into either would make a REFUSAL
+look like an ERROR, which is the opposite of what the trail is for.**
+
+**The reason belongs in the code beside the enum** (the ruling says so
+explicitly), not only here: an implementer reading four values without the
+question they answer will eventually simplify them to two.
+
+**THE VOCABULARY IS CLOSED. A fifth outcome is a REPORT, never an addition**,
+and the reason travels with the rule: a vocabulary that grows silently makes
+old rows mean something different from new ones, so every historical answer to
+"who viewed this" changes meaning without anybody editing a row. Same posture
+as the capture router's severity rules and the estimate hierarchy: the values
+are the founder's, and an implementer meeting a fifth case reports it.
+
+**What stays true until it is built**, unchanged from the entry above: any
+audit export answering "who viewed this" must be read as "who was authorized to
+view this and attempted it". **The audit invariant is untouched by this
+ruling**: the row is written BEFORE the decrypt and the outcome is a SECOND
+write, so a failed second write leaves the conservative attempt row standing
+and the trail keeps assuming they saw it.
+
+**Queue row Q-11l**, placed in queue order under the standing authorization
+rather than built ahead of it. Frozen ruling:
+`docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
 
 ### G-54. A KEK rotation locks out every enrolled staff user, backup codes included, because the TOTP decrypt throws before the fallback is reached
 
@@ -7646,3 +7723,597 @@ internal coverage-binder scope must respect the vault rule: **no S3
 value renders, and its absence is VISIBLE rather than silent**, so a
 binder reader can tell a secured value exists and was withheld instead
 of reading a gap as no-such-value.
+
+### G-123 OPEN and minor, 5 September 2026: a frozen ruling's own date precedes the report it answers
+
+`docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md` is titled and dated
+**4 September 2026** and instructs that it be registered under WK-QA-018
+"with the day's other entries", which places it beside the Part C review
+of the same date. Its rulings B and C answer freeze-packet items that
+were written on **5 September**, in
+`docs/FREEZE_DECISION_PACKET_2026-09-25.md`, which did not exist on the
+4th.
+
+**Not reconciled, per the standing rule.** The document is a founder
+record and records keep their own wording and their own dating; the file
+is frozen verbatim under the founder's date and its manifest comment
+points here. The most likely explanation is that the rulings were made
+across a sitting that spans the boundary, or that the WK-QA-018 grouping
+is by session rather than by clock, and neither is checkable from this
+repository.
+
+**Why it is filed at all rather than shrugged off.** The dating is how a
+later reader orders cause and effect. Someone reading the register in
+order will see a ruling resolving a conflict before the document that
+raised the conflict exists, and will reasonably conclude that one of the
+two files was backdated or that a third document is missing. One line
+here is cheaper than that reconstruction. **It is not a defect in either
+document and changes nothing about the rulings, which are applied in
+full.**
+
+**Founder-side to settle, in one sentence:** whether the intended date is
+4 or 5 September. If 5, the fix is a reviewed hash update on the frozen
+file and a rename; if 4, this entry is the explanation and nothing moves.
+
+### G-124 CLOSED on arrival, 5 September 2026: the security audit's own first finding was the shape of its query
+
+**What happened.** The 5 September self-audit reported, as its lead
+finding, that "the web magic-link entry point carries no rate limit".
+**It does, and always has.** `apps/web/src/app/signin/action/route.ts`
+throttles issuance by IP and address on the same keys the mobile routes
+use, and `apps/web/src/app/signin/code/route.ts` throttles the typed
+code on its own pair.
+
+**The mechanism, which is the only reason this is filed.** The audit
+enumerated route handlers with `find apps/web/src/app/api -name
+route.ts`. The web sign-in routes are route handlers that do not live
+under `api/`; they are at `app/signin/action` and `app/signin/code`.
+So the search could not see them, and the empty result was read as
+evidence of absence.
+
+**That is G-106 exactly**, committed inside an audit whose entire
+purpose was to look, by the session holding the rule. G-106 was filed
+when `ls docs` plus a grep over `docs/*.md` could not see a `.docx` one
+directory down. Same class, three weeks later, in a document about
+being thorough.
+
+**What survived the correction is not nothing, and is sharper than what
+was reported.** The sign-in token has TWO entry paths, `/signin/code`
+and the emailed link's own `GET /api/auth/callback/email`, and only the
+first was throttled. So the true finding was a BYPASS of an existing
+control rather than a missing control, which is a worse shape and a
+smaller fix. Both are now throttled, on deliberately SHARED keys.
+
+**The lesson, stated so it is usable rather than merely chastening: an
+enumeration is a claim about the enumerator, and a negative result
+inherits every limit of the pattern that produced it.** The cheap
+remedy that would have caught this is the one used to correct it:
+before reporting an absence, search for the CALL rather than for the
+location. `grep -rn "rateLimit(" apps/web/src` found all twelve sites
+in one command and needed no assumption about where a route lives.
+
+**Recorded as closed rather than open** because the false half is
+corrected in place in the audit document with the correction visible,
+the true half is fixed in code, and the lesson is written here. Nothing
+is left to do.
+
+---
+
+### G-125 CLOSED, 5 September 2026: the erasure tool's first real run failed on a column it had never written to
+
+**Authorization.** Founder ruling, 5 September 2026: one `--commit` run against
+a disposable database, seeded solely from fixture archives, before-and-after
+counts recorded, destroyed afterwards, never against production or any database
+holding a real household at any scope. **The second authorized exception in the
+history of the never-commit rule**, and the first was a throwaway Neon branch at
+the custody sitting. Her reason, recorded in `CLAUDE.md` beside the exception:
+an irreversible path that has never executed anywhere is not a proven
+capability, and the first real run must not be the first run.
+
+**It was vindicated on the first attempt.** The run printed its complete plan
+and then died inside the transaction:
+
+```
+FAILED - rolled back, nothing changed:
+column "updated_at" of relation "anticipation_exclusion" does not exist
+```
+
+`erase-household.mjs` stamps `updated_at=now()` on twenty-five tables.
+`anticipation_exclusion` is the one that has no such column. A census over every
+UPDATE the tool issues confirmed it is the only instance.
+
+**Why no dry run could ever have caught it.** The failing statement sits PAST
+the plan the dry run prints and INSIDE the transaction the dry run does not
+open. So every dry run ever performed against this tool printed a correct plan
+that this statement could not carry out, and the plan and the outcome were
+indistinguishable from the outside. **The class is wider than the instance: a
+tool with a rehearsal mode can be rehearsed indefinitely and still fail at the
+one step the rehearsal is defined not to take.**
+
+**The consolation, which is real and was observed rather than assumed:** the
+rollback held. Nothing changed, and the whole-or-nothing property was proven by
+a genuine failure rather than by a sentinel.
+
+**Fixed** at the line with the reason written there. The run then completed and
+its results are in `docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section
+4: content cleared and tombstoned, `paused_decision` deleted, role assignments
+deleted, the household renamed rather than removed, and the audit count going
+**up** by one, because the erasure is itself an audited event.
+
+**Two branches remain unexercised and are named rather than implied**: the vault
+crypto-shred and the photo purge. Both are unreachable from an archive-seeded
+database, because `vault_item` is excluded from every archive and photo bytes do
+not restore. Exercising them needs seeding outside an archive, which the
+authorization does not cover.
+
+---
+
+### G-126 CLOSED, 5 September 2026: the household archive could not restore a jsonb ARRAY, and the portability proof had passed without noticing
+
+**Found by** the G-125 run's precondition check, which reported two households
+where three were expected. The third restore had refused and the loop that ran
+it had not surfaced the error. **A proof asserting its own preconditions caught
+what a proof reading its own summary would have missed.**
+
+```
+REFUSED and rolled back: invalid input syntax for type json
+```
+
+**Cause.** `node-postgres` serializes a JS OBJECT to JSON and a JS ARRAY to a
+POSTGRES ARRAY LITERAL. The importer passed archive values straight through, so
+`registry_entry.detail` (an object) round-tripped and
+`decision_record.alternatives` (an array) arrived as `{Ask each visit,Batch a
+weekly confirmation}`, which Postgres refuses as invalid json.
+
+**The asymmetry is the whole lesson.** Two shapes go into the same column type
+through the same code path, one works and one cannot, and the working one is
+the common one. **Every archive restored before this date happened to carry
+objects only**, including the one used hours earlier in
+`DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 3. That result was true
+and its SCOPE was narrower than it read: "an archive restores whole" had been
+demonstrated for one of the two structured shapes.
+
+Corrected in place in that document rather than left to stand.
+
+**Fixed** by computing the json and jsonb columns from `information_schema`, the
+same way the importer already computes its nullable columns, and stringifying
+explicitly rather than leaving the driver to guess. Stringifying is correct for
+every json value and not only for arrays: an object arrives as the same JSON
+text the driver would have produced, and a bare string arrives as a quoted json
+string rather than as invalid json, which is the third shape nobody had hit
+either.
+
+**Verified by reading the value back as jsonb**, not by watching the insert
+succeed: `jsonb_typeof` returns `array`, length 2, first element intact.
+
+---
+
+### G-127 CLOSED, 5 September 2026: playbook section 1 was named in the company's triage vocabulary and rendered on the member's own page
+
+**Founder ruling**, following the flag-vocabulary fix of the same day.
+
+Section 1 of the playbook instrument was called **"Critical Flags & Household
+Summary"**. `SECTION_NAMES` renders on the client playbook, and a stylesheet
+uppercases section titles, so a member read **CRITICAL FLAGS** as a heading on
+their own record. "Critical flags" is the company's internal triage vocabulary,
+which puts this in the same class as the `field_flag` enum the same day's ruling
+removed: **the member-never-sees-the-machinery doctrine reaches instrument
+NAMES, not only field values.**
+
+**Ruled a library change with this entry as its register record**, and renamed
+to **"Household summary"**. WK-PLAY-001 takes the same edit library-side, which
+is founder-side and is the half this repository cannot do.
+
+**REQ-011 is not touched.** It forbids deleting and RENUMBERING the 24 sections,
+and the NUMBERS are the public API. A section name is display copy. Checked
+before the change rather than assumed: every reader in the tree keys on the
+integer and nothing matches on the string, so no behaviour depends on it. That
+check is the packName lesson applied before a rename rather than after.
+
+**And a test exclusion came out with it.** The flag-vocabulary journey had
+carried one written exclusion for exactly this heading, added that morning when
+it was reported-not-fixed. The exclusion is **removed** rather than
+grandfathered, and the assertion is now unconditional. **The cheap moment to
+remove an exclusion is the moment the thing it excused stops existing**, and an
+exclusion that outlives its reason is how an allowlist grows.
+
+---
+
+### G-128 REPORTED, 5 September 2026: erasure is complete logically and the bytes stay on disk until the relation is rewritten
+
+**Found by** the third authorized `--commit` exception, which extended the
+second so the vault crypto-shred and photo purge could be exercised on a real
+sealed value and real image bytes, seeded outside an archive under a throwaway
+KEK generated in-process. Full run in
+`docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 4b.
+
+**What passed, and it is most of it.** The shred deletes the ciphertext and its
+wrapped data key together, since `key_ref` sits on the same row, so a decrypt
+that SUCCEEDED before the run had nothing to operate on after it. The photo
+purge clears the bytes and keeps a tombstone carrying the byte count. A
+`pg_dump` of the erased database, searched for the plaintext, a phrase inside
+it, and the base64 JPEG magic prefix, returned **zero on all three**.
+
+**What did not.** The instruction asked for bytes gone from STORAGE and not only
+from the table, which is a question about the disk.
+
+| Stage | Marker in the heap file |
+|---|---|
+| seeded, after CHECKPOINT | present (the control) |
+| after the erasure committed | **still present** |
+| after a plain `VACUUM` | **still present** |
+| after `VACUUM FULL` | gone, old file removed |
+
+**The control came first**, because a heap search that can never find anything
+reports zero for the wrong reason. And the vault was tested SEPARATELY from the
+photo, because DELETE and UPDATE are different paths: both its ciphertext and
+its wrapped key survived the shred in the heap and both went with `VACUUM FULL`.
+
+**Why this is a report and not a fix.** It is not a new exposure class: the
+tool's own output already footnotes that inside the Neon PITR window a restore
+reconstitutes shredded values (G-04), and PITR is a far wider door than a dead
+tuple. What is new is that the same holds for the live heap, which nothing had
+said. And the remedy is a decision rather than an obvious change: forcing
+`VACUUM FULL` on erasure takes an exclusive lock and rewrites a table, which on
+a shared production database is an availability decision, and it would still
+leave the PITR term untouched.
+
+**Two questions raised and left with the founder and counsel**, deliberately
+without a queue row, since opening one would imply the answer is a build:
+whether the retention floor is stated to members as what it is (complete at the
+application layer immediately, at the storage layer within the backup retention
+window), and whether the crypto-shred should keep the unqualified word
+"unrecoverable" anywhere it currently appears.
+
+**The general lesson, which is why this is a register entry and not only a
+document section: "cleared" and "gone" are different claims, and every layer
+below the one you tested answers the second one differently.** The application
+layer was clean, the logical database was clean, and the storage layer was not,
+and all three were true at the same moment.
+
+**G-128 ADDENDUM, 5 September 2026: the founder's ruling, and what changed in
+the wording.** No `VACUUM FULL` on erasure, for the reasons the entry gives.
+The unqualified word **"unrecoverable" is removed wherever it appeared** and
+replaced with what is true: the shred destroys the ciphertext and the only key
+that opens it, and recovery would require a point-in-time restore of the
+database, which is a controlled and audited act within a bounded retention
+window. Applied in `erase-household.mjs`'s header, its printed dry-run line and
+its final warning; the only occurrence of the word that survives there is the
+sentence explaining why it is not used.
+
+**And the retention floor is now stated to MEMBERS**, in both copies of the
+privacy notice, not only in engineering records: deletion is complete and
+immediate in the system, the backups carry it for a bounded period afterwards,
+and reaching into one is a deliberate and logged act. Counsel reviews the
+phrasing; the substance is ruled.
+
+**One blank, deliberate and structural.** The window's length depends on the
+database plan and is not a fact this repository holds, so
+`BACKUP_RETENTION_WINDOW` is null in `@wellkept/config` and the notice renders
+the true paragraph while omitting the clause that names the window. **A
+plausible number there would read exactly like a verified one**, and it would
+be a claim to members about how long their deleted information exists, which is
+the worst place in the system for a guess. Nothing false ships and nothing
+placeholder-shaped ships; the sentence is incomplete rather than wrong.
+
+**Considered and deliberately NOT changed:** `docs/SECURITY.md`'s "KEK loss =
+vault data unrecoverable". That is a true statement about losing the key, not a
+claim about erasure, and weakening it would be the opposite error.
+
+---
+
+### G-129 CLASS NAMED, 5 September 2026: a check that counts, matches or searches the wrong unit
+
+**Founder ruling**, naming the class after its fourth instance in a single day.
+The rule is in `CLAUDE.md` beside the verification section; this entry is the
+evidence behind it.
+
+**What the four have in common, and it is not carelessness.** Every one produced
+a clean, plausible, confident answer. None was an error in the check itself.
+Each was an error in what the check was POINTED AT, which is precisely why none
+of them looked wrong: a count returns a number whether or not it counted the
+right thing, a match returns green whether or not it matched the right thing,
+and a search returns empty whether or not it could see.
+
+**The four:**
+
+1. **A count of the wrong rows.** The Task Inventory's UNCERTAIN rows were
+   reported as FIFTEEN, from counting lines containing the word. There are
+   EIGHT. Seven of the fifteen were the draft's own prose explaining what
+   UNCERTAIN means, and the document states "the eight UNCERTAIN rows" two
+   screens above the number that was reported. Delivered inside a list of
+   blockers the founder was about to act on, so the wrong number would have set
+   the size of her afternoon.
+2. **An assertion that only counted** (the operational-health restore drill).
+   Its restore re-inserted a row hashed `operational-health-proof-restore`,
+   which put the migration COUNT back while leaving the table asserting that a
+   migration nobody wrote had been applied. **It passed its own assertion,
+   because the assertion counted rows rather than reading them.** Fixed by
+   capturing the row before the delete and asserting the HASH.
+3. **A guard matching a comment.** `erasure-coverage` matches a table NAME
+   anywhere in the tool, so a comment satisfies it exactly as an executable
+   query does. **That is a DECISION, written in the guard's own header**, and it
+   belongs in this list anyway: the unit the guard matches and the unit a reader
+   assumes it matches are different, and Q-6-1 reported that difference as a
+   defect before reading the header two screens above the line it was reading.
+4. **An audit searching by location** (G-124). The security self-audit
+   enumerated `apps/web/src/app/api -name route.ts` and concluded the web
+   magic-link path carried no rate limit. The sign-in routes are route handlers
+   that do not live under `api/`. The empty result was read as evidence of
+   absence, inside an audit whose whole purpose was to look, and it was itself a
+   repeat of G-106.
+
+**The remedy was the same in all four, which is what makes it a rule rather than
+four lessons: READ THE THING ITSELF.** Open the document and count its rows.
+Read the restored value, not the row count. Read the guard's header before
+reporting its behaviour. Find the routes by what they DO, not by where they sit.
+
+**FIFTH INSTANCE, added 5 September 2026 by founder instruction, and it is the
+entry's most useful line: THE CLASS RECURS UNDER THE ATTENTION OF SOMEONE WHO
+HAS JUST NAMED IT.**
+
+Reconciling WK-SEC-001's scope against the tree, an hour after this entry was
+filed, the question was whether the S3 object storage the scope describes
+exists. A search for `S3` in the codebase returns many hits. **Every single one
+is the sensitivity tier `s3`** (`s3` fields, the vault's `s3`-only rule, `s3.3`
+in a comment), and there is no AWS SDK, no S3 client and no presigned URL
+anywhere. **A confident "object storage confirmed present" was one grep away**,
+and it would have gone into a handoff package as a verified fact, inside the
+very document that was reporting instances one through four.
+
+**It was caught by reading the hits rather than counting them**, which is this
+entry's own remedy applied in the moment it was written down.
+
+**Why the fifth instance matters more than the first four.** They could be read
+as inattention. This one happened under maximum attention, by the session that
+had just enumerated the class, while writing about it. **So the remedy is not
+"be careful", which is what the first four might suggest.** Care is exactly what
+was present. The remedy is procedural and survives a careless day: name the unit
+before trusting the number, every time, including when you have just finished
+explaining why.
+
+**The cheap pre-check that would have caught every one:** say out loud what unit
+the check returns and what unit the question is about. If those are not the same
+sentence, the number is an answer to a different question. **Note that three of
+the four were committed by a session that already held the standing
+state-the-UNIT convention**, which is why the founder named the class rather
+than adding a fifth instance to that convention: the existing rule is about
+reporting a count honestly, and this one is about whether the count answers the
+question at all.
+
+---
+
+### G-130 CLOSED, 5 September 2026: WK-SEC-001's scope described a system this codebase is not, and the self-audit paid for itself before the audit ran
+
+**Founder ruling: WK-SEC-001 is AMENDED before any assessor is engaged, not
+supplemented.** Her reason is the finding: **a scope that describes a different
+system is worse than none, because an assessor will follow it.** A correction
+sheet stapled to v1.0 preserves the risk, since the two are read in the order
+they are handed over.
+
+**What the reconciliation found**, each verified against the tree rather than
+inferred: the scope specifies S3 object storage via presigned URLs (there is no
+object storage; photo bytes are base64 in a `text` column), three member portals
+(one, frozen at the digest), a restricted-access class enforced server-side
+(does not exist), consents as switches arming capabilities (consent is recorded
+and arms nothing), prompt-injection through a photo-processing pipeline (no AI
+pipeline, no AI vendor), and a Beaumont-Ashford fixture set (the fixtures are
+Fernbrook, Smoke Test and Trainor).
+
+**Three of the eight test areas are substantially about components that do not
+exist**, and two of those absences are themselves the finding rather than a
+reason to skip the area.
+
+**The cost this avoided, which is the entry's point.** An assessor engaged
+against v1.0 would have spent billable time attacking a presigned-URL layer, a
+consent-enforcement mechanism and an AI seam, none of which exist, and would not
+have been pointed at where the risk actually sits: the free-text
+`playbook_field.value` column that no guard can read, the operator with the
+connection string, the absent idle timeout, and a detection posture that is
+deliberately none. **A day of hunting absent components is a day not spent on
+tenant isolation**, which is the existential area and the one worth the whole
+engagement. **The self-audit paid for itself before the audit ran**, and this is
+recorded so the next reconciliation-before-engagement is understood as budget
+rather than as diligence theatre.
+
+**What was done.** `docs/library/WK-SEC-001_v1_1_AMENDED_SCOPE.md` is the
+complete amended scope an assessor receives, not an errata sheet: the corrected
+description, the attack-this-in-priority-order section, and **the three absences
+KEPT AS STATED FINDINGS rather than deleted, so it stays visible that they were
+considered.** G-128 goes in the handoff package rather than being left for
+rediscovery, since test area 2 asks exactly the right question and the answer is
+already known.
+
+**One ambiguity the amendment resolves rather than inherits.** The pass criteria
+require zero unresolved critical or high findings "touching the
+restricted-access class". That class does not exist, so the criterion cannot be
+satisfied by testing. **Whether its absence is itself a blocking finding is a
+founder decision**, named in v1.1 rather than resolved, so a pass or fail is not
+decided by an assessor's reading of a clause about a component that was never
+built.
+
+**Control:** the operating library is the system of record. v1.1 lands on the
+repository mirror first, the established pattern when an amendment is authored
+here, and the founder transfers it into the controlled copy. The `.docx` remains
+v1.0 until she does, and **no assessor is engaged against v1.0.**
+
+---
+
+### G-131 REPORTED, 5 September 2026: the scenario bank's category source has never been written, and "the evaluation form" names two different instruments
+
+Preparation batch item 9 asks for two things: the twelve rubric domains turned
+into the evaluation form's shape, and thirty scenario stubs drawn from the
+WK-TRN-007 categories A to G. **The first is buildable and built. The second is
+blocked on a document that does not exist**, and the two halves together
+surfaced a naming collision that would have been paid for at build time.
+
+**WK-TRN-007 is not in this repository**, checked four ways rather than by one
+search that could not see (the G-106 lesson, and the G-129 remedy applied on
+purpose): no filename in the tree matches; `git grep` finds the identifier in
+exactly two tracked files, `docs/PREPARATION_BATCH_2026-09-04.md` and
+`docs/intake/2026-09-03-build-package/FIXTURES.md`, both of which CITE it; and a
+scan inside every XML part of all ten `docs/library/*.docx` returns nothing,
+which is exactly where the last supposedly-absent document turned out to be.
+
+**Of the seven categories, the tree names two.** C, "allergen, medical, safety",
+named only in passing because it carries no partial credit, and G, "boundaries,
+fraud, restricted access, welfare". **A, B, D, E and F are cited by letter and
+defined nowhere.** Drafting stubs indexed to them means inventing five category
+definitions, which is a taxonomy, so it was not done. `docs/SCENARIO_STUB_BANK.md`
+fills every slot the tree can source (the twelve deliberate traps into the
+twelve deviation slots, offered as a proposal with its one line of reasoning
+visible), lists seven candidates against six integration slots without picking
+which one to drop, and leaves all twelve procedure slots empty with the three
+candidate sources named.
+
+**AMENDED the same day by founder ruling: three absent training documents is a
+PATTERN, not three incidents, and it is stated that way here because the two
+framings have different remedies.** WK-TRN-009 (G-110), WK-QA-000's
+"five-dimension review" (G-108) and now WK-TRN-007 are all cited by number and
+all absent. Read as three incidents they are three documents to chase. Read as
+one pattern they are the same fact: **the certification program's sources are
+largely unwritten and exist in the COO's practice.**
+
+**So writing them is the founding-cohort CRITICAL PATH, not a documentation
+chore**, and it goes on the 25 September agenda in that form. That reframing is
+the whole point of the ruling: a chore gets fitted around the build, and a
+critical path gets scheduled ahead of it. Q-16 and Q-17 both wait on it, and no
+amount of engineering closes either row without it.
+
+**None of them is to be drafted here** (founder instruction, explicit). A
+drafted curriculum would read as the program to whoever found it next, which is
+the same objection that stopped the WKT ids being fabricated and the Household
+Green workbook being pre-filled.
+
+**The second half, and it is the one that would have cost a build.** Item 9 says
+"the evaluation form" and the sources define TWO instruments with different
+units:
+
+| | Form A | Form B |
+|---|---|---|
+| Unit | one HOM, one domain, standing | one scenario run |
+| Source | `rubric_anchors.csv`, twelve domains, anchors 2 to 5 | SPEC_MODE_LOGIC section 4, five items |
+| Output | a score per domain | pass / repeat / module review |
+
+**Q-17's own acceptance criterion says "captured against the five-item
+evaluation form"**, so a builder reading the queue row builds Form B and a
+builder reading item 9 builds Form A, and each would be satisfied that they had
+built the evaluation form. Both are rendered in
+`docs/EVALUATION_FORMS_REVIEW_SHEET.md`, separately and unfused (founder ruling,
+confirmed the same day), because fusing them decides the join (which scenario
+exercises which domain) and that judgment is the COO's. It is the first of the
+blanks listed on that page. **Q-17's row now carries the collision on its face**,
+by the same ruling: the next reader is to see WHY both instruments exist rather
+than assume the newer sentence supersedes the older one.
+
+**Three smaller things the generation surfaced**, each reported rather than
+resolved:
+
+- **The rubric had no anchor for 1.** Anchors ran 2 to 5, so either the scale
+  started at 2 or a 1 existed unanchored, and a form printed with a 1 nobody
+  defined would collect scores nobody could read. **RULED the same day and
+  CLOSED: the scale starts at 1, and 1 means the domain was not demonstrated at
+  all, whether refused, absent or not attempted.** The founder's reason is why
+  the blank was worth raising rather than defaulting: **a 2 says the person did
+  the thing badly and a 1 says the thing did not happen**, which are different
+  findings calling for different responses, and a rubric that can only record
+  the first would have quietly converted every refusal and every no-show into a
+  performance score. The anchor was ADDED and the scale NOT renumbered, so
+  nothing already scored changes meaning. **The founder recorded that the gap
+  was in her own draft rather than in an upstream source**, which is worth
+  keeping: without that line the next reader spends an afternoon looking for a
+  better copy of `rubric_anchors.csv` that has the column. The anchor lives in
+  `docs/FOUNDER_RULINGS_2026-09-05_Item9.md`, because a ruling is applied beside
+  a frozen intake file and never by editing one, and the generator PARSES it
+  from there rather than restating it.
+- **The bank arithmetic does not close.** FIXTURES states 30 as 12 procedure,
+  12 deviation and 6 integration, then gives eleven AI abuse and reconciliation
+  scenarios and calls them the "same bank". Thirty leaves no room for eleven
+  more. They are appended as A-01 to A-11 rather than folded into either
+  reading.
+- **Two of the twelve traps are near neighbours** (a vendor asking to change
+  payment details, and a payment-change request). Both are printed as separate
+  slots. Merging them here would have hidden the question of whether the source
+  lists one scenario twice.
+
+**Method note, and it is the reason this entry can be trusted.** Both sheets are
+GENERATED from the frozen sources, and every list is counted from its source and
+asserted against the count the source states in words: twelve domains, five form
+items, three verdicts, twelve traps, eleven abuse scenarios, thirty slots
+emitted. A parse that silently returned eleven traps would otherwise have
+produced a confident sheet about a question it never asked, which is the class
+named this morning. Proven in the failing direction three ways with each
+mutation confirmed landed first (a domain removed, a trap removed, an item
+struck from the five-item line), each refusing by name, and green on the
+restored tree.
+
+---
+
+### G-132 CLOSED (the break) and REPORTED (what it exposed), 5 September 2026: the required argument broke CI, and five commits were reported green from a suite that never runs the failing step
+
+**What happened.** The Q-11y ruling made `is_fixture` a required argument on
+`db:seed`. `.github/workflows/ci.yml` calls that loader in BOTH jobs and passes
+no flag, so the loader refused, and **`gates` and `airplane` have both died at
+the seed step on every commit since**. The refusal message is exactly the one
+the ruling asked for; it was simply printed where nobody was reading.
+
+**Five commits red, and the reason nobody noticed is the part worth keeping.**
+Every one of those commits was reported with "suite 11/11 uncached", and every
+one of those claims was TRUE and IRRELEVANT: the local suite is `pnpm test`,
+which never invokes `db:seed`. **CI's failing step is not in the local suite at
+all**, so a green local run carries no information about it. The claim and the
+question were about different things, which is the G-129 class arriving in a
+new place: not a count of the wrong unit, but a PASS from the wrong harness,
+reported as though it settled the question a reviewer would ask.
+
+**It was found by the merge control rather than by the build.**
+`verify-merge.sh` refused PR #300 with `suite completed/failure runs=2`, which
+is the script doing exactly the job the Merging section describes. Branch
+protection would have refused too. **Neither of those is a substitute for
+looking**, and the honest reading is that the controls caught what the author
+did not.
+
+**The fix.** Both CI seed steps state `--fixture`, with the reason in a comment
+beside them, because CI seeds a synthetic household. `DEPLOY.md`'s documented
+production command carried the same latent refusal and is corrected in the same
+change. The flag reaching the loader through `pnpm ... -- --fixture` was
+verified by running it rather than by reading it.
+
+**What the fix exposed, reported and NOT fixed (queue row Q-11o).** The
+household insert is `onConflictDoNothing`, so **on a re-seed the stated flag is
+not applied and the stored value stands**. The local tree is the live instance:
+Fernbrook Demo carries `is_fixture = false` while being a fixture household, and
+a re-seed stating `--fixture` left it false and said nothing. **Not to be fixed
+by overwriting**, because flipping a real household to fixture would erase it
+from every corporate number, which is the second half of the founder's own
+pair. So the required-argument rule is satisfied on INSERT and defeated on
+RE-RUN, and which of the three shapes closes that is a semantics decision about
+re-seeding rather than a defect with one obvious answer.
+
+**The standing lesson, stated so it binds the next session:** a change to a
+COMMAND's interface is a change to every caller of that command, and callers
+live outside the source tree's test surface. Grep the command name across
+`.github/`, `tooling/` and the operator documents, not only across `src`. The
+required-argument pattern's whole claim is that it forces every call site to be
+visited; it can only do that for call sites somebody looks for.
+
+**EXTENDED BY FOUNDER RULING, 5 September 2026, and both halves are now in
+`CLAUDE.md`.**
+
+**First, the companion rule to the required-argument pattern: MAKING AN
+ARGUMENT REQUIRED IS AN INTERFACE CHANGE, and its callers are ENUMERATED BEFORE
+THE COMMIT**, explicitly including CI workflows, tooling scripts and the
+operator documents. The founder counts three such changes in this repository so
+far. The tree carries many CLIs that refuse a missing input and only some of
+those are this pattern, which is about a value that is a DECISION rather than a
+value that is merely absent; the distinction is why the enumeration is worth
+doing by hand each time rather than being reduced to a grep of `REFUSED:`.
+
+**Second, the reporting convention, adopted as the remedy for the class rather
+than as advice: a green suite is reported with what it COVERS and what it does
+NOT, in the same breath, or CI's state is reported instead.** The founder's own
+sentence for it: **"Suite green, CI not yet run on this head" would have
+surfaced this five commits earlier.** The claim that was made was true and
+answered a different question from the one she was asking, which is the G-129
+family arriving as a PASS FROM THE WRONG HARNESS rather than as a count of the
+wrong unit.

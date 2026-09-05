@@ -7,13 +7,20 @@
  * shows exactly what will happen; --commit does it).
  *
  * What it does, per table:
- *  - vault_item: rows DELETED - removing ciphertext + wrapped keys is a
- *    crypto-shred; the secrets are unrecoverable... in the LIVE database.
- *    Inside Neon's point-in-time-recovery window a restore branch can
- *    reconstitute deleted rows while the KEK is still live, so for that
- *    window erasure is a strong revocation of access, not destruction -
- *    the history-retention setting is the true floor on erasure latency
- *    (gap register G-04; counsel writes the notice knowing this).
+ *  - vault_item: rows DELETED. The shred destroys the ciphertext AND the
+ *    only key that opens it: key_ref carries the household's wrapped data
+ *    key on the same row, so both go together or neither does.
+ *
+ *    THE WORD "UNRECOVERABLE" IS DELIBERATELY NOT USED HERE (founder
+ *    ruling, 5 September 2026, on G-128). What is true is narrower and is
+ *    what this says instead: recovery would require a point-in-time
+ *    restore of the database, which is a controlled and audited act
+ *    within a bounded retention window. The history-retention setting is
+ *    therefore the true floor on erasure latency (G-04), and G-128 added
+ *    that the same holds one layer down, in the table's own storage,
+ *    until the relation is rewritten. An unqualified "unrecoverable"
+ *    would be a claim this system cannot keep, and counsel writes the
+ *    member-facing notice from the qualified form.
  *  - visit_photo: image bytes cleared + purged_at stamped (tombstone rows
  *    remain). Retention holds are HONOURED by default - a hold exists
  *    precisely because the photo substantiates an open incident or
@@ -121,6 +128,20 @@
  *    the whole-or-absent value CHECK survives erasure (the W-6
  *    precedent), and the confirmation pair is untouched so the
  *    confirmation CHECK survives too.
+ *  - commitment_ledger_item (0067, Q-6-2, 2026-09-05): free text
+ *    BLANKED (the title, the member decision question, the external
+ *    completion note, the verification pending reason, the close note),
+ *    the SKELETON and every TIMESTAMP kept - the work_item posture. THAT
+ *    a commitment existed, that a member decision was asked and when,
+ *    and that it was closed under the Handled invariant is the record of
+ *    what we were accountable for and how it ended; what it was ABOUT is
+ *    the household's. Blanking uses markers rather than NULL so all four
+ *    CHECKs survive erasure (the W-6 precedent), and it matters more
+ *    here than anywhere else: nulling member_decision_question on a row
+ *    that carries an asked_at would violate the whole-or-absent
+ *    constraint, and nulling it on a CLOSED row would leave the
+ *    Handled-invariant CHECK asserting a clause about a question that no
+ *    longer exists.
  *  - preference_rule (0057, 2026-08-25): free text BLANKED (rule and
  *    retirement reason to markers; a confidence value, where one ever
  *    exists on a non-explicit row, to a marker too so the
@@ -280,8 +301,8 @@ const counts = {
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} - household "${hh.name}" (${hh.id})\n`);
 if (openIncidents > 0) console.log(`  !! ${openIncidents} OPEN incident(s) - proceeding on --despite-open-incidents\n`);
-console.log(`  vault items to CRYPTO-SHRED (rows deleted, unrecoverable*): ${counts.vault}`);
-console.log(`     *inside the Neon PITR window a restore can reconstitute them (G-04) - retention is the erasure-latency floor`);
+console.log(`  vault items to CRYPTO-SHRED (ciphertext and its key deleted together): ${counts.vault}`);
+console.log(`     recovery would need a point-in-time restore, a controlled and audited act inside the retention window (G-04, G-128)`);
 console.log(`  photos to purge (bytes cleared, tombstones remain):        ${counts.photos}`);
 console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " - WILL BE PURGED (--override-holds)" : " - HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
@@ -308,7 +329,7 @@ console.log(`  audit events: ${SCRUB_AUDIT ? "detail payloads WILL be scrubbed (
 console.log(`  role assignments to delete (sessions revoked):             ${counts.roles}`);
 
 if (!COMMIT) {
-  console.log("\nRe-run with --commit to execute. This is not reversible - the vault shred cannot be undone.\n");
+  console.log("\nRe-run with --commit to execute. The vault shred cannot be undone from inside this system; recovery would need a point-in-time restore.\n");
   await c.end();
   process.exit(0);
 }
@@ -352,6 +373,11 @@ try {
   // the skeleton (see header). value_text goes to a MARKER rather than
   // NULL so decision_right_value_is_one_shape survives erasure.
   await c.query("UPDATE decision_right SET value_text=CASE WHEN value_text IS NULL THEN NULL ELSE $2 END, note=CASE WHEN note IS NULL THEN NULL ELSE $2 END, authority=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // commitment_ledger_item: blank the words, keep the skeleton and every
+  // timestamp (see header). Markers rather than NULL throughout, so the
+  // member-decision, verification, close and Handled-invariant CHECKs
+  // all survive erasure.
+  await c.query("UPDATE commitment_ledger_item SET title=$2, member_decision_question=CASE WHEN member_decision_question IS NULL THEN NULL ELSE $2 END, external_completion_on=CASE WHEN external_completion_on IS NULL THEN NULL ELSE $2 END, verification_pending_reason=CASE WHEN verification_pending_reason IS NULL THEN NULL ELSE $2 END, close_note=CASE WHEN close_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // preference_rule: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE preference_rule SET rule=$2, confidence=CASE WHEN confidence IS NULL THEN NULL ELSE $2 END, retired_reason=CASE WHEN retired_reason IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // work_item: blank the words, keep the lifecycle (see header).
@@ -377,7 +403,15 @@ try {
   }
   // Coverage guard additions (2026-07-27): the four tables the mechanical
   // check found missing the day it was written (G-40 addendum).
-  await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // NO updated_at HERE, and it is not an omission: anticipation_exclusion is
+  // the ONE table this tool writes that has no such column (25 others have it).
+  // The stamp was written from the house pattern rather than from the table,
+  // and it made the whole erasure fail at this line, AFTER the plan printed
+  // and inside the transaction. Found by the first authorized --commit run,
+  // 5 September 2026, which is the argument for that run in one sentence:
+  // a path that has never executed is not a capability, and every dry run
+  // ever performed printed a correct plan this statement could not carry out.
+  await c.query("UPDATE anticipation_exclusion SET reason=$2, target=CASE WHEN target IS NULL THEN NULL ELSE $2 END WHERE household_id=$1", [householdId, E]);
   await c.query("DELETE FROM notification WHERE household_id=$1", [householdId]);
   await c.query("DELETE FROM event_outbox WHERE household_id=$1", [householdId]);
   // shadow_log: internal engine output about the household (see header).

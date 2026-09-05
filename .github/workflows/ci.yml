@@ -50,8 +50,13 @@ jobs:
       - name: Migrate against a real PostgreSQL 16
         run: pnpm --filter @wellkept/schema db:migrate
       - name: Seed the 258-field fixture and verify the vault rule holds in the database
+        # --fixture is REQUIRED, not decorative: the loader refuses without it
+        # (Q-11y, founder ruling 5 September 2026), because is_fixture decides
+        # whether a household is counted in every fleet number and that is the
+        # caller's statement rather than an inherited default. CI seeds a
+        # synthetic household, so it says so.
         run: |
-          pnpm --filter @wellkept/schema db:seed
+          pnpm --filter @wellkept/schema db:seed -- --fixture
           node -e "
             const pg = require('pg');
             (async () => {
@@ -108,7 +113,7 @@ jobs:
       - name: Migrate + seed (fresh DB → jordan HM on Fernbrook, no prior visits)
         run: |
           pnpm --filter @wellkept/schema db:migrate
-          pnpm --filter @wellkept/schema db:seed
+          pnpm --filter @wellkept/schema db:seed -- --fixture
       # The Smoke Test Fixture, so the Part B rehearsal is real coverage
       # rather than a spec that skips here and runs on one machine. Without
       # it, retirePreferenceRule could be changed to mutate in place and

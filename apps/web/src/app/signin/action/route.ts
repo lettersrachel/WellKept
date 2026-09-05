@@ -14,11 +14,13 @@ export async function POST(request: Request) {
   }
 
   // Sprint-10 hardening: throttle magic-link requests per IP and per
-  // address (email bombing / enumeration). Fails open on Redis trouble.
+  // address (email bombing / enumeration). FAILS CLOSED since the 5
+  // September ruling: an unreachable Redis blocks new sign-ins and
+  // evicts nobody, because sessions are database-backed.
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const [ipOk, emailOk] = await Promise.all([
-    rateLimit(`signin:ip:${ip}`, 10, 3600),
-    rateLimit(`signin:email:${email.toLowerCase()}`, 5, 3600),
+    rateLimit(`signin:ip:${ip}`, 10, 3600, "closed"),
+    rateLimit(`signin:email:${email.toLowerCase()}`, 5, 3600, "closed"),
   ]);
   if (!ipOk || !emailOk) {
     return Response.redirect(new URL("/signin?error=rate-limited", request.url), 303);

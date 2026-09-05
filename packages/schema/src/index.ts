@@ -8,3 +8,4 @@ export * from "./events.ts";
 export * from "./event-catalog.ts";
 export * from "./pipeline-stage.ts";
 export * from "./app-config.ts";
+export * from "./migration-manifest.ts";

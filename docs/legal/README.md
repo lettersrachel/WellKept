@@ -59,6 +59,13 @@ Four documents, one per audience and direction:
   staff and management (second factor required on every view), and never
   appear on the client's view. No retention period is set yet, counsel
   should set one (see the photo-lifecycle item in LAUNCH.md §3).
+  **Settled 4 September 2026 (founder ruling B,
+  `docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md`), because the
+  portability line and the sentence above pointed opposite ways at the
+  same artifact: photographs are never rendered to a client surface; a
+  manifest that records that a photograph exists, with its hash and
+  metadata and no bytes, is not a rendering and is part of the
+  household's portable record.**
 - **"Dots"**, verbatim observations a house manager logs; never shown to the
   client.
 - **Incident & complaint records** (added 2026-07-25; extended 2026-07-27);
@@ -225,6 +232,21 @@ Four documents, one per audience and direction:
   the client; on erasure the words blank and the skeleton tombstones
   (the registry posture). Configured by a named corporate user, also
   STAFF data (configured_by).
+- **Commitment ledger items** (added 2026-09-05, Q-6-2): one row per
+  thing we committed to do or asked the household to decide, carrying
+  what it is in our words, who is accountable for it, any question put
+  to the household and when, anything outstanding with a third party,
+  whether it has been verified, and how it closed. Internal (s2); never
+  shown to the client, since the member decision inbox is deliberately
+  not built while the client side is frozen; a row cannot be marked
+  closed unless an owner exists, no asked decision is unanswered, a
+  follow-up exists where someone outside still owes something, and
+  verification is either done or explicitly outstanding (the Handled
+  invariant, enforced by the database rather than by a screen); on
+  erasure the words blank to markers and the skeleton and its dates keep
+  (the work-item posture). Recorded, owned and closed by named corporate
+  users, so also STAFF data (accountable_owner, recorded_by,
+  member_decision_resolved_by, closed_by).
 - **Preference rules** (added 2026-08-25, WK-DEV-007 §4): an instance
   of the operating-details category above, named for precision: one
   stated fact per row about how the household wants things done

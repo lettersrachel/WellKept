@@ -133,10 +133,91 @@ export const MEMBER_SCOPE: Record<string, { category: PortabilityCategory; why: 
     category: "access history",
     why: "who held what role on this household and when, which is the phrase verbatim. Safe to carry because the people table is pseudonymised: a member learns that access existed and its shape, not who held it.",
   },
+  visit_photo: {
+    category: "document and media manifest",
+    why: "RULED into member scope (founder ruling B, docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md), on the distinction the exporter already implements: a manifest of content_sha256 and metadata is not an image. IMAGE BYTES ARE NEVER ADMITTED TO ANY ARCHIVE AT ANY SCOPE, which the projection enforces on the way out and the restore enforces by not writing photo rows at all. legal/README.md carries the settling sentence.",
+  },
   audit_event: {
     category: "audit metadata",
     why: "the append-only trail, which is the phrase verbatim. Subjects are ADR-006 TOKENS and audit_subject_token is excluded from every scope, so the trail says what happened without naming staff.",
   },
+};
+
+/**
+ * THE ALLOW-LIST IS TOTAL OVER THE CORPORATE SET (founder ruling, 5
+ * September 2026, ruling 1 of the Q-8b acceptance). Every table in the
+ * corporate archive carries an explicit decision: MEMBER_SCOPE above, or
+ * a written reason here. A table with NO entry fails the guard rather
+ * than defaulting quietly to corporate-only.
+ *
+ * The reason is the erasure-coverage floor applied to a second question,
+ * and it is the same property: the author must DECIDE, not merely omit.
+ * The first version of this module left thirty-five tables out by
+ * saying nothing about them, so "considered and left out" and "never
+ * considered" were the same absence, and a table added tomorrow would
+ * have joined that silence. Writing it down is what leaves the trace.
+ *
+ * "Corporate-only" is not a judgment that the fact is secret. It is the
+ * narrower claim that the portability line does not name it, or that
+ * another standing rule keeps it off a member-reaching artifact.
+ */
+export const CORPORATE_ONLY: Record<string, string> = {
+  // The anticipation engine and its own bookkeeping. None of it is a
+  // fact ABOUT the household; it is how the company decides what to
+  // notice, and the portability line names no category for it.
+  anticipation_exclusion: "engine tuning: which objects or topics are suppressed from anticipation, with the corporate approver. A record of the company's own noticing rules, not of the household.",
+  trigger_rule: "the company's rule set. Which conditions raise attention is Well Kept's method, and STD-016's change control governs it; a household's copy of the record does not carry the method.",
+  prompt_pack_item: "scheduled engine output, and Q-5's stage tag lives here. Spec section 5 makes the stage internal to the point that both client-payload mechanisms forbid the key by name.",
+  prompt_outcome: "one row per prompt answered by a staff member, used to retire rules that do not earn their place. About the RULE, not the household.",
+  season_observation: "repeat-season recall the engine builds for itself. Superseded rather than deleted, versioned as engine memory.",
+  shadow_log: "internal engine output about the household, named by the founder's ruling. Its erasure treatment is DELETE for the same reason.",
+  stranger_test: "records of the stranger-mode projection being exercised. A test of the software, kept against the household id for tenancy.",
+  situation: "the bundling of related noticing into one thing a person meets once. Bundling is a corporate judgment in v1 and the label is the bundler's words.",
+  attention_record: "internal noticing with its firewall destination. The record that the company paid attention, in the company's own vocabulary.",
+  visit_brief_snapshot: "the evidence rail: exactly what a staff member was shown before a visit. Its value is as proof of what the company did, and it carries the staff projection verbatim.",
+
+  // Staff-authored internal records. Each is a person's working note,
+  // and in four cases legal/README.md says in as many words that it is
+  // never shown to the client.
+  dot: "verbatim staff observations. legal/README.md: never shown to the client.",
+  incident_report: "complaints, breakages, injuries and near-misses with the resolver's note. legal/README.md: internal, never shown to the client in the app.",
+  paused_decision: "research a staff member paused, named by the founder's ruling. Its own table comment reads INTERNAL: no client projection exists at all.",
+  condition_flag: "a staff member's concern in their own words, with a revisit trigger. The condition_flag class erases by DELETE precisely because it is the staff member's note rather than a business record.",
+  object_observation: "the repeated-observation series behind a flag or an object. Staff observation, and the series is how the company decides something is worsening.",
+  capture_artifact: "the HOM's pre-filing words, named by the founder's ruling. Tell Well Kept is the staff member speaking to the company.",
+  work_item: "internal work tracking, staff-only by default (s2) by its own design.",
+  decision_record: "one routed corporate choice with its authority rule and decider. Its own comment records that the client audience is deliberately absent until the freeze lifts.",
+  gesture: "CORRECTED 5 September 2026: the first version of this reason called this interaction telemetry about the software, and it is not. REQ-042: a thoughtful act toward the household, carrying the idea in words, the two approval gates, when it was executed and what it cost. It is a household fact and arguably outcome history. It stays corporate-only because nothing has yet decided a member should see the company deliberating about a gesture toward them, and because the idea text is the company thinking aloud rather than a record of what happened. A candidate for the member scope if the founder rules it, unlike everything else in this group.",
+  client_edit: "RULED corporate-only (founder ruling A, docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md). Half the row is the member's own words and half is an internal review disposition, and a row carrying both would ship a staff judgment about the member's edit under the guise of returning their own text. The member half becomes its own build: a projection of the member-authored text alone, asserted in the shape the exporter already uses rather than hand-listed. Queue row Q-8c.",
+
+  // Duration-carrying tables. D7 (register A564) bars a duration from a
+  // client surface, and these carry one either as a column or inside a
+  // payload. This is a rule keeping them out, not a judgment that the
+  // household should not know.
+  visit: "the visit row the close flow fills, which travels as a unit with visit_command's hours. Held by D7 with visit_command; see the freeze packet's first ruling.",
+  visit_command: "the applied visit, whose jsonb payload carries the HOURS. D7 bars a duration from a client surface, and which keys to drop inside a jsonb column is a decision nobody has made.",
+  time_entry: "wage-time records, duration by definition, and a wage record besides.",
+  time_segment: "derived service-time segments. The duration is computed from the window rather than stored, which changes nothing about D7.",
+  estimate_snapshot: "internal duration estimates for a work requirement. D7, and estimates are the company's planning rather than the household's record.",
+  task_occurrence: "what actually happened for a requirement, carrying actual minutes. D7.",
+  work_requirement: "planned recurring instances, the forecasting unit, and the parent of the estimate and occurrence rows that D7 holds. Out with them so the member scope does not carry a skeleton whose content is absent.",
+  household_task_profile: "how a reusable task manifests here, with s2 how-they-want-it-done notes and the company's cadence in words. Durations are absent by construction; the s2 notes are the reason.",
+
+  commitment_ledger_item: "the Commitment Ledger (0067): what the company committed to, who is accountable for it, what was asked of the household and how it closed under the Handled invariant. CORPORATE-ONLY BY THE FREEZE, not by a judgment that the household should not know: the member decision inbox is Q-6's freeze-gated half and waits for the 25 September two-key decision, so the export cannot ship the record of member-facing asks ahead of the surface that makes them (the decision_right posture, one row over). A member scope for it is a candidate the moment the freeze lifts, and it carries a staff accountable_owner, which is its own question then.",
+
+  // Delivery and event plumbing. The portability line names audit
+  // metadata, which is audit_event; none of these is that.
+  event_outbox: "the internal event bus. Envelope plumbing, and its provenance answers a different question from audit metadata.",
+  notification: "in-app notification delivery. The notification class erases by DELETE; the record that matters is the thing notified about.",
+  mail_outcome: "provider delivery telemetry: bounces, complaints and delivery ids from Resend. Plumbing carrying the member's address, erased by DELETE for that reason.",
+
+  // Money and commercial standing.
+  cost_entry: "costs recorded against the household. D7 does not bar money, but R25 rules that the monthly itemized statement is the transparency commitment for the launch cohort and an always-available billing history is not shipped.",
+  membership_event: "membership and tier history with cause codes, and a cause code is the company's characterization of why a household left.",
+
+  // Named by the founder, freeze-gated on its own account.
+  decision_right: "what the household wants decided on its behalf, named by the founder's ruling. Its member-facing surface is itself freeze-gated (Q-6-1), so the export cannot ship it ahead of the surface.",
+
 };
 
 /**

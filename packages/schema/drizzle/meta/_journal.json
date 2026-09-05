@@ -470,6 +470,13 @@
       "when": 1788564267419,
       "tag": "0066_decision_right",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788622518694,
+      "tag": "0067_commitment_ledger",
+      "breakpoints": true
     }
   ]
 }

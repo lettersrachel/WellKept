@@ -70,6 +70,17 @@ const DISCLOSED: Record<string, string> = {
 
 // The escape hatch, per the standing pattern: a written reason, reviewed.
 const ALLOWLIST: Record<string, string> = {
+  commitment_ledger_item:
+    "Q-6-2, 2026-09-05: four columns attribute to a named staff member (accountable_owner, " +
+    "recorded_by, member_decision_resolved_by, closed_by). ACCOUNTABLE OWNERSHIP is the " +
+    "sharpest of them and is not the same attribution as written work: it says a named person " +
+    "is answerable for an outcome, which is exactly the sort of line a person should read " +
+    "before signing. Recorded as a FOUNDER LINE CANDIDATE FOR THE COUNSEL REVIEW HAPPENING " +
+    "NOW rather than for a later revision, because G-13 was reclassified on 5 September 2026 " +
+    "as a HIRING PRECONDITION on the 25 September agenda, and this is the third staff-attributed " +
+    "table to ship under that rule after time_entry and object_observation. No HOM exists to be " +
+    "attributed today, so nothing is recorded about anyone who has not been told; the debt is " +
+    "against the disclosure, not against a person",
   decision_right:
     "Q-6-1, 2026-09-04: confirmed_by attributes the person who confirmed a Decision Right, " +
     "and the surface shipped after the disclosure was approved. The attribution is of a " +

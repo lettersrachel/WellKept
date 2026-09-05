@@ -593,6 +593,36 @@ capture surface can do without a stopwatch. Unresolved and not resolvable
 in engineering: whether a HOM ever times a segment is a founder call
 about the field day.
 
+**RESOLVED 5 September 2026, AGAINST ExecutionActual** (founder,
+`FOUNDER_RULINGS_2026-09-05_Blockers.md` decision 3). The paragraphs above
+stay as the dated report of the conflict; this is the ruling on it.
+
+**Section 29 wins. There is no universal HOM stopwatch, ever.** The founder's
+stated reason is doctrine rather than cost: seven time segments per visit is
+precisely the measurement the never-measured doctrine bars, and she would
+rather carry a weaker E2 metric than run a system that times her operators.
+
+**The seven segments are STRUCK, not deferred**, and the difference is the
+point of the ruling: a deferred item invites somebody to reopen it later while
+looking for a better metric, and a struck one does not. **E2 measures visit
+minutes per household**, which is what the instrumentation check said it would
+default to anyway (`SEED_EVIDENCE_INSTRUMENTATION_2026-09-05.md` measurement
+4), so the ruling costs nothing that was ever going to exist and closes the
+question that would have kept re-arriving.
+
+**Standing instruction attached to it: flag any future queue row that would
+reintroduce per-task timing.** Recorded in `CLAUDE.md` beside the section 29
+adoption, because a rule that only lives here would be met by a session that
+never read this file.
+
+**What this does NOT touch**, so the strike is not read wider than it is:
+`time_segment`'s nine-kind taxonomy stays as the STORAGE model with its four
+structural walls, including that manual per-segment field timing is
+unrepresentable by construction. That table was already built to make this
+exact thing impossible, and the ruling confirms the design rather than
+changing it. What is struck is the SPEC's demand for seven captured actuals,
+not the schema that refuses to capture them.
+
 **2. Sequencing: the spec's T09 against WK-DEV-007.** The spec puts
 member surface conversion at T09. WK-DEV-007 puts the input spine and the
 HOM Cockpit first, with the client side FROZEN at the digest.
@@ -1986,7 +2016,13 @@ duration unchanged), 2 visit_close rows labeled without moving, 13 seed
 rows NULL by design. The snapshot-then-compare was the right hatch for
 the non-recoverable clause and is the pattern for any future one. A
 re-run is a structural no-op. **The one remainder from the ruling set:
-the tz NOT NULL tighten**, a future one-liner gated on the founder
+the tz NOT NULL tighten**, now **QUEUE ROW Q-11w, DEFERRED WITH A TRIGGER**
+(founder amendment, 5 September 2026): it is no longer gated on the founder
+confirming anything, because she cannot know what is queued on the COO's phone
+or the test handsets and a row blocked on an unknowable fact never moves. The
+trigger is the founding cohort's 30-day mark, when every device in the fleet is
+company-issued, and it lives on the row so it fires rather than being
+remembered. The superseded framing, kept visible: a future one-liner gated on the founder
 confirming no pre-0060 offline command can still be queued. **Still
 owed from the A2 ruling: the Railway worker redeploy**, which flips the
 fleet board's drain line and completes "metric visible in production".
@@ -3722,7 +3758,18 @@ and not lost, not proposing a build order.
 5. Chores (Upstash budget alert, Vercel project rename, DMARC, and the
    `tsbuildinfo` untrack), the pilot protocol's friction-log brackets, the two
    LAUNCH signatures with §2.4 after the restore drill.
-6. **Consider putting one training household on a non-Concierge tier.** If
+6. **Founding-member prepayment, SHAPE ONLY** (founder ruling E, 4 September
+   2026, `docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md`). Prepaid
+   membership is offered as FOUNDING TERMS rather than as a discount scheme:
+   six or twelve months paid at signing, at a modest discount, capped at the
+   first ten households. **Nothing in the software changes for this today**,
+   and it is recorded so the billing shape is known before a member agreement
+   is drafted. Two pieces are expressly NOT ruled and are not to be inferred:
+   the mid-term refund clause the member agreement needs, and the revenue
+   recognition treatment, which is Kelly's. Amounts and rates never enter
+   source control (ADR-004 and the standing figures rule), so if this ever
+   reaches software it arrives as configuration.
+7. **Consider putting one training household on a non-Concierge tier.** If
    every training household runs the same tier, training ends with no evidence
    about tier differentiation, and the tiers are load-bearing in the revenue
    model. A recruiting decision, not a build.

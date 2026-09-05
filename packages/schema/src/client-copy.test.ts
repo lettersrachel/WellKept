@@ -5,6 +5,24 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 /**
+ * THE VOICE RULE THIS GUARD SERVES, stated here so the guard has an
+ * intent rather than only a pattern (founder ruling, comprehensive
+ * instruction Part One item 5, 4 September 2026):
+ *
+ *   Plain, brief, never cheerful, never apologetic, never "we noticed",
+ *   never a phrase that implies the household is being watched.
+ *
+ * THIS GUARD ENFORCES A SUBSET AND ALWAYS DID: em dashes, over a
+ * computed scope. The rule is wider. It is written here because a guard
+ * without its intent invites the reading that passing it is the whole
+ * obligation, and the residue this file already names (free text a
+ * person writes into a sentence the rules cannot see) is exactly where
+ * voice lives. Read for voice, not only for punctuation.
+ *
+ * `docs/DOCTRINE_CLIENT_AND_HOM.md` carries the rule with the current
+ * contradictions beside it.
+ */
+/**
  * The no-em-dash rule (CLAUDE.md conventions), enforced the same way the
  * erasure rule is: a guard, not a memory. Code comments are stripped
  * before checking, since an em dash in a comment is not user-facing.
@@ -79,6 +97,13 @@ const COPY_SOURCES = [
   // traffic place it could have been.
   "../../../apps/web/src/lib/auth/config.ts",
   "../../../apps/web/src/lib/push.ts",
+  // 5 Sep 2026: the member's reading of the field flags moved into a shared
+  // module so the client page and the corporate client-preview cannot drift.
+  // MEMBER-FACING LABELS IN A `.ts` SIT OUTSIDE THE CENSUS, which derives from
+  // the `.tsx` the app renders, so extracting them would have quietly removed
+  // them from the scan. Added in the same change that created the file, which
+  // is the only moment anybody would think of it.
+  "../../../apps/web/src/lib/member-flag.ts",
   // 25 Aug 2026, from the section 4 sitting: the operator CLI scripts
   // print user-facing copy too (the erasure tool's REFUSED message is
   // the most consequential sentence the tooling prints), and no scanned

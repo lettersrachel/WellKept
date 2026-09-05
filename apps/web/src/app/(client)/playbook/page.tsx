@@ -10,6 +10,7 @@ import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { getRegistries, getStewardship, getClientDeferrals } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { RecordedBanner } from "@/components/RecordedBanner";
+import { memberFlag, type MemberFlag } from "@/lib/member-flag";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,32 @@ async function VisitReportCard({ householdId }: { householdId: string }) {
   );
 }
 
+/**
+ * And the vocabulary is PROJECTED OUT, not merely left unrendered.
+ *
+ * The first version of this fix stopped `CRITICAL` appearing on the page
+ * and shipped it anyway: `ClientField` took the whole field row, so the
+ * word travelled to the member's browser inside the RSC flight payload and
+ * sat in view-source under `"flag":"CRITICAL"`. "The label no longer
+ * renders" and "the word no longer reaches the member" are two different
+ * claims, and only the second one is the doctrine. The journey caught it
+ * by reading the emitted HTML rather than the rendered text.
+ *
+ * So the component is handed the member's own view: the resolved label, or
+ * nothing at all. There is no field on this shape that could carry the
+ * company's word, which is the difference between a rule and a habit.
+ */
+type MemberField = {
+  id: unknown;
+  name: unknown;
+  value: unknown;
+  flag: MemberFlag | null;
+};
+
+function toMemberField(f: FieldRecord): MemberField {
+  return { id: f.id, name: f.name, value: f.value, flag: memberFlag(f.flag) };
+}
+
 /** The intake instrument's field names are long internal prompts; the client
  * sees a clean title (text before the first colon) with the detail demoted. */
 function splitName(name: string): { title: string; detail: string | null } {
@@ -94,15 +121,16 @@ function ClientField({
   f,
   pending,
 }: {
-  f: FieldRecord;
+  f: MemberField;
   pending: boolean;
 }) {
   const { title } = splitName(String(f.name));
+  const mf = f.flag;
   return (
-    <div className={`field ${f.flag && f.flag !== "none" ? String(f.flag) : ""}`}>
+    <div className={`field ${mf ? mf.cls : ""}`}>
       <span className="fname">
         {title}
-        {f.flag && f.flag !== "none" ? <span className={`tag ${String(f.flag)}`}>{String(f.flag)}</span> : null}
+        {mf ? <span className={`tag ${mf.cls}`}>{mf.label}</span> : null}
       </span>
       <div className="fval">{String(f.value)}</div>
       {pending ? (
@@ -187,7 +215,12 @@ export default async function ClientPlaybook({
   const captured = visible.filter((f) => f.value);
   const uncapturedCount = visible.length - captured.length;
   const summary = captured.find((f) => String(f.name).startsWith("Household summary paragraph"));
-  const flagged = captured.filter((f) => f.flag && f.flag !== "none" && f !== summary);
+  // Grouped by the flags a MEMBER can see, not by every flag that exists.
+  // A DELIGHT field would otherwise be lifted into this section with no tag
+  // on it, which is the categorisation reaching them through position
+  // instead of through words. Reported as a reading of the ruling rather
+  // than as something it said in as many terms.
+  const flagged = captured.filter((f) => memberFlag(f.flag) && f !== summary);
   const rest = captured.filter((f) => f !== summary && !flagged.includes(f));
 
   return (
@@ -270,9 +303,9 @@ export default async function ClientPlaybook({
 
       {flagged.length > 0 && (
         <div className="card">
-          <h2>Worth knowing</h2>
+          <h2>Things to keep an eye on</h2>
           {flagged.map((f) => (
-            <ClientField key={String(f.id)} f={f} pending={pendingByField.has(String(f.id))} />
+            <ClientField key={String(f.id)} f={toMemberField(f)} pending={pendingByField.has(String(f.id))} />
           ))}
         </div>
       )}
@@ -302,7 +335,7 @@ export default async function ClientPlaybook({
               {rest
                 .filter((f) => f.section === sec)
                 .map((f) => (
-                  <ClientField key={String(f.id)} f={f} pending={pendingByField.has(String(f.id))} />
+                  <ClientField key={String(f.id)} f={toMemberField(f)} pending={pendingByField.has(String(f.id))} />
                 ))}
             </div>
           ))

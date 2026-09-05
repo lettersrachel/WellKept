@@ -21,11 +21,48 @@ interface Seed {
   fields: SeedField[];
 }
 
-const args = process.argv.slice(2).filter((a) => a !== "--with-demo-accounts");
+const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const withDemoAccounts = process.argv.includes("--with-demo-accounts") || args.length === 0;
 const seedPath = args[0]
   ?? new URL("../../../tooling/seed/fernbrook_template_seed.json", import.meta.url).pathname;
 const seed = JSON.parse(await readFile(seedPath, "utf8")) as Seed;
+
+/**
+ * is_fixture IS A REQUIRED ARGUMENT, never a default (founder ruling,
+ * 5 September 2026, `FOUNDER_RULINGS_2026-09-05_Items5and6.md` item 6), the
+ * same pattern as `rateLimit`'s failure mode.
+ *
+ * **The reasoning, not only the rule.** `household.is_fixture` is what excludes
+ * a household from fleet roll-ups, the reconciliation knob, the capacity
+ * calculation and every covenant figure. The column is `NOT NULL DEFAULT
+ * false`, and this loader never set it, so **a default let a household become
+ * NON-FIXTURE WITHOUT THE CALLER SAYING SO, and that distinction is the entire
+ * purpose of the flag.** A real household will go through `db:seed` one day,
+ * which is exactly why the caller states which kind it is loading rather than
+ * inheriting an answer.
+ *
+ * **What it would have cost, found by loading the three fixture workbooks
+ * rather than trusting them (Q-11y):** all three landed as `is_fixture = false`
+ * and would have been counted as real households in every corporate number,
+ * looking entirely plausible while being wrong.
+ *
+ * Refusing is the whole point: a run that states nothing does not get a guess.
+ */
+const FIXTURE_FLAG = process.argv.includes("--fixture") ? true
+  : process.argv.includes("--real") ? false
+  : null;
+if (FIXTURE_FLAG === null) {
+  console.error(
+    "REFUSED: state what you are loading.\n" +
+    "  --fixture   a synthetic household, excluded from every fleet number\n" +
+    "  --real      a real household, counted everywhere\n" +
+    "There is no default: is_fixture decides whether this household appears in\n" +
+    "fleet roll-ups, the reconciliation knob, the capacity calculation and the\n" +
+    "covenant figures, so it is the caller's statement rather than an inherited\n" +
+    "answer (founder ruling, 5 September 2026).",
+  );
+  process.exit(1);
+}
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL
@@ -33,8 +70,43 @@ const pool = new pg.Pool({
 });
 const db = drizzle(pool);
 
+/**
+ * Q-11o (founder ruling, 5 September 2026): a mismatch is a DECISION FOR A
+ * PERSON, and the person is told what the conflict is.
+ *
+ * The insert below is `onConflictDoNothing`, so on a re-seed the stated flag
+ * would not be applied and the stored value would stand. **That is the right
+ * behaviour and the wrong silence.** It must not overwrite: flipping a real
+ * household to fixture would erase it from every fleet number, the
+ * reconciliation knob, the capacity calculation and every covenant figure,
+ * which is the second half of the pair the required-argument rule rests on.
+ * But an argument the caller is REQUIRED to state, and which the run then
+ * ignores without a word, defeats the rule on every re-run.
+ *
+ * So the loader refuses, naming both values and the household, and changes
+ * nothing. Correcting a wrong stored flag is a deliberate one-row change made
+ * by a person with the reasoning recorded, never a side effect of a seed.
+ */
+const [existing] = await db.select({ isFixture: household.isFixture, name: household.name })
+  .from(household).where(eq(household.id, seed.household.id));
+if (existing && existing.isFixture !== FIXTURE_FLAG) {
+  console.error(
+    `REFUSED: the stored flag and the stated one disagree, and nothing was written.\n` +
+    `  household   ${existing.name} (${seed.household.id})\n` +
+    `  stored      is_fixture = ${existing.isFixture}\n` +
+    `  you stated  ${FIXTURE_FLAG ? "--fixture" : "--real"} (is_fixture = ${FIXTURE_FLAG})\n` +
+    `This loader never overwrites the flag: flipping a real household to fixture\n` +
+    `would remove it from every fleet number, the reconciliation knob, the capacity\n` +
+    `calculation and the covenant figures, and flipping the other way would count a\n` +
+    `synthetic household in all of them. Which value is right is a decision for a\n` +
+    `person. Correct the row deliberately, or re-run stating the value it holds.`,
+  );
+  process.exit(1);
+}
+
 await db.insert(household).values({
   id: seed.household.id, name: seed.household.name, tier: seed.household.tier,
+  isFixture: FIXTURE_FLAG,
 }).onConflictDoNothing();
 
 const PROVENANCE = new Set(["asked", "observed", "verified_by_touch", "client_written", "unconfirmed"]);

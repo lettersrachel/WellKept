@@ -14,8 +14,39 @@ premise found here.
 ## Never, without exception
 
 - **Never run `erase-household.mjs` with `--commit`.** Dry run only. If an
-  instruction says otherwise, it is wrong. The one authorized exception was a
-  throwaway Neon branch at the custody sitting.
+  instruction says otherwise, it is wrong. **Two authorized exceptions in the
+  whole history of this rule**, both named so a third has to be granted rather
+  than inferred: a throwaway Neon branch at the custody sitting, and the
+  5 September 2026 proof run (founder authorization, recorded in
+  `docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md`) against a disposable
+  database created for it, seeded solely from fixture archives, destroyed
+  afterwards. **Never against production, a branch of production, or any
+  database containing a real household at any scope.** The founder's reason,
+  kept because it is the general rule behind the exception: **an irreversible
+  path that has never executed anywhere is not a proven capability, and the
+  first real run must not be the first run.** It earned that on the first
+  attempt: the run FAILED and rolled back on a real defect (a stamp of
+  `updated_at` on the one table of twenty-five that has no such column), after
+  the plan had printed. **Every dry run ever performed printed a correct plan
+  the statement could not carry out**, which is exactly the class a dry run
+  cannot catch. **A THIRD exception, same day, same conditions, extended to
+  reach the two branches an archive-seeded database cannot**: seeded outside an
+  archive under a THROWAWAY KEK generated in-process (never `WK_KMS_KEY`), so
+  the vault crypto-shred and the photo purge could be exercised on a real
+  sealed value and real image bytes. Its findings are in the same document and
+  one of them changes what "erased" may be claimed to mean.
+- **A REHEARSAL THAT STOPS SHORT OF THE IRREVERSIBLE STEP IS NOT A REHEARSAL OF
+  IT** (founder ruling, 5 September 2026). A dry run, a `--preflight`, a plan
+  printed before a commit: each proves everything up to the line it declines to
+  cross, and nothing at all about that line. **G-125 is the instance.** The
+  erasure tool's failure lived PAST what a dry run prints and INSIDE a
+  transaction a dry run never opens, so the rehearsal was not merely
+  insufficient, it was structurally incapable: no number of dry runs, however
+  careful, could reach the statement that failed. Read beside the
+  prove-it-both-directions rule, which this sharpens: the accepting direction
+  of an irreversible operation cannot be proven by anything that does not
+  perform it. Where the real thing cannot be run, say so and name what is
+  therefore unproven, rather than letting the rehearsal's pass stand in for it.
 - **Never echo `DATABASE_URL`, `WK_KMS_KEY`, `AUTH_SECRET`, or the contents of
   `.neon-connection`.** Refer to them by name.
 - **Never build per-person analytics.** No performance scoring, productivity
@@ -43,6 +74,21 @@ premise found here.
   close.
 - **Never load real household data into fixtures or tests.** Fernbrook DEMO and
   the Smoke Test Fixture only.
+- **Certification and training stay INTERNAL, and if they ever go
+  external they go BESIDE the staff application, never inside it**
+  (founder ruling, 5 September 2026, on
+  `docs/EXTERNAL_CERTIFICATION_FEASIBILITY.md`). Recorded as doctrine
+  rather than as a preference so nobody designs toward the foreclosed
+  path. **The path that is foreclosed, named so it is recognisable:**
+  `getStaffIdentity` derives staff identity from
+  `household_role_assignment` and returns null for a person who holds
+  none, so belonging to a household is how this system knows who anyone
+  is. Making an external trainee work INSIDE the app therefore means
+  giving a stranger a household assignment, which puts them inside the
+  mechanism tenant isolation rests on. That is not a cost to weigh; it
+  is the thing not to do. A future Q-16 credential object must not
+  assume a household, and any training surface for a non-employee is a
+  separate application consuming the scenario bank as data.
 
 ## The audit invariant
 
@@ -102,7 +148,7 @@ row here fails CI, so the table cannot silently go stale.
 | Guard | Enforces | Not covered |
 |---|---|---|
 | payload guards (`permissions.test.ts`) | client responses never carry staff-only rows | new routes until wired |
-| `erasure-coverage.test.ts` | household-referencing tables named in the erasure tool | whether the treatment is correct |
+| `erasure-coverage.test.ts` | household-referencing tables named in the erasure tool; and, since Q-6g, that the naming is not PROSE ALONE: the tool's source is stripped of comments and every table must appear in what is left, detected by the ABSENCE of any statement rather than by the presence of a particular SQL shape, so a deliberate no-op recorded as code passes | whether the treatment is CORRECT, which no census can read. The floor of the first test is still being NAMED (founder ruling, 4 September 2026), so a comment satisfies that half exactly as a query does; the second test is what stops a treatment that exists only in the header |
 | `client-copy.test.ts` (five scopes plus the copy census) | no em dashes in client pages, staff pages, hand-held templated copy sources, legal documents, or the root operator documents (DEPLOY.md, CLAUDE.md, README.md); and the census DERIVES the copy-emitting surfaces from three rules (every `.tsx` the web app renders, every file that sends mail or push, every file carrying `recorded()`/`refuse()` operator copy, and every file a `db:` script points at, since a seed writes CONTENT a surface then renders), each with a floor, so scope is computed rather than remembered | free text a person writes into a sentence the rules cannot see; the hand-held residue, which stays a reviewed list because no syntax separates a sentence from an identifier; the exact FRAGMENTS named in `CENSUS_EXCUSALS` and in `ROOT_DOC_EXCUSALS`, which is the complete written inventory of what is deliberately unscanned. Excusals are fragment-scoped, never file-scoped: a file-level hatch is always wider than the exception it was opened for, and the first version of this list proved it by excusing the client report email's subject line inside an exception written for the staff alert beside it. The scan also reads entity forms (`&mdash;`, `&#8212;`, `&#x2014;`), since an em dash can reach a reader without ever appearing as U+2014 in source |
 | `sizes` CHECK constraint | `kind = 'sizes'` cannot be s1 | any other child-data kind until classified |
 | `child-data-kinds.test.ts` | every registry kind classified child-data or client-safe; child kinds carry a CHECK; CHILD_DATA.md covers every surface | free-text content a database cannot read |
@@ -178,6 +224,20 @@ built it.
   access from a known relationship (per-identity auth, the one-role
   index, revocation audited).
 
+  **The stopwatch item is a SETTLED CONFLICT as of 5 September 2026, not a
+  standing tension.** ExecutionActual's seven per-visit time segments are
+  **STRUCK, not deferred** (founder ruling,
+  `FOUNDER_RULINGS_2026-09-05_Blockers.md` decision 3). Section 29 wins; the
+  stated reason is the never-measured doctrine rather than cost, and E2
+  carries the weaker visit-minutes-per-household metric instead. **Struck
+  rather than deferred so nobody reopens it later while looking for a better
+  metric**, and the standing instruction that travels with it: **FLAG ANY
+  FUTURE QUEUE ROW THAT WOULD REINTRODUCE PER-TASK TIMING**, rather than
+  sizing it. It does not touch `time_segment`, whose nine-kind taxonomy
+  already makes manual per-segment timing unrepresentable by construction:
+  what is struck is a spec's demand for seven captured actuals, not the
+  schema that refuses to capture them.
+
   **Ten add something this file did not say**, and are adopted as
   written: no generic AI chat box as the primary service interface; no
   generic "Well Kept Verified" badge without an exact definition; no
@@ -220,6 +280,20 @@ and the Q-0b session log records "already stated".
   move behind E1; E1 does not move. The name decision is excluded and
   lands 25 September 2026. The design arc stays closed (A133); a feature
   enters a higher tier only if a milestone test would fail without it.
+
+  **Amended 5 September 2026 (founder addition): a shadow-mode feature
+  is turned ON for the test households THE DAY IT SHIPS, so data
+  accumulates from now rather than from E2.** This promotes nothing and
+  does not touch the freeze: shadow still means computes, logs, visible
+  in the corporate portal, surfacing to no member and altering no HOM
+  briefing. It changes WHEN accumulation starts, which is what makes the
+  E2 promotion delta measurable against a baseline instead of against
+  nothing. Two things it needs and does not have, both reported on queue
+  row Q-11s: **no shadow-enablement mechanism exists in this tree**
+  (`shadow_log` is the anticipation engine's own output, and
+  `app_setting` holds no such switch), and **which three test households
+  is the founder's to name**, since the tree holds six and the intake's
+  F-1, F-2 and F-3 do not exist yet.
 
 - **Quiet hours.** No client-facing notification between 21:00 and 07:00
   household time. Replies to inbound member messages are exempt
@@ -337,6 +411,66 @@ and the Q-0b session log records "already stated".
   the six launch patterns, portability, source revision intelligence)
   is a consumer of the outbox, never a field attribute, and enters
   through the RFC-ATTR-01 amendment and the re-cut queue.
+
+## Client-side and HOM-side doctrine (founder rulings, 4 September 2026)
+
+Ruled before any member surface is built. **The full text, with the
+current contradictions reported beside each item, is
+`docs/DOCTRINE_CLIENT_AND_HOM.md`**; the load-bearing edges are here
+because a constraint that forecloses a build has to be met by the
+session that would have built it.
+
+- **The member is never asked** to categorize their own tasks, to check
+  whether something happened, to rate a visit, to confirm what the
+  record already knows, or nudged to engage. **The refusal is the
+  differentiator.** Correcting a fact and granting authority are
+  different acts and are permitted; being asked to do the product's
+  work is not.
+- **A weekly contact ceiling of THREE across every channel**: the
+  digest plus up to two decisions, with urgent sends under the
+  materiality rules exempt. **Live contradiction, Q-11c:** two
+  member-reaching channels exist (the digest, and the client report on
+  every applied visit) and neither is counted.
+- **The member never sees the machinery.** No stages, modes, confidence
+  scores, inference labels, capture artifacts or knowing-states.
+  **Live contradiction, small and specific:** the client playbook
+  renders the internal field flag verbatim, so a member sees
+  `CRITICAL`, `CAUTION` or `DELIGHT` on their own record.
+- **A member may always correct a fact about themselves and always
+  change a standing instruction.** Everything else goes through their
+  HOM, because the relationship is the product rather than the
+  interface. The second half has no member path today; the freeze
+  covers that, and this is the reason it must exist when the freeze
+  lifts.
+- **The voice rule, substantively:** plain, brief, never cheerful,
+  never apologetic, never "we noticed", never a phrase that implies the
+  household is being watched. It sits beside the copy guard in that
+  file's header, so the guard has a stated intent rather than only a
+  pattern.
+- **The software never asks a HOM** to justify her time in the app, to
+  rate her own performance, to explain a gap, or to compete with
+  another HOM. The judgment-free guard bars the schema fields; this
+  bars the interactions. A reason attached to WORK is a record; the
+  same field attached to a PERSON is a justification.
+- **Never measured about her, corporate-only included:** speed per
+  task, idle time, app dwell, location outside a visit. **A measure
+  which exists is eventually used**, which is why the schema holds the
+  hardest part structurally (`task_occurrence` stores no performer at
+  all).
+- **Dissent is a first-class action, not a note field**, and it reaches
+  corporate. **A system that records only compliance trains its
+  operators to stop noticing.** Built for prompts, absent everywhere
+  else (Q-11f).
+- **She sees the full permitted record for her assigned households,
+  standing**, not need-to-know per visit. Judgment requires context.
+- **A mode demotion is developmental.** The software never initiates a
+  performance action. Read beside the adopted mode-logic law below:
+  automatic DEMOTION is permitted, an automatic PERFORMANCE ACTION is
+  not, and this is what keeps the two apart when one event could be
+  read either way.
+- **Her own data is hers**: visible, exportable when she leaves, and
+  retained afterwards only as far as the household's continuity
+  requires (Q-11h; one third built).
 
 ## Boundary (ADR-004)
 
@@ -476,6 +610,61 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   writer visible. The rule is narrow on purpose: a default that
   expresses a real invariant every row satisfies by construction is
   fine. This is about columns whose value is an assertion someone made.
+- **The same principle applied to BEHAVIOUR: where a helper's failure
+  mode is a decision, it is a REQUIRED ARGUMENT, never a default**
+  (founder ruling, 5 September 2026, on the security self-audit). The
+  rule above is about data, this one is about code, and the reasoning is
+  identical: **an inherited default is indistinguishable from a decided
+  answer.** A call site that took the default and a call site where
+  someone weighed the question and chose look exactly the same in the
+  diff, in review, and to the next reader.
+  **The instance that proved it:** `rateLimit` failed OPEN everywhere,
+  with the reason written down and defensible. When the ruling split it
+  (closed on the sign-in path, open only where blocking is worse than
+  allowing), making the mode a required argument forced every existing
+  call site to be visited, **and that is what surfaced two MFA sites
+  nobody had considered** in the audit that prompted the ruling. They
+  turned out to be the clearest case in the whole set, since a six-digit
+  TOTP is the most brute-forceable secret in the system. A default would
+  have carried them silently into the new world with the old answer.
+  The rule is narrow in the same way its data twin is: a default that
+  expresses an invariant every caller satisfies by construction is fine.
+  This is about parameters whose value is a judgment someone made.
+
+  **THE CLEAREST ARGUMENT FOR THE PATTERN IN THIS TREE IS A PAIR, and it is
+  recorded as a pair rather than as two findings** (founder, 5 September 2026),
+  because either half alone reads as a one-off and the two together are the
+  whole case. `household.is_fixture` is `NOT NULL DEFAULT false`, and `db:seed`
+  never set it:
+  - **A fixture household loaded as real is COUNTED in every corporate
+    number**: fleet roll-ups, the reconciliation knob, the capacity
+    calculation, every covenant figure. Found by loading the three fixture
+    workbooks rather than trusting them (Q-11y); all three landed
+    `is_fixture = false` and would have looked entirely plausible while being
+    wrong.
+  - **A real household loaded as a fixture VANISHES from all of them.** The
+    same column, the same absent statement, the opposite and equally silent
+    failure. Household Green is the live instance: a real household whose
+    workbook goes through the same loader.
+
+  **MAKING AN ARGUMENT REQUIRED IS AN INTERFACE CHANGE, AND ITS CALLERS ARE
+  ENUMERATED BEFORE THE COMMIT** (founder ruling, 5 September 2026, extending
+  G-132). The pattern's whole claim is that it forces every call site to be
+  visited, and **it can only do that for call sites somebody looks for.** The
+  enumeration is explicitly wider than the source tree: **CI workflows, tooling
+  scripts and the operator documents**, because a command's callers live where
+  no test runs. The founder counts three such changes in this repository so
+  far; the tree carries many CLIs that refuse a missing input, and only some of
+  those are this pattern, which is about a value that is a DECISION rather than
+  a value that is merely absent.
+  **The instance:** `is_fixture` became required on `db:seed`, `ci.yml` calls
+  that loader in both jobs and passed no flag, and both CI jobs died at the seed
+  step for five commits while the local suite stayed green (G-132).
+
+  **The required argument is what makes both STATABLE rather than DEFAULTED.**
+  Neither direction is a wrong value; both are a value nobody chose, and no
+  reading of the data afterwards can tell a default from a decision. That is
+  the pattern's whole claim, and here it costs one word at the call site.
 - **Generated migration SQL is READ before it is applied.** `drizzle-kit`
   emitted 0058's two composite foreign keys BEFORE the unique index they
   reference; Postgres refused with "there is no unique constraint
@@ -494,6 +683,40 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 - **Stop and ask rather than choosing a threshold, taxonomy, or default.** A
   blank is a fine deliverable. A plausible default looks like a decision
   somebody made.
+- **Standing authority, so the run does not stall** (founder rulings Part
+  Two, 4 September 2026, `docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md`).
+  These are pre-authorized and REPORTED rather than asked:
+  - **The standing tiebreak.** When a decision is genuinely close on
+    merit, and it is not two-key, not member-facing, and not a semantics
+    change to a shipped primitive, take the option that keeps existing
+    meanings intact, open a row for the alternative, and report the call.
+    **A close call is a report, not a question.**
+  - **Migration splits.** An item that turns out to need more than one
+    migration splits into consecutive sessions on your own judgment,
+    stated in the plan. One migration per session still holds.
+  - **Queue-row corrections.** When a census contradicts a queue row,
+    correct the row and record both the correction and the evidence. The
+    original claim stays visible as wrong rather than being deleted.
+  - **Guard findings are rows, not questions.** When a red proof surfaces
+    a weak or mis-scoped guard, open a queue row with both-directions
+    acceptance criteria and continue. Bring it up only if fixing it would
+    change a shipped behaviour or touch a two-key adoption.
+  - **Deploy authority for shadow and server-only work.** You may run
+    `tooling/deploy.sh` yourself, after preflight, when ALL THREE hold:
+    the merge carries no member-facing change; every pending migration is
+    additive; and preflight reports exactly what the plan predicted.
+    Report the transcript. Founder approval stays required for anything
+    member-facing, anything non-additive, and any deploy where preflight
+    reports something unexpected, **including a surprising pending
+    count**.
+  - **Missing specs do not stop the run.** When an item's spec is not in
+    the repository, open the blocked row with the intake condition named
+    and proceed to the next unblocked item.
+- **Never pre-authorized, and these cost a round trip every time**
+  (same ruling): anything member-facing; anything that widens an
+  allowlist, adds a guard excusal, or lowers a guard's floor; anything
+  touching a two-key adoption. They are named as a set because they are
+  exactly where a fast default goes wrong quietly.
 - Read-only sessions are read-only. Report findings; do not fix.
 - Quote evidence: file and function, for every claim. "Unverifiable" is a valid
   finding. Do not infer.
@@ -501,6 +724,69 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 
 ## Verification, learned the hard way
 
+- **A CHECK THAT COUNTS, MATCHES OR SEARCHES THE WRONG UNIT REPORTS A
+  CONFIDENT NUMBER ABOUT A QUESTION IT NEVER ASKED** (founder ruling,
+  5 September 2026, naming the class after its fourth instance in one day).
+  Every one of these produced a clean, plausible answer. None of them was an
+  error in the check; each was an error in what the check was pointed at, which
+  is why none of them looked wrong.
+
+  **The four instances, all 5 September 2026 except where noted:**
+  1. **A count of the wrong rows.** The Task Inventory's UNCERTAIN rows were
+     reported as FIFTEEN by counting LINES containing the word; there are
+     EIGHT, and the document says "the eight UNCERTAIN rows" two screens above
+     the number reported. Seven of the fifteen were the document's own prose
+     explaining what the word means.
+  2. **An assertion that only counted.** The operational-health restore drill
+     re-inserted a row hashed `operational-health-proof-restore`, which put the
+     migration COUNT back and left the table asserting that a migration nobody
+     wrote had been applied. **It passed its own assertion, because the
+     assertion counted rows rather than reading them.**
+  3. **A guard matching a comment.** `erasure-coverage` matches a table NAME
+     anywhere in the tool, so a comment satisfies it exactly as a query does.
+     That one is a DECISION written in the guard's own header (the floor is
+     being NAMED), and it belongs in this list anyway, because the unit the
+     guard matches and the unit a reader assumes it matches are different, and
+     Q-6-1 reported the difference as a defect before reading the header.
+  4. **An audit searching by location** (G-124). The security self-audit
+     enumerated `apps/web/src/app/api -name route.ts` and concluded the web
+     magic-link path had no rate limit. The sign-in routes are route handlers
+     that do not live under `api/`. **The empty result was read as evidence of
+     absence**, inside an audit whose entire purpose was to look. Itself a
+     repeat of G-106, where `ls docs` plus a grep over `docs/*.md` could not
+     see a `.docx` one directory down.
+
+  **A FIFTH, and it is the one that decides what the remedy can be.** An hour
+  after this class was named, reconciling WK-SEC-001's scope against the tree,
+  a search for `S3` returned many hits and **every one was the sensitivity tier
+  `s3`**; there is no object storage in this system. "Object storage confirmed
+  present" was one grep away and would have entered a handoff package as a
+  verified fact, **inside the document reporting instances one through four**.
+  Caught by reading the hits rather than counting them. **So the remedy cannot
+  be "be careful": care was present, and the class recurred under the attention
+  of the session that had just named it.** It has to be procedural.
+
+  **The remedy was the same in all five and it is the rule: READ THE THING
+  ITSELF.** Open the document and count its rows; read the restored value and
+  not the row count; read the guard's header before reporting its behaviour;
+  find the routes by what they DO rather than by where they sit. **Before
+  trusting any count, match or search, say out loud what unit it returns and
+  what unit the question is about**, and if those two sentences are not the
+  same sentence, the number is about something else. This is the sharper form
+  of the standing state-the-UNIT convention: that one is about reporting a
+  count honestly, this one is about the count being an answer to the question
+  at all. **Say the two units out loud before trusting any number, every time,
+  including when you have just finished explaining why.**
+- **A GREEN SUITE IS REPORTED WITH WHAT IT COVERS AND WHAT IT DOES NOT, IN THE
+  SAME BREATH, OR CI'S STATE IS REPORTED INSTEAD** (founder ruling, 5 September
+  2026, as the remedy for the class rather than as advice). "Suite 11/11
+  uncached" was TRUE on five consecutive commits while both CI jobs were failing
+  at a step the local suite does not run, so the claim was true and answered a
+  different question from the one being asked. **"Suite green, CI not yet run on
+  this head" would have surfaced it five commits earlier**, which is the whole
+  cost of the omission. This is the G-129 family arriving as a PASS FROM THE
+  WRONG HARNESS rather than as a count of the wrong unit: say which harness ran,
+  and say what it does not reach.
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**
@@ -636,6 +922,24 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   moment the register moves.** Grep the entry id across `CLAUDE.md`,
   `DEPLOY.md` and `docs/` before treating any such clause as current,
   and when an addendum lands, fix every copy in the same change.
+- **On a member surface, NOT RENDERING IS NOT THE SAME AS NOT SENDING**
+  (founder ruling, 5 September 2026). The RSC flight payload carries what a
+  COMPONENT RECEIVES, not what it draws, so a prop that is read and discarded
+  still travels to the member's browser and sits in view-source. **Member
+  projections are therefore shaped at the BOUNDARY, never filtered at the
+  view**: the component is handed an object that has no field capable of
+  carrying the thing being withheld, rather than an object it politely declines
+  to render. **The instance:** the fix removing the internal `field_flag`
+  vocabulary from the client playbook resolved `CRITICAL` to "Needs attention"
+  in `ClientField` and passed the WHOLE field row in, so the word shipped
+  anyway under `"flag":"CRITICAL"`. The page looked right. **"The label no
+  longer renders" and "the word no longer reaches the member" are two different
+  claims and only the second is the doctrine**, and they are
+  indistinguishable on screen, which is why this is a rule and not a review
+  note. It was caught by a journey reading `page.content()` rather than
+  `innerText`, and that is the test shape for any member-facing withholding:
+  **assert against the emitted markup, because the rendered text cannot see
+  the payload.**
 - **Log-before-do is correct in the vault and nowhere else.** In the vault,
   no row must mean no value. At every other surface it produces an
   optimistic row that claims something happened before anything did, which

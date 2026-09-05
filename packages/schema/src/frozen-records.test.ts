@@ -69,6 +69,31 @@ const FROZEN: Record<string, string> = {
   "docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md": "3553b742a532987e50b6dfc507ef74a7ff694b7868ad72ae3b017788ba5dc7d0",
   // Part C (4 September): the founder's review of Q-0b, same WK-QA-018 entry.
   "docs/FOUNDER_RULINGS_2026-09-04_PartC_Q0b_Review.md": "1a9d9e4e59b2b4fb65b9558839b46061956b5b662ca0d36d0ebb48e5d8d1e02f",
+  // The no-dependency rulings, A through E, same WK-QA-018 entry. Its own
+  // title dates it 4 September and it answers a report written on the 5th;
+  // the founder's dating is kept as she wrote it and the discrepancy is
+  // reported rather than reconciled (G-123).
+  "docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md": "adfee7cef7ab5c99b627479b543158ba42fc1f8d312b32b78bd36364399673aa",
+  // "Unblocking the run", same WK-QA-018 entry and same dating question
+  // (G-123). Part One settles six carried questions; Part Two is standing
+  // authority and is merged into CLAUDE.md's session discipline.
+  "docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md": "7ac66655c577d1cd199312e238087f005389f77198b4a45ed5cd89d507d29949",
+  "docs/FOUNDER_RULINGS_2026-09-05_Blockers.md": "d751e88db6c7cc1fde00ecdc295812774fd9f48674a302c1ffd81ae119ed56a1",
+  "docs/FOUNDER_RULINGS_2026-09-05_Items5and6.md": "62abd225a44883c8ad3d4c6f11a512f849cd7ee647403aaf21c01f30caef8742",
+  // Item 9: the anchor-1 ruling (the scale starts at 1), the two forms staying
+  // unfused, and the three-absent-documents pattern. Same WK-QA-018 entry.
+  "docs/FOUNDER_RULINGS_2026-09-05_Item9.md": "f094d8bc542169a28de8ca5deccf0b9436fb2063398f261a20b23655c46d4104",
+  // G-53 (the four-value vault reveal outcome vocabulary, closed), G-13
+  // reclassified as a hiring precondition, and the return to the queue.
+  "docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md": "fca701cf0b61fb473c0ab4da8289369b36594376e868f20b6fba8a4895a53a70",
+  // The preparation batch: twelve items that run ALONGSIDE the build
+  // queue rather than instead of it. Document-only unless an item says
+  // otherwise. Same WK-QA-018 entry and same dating question (G-123).
+  "docs/PREPARATION_BATCH_2026-09-04.md": "fcd612e41be398e37951489bc5256725d19928eced213dfb7abf2506ced39adb",
+  // The comprehensive instruction: client and HOM doctrine, the security
+  // self-audit, proactive assurance, corporate capabilities, queue rows and
+  // the shadow-now ruling. Same WK-QA-018 entry, same dating question (G-123).
+  "docs/COMPREHENSIVE_INSTRUCTION_2026-09-04.md": "f87ba197f9745c7583d224a501b06eb62596b555caa7c415495414636880a7bc",
   // The 4 September founder values package (document-only intake, the
   // Q-0b shape): received bytes frozen verbatim; .md hashes are
   // frontmatter-stripped, .csv/.yaml hashes are whole-file (no

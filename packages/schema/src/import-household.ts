@@ -99,6 +99,34 @@ const { rows: nullableRows } = await pool.query(
 const nullable = new Set(nullableRows.map((r: { t: string; c: string }) => `${r.t}.${r.c}`));
 
 /**
+ * The json/jsonb columns, computed the same way, because node-postgres
+ * serializes a JS OBJECT to JSON and a JS ARRAY to a POSTGRES ARRAY LITERAL.
+ *
+ * So a jsonb column holding `{"location":"basement"}` round-trips and one
+ * holding `["a","b"]` arrives as `{a,b}` and Postgres refuses it as invalid
+ * json. **The two failure modes are not symmetric and that is what hid this:**
+ * every archive restored before 5 September 2026 happened to carry objects
+ * only, so the portability proof passed while exercising one of the two
+ * shapes. The authorized erasure run restored a second fixture and the
+ * importer refused on `decision_record.alternatives`, which is the first
+ * jsonb ARRAY any restore has met.
+ *
+ * The fix is to stop relying on the driver's guess and say what the column is.
+ * Stringifying is correct for every json value, not only arrays: an object
+ * arrives as the same JSON text the driver would have produced, and a bare
+ * string arrives as a quoted json string rather than as invalid json, which is
+ * the third shape nobody had hit yet either.
+ */
+const { rows: jsonRows } = await pool.query(
+  `SELECT table_name AS t, column_name AS c FROM information_schema.columns
+    WHERE table_schema = 'public' AND data_type IN ('json','jsonb') AND table_name = ANY($1::text[])`,
+  [carried],
+);
+const jsonCols = new Set(jsonRows.map((r: { t: string; c: string }) => `${r.t}.${r.c}`));
+const bind = (table: string, col: string, value: unknown) =>
+  value != null && jsonCols.has(`${table}.${col}`) ? JSON.stringify(value) : value;
+
+/**
  * A self-referencing foreign key is deferred by writing ONE of its
  * columns NULL, which under MATCH SIMPLE switches the whole constraint
  * off for that row, and filling it back in once the table is complete.
@@ -203,14 +231,14 @@ try {
       const conflict = isGlobal ? " ON CONFLICT (id) DO NOTHING" : "";
       await c.query(
         `INSERT INTO "${table}" (${cols.map((k) => `"${k}"`).join(",")}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(",")})${conflict}`,
-        cols.map((k) => r[k]),
+        cols.map((k) => bind(table, k, r[k])),
       );
       inserted++;
     }
   }
   // The self-references, once every row of their own table exists.
   for (const d of deferred) {
-    await c.query(`UPDATE "${d.table}" SET "${d.col}" = $1 WHERE id = $2`, [d.value, d.id]);
+    await c.query(`UPDATE "${d.table}" SET "${d.col}" = $1 WHERE id = $2`, [bind(d.table, d.col, d.value), d.id]);
   }
 
   await c.query("COMMIT");

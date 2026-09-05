@@ -37,3 +37,28 @@ export const CREDENTIAL_NAMES = {
   certifiedLevelI: "Certified Household Operations Manager, Level I",
   certifiedLevelII: "Certified Household Operations Manager, Level II",
 } as const;
+
+/**
+ * The backup retention window, as stated to members in the privacy notice.
+ *
+ * Founder ruling, 5 September 2026, on gap register G-128: the retention floor
+ * is stated to members as what it is, naming the window. Deletion is complete
+ * and immediate at the application layer, and the database backups still carry
+ * the information for a bounded period afterwards; recovery from one is a
+ * controlled and audited act.
+ *
+ * **NULL, AND DELIBERATELY SO.** The window depends on the database plan
+ * (LAUNCH.md records it as "at least 7 days" and says the figure depends on the
+ * plan), so the actual value is a founder-side fact this repository does not
+ * hold. **A plausible number here would read exactly like a verified one** and
+ * would be a claim to members about how long their deleted information exists,
+ * which is the worst possible place for a guess.
+ *
+ * While it is null the privacy notice renders the whole true paragraph and
+ * OMITS the clause that names the window. Nothing false ships, nothing
+ * placeholder-shaped ships, and the sentence is incomplete rather than wrong.
+ * Set it to the value from the Neon plan (for example "30 days") and the clause
+ * appears. The master notice at `docs/legal/privacy-notice.md` carries the same
+ * blank for counsel.
+ */
+export const BACKUP_RETENTION_WINDOW: string | null = null;

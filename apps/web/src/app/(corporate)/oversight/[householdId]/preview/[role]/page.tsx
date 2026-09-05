@@ -8,6 +8,7 @@ import { ProvisionList } from "@/app/ProvisionList";
 import { getHouseholdAndPrincipalById, getFields, getOpenDots, getUpcomingPackItems, getDeltasSince, getSeasonRecall, getRegistries } from "@/lib/data";
 import { latestAppliedVisit } from "@/lib/visit-command-store";
 import { RegistryCard } from "@/app/RegistryCard";
+import { memberFlag } from "@/lib/member-flag";
 
 export const dynamic = "force-dynamic";
 // Headroom over Vercel's ~10s default (2026-07-27, see drill-in note): a slow
@@ -67,7 +68,11 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
     const captured = visible.filter((f) => f.value);
     const uncapturedCount = visible.length - captured.length;
     const summary = captured.find((f) => String(f.name).startsWith("Household summary paragraph"));
-    const flagged = captured.filter((f) => f.flag && f.flag !== "none" && f !== summary);
+    // Grouped and labelled through the MEMBER's reading of the flag, the same
+    // module the real client page uses. A preview that showed the raw enum
+    // would be showing something the member does not see, which defeats the
+    // only reason this page exists.
+    const flagged = captured.filter((f) => memberFlag(f.flag) && f !== summary);
     const rest = captured.filter((f) => f !== summary && !flagged.includes(f));
 
     return (
@@ -95,10 +100,10 @@ export default async function RolePreview({ params }: { params: Promise<{ househ
         <RegistryCard entries={await getRegistries(hh.id, "client")} />
         {flagged.length > 0 && (
           <div className="card">
-            <h2>Worth knowing</h2>
+            <h2>Things to keep an eye on</h2>
             {flagged.map((f) => (
-              <div key={String(f.id)} className="field">
-                <span className="fname">{String(f.name).split(":")[0]}<span className={`tag ${String(f.flag)}`}>{String(f.flag)}</span></span>
+              <div key={String(f.id)} className={`field ${memberFlag(f.flag)?.cls ?? ""}`}>
+                <span className="fname">{String(f.name).split(":")[0]}<span className={`tag ${memberFlag(f.flag)?.cls ?? ""}`}>{memberFlag(f.flag)?.label}</span></span>
                 <div className="fval">{String(f.value)}</div>
               </div>
             ))}

@@ -144,6 +144,14 @@ if (set.some((t) => t.projected)) knownLosses.push(ARCHIVE_PHOTO_LOSS);
 if (scope === "member") {
   knownLosses.push(
     "This is the MEMBER scope: it carries only what the portability line names and what the tree has already decided reaches the household. It is deliberately NOT a complete copy of the record; the corporate scope is.",
+    // The photo asymmetry, stated rather than left to be noticed (founder
+    // ruling, 5 September 2026). visit_photo is in the member scope and every
+    // duration-carrying table is held out, so an archive can carry the
+    // reference to a photograph taken during a visit and nothing about the
+    // visit. That is a consequence of two rulings made separately rather than
+    // a decision anybody took, and it stands until freeze packet item A is
+    // ruled. Ugly and honest is the right order.
+    "Visits are ABSENT and photo references are present, so this archive can name a photograph taken during a visit while carrying nothing about the visit itself: not when it happened, what was done, or by whom. Work history is empty for the same reason. The rule holding visits out is D7 and the question of whether a member's own exported record is covered by it is open.",
   );
 }
 
