@@ -798,6 +798,21 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   later. **A convention that only catches other people is a preference; this one
   is worth keeping because it caught its own author on the day it was
   adopted.**
+  **THE SHARPER FORM, folded in rather than left adjacent (founder ruling, the
+  same day, after the second instance): A RESULT MUST BE READ BEFORE IT CAN BE
+  DESCRIBED, AND A REPORT CHAINED BEHIND AN UNREAD COMMAND IS A CLAIM ABOUT
+  INTENTION.** Naming what one meant to do is not reporting what happened, and
+  the two are indistinguishable in a commit message.
+  **The mechanism is the CHAINING rather than carelessness**, and it is stated
+  as a mechanism because that is what can be avoided: both of the day's
+  instances put a claim and the command it describes in one shell chain, so the
+  claim was composed before the outcome existed. `cmd; git commit -m "did X"`
+  writes the message whether or not `cmd` did X, and `a && b` skips `b` on
+  failure while any later chained step still runs. The two instances, both the
+  author's: a suite reported 11/11 that had just failed on a stopped Postgres,
+  and a commit that said a queue row was corrected when the edit had thrown on a
+  wrong cell index. **Read the result, then write the sentence**: separate
+  steps, or a command whose own output is quoted into the claim.
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**

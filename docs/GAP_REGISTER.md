@@ -8317,3 +8317,40 @@ surfaced this five commits earlier.** The claim that was made was true and
 answered a different question from the one she was asking, which is the G-129
 family arriving as a PASS FROM THE WRONG HARNESS rather than as a count of the
 wrong unit.
+
+---
+
+### G-133 REPORTED, 5 September 2026: a queue row that disagreed with itself passed every reading until somebody tried to build from it
+
+**Found by** working Q-10 in queue order. Its PREREQUISITE column read
+`WK-STD-028 (not in repository)` and its STATUS column read `**NEW.**`, three
+cells apart on one line. **Both are readable, neither is false on its own, and
+together they say a row is ready to build whose named input does not exist.**
+
+**The shape, which is the reason this is an entry rather than a note.** Every
+other check in this repository compares one artefact against another: the
+schema against the erasure tool, the guard set against the manifest, the
+disclosure against the computed surface set. **Nothing checks a queue row
+against itself.** A row is read a cell at a time by a person who is looking for
+one thing, so an internal contradiction survives every reading until the
+sentence that matters is the one being acted on. Q-10's row had been in that
+state since the queue was re-cut on 3 September, read past by several sessions
+including the one that opened the rows beside it.
+
+**It cost nothing here because the row was blocked for three other reasons
+too**, all found by reading the tree: no inbound-message table exists, REQ-080's
+own text ends `GATE: with REQ-078`, and the WK-STD-028 commitment table is a
+library `.docx` the standards store does not hold as data. **That is luck rather
+than a control.** A row whose only defect was the contradiction would have been
+built from.
+
+**Guardable, cheaply, and opened as queue row Q-11q rather than built here**
+(the standing rule that a guard finding is a row). The detection is a
+same-row comparison rather than a judgment: where a prerequisite cell says a
+named input is not in the repository, the status cell must say the row is
+blocked, gated or corrected, or carry a written allowlist reason. Both the
+marker words and the not-in-repository phrasings are drawn from the file's own
+existing text rather than invented, which is what keeps it a consistency check
+and not a new vocabulary. The honest limit belongs on the row: it reads PROSE,
+so it catches the stated contradiction and not an unstated one, and a row can
+still be wrong in ways no same-row comparison can see.
