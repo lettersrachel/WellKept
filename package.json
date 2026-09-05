@@ -22,7 +22,6 @@
     "overrides": {
       "sharp": ">=0.35.0",
       "postcss": ">=8.5.23",
-      "@opentelemetry/core": ">=2.8.0",
       "@auth/core": ">=0.41.3",
       "brace-expansion@1": ">=1.1.18",
       "brace-expansion@2": ">=2.1.4",

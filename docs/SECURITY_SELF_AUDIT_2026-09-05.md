@@ -50,7 +50,7 @@ test tooling. The conclusion is unchanged and the sentence was wrong.
 | 1 | ~~The WEB magic-link entry point has no rate limit~~ **CORRECTED: the token had two doors and only one was throttled** | **REAL, FIXED** | done |
 | 2 | `rateLimit` fails OPEN by design | **REAL, RULED, FIXED** | done |
 | 3 | Photo bytes are never validated as JPEG, so the metadata-strip promise is conditional | **REAL, FIXED** | done |
-| 4 | Nine dependency advisories, two of them in shipped runtime code | **REAL, low, FIXED** | done |
+| 4 | Nine dependency advisories, two of them in shipped runtime code | **REAL, low; ONE fixed, ONE cannot be fixed by override** | done, with a correction |
 | 5 | Upload returns `ok: true` on a silent no-op | **REAL, not security, FIXED** | done |
 | 6 | Object-level authorization on id-taking routes | **VERIFIED GOOD** | n/a |
 | 7 | The offline queue replaying a stale write after a permission change | **VERIFIED GOOD, already built** | n/a |
@@ -179,13 +179,32 @@ Apple Developer enrollment. **The seventh is `esbuild` through
 `packages/schema`**, which is test tooling; the first version of this
 paragraph said all seven were Expo and was wrong by one.
 
-**FIXED, 5 September 2026:** the two runtime advisories are closed by
-override (`postcss` re-pinned from >=8.5.18 to >=8.5.23,
-`@opentelemetry/core` added at >=2.8.0). Re-audited after the install:
-**nine advisories down to seven, and neither runtime one remains.** The
-Expo chain is left to Expo's own upgrade and says so in the assessor
-packet, rather than letting a raw `pnpm audit` imply eleven live
-problems.
+**PARTLY FIXED, and the other half CANNOT be fixed this way. Corrected
+5 September 2026 after the attempt.**
+
+`postcss` is closed: the override moved from >=8.5.18 to >=8.5.23, a
+patch bump inside 8.x, and the build is unaffected.
+
+**`@opentelemetry/core` is NOT closed, and forcing it broke the build.**
+The advisory patches at >=2.8.0, and 2.x removed `getEnv`, which
+`@opentelemetry/resources@1.30.1` and `@opentelemetry/sdk-trace-base@1.30.1`
+still import. Both arrive through `@sentry/node@9.46.0`. The override
+therefore compiled to `Attempted import error: 'getEnv' is not exported
+from '@opentelemetry/core'` across the Sentry OTel stack, and the
+override was reverted.
+
+**So the honest state is eight advisories, not seven**, and the one that
+remains in shipped runtime code closes when `@sentry/node` upgrades its
+OpenTelemetry stack, which is a dependency change of a different size
+and not an override. Stated for the assessor packet rather than left as
+a number that quietly went down.
+
+**The lesson, recorded because I made it inside a session about being
+careful:** a transitive override across a MAJOR version is a change to
+code nobody in this repository wrote, and the only thing that can tell
+you whether its dependents survive it is a build. I bumped it and
+reported it closed in the same breath, and the build said otherwise
+about ninety seconds later.
 
 ## 5. The upload's silent no-op. REAL, not a security finding.
 

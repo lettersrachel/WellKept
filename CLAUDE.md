@@ -505,6 +505,26 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   writer visible. The rule is narrow on purpose: a default that
   expresses a real invariant every row satisfies by construction is
   fine. This is about columns whose value is an assertion someone made.
+- **The same principle applied to BEHAVIOUR: where a helper's failure
+  mode is a decision, it is a REQUIRED ARGUMENT, never a default**
+  (founder ruling, 5 September 2026, on the security self-audit). The
+  rule above is about data, this one is about code, and the reasoning is
+  identical: **an inherited default is indistinguishable from a decided
+  answer.** A call site that took the default and a call site where
+  someone weighed the question and chose look exactly the same in the
+  diff, in review, and to the next reader.
+  **The instance that proved it:** `rateLimit` failed OPEN everywhere,
+  with the reason written down and defensible. When the ruling split it
+  (closed on the sign-in path, open only where blocking is worse than
+  allowing), making the mode a required argument forced every existing
+  call site to be visited, **and that is what surfaced two MFA sites
+  nobody had considered** in the audit that prompted the ruling. They
+  turned out to be the clearest case in the whole set, since a six-digit
+  TOTP is the most brute-forceable secret in the system. A default would
+  have carried them silently into the new world with the old answer.
+  The rule is narrow in the same way its data twin is: a default that
+  expresses an invariant every caller satisfies by construction is fine.
+  This is about parameters whose value is a judgment someone made.
 - **Generated migration SQL is READ before it is applied.** `drizzle-kit`
   emitted 0058's two composite foreign keys BEFORE the unique index they
   reference; Postgres refused with "there is no unique constraint
