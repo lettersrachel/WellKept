@@ -904,6 +904,15 @@ export default async function Oversight({ params, searchParams }: {
                   {c.memberDecisionQuestion && !c.memberDecisionResolvedAt ? ` · asked: ${c.memberDecisionQuestion}` : ""}
                 </span>
               </span>
+              {/*
+                LOAD-BEARING, not decoration (founder, 5 September 2026).
+                The display state puts `needs you` ahead of `unowned`, so an
+                item that is both reads `needs you`, and THIS LINE is what
+                keeps the missing owner visible. Dropping it, collapsing it,
+                or hiding it behind a toggle turns that precedence into a
+                concealment, and the remedy is a REPORT rather than a styling
+                change. See lib/commitment-ledger.ts.
+              */}
               {!c.closedAt && unmet.length > 0 && (
                 <div className="prov">not handled yet: {unmet.join("; ")}</div>
               )}

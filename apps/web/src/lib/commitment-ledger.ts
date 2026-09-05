@@ -86,6 +86,16 @@ export type LedgerDisplayState = "needs you" | "handled" | "unowned" | "in_progr
  * corporate card renders that line, so the fact is on the screen whatever
  * the state word says.
  *
+ * **THAT COUPLING IS LOAD-BEARING AND IS RECORDED AS SUCH** (founder,
+ * 5 September 2026, confirming the precedence): `needs you` over
+ * `unowned` is safe ONLY BECAUSE the unmet-clause line still names the
+ * missing owner on the row. **If that line ever stops rendering, the
+ * precedence becomes a CONCEALMENT rather than a display choice**, and
+ * the remedy is then a REPORT rather than a styling change: which fact a
+ * member-vocabulary state may hide is the founder's question, not a
+ * layout decision taken while tidying a card. Any change that drops,
+ * collapses or conditionally hides that line IS that report.
+ *
  * **The member vocabulary is still the queue row's four.** `unowned` is
  * the company's own word for its own failure, and whether a member ever
  * sees it is a question for the freeze-gated inbox rather than a decision
