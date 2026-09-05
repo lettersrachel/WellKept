@@ -24,6 +24,24 @@ import path from "node:path";
  * floor is being NAMED — the treatment decision — not a particular SQL
  * shape). Verified to fire: blanking every standalone mention of one
  * table turns the suite red.
+ *
+ * THAT FLOOR IS DECIDED AND STAYS (founder ruling, 4 September 2026),
+ * recorded here so the next reader meets the answer rather than
+ * re-deriving the question. Q-6-1 tested it by accident: removing only
+ * the executable `UPDATE decision_right ...` left this guard GREEN,
+ * because the header comment still named the table, and that was
+ * reported as a hole before the sentence above was read. The ruling:
+ * **naming and deciding is the property worth having**, and a guard
+ * demanding a particular SQL shape would fail on every legitimate
+ * no-op treatment and be allowlisted into silence, which is the exact
+ * failure mode CLAUDE.md already names as the reason the per-column
+ * producer rule cannot become a guard.
+ *
+ * ONE NARROWER FINDING SURVIVES and is queued as Q-6g, not fixed here:
+ * a treatment DESCRIBED in a comment and written nowhere should not
+ * pass. That is a smaller claim than "the guard should demand SQL",
+ * and it is the only part of the Q-6-1 report that outlived the
+ * ruling.
  */
 const ALLOWLIST: Record<string, string> = {
   // (none today — the tool names every household-referencing table.
