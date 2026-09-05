@@ -8421,3 +8421,54 @@ list was written could have reached the manifest without reaching the table.
 None did, checked by deriving the names and finding the table already complete,
 so the drift never happened. That is the same standing as branch protection's
 missing month: nothing broke, and nothing would have said so.
+
+### G-134 ADDENDUM, 5 September 2026 (founder instruction): what made it dangerous, stated plainly
+
+**A claim of enforcement that nobody could see was false.** CLAUDE.md said the
+guard table "is asserted against the guard manifest", and that sentence is
+exactly the kind a reader stops at. It loads as premise into every session, it
+names the mechanism, and it names the file the mechanism lives in. Nothing
+about it invites a check. **So the harm is not that the coupling was missing;
+it is that the missing coupling had a sentence standing in for it**, and
+everyone downstream stopped looking because the sentence said someone already
+had.
+
+**And nothing had drifted, which was luck rather than the control working.**
+The table was complete when the derivation was written, checked by deriving the
+names and comparing. That is the same standing as branch protection's missing
+month: the outcome was fine, the control was absent, and no reading of the
+outcome could tell those two apart. **A guard that has never been needed and a
+guard that does not exist look identical from the outside**, and the only way
+to tell them apart is to break something on purpose and watch.
+
+### G-133 ADDENDUM 2, 5 September 2026 (founder instruction): Q-7 is an instance in its own right, and it is the entry demonstrating itself
+
+**The session that filed this finding then committed the same shape, hours
+later.** Working the queue in order on 5 September, Q-7 was read, found to
+depend on the Pre-Populated Intake Spec (A129), reported BLOCKED in the turn
+report to the founder, and the row was left reading `**PARTLY.**` with its
+remaining work listed as if it were buildable. **The report existed and never
+reached the row.**
+
+**That is a second failure mode of the same class, and it is worth separating
+from the first.** G-133 opened on a row that contradicted its own prerequisite
+cell. This is a row that contradicts the REPORT ABOUT IT, which is worse in one
+specific way: the contradiction is not visible anywhere on the row at all. A
+reader of the queue sees `PARTLY` and a list of work; a reader of the session
+report sees BLOCKED; **and no artefact in the repository holds both**, so there
+is nothing to compare and nothing to find.
+
+**It is the strongest evidence the entry could have.** Every check in this
+repository compares an artefact against another artefact. **Nothing checks a
+queue row against its own report**, and the Q-11q guard does not either: it
+reads the row, so it caught Q-7 only because the row's own two cells happened
+to disagree as well. Had the prerequisite cell said nothing about A129, the
+report would have stayed lost and the guard would have passed the row.
+
+**Kept as the entry demonstrating itself, rather than as an embarrassment to be
+noted once.** The finding was fresh, filed by the same session, and the rule was
+being actively held in mind, and the shape still recurred within hours. That is
+the same knowing-the-rule-is-not-applying-it evidence the section 4 ledger
+carries about carried-forward check results, and it argues the remedy has to be
+procedural rather than attentional: **a report that names a row updates the
+row in the same change, or it is a claim about intention.**
