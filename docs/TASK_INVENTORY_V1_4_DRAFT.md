@@ -118,6 +118,8 @@ Two consequences for whoever applies the verdicts:
   filing about unattributed claims.
 
 The eight UNCERTAIN rows in the catalog below are unchanged; R18 widens
+
+**ALL EIGHT ARE RULED, 5 September 2026 (founder), and the sentence above is left standing as the state it described rather than deleted.** WKT-017 was ruled earlier the same day on the standing no-vulnerability-flag invariant; the other seven arrived together. **Seven of the eight terminate at NO-MAP, and the founder's reason for the pattern travels with the verdicts rather than being read off them:** the operational catalog's grain is EXECUTION and CADENCE, the commercial catalog's grain is what a household BUYS, and where those disagree the operational catalog stays honest about what a HOM actually does, because it is the one the workforce model and the time standards are built on. If that leaves the commercial catalog untidy, that is the correct direction for the untidiness to fall. Two rows carry their own revision conditions on their notes: WKT-025 is reopenable on T-025's unreadable wording, a FACT rather than a taxonomy, and WKT-047 was decided on the cadence rule rather than on a strong reading.
 what their verdicts may be, not what they say today.
 
 ## The catalog
@@ -139,7 +141,7 @@ what their verdicts may be, not what they say today.
 | WKT-007 | Perishables and delivery handling | STD-001.1.2, STD-002.3, STD-003.6 | T-029, T-101 | first work of every visit; the clock rule |
 | WKT-008 | Refrigerator organization and rotation | STD-001.4, STD-002.4, STD-002.5 | T-011, T-013 | |
 | WKT-009 | Food storage placement | STD-001.3 | T-012 | counter vs ripen-out vs refrigerated |
-| WKT-010 | Leftovers portioning and labeling | STD-001.1.4, STD-002.4 | UNCERTAIN (T-011) | v1.3 may fold this into the fridge audit; the founder rules |
+| WKT-010 | Leftovers portioning and labeling | STD-001.1.4, STD-002.4 | NO-MAP: portioning is execution, the audit is inspection | RULED 5 Sep 2026 (founder), AGAINST the sheet's lean and with the reason recorded: rows 1 and 6 are one inspect-versus-execute shape and must answer alike; a HOM who finds nothing has completed the audit, a HOM who finds three containers has done a second thing, and folding execution into inspection makes the audit's duration unpredictable and hides work on a forecast |
 | WKT-011 | Cookware and specialty dish care | STD-001.5, STD-007.3 | NO-MAP: no cookware-care row exists; the method lives standards-side | |
 | WKT-012 | Dishwasher cycle | STD-001.6, STD-001.2.2 | T-014 | |
 | WKT-013 | Kitchen staples and lows watch | STD-001.8, STD-015.1 | T-010, T-017 | feeds the purchasing rows |
@@ -151,7 +153,7 @@ what their verdicts may be, not what they say today.
 | WKT-014 | Bathroom reset to done state | STD-004.1, STD-004.2; cloth floor STD-004.4 | T-033, T-347 | T-347 added by the A584 amendment; the earlier no-distinct-row note is resolved |
 | WKT-015 | Bathroom moisture sentinel check | STD-004.6, STD-004.10 | T-003 | |
 | WKT-016 | Towel rotation | STD-004.5 | T-021, T-276 | |
-| WKT-017 | Bathroom hazard-storage check | STD-004.8 | UNCERTAIN (T-052) | child-safeguarding compliance is the nearest row; whether it covers hazard storage is the founder's call |
+| WKT-017 | Bathroom hazard-storage check | STD-004.8 | NO-MAP: hazard storage applies to every household, not only those with children | RULED 5 Sep 2026 (founder), on DOCTRINE rather than on fit: a universal safety check mapped under a child-specific task makes the check contingent on a household characteristic, which runs at the standing invariant that no behaviour may require a disability, age, diagnosis or vulnerability flag. A later reader reopening this row meets the invariant rather than re-arguing the taxonomy. **The verdict was made on 5 September and reached this row on 5 September only after the other seven landed**: it had been recorded in the UNCERTAIN sheet alone, which is the report-never-reaching-the-artefact shape (G-133 addendum 2). |
 
 ### Bedroom and closet (STD-005)
 
@@ -168,8 +170,8 @@ what their verdicts may be, not what they say today.
 |---|---|---|---|---|
 | WKT-022 | Laundry cycle service | STD-006.1, STD-006.2, STD-006.3, STD-006.5, STD-000.4 | T-020, T-275 | |
 | WKT-023 | Stain treatment | STD-006.4 | NO-MAP: folded into the laundry cycle rows; no distinct row | never through the dryer |
-| WKT-024 | Delicates and specialty garment care | STD-006.6 | UNCERTAIN (T-085) | T-085 is the out-of-house dry clean circuit; in-home delicates care may or may not be inside it |
-| WKT-025 | Laundry machine upkeep | STD-006.5, STD-006.7 | UNCERTAIN (T-025) | T-025 is filter changes on cycle; whether it includes laundry machines is the founder's call |
+| WKT-024 | Delicates and specialty garment care | STD-006.6 | NO-MAP: T-085 is a courier circuit; in-home delicates care shares the garments and not the work | RULED 5 Sep 2026 (founder), following the precedent: execution is the grain, and hand-washing at a sink is not a drop-off run |
+| WKT-025 | Laundry machine upkeep | STD-006.5, STD-006.7 | NO-MAP: laundry machine upkeep is its own cadence | RULED 5 Sep 2026 (founder), following the registry's per-appliance clock. REVISITABLE ON A FACT, not on taxonomy: T-025's full definition was unreadable from this repository, so if its wording turns out to be appliance-general this verdict is reopened on that reading |
 | WKT-026 | Linen rotation, primary and guest | STD-015.3, STD-004.5 | T-021, T-276 | LIVE (db:tasks) |
 
 ### Living spaces (STD-008)
@@ -190,7 +192,7 @@ what their verdicts may be, not what they say today.
 | WKT-033 | Inbound and outbound zone processing | STD-003.4, STD-003.6, STD-003.12 | T-028, T-029, T-086, T-279 | |
 | WKT-034 | Wet-weather and shoe-practice handling | STD-003.5, STD-003.2 | NO-MAP: method within the entry reset; no distinct row | |
 | WKT-035 | Seasonal gear rotation and child sizing | STD-003.8, STD-013.4 | T-026, T-036, T-099, T-142, T-245, T-246 | |
-| WKT-036 | Unhomed-item landing and pattern watch | STD-003.7 | UNCERTAIN (T-281) | T-281 stages decluttering for member decision; the weekly landing habit may be inside or beside it |
+| WKT-036 | Unhomed-item landing and pattern watch | STD-003.7 | NO-MAP: T-281 is an event, the landing is a standing habit | RULED 5 Sep 2026 (founder), the strongest row in the sheet and taken without hesitation: the tree keeps noticing and resolving structurally apart, and a catalog that fused them would contradict the software |
 | WKT-037 | Bins staged for collection | STD-001.2.6, STD-013.1 | T-022, T-023 | LIVE (db:tasks) |
 
 ### Home office (STD-010)
@@ -211,7 +213,7 @@ what their verdicts may be, not what they say today.
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
 | WKT-041 | Entry approach and porch reset | STD-013.3 | NO-MAP: weekly approach care has no row; T-006 is the post-storm check, T-153.. the seasonal property builds | |
-| WKT-042 | Ice and snow same-day clearing | STD-013.2 | UNCERTAIN (T-006) | whether the post-storm exterior check includes clearance is the founder's call |
+| WKT-042 | Ice and snow same-day clearing | STD-013.2 | NO-MAP: clearing is same-day time-critical work, the check is scheduled | RULED 5 Sep 2026 (founder), on precedent and its own safety argument: a mapping that hides urgent clearing inside a scheduled check makes it look routine on a forecast |
 | WKT-043 | Seasonal outdoor preparation | STD-013.4, STD-016.3 | T-027, T-239 | booked ahead, not done at the season |
 
 ### Pets and plants (STD-009)
@@ -226,7 +228,7 @@ what their verdicts may be, not what they say today.
 | Id | Task | Governing standards | MAPS_TO | Note |
 |---|---|---|---|---|
 | WKT-046 | Par-level consumables check | STD-015.1 | T-010, T-033, T-244 | |
-| WKT-047 | Linen closet upkeep | STD-015.2, STD-000.4 | UNCERTAIN (T-021) | the closet's own upkeep vs the linen change |
+| WKT-047 | Linen closet upkeep | STD-015.2, STD-000.4 | NO-MAP: the closet has its own cadence, longer than the linen change | RULED 5 Sep 2026 (founder). DECIDED ON THE CADENCE RULE RATHER THAN ON A STRONG READING, recorded so a later reader knows this is the row most open to revision: two cadences, two rows, as with WKT-025 and WKT-036 |
 | WKT-048 | Guest room readiness | STD-015.3, STD-019.4 | T-032, T-125, T-138 | |
 
 ### Products, supplies, and equipment (STD-011)
@@ -244,7 +246,7 @@ what their verdicts may be, not what they say today.
 | WKT-052 | Standing replenishment ordering | STD-017.3, STD-017.4; credentials floor STD-017.2 | T-096, T-097, T-098, T-100, T-109, T-111, T-244 | |
 | WKT-053 | Purchase logging and receipt capture | STD-017.6 | T-041, T-075 | |
 | WKT-054 | Order follow-through and returns processing | STD-017.7, STD-003.4 | T-086, T-101, T-279 | |
-| WKT-055 | Subscription observation and proposal | STD-017.5 | UNCERTAIN (T-092, T-115) | renewal executions and standing-instruction proposals are each half of it |
+| WKT-055 | Subscription observation and proposal | STD-017.5 | T-092, T-115 | RULED 5 Sep 2026 (founder), settled by the join's own one-to-many rule: mapping to both is the shape MAPS_TO was built for, not a compromise |
 
 ### Vendors and third parties (STD-020)
 
