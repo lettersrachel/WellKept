@@ -104,6 +104,22 @@ Four documents, one per audience and direction:
   arrived is a record our staff can see instead of a silence.
   Corporate-only; never rendered to any client; deleted whole on
   household erasure.
+- **Expectations and reconciliation** (added 2026-09-05, migration
+  0069): the things we are expecting on a household's behalf and whether
+  each arrived. Each row carries which of six patterns it is (a vendor
+  visit with no invoice or report, a registration with no confirmation, a
+  cancellation charged again, a return with no refund, an overdue
+  estimate, a missing annual school-cycle packet), what is expected in
+  our operator's words, the window it is expected by, how material a
+  miss would be, an amount where money is involved, and, once the window
+  passes, whether it arrived and what we might decide about it.
+  Corporate-only and in SHADOW: it is visible to our staff on the
+  household record and reaches no member surface and no field briefing.
+  It exists so a silence is something we notice rather than something
+  the household has to chase, which is the client-side doctrine's own
+  refusal: the member is never made to check. Free text is blanked on
+  household erasure and the structure is kept, the work-record posture.
+
 - **Commercial record** (added 2026-07-27), how the household found Well
   Kept (referral channel, with an optional note), and the membership
   history as dated events: start, tier change, pause, resume, cancellation,

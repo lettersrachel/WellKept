@@ -2566,3 +2566,67 @@ export async function closeCommitment(formData: FormData) {
   });
   recordedTo(returnTo, "commitment closed");
 }
+
+/**
+ * Q-12b-1: record an expectation. The producer for `expected_event`, so
+ * the table is not schema ahead of its writer (G-85).
+ *
+ * Corporate-side only, like every other reconciliation surface: the
+ * member is never asked to check, and the HOM is never asked either,
+ * because shadow forbids altering her briefing. The pattern must be one
+ * of the six launch patterns; a seventh is a founder decision and the
+ * enum refuses it at the database besides.
+ *
+ * MATERIALITY IS OPTIONAL AND ITS BLANK IS HONEST. An unclassified
+ * expectation proposes when its window passes, rather than being
+ * assigned a class nobody chose. Same for the amount: blank is NULL, and
+ * NULL is not below any ceiling.
+ */
+export async function recordExpectedEvent(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { expectedEvent, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES } = await import("@wellkept/schema");
+  const pattern = String(formData.get("pattern") ?? "");
+  if (!(EXPECTED_EVENT_PATTERNS as readonly string[]).includes(pattern)) refuseTo(returnTo, "bad-input");
+  const expectation = String(formData.get("expectation") ?? "").trim().slice(0, 500);
+  if (expectation.length < 4) refuseTo(returnTo, "bad-input");
+  const expectedBy = String(formData.get("expectedBy") ?? "");
+  const when = new Date(expectedBy);
+  if (!expectedBy || Number.isNaN(when.getTime())) refuseTo(returnTo, "bad-input");
+  const materialityRaw = String(formData.get("materiality") ?? "").trim();
+  if (materialityRaw !== "" && !(MATERIALITY_VALUES as readonly string[]).includes(materialityRaw)) {
+    refuseTo(returnTo, "bad-input");
+  }
+  const materiality = materialityRaw === "" ? null : (materialityRaw as "safety_access" | "money_legal" | "convenience");
+  const amountRaw = String(formData.get("amountCents") ?? "").trim();
+  let amountCents: number | null = null;
+  if (amountRaw !== "") {
+    const parsed = Number(amountRaw);
+    if (!Number.isInteger(parsed) || parsed < 0) refuseTo(returnTo, "bad-input");
+    amountCents = parsed;
+  }
+  const rightKeyRaw = String(formData.get("decisionRightKey") ?? "").trim().slice(0, 120);
+  const decisionRightKey = rightKeyRaw === "" ? null : rightKeyRaw;
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(expectedEvent).values({
+      id, householdId, pattern: pattern as never, expectation, expectedBy: when,
+      materiality, amountCents, decisionRightKey, recordedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "expected_event.recorded",
+      payload: { expectedEventId: id, pattern },
+      provenance: "action:recordExpectedEvent", objectId: id,
+      actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "expected_event", detail: { expectedEventId: id, pattern, action: "recorded" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "expectation recorded");
+}

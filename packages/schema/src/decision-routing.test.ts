@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { routeByDecisionRights, type RoutingRight } from "./decision-routing";
+import { routeByDecisionRights, type RoutingRight } from "./decision-routing.ts";
 
 const rights: RoutingRight[] = [
   { rightKey: "spend_without_asking_per_item_usd", valueCents: 15000, valueText: null },

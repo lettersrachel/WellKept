@@ -1975,3 +1975,160 @@ export const commitmentLedgerItem = pgTable("commitment_ledger_item", {
       AND (${t.verifiedAt} IS NOT NULL OR ${t.verificationPendingReason} IS NOT NULL)
     )`),
 ]);
+
+/**
+ * Q-12b-1 (0069): `expected_event`, the reconciliation layer's first
+ * object. Anticipation answers what SHOULD happen; reconciliation
+ * answers whether reality matched. It is a CONSUMER of the outbox, never
+ * a field attribute (intake BENCHMARK_ADOPTION section 2, adopted).
+ *
+ * YEAR-TWO, SHADOW. It computes, it logs, and it is visible in the
+ * corporate portal. It surfaces to no member and alters no HOM briefing,
+ * which is why the sweep writes nothing into `attention_record`: that
+ * table's records reach the previsit brief, and reaching the brief is
+ * exactly what shadow forbids.
+ *
+ * "THE HOUSEHOLD IS NEVER MADE TO CHECK" is the spec's own sentence and
+ * it is held structurally rather than by intention: nothing here has a
+ * member audience to route to. `decision_record.audience` is CHECK-
+ * constrained to hom / corporate / founder, and this table has no
+ * audience column at all.
+ *
+ * WHY THE CANDIDATE DECISION LIVES HERE RATHER THAN IN
+ * `decision_record`. A sweep has no user, and `decision_record.routed_by`
+ * is NOT NULL referencing `auth_user`. Creating one would mean inventing
+ * an actor, which is the thing G-66 refused to do for a missing role
+ * assignment. So the sweep records the candidate decision in WORDS with
+ * its computed routing, personless, in the `time_segment` posture: a
+ * derived row is a system row carrying no person. Turning a candidate
+ * into a real decision record is the PROMOTION step and a human does it.
+ *
+ * AND WHY THERE IS NO `candidate_decision_refs[]`. RFC-ATTR-01 A1.3
+ * names an array. A Postgres array carries no foreign key, so it cannot
+ * hold the composite `(household_id, id)` tenancy guarantee every other
+ * reference in this tree uses, and a cross-tenant id in an array would be
+ * representable. The refs arrive as a reverse join at promotion instead.
+ * Reported on the queue row rather than silently dropped.
+ */
+/**
+ * The six launch patterns as a readable list, so a surface and an action
+ * both render and validate against the same set rather than each keeping
+ * its own copy. The enum is the wall; this is the list.
+ */
+export const EXPECTED_EVENT_PATTERNS = [
+  "vendor_visit_without_invoice_or_report",
+  "registration_without_confirmation",
+  "cancellation_confirmed_then_charged_again",
+  "return_shipped_without_refund",
+  "promised_estimate_overdue",
+  "annual_school_cycle_packet_missing",
+] as const;
+
+export const expectedEventPatternEnum = pgEnum("expected_event_pattern", [
+  // The six launch patterns, BENCHMARK_ADOPTION section 2. The keys are
+  // minted; the sentence each transcribes is in the migration header, so
+  // the key is the identifier and the sentence stays the display text
+  // (the pack_key lesson). A seventh pattern is a founder decision.
+  "vendor_visit_without_invoice_or_report",
+  "registration_without_confirmation",
+  "cancellation_confirmed_then_charged_again",
+  "return_shipped_without_refund",
+  "promised_estimate_overdue",
+  "annual_school_cycle_packet_missing",
+]);
+
+export const reconciliationStatusEnum = pgEnum("reconciliation_status", [
+  // Verbatim from the spec, in its own order.
+  "matched",
+  "missing_expected",
+  "unexpected",
+  "changed",
+  "conflicting",
+  "stale",
+  "cannot_determine",
+]);
+
+export const candidateRoutingEnum = pgEnum("candidate_routing", [
+  // The routing outcome vocabulary already shipped in
+  // `decision-routing.ts` as RouteOutcome. Named here so a candidate's
+  // computed route is a stored value with the same three meanings, never
+  // a fourth vocabulary that happens to use the same words.
+  "auto_execute",
+  "propose",
+  "blocked",
+]);
+
+export const expectedEvent = pgTable("expected_event", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  // Which of the six launch patterns this expectation is an instance of.
+  pattern: expectedEventPatternEnum("pattern").notNull(),
+  // What is expected, in the operator's words; s2, staff-authored.
+  expectation: text("expectation").notNull(),
+  // The end of the window. NOT NULL because an expectation with no
+  // window can never be reconciled: there is no moment at which its
+  // absence becomes a fact, so the row would sit forever looking live.
+  expectedBy: timestamp("expected_by", { withTimezone: true }).notNull(),
+  // The materiality of the miss, from the signed three-value enum.
+  // NULLABLE WITH NO DEFAULT: this is a judgment somebody made, and a
+  // default would make "nobody classified it" and "somebody chose
+  // convenience" the same bytes. The sweep reads NULL honestly and
+  // proposes rather than assuming.
+  materiality: materialityEnum("materiality"),
+  // Money, integer cents, and NULL is the honest unknown. A miss with no
+  // amount is not below any ceiling, which is the routing module's own
+  // rule and is why most candidates propose.
+  amountCents: integer("amount_cents"),
+  // The decision right whose ceiling governs a candidate from this
+  // expectation, named by the operator VERBATIM. The routing module's
+  // standing rule is that the caller names the right, because mapping an
+  // arbitrary commitment to one of the seventeen rights is a taxonomy.
+  decisionRightKey: text("decision_right_key"),
+  // The reconciliation result. NULLABLE WITH NO DEFAULT: NULL is the
+  // true statement about a row still inside its window, and it is what
+  // the sweep looks for. A default of `cannot_determine` would be a
+  // claim nobody made about every unswept row.
+  reconciliationStatus: reconciliationStatusEnum("reconciliation_status"),
+  reconciledAt: timestamp("reconciled_at", { withTimezone: true }),
+  // What matched, when something did. The composite FK is the tenancy
+  // guarantee: an expectation can only ever be matched by an event in
+  // its own household (the 0056 situation pattern).
+  matchedEventId: uuid("matched_event_id"),
+  // The candidate decision the sweep produced, in words, and the route
+  // it computed. Whole or absent together: a route with no candidate
+  // names nothing, and a candidate with no route is an unanswered
+  // question wearing an answer's shape.
+  candidateDecision: text("candidate_decision"),
+  candidateRouting: candidateRoutingEnum("candidate_routing"),
+  candidateRoutingWhy: text("candidate_routing_why"),
+  // Write provenance for the operator-recorded half. The sweep writes no
+  // person anywhere on this row.
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("expected_event_household_idx").on(t.householdId, t.reconciliationStatus),
+  // The sweep's own read: open expectations whose window has passed.
+  index("expected_event_window_idx").on(t.expectedBy, t.reconciliationStatus),
+  foreignKey({
+    columns: [t.householdId, t.matchedEventId],
+    foreignColumns: [eventOutbox.householdId, eventOutbox.id],
+    name: "expected_event_matched_event_same_household_fk",
+  }),
+  // A reconciliation result is whole or absent: a status with no time
+  // loses when it was decided, and a time with no status says nothing.
+  check("expected_event_reconciliation_is_whole",
+    sql`(${t.reconciliationStatus} IS NULL AND ${t.reconciledAt} IS NULL)
+        OR (${t.reconciliationStatus} IS NOT NULL AND ${t.reconciledAt} IS NOT NULL)`),
+  // `matched` is the one status that requires evidence. Every other
+  // status is a statement about an ABSENCE, which has no event to point
+  // at, so requiring one everywhere would make them unrepresentable.
+  check("expected_event_matched_carries_its_event",
+    sql`${t.reconciliationStatus} IS DISTINCT FROM 'matched' OR ${t.matchedEventId} IS NOT NULL`),
+  // A candidate decision and its route are whole or absent together.
+  check("expected_event_candidate_is_whole",
+    sql`(${t.candidateDecision} IS NULL AND ${t.candidateRouting} IS NULL AND ${t.candidateRoutingWhy} IS NULL)
+        OR (${t.candidateDecision} IS NOT NULL AND ${t.candidateRouting} IS NOT NULL AND ${t.candidateRoutingWhy} IS NOT NULL)`),
+  // Zero is not an unknown amount (the estimate_snapshot rule). A
+  // negative amount is not a miss anybody can describe.
+  check("expected_event_amount_is_not_negative",
+    sql`${t.amountCents} IS NULL OR ${t.amountCents} >= 0`),
+]);

@@ -46,7 +46,9 @@ export default function PrivacyPage() {
         pre-visit briefs we show our staff (kept exactly as shown), what
         our reminder engine would have suggested while we tune it, and delivery
         records from our email provider telling us whether a message we sent you
-        arrived) to run the service
+        arrived, and the things we are expecting on your behalf (a vendor&apos;s
+        invoice, a confirmation, a refund) together with whether each arrived, so a
+        silence becomes something we notice rather than something you have to chase) to run the service
         reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product

@@ -111,6 +111,16 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  expected_event:
+    "Q-12b-1, 2026-09-05: recorded_by is write provenance and is the ONLY staff column on " +
+    "this table. The sweep that reconciles the row writes no person at all (the time_segment " +
+    "posture), so what is attributed is the recording of an expectation and never the meeting " +
+    "or missing of one: a miss is a fact about a vendor or a provider, not about a HOM. " +
+    "Generic action-log coverage; a named line is a founder decision, not a drift. Flagged " +
+    "with the same standing as commitment_ledger_item: this is the FOURTH staff-attributed " +
+    "table to ship since G-13 was reclassified as a hiring precondition, and no HOM exists " +
+    "to be attributed today, so the debt is against the disclosure rather than against a " +
+    "person",
   estimate_snapshot:
     "WL Gate 1, 2026-08-25: estimated_by records which corporate user recorded a planning " +
     "estimate; corporate planning data behind the D7 staffing wall, never evaluative of " +

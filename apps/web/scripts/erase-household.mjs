@@ -275,6 +275,7 @@ const counts = {
   season: await count("SELECT count(*) n FROM season_observation WHERE household_id=$1"),
   captures: await count("SELECT count(*) n FROM capture_artifact WHERE household_id=$1"),
   mailOutcomes: await count("SELECT count(*) n FROM mail_outcome WHERE household_id=$1"),
+  expectations: await count("SELECT count(*) n FROM expected_event WHERE household_id=$1"),
   briefSnapshots: await count("SELECT count(*) n FROM visit_brief_snapshot WHERE household_id=$1"),
   taskProfiles: await count("SELECT count(*) n FROM household_task_profile WHERE household_id=$1"),
   workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
@@ -460,6 +461,21 @@ try {
   // event_outbox class. Null-household rows are unreachable by this
   // WHERE clause by construction. The tenth documented DELETE exception.
   await c.query("DELETE FROM mail_outcome WHERE household_id=$1", [householdId]);
+  // expected_event (Q-12b-1, 2026-09-05): BLANKED AND KEPT, not deleted.
+  // The row is a business record of what this household was owed and
+  // whether it arrived, which is the work_item / task_occurrence class
+  // rather than the condition_flag class: it can be needed to answer
+  // what we said we would watch for. What is erased is the free text
+  // (the expectation in the operator's words, the candidate decision,
+  // and the routing reason), blanked to a MARKER rather than to NULL so
+  // the whole-or-absent candidate CHECK survives on a row that carried
+  // one. Pattern, window, status and amount are structure and stay.
+  await c.query(
+    `UPDATE expected_event SET expectation=$2,
+       candidate_decision = CASE WHEN candidate_decision IS NULL THEN NULL ELSE $2 END,
+       candidate_routing_why = CASE WHEN candidate_routing_why IS NULL THEN NULL ELSE $2 END,
+       updated_at=now() WHERE household_id=$1`,
+    [householdId, E]);
   // paused_decision (W-7/AD, 2026-07-28): DELETED - internal staff
   // research about the household, the condition_flag class.
   await c.query("DELETE FROM paused_decision WHERE household_id=$1", [householdId]);
