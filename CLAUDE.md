@@ -721,7 +721,17 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
      repeat of G-106, where `ls docs` plus a grep over `docs/*.md` could not
      see a `.docx` one directory down.
 
-  **The remedy was the same in all four and it is the rule: READ THE THING
+  **A FIFTH, and it is the one that decides what the remedy can be.** An hour
+  after this class was named, reconciling WK-SEC-001's scope against the tree,
+  a search for `S3` returned many hits and **every one was the sensitivity tier
+  `s3`**; there is no object storage in this system. "Object storage confirmed
+  present" was one grep away and would have entered a handoff package as a
+  verified fact, **inside the document reporting instances one through four**.
+  Caught by reading the hits rather than counting them. **So the remedy cannot
+  be "be careful": care was present, and the class recurred under the attention
+  of the session that had just named it.** It has to be procedural.
+
+  **The remedy was the same in all five and it is the rule: READ THE THING
   ITSELF.** Open the document and count its rows; read the restored value and
   not the row count; read the guard's header before reporting its behaviour;
   find the routes by what they DO rather than by where they sit. **Before
@@ -730,7 +740,8 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   same sentence, the number is about something else. This is the sharper form
   of the standing state-the-UNIT convention: that one is about reporting a
   count honestly, this one is about the count being an answer to the question
-  at all.
+  at all. **Say the two units out loud before trusting any number, every time,
+  including when you have just finished explaining why.**
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**

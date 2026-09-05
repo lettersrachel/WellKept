@@ -60,9 +60,16 @@ not there, and would not be pointed at the places where the real risk sits.
 **The honest summary of this table: three of the eight test areas are
 substantially about components that do not exist**, and two of those (the
 restricted-access class, consent-as-enforcement) are absences that are
-themselves the finding. **An assessor should be given this table with the
-scope**, so the engagement tests the system that exists and reports the
-components that do not as gaps rather than as passes.
+themselves the finding. **FOUNDER RULING, 5 September 2026: the scope is AMENDED, not supplemented.** A
+scope that describes a different system is worse than none, because an assessor
+will follow it, and a correction sheet stapled to v1.0 preserves the risk. The
+amended scope is `docs/library/WK-SEC-001_v1_1_AMENDED_SCOPE.md`: the complete
+document an assessor receives, carrying the corrected description, the
+attack-this-instead ordering, and **the three absences kept as STATED FINDINGS
+rather than deleted, so it stays visible they were considered.** G-128 travels
+in this package rather than being left for rediscovery. **No assessor is
+engaged against v1.0.** The table above stays as the reconciliation that produced
+the amendment. Register entry G-130.
 
 **One methodological note, because it nearly went the other way.** A search for
 `S3` in this codebase returns many hits, and every one is the **sensitivity tier

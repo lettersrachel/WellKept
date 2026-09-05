@@ -7971,6 +7971,30 @@ four lessons: READ THE THING ITSELF.** Open the document and count its rows.
 Read the restored value, not the row count. Read the guard's header before
 reporting its behaviour. Find the routes by what they DO, not by where they sit.
 
+**FIFTH INSTANCE, added 5 September 2026 by founder instruction, and it is the
+entry's most useful line: THE CLASS RECURS UNDER THE ATTENTION OF SOMEONE WHO
+HAS JUST NAMED IT.**
+
+Reconciling WK-SEC-001's scope against the tree, an hour after this entry was
+filed, the question was whether the S3 object storage the scope describes
+exists. A search for `S3` in the codebase returns many hits. **Every single one
+is the sensitivity tier `s3`** (`s3` fields, the vault's `s3`-only rule, `s3.3`
+in a comment), and there is no AWS SDK, no S3 client and no presigned URL
+anywhere. **A confident "object storage confirmed present" was one grep away**,
+and it would have gone into a handoff package as a verified fact, inside the
+very document that was reporting instances one through four.
+
+**It was caught by reading the hits rather than counting them**, which is this
+entry's own remedy applied in the moment it was written down.
+
+**Why the fifth instance matters more than the first four.** They could be read
+as inattention. This one happened under maximum attention, by the session that
+had just enumerated the class, while writing about it. **So the remedy is not
+"be careful", which is what the first four might suggest.** Care is exactly what
+was present. The remedy is procedural and survives a careless day: name the unit
+before trusting the number, every time, including when you have just finished
+explaining why.
+
 **The cheap pre-check that would have caught every one:** say out loud what unit
 the check returns and what unit the question is about. If those are not the same
 sentence, the number is an answer to a different question. **Note that three of
@@ -7979,3 +8003,59 @@ state-the-UNIT convention**, which is why the founder named the class rather
 than adding a fifth instance to that convention: the existing rule is about
 reporting a count honestly, and this one is about whether the count answers the
 question at all.
+
+---
+
+### G-130 CLOSED, 5 September 2026: WK-SEC-001's scope described a system this codebase is not, and the self-audit paid for itself before the audit ran
+
+**Founder ruling: WK-SEC-001 is AMENDED before any assessor is engaged, not
+supplemented.** Her reason is the finding: **a scope that describes a different
+system is worse than none, because an assessor will follow it.** A correction
+sheet stapled to v1.0 preserves the risk, since the two are read in the order
+they are handed over.
+
+**What the reconciliation found**, each verified against the tree rather than
+inferred: the scope specifies S3 object storage via presigned URLs (there is no
+object storage; photo bytes are base64 in a `text` column), three member portals
+(one, frozen at the digest), a restricted-access class enforced server-side
+(does not exist), consents as switches arming capabilities (consent is recorded
+and arms nothing), prompt-injection through a photo-processing pipeline (no AI
+pipeline, no AI vendor), and a Beaumont-Ashford fixture set (the fixtures are
+Fernbrook, Smoke Test and Trainor).
+
+**Three of the eight test areas are substantially about components that do not
+exist**, and two of those absences are themselves the finding rather than a
+reason to skip the area.
+
+**The cost this avoided, which is the entry's point.** An assessor engaged
+against v1.0 would have spent billable time attacking a presigned-URL layer, a
+consent-enforcement mechanism and an AI seam, none of which exist, and would not
+have been pointed at where the risk actually sits: the free-text
+`playbook_field.value` column that no guard can read, the operator with the
+connection string, the absent idle timeout, and a detection posture that is
+deliberately none. **A day of hunting absent components is a day not spent on
+tenant isolation**, which is the existential area and the one worth the whole
+engagement. **The self-audit paid for itself before the audit ran**, and this is
+recorded so the next reconciliation-before-engagement is understood as budget
+rather than as diligence theatre.
+
+**What was done.** `docs/library/WK-SEC-001_v1_1_AMENDED_SCOPE.md` is the
+complete amended scope an assessor receives, not an errata sheet: the corrected
+description, the attack-this-in-priority-order section, and **the three absences
+KEPT AS STATED FINDINGS rather than deleted, so it stays visible that they were
+considered.** G-128 goes in the handoff package rather than being left for
+rediscovery, since test area 2 asks exactly the right question and the answer is
+already known.
+
+**One ambiguity the amendment resolves rather than inherits.** The pass criteria
+require zero unresolved critical or high findings "touching the
+restricted-access class". That class does not exist, so the criterion cannot be
+satisfied by testing. **Whether its absence is itself a blocking finding is a
+founder decision**, named in v1.1 rather than resolved, so a pass or fail is not
+decided by an assessor's reading of a clause about a component that was never
+built.
+
+**Control:** the operating library is the system of record. v1.1 lands on the
+repository mirror first, the established pattern when an amendment is authored
+here, and the founder transfers it into the controlled copy. The `.docx` remains
+v1.0 until she does, and **no assessor is engaged against v1.0.**
