@@ -2582,6 +2582,144 @@ export async function closeCommitment(formData: FormData) {
  * assigned a class nobody chose. Same for the amount: blank is NULL, and
  * NULL is not below any ceiling.
  */
+/**
+ * Q-12b-3: recording a household's fallback ladder. A corporate act, the
+ * `recordChangeset` shape.
+ *
+ * FOUR OPTIONS, ALL OPTIONAL. A household with no preferred option has
+ * given a real answer and the blank stays NULL rather than becoming an
+ * empty string, so the step-exists CHECK can tell an absent rung from a
+ * present one.
+ *
+ * THE CALLER NAMES THE RIGHT, the rule `expected_event` already holds:
+ * mapping a choice to one of the seventeen rights is a taxonomy, so the
+ * operator names it and this action never guesses it from the words.
+ *
+ * NO EVALUATION HAPPENS HERE. Recording a plan and reading which step it
+ * reaches are two acts by two people at two times, the
+ * record/classify/apply split `changeset` holds, and collapsing them
+ * would make "somebody wrote the ladder down" and "somebody read the
+ * authority" one event.
+ */
+export async function recordFallbackPlan(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const { fallbackPlan } = await import("@wellkept/schema");
+  const choice = String(formData.get("choice") ?? "").trim().slice(0, 200);
+  if (choice.length < 4) refuseTo(returnTo, "bad-input");
+  const opt = (name: string) => {
+    const v = String(formData.get(name) ?? "").trim().slice(0, 200);
+    return v === "" ? null : v;
+  };
+  const preferredOption = opt("preferredOption");
+  const approvedSubstitute = opt("approvedSubstitute");
+  const establishedBackup = opt("establishedBackup");
+  const vettedBench = opt("vettedBench");
+  const rightKeyRaw = String(formData.get("decisionRightKey") ?? "").trim().slice(0, 120);
+  const decisionRightKey = rightKeyRaw === "" ? null : rightKeyRaw;
+  const amountRaw = String(formData.get("amountCents") ?? "").trim();
+  let amountCents: number | null = null;
+  if (amountRaw !== "") {
+    const parsed = Number(amountRaw);
+    if (!Number.isInteger(parsed) || parsed < 0) refuseTo(returnTo, "bad-input");
+    amountCents = parsed;
+  }
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(fallbackPlan).values({
+      id, householdId, choice, preferredOption, approvedSubstitute,
+      establishedBackup, vettedBench, decisionRightKey, amountCents,
+      recordedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "fallback_plan.recorded",
+      payload: { fallbackPlanId: id },
+      provenance: "action:recordFallbackPlan", objectId: id,
+      actor: principal.userId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "fallback_plan", detail: { fallbackPlanId: id, action: "recorded" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "fallback plan recorded");
+}
+
+/**
+ * Q-12b-3: reading which step a plan reaches.
+ *
+ * THE AUTHORITY IS READ FROM THE HOUSEHOLD'S OWN DECISION RIGHTS and
+ * nothing is minted here: this action loads the rights and hands them to
+ * `walkFallbackLadder`, which contributes no threshold of its own.
+ *
+ * IT WRITES NO PERSON, deliberately (the `time_segment` posture). Which
+ * rung a household's own grant reaches is a fact about the grant, not
+ * about the operator who looked, so `reached_step`, `reached_at` and
+ * `reached_why` are stamped and nobody is attributed. `recorded_by`
+ * already says who wrote the plan down, which is the attributable act.
+ *
+ * NOTHING EXECUTES. The write says which step the household's grant
+ * permits. No code path anywhere acts on that, and the outbox event is
+ * named `evaluated` rather than anything in the imperative for the same
+ * reason.
+ *
+ * RE-EVALUATION IS ALLOWED and is not the changeset case: a plan's
+ * reached step is a reading of the rights AS THEY ARE, so a right that
+ * changes should give a different reading. What is refused is a silent
+ * one, so the reason is rewritten with the step and the timestamp
+ * together and the whole-or-absent CHECK holds across the update.
+ */
+export async function evaluateFallbackPlan(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !["corporate_admin", "corporate_ops"].includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const planId = String(formData.get("fallbackPlanId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(planId)) refuseTo(returnTo, "bad-input");
+  const { fallbackPlan, decisionRight, walkFallbackLadder } = await import("@wellkept/schema");
+  const [plan] = await db.select().from(fallbackPlan).where(eq(fallbackPlan.id, planId));
+  if (!plan || plan.householdId !== householdId) refuseTo(returnTo, "missing");
+  const rights = await db.select().from(decisionRight)
+    .where(eq(decisionRight.householdId, householdId));
+  const result = walkFallbackLadder({
+    plan: {
+      preferredOption: plan.preferredOption,
+      approvedSubstitute: plan.approvedSubstitute,
+      establishedBackup: plan.establishedBackup,
+      vettedBench: plan.vettedBench,
+      decisionRightKey: plan.decisionRightKey,
+      amountCents: plan.amountCents,
+    },
+    rights: rights.map((r) => ({
+      rightKey: r.rightKey, valueCents: r.valueCents, valueText: r.valueText,
+    })),
+  });
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.update(fallbackPlan).set({
+      reachedStep: result.step as never, reachedAt: now,
+      reachedWhy: result.why.slice(0, 500), updatedAt: now,
+    }).where(eq(fallbackPlan.id, planId));
+    await emitOutboxEvent(tx, {
+      householdId, kind: "fallback_plan.evaluated",
+      payload: { fallbackPlanId: planId, reachedStep: result.step },
+      provenance: "action:evaluateFallbackPlan", objectId: planId,
+      actor: principal.userId, correlationId: planId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "fallback_plan", detail: { fallbackPlanId: planId, reachedStep: result.step, action: "evaluated" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, `fallback plan evaluated, reached ${result.step.replace(/_/g, " ")}`);
+}
+
 export async function recordExpectedEvent(formData: FormData) {
   const householdId = String(formData.get("householdId") ?? "");
   const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);

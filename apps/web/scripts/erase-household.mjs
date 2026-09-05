@@ -496,6 +496,39 @@ try {
        candidate_routing_why = CASE WHEN candidate_routing_why IS NULL THEN NULL ELSE $2 END,
        updated_at=now() WHERE household_id=$1`,
     [householdId, E]);
+  // fallback_plan (Q-12b-3, 2026-09-05): BLANKED AND KEPT, the
+  // expected_event posture. The row is a business record of what this
+  // household agreed could happen without being asked, which can be
+  // needed to answer what authority we believed we had; what is erased
+  // is every free text (the choice, the four named options, and the
+  // reason a step was reached). The step, its timing, the named right
+  // and the amount are structure and stay, so the whole-or-absent
+  // evaluation CHECK and the step-exists CHECK both survive.
+  //
+  // THE CHOICE MARKER CARRIES THE ROW ID, and that is not decoration.
+  // `fallback_plan_one_per_choice` is a UNIQUE index on
+  // (household_id, choice), so blanking every plan of one household to
+  // the SAME constant marker makes two erased plans collide and the
+  // erasure fails on its last household with several plans. The
+  // W-6 precedent (blank to a marker, never NULL, so the CHECK
+  // survives) generalizes here to uniqueness: where the blanked column
+  // is part of a unique key, the marker has to be per row. Proven in
+  // SQL both ways before this line was written: the constant form
+  // raised duplicate key value violates unique constraint
+  // "fallback_plan_one_per_choice", this form does not.
+  //
+  // The four option columns blank only where they were set, so a NULL
+  // option (a household that has no preferred option, which is a real
+  // answer) does not become an erased-something on the way out.
+  await c.query(
+    `UPDATE fallback_plan SET choice = $2 || ' ' || id::text,
+       preferred_option    = CASE WHEN preferred_option    IS NULL THEN NULL ELSE $2 END,
+       approved_substitute = CASE WHEN approved_substitute IS NULL THEN NULL ELSE $2 END,
+       established_backup  = CASE WHEN established_backup  IS NULL THEN NULL ELSE $2 END,
+       vetted_bench        = CASE WHEN vetted_bench        IS NULL THEN NULL ELSE $2 END,
+       reached_why         = CASE WHEN reached_why         IS NULL THEN NULL ELSE $2 END,
+       updated_at=now() WHERE household_id=$1`,
+    [householdId, E]);
   // paused_decision (W-7/AD, 2026-07-28): DELETED - internal staff
   // research about the household, the condition_flag class.
   await c.query("DELETE FROM paused_decision WHERE household_id=$1", [householdId]);

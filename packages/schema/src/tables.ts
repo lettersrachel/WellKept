@@ -2291,3 +2291,100 @@ export const changesetEffect = pgTable("changeset_effect", {
     name: "changeset_effect_same_household_fk",
   }),
 ]);
+
+/**
+ * Q-12b-3 (0073): `fallback_plan`, what to do when the preferred option
+ * for a repetitive operational choice is unavailable. RFC-ATTR-01
+ * Amendment 1 section A1.3, five values verbatim.
+ *
+ * YEAR-TWO, SHADOW, on its siblings' terms: computes, logs, visible in
+ * the corporate portal, surfacing to no member and altering no HOM
+ * briefing.
+ *
+ * BESIDE `preference_rule` (0057), NOT INSIDE IT, which the RFC says in
+ * as many words and is worth keeping: a preference rule is a household
+ * operating fact in PROSE, and this is a structured ladder that gets
+ * EVALUATED. Overloading the prose table would have made one of the two
+ * uses lie about what its rows are.
+ *
+ * THE LADDER'S ORDER IS THE VOCABULARY'S OWN, so nothing here invents it:
+ * `preferred` is the household's own choice, `approved_substitute` and
+ * `established_backup` are options somebody already approved for THIS
+ * household, `vetted_bench` is company-vetted and approved for nobody in
+ * particular, and `ask` is the floor, the step that means the authority
+ * ran out. Whether a given household's ladder SKIPS a rung is a
+ * per-household question, reported on the queue row and deliberately not
+ * built: nothing here lets a household reorder or skip, and nothing
+ * assumes they cannot.
+ *
+ * NOTHING EXECUTES. Reaching a step means the household's Decision Rights
+ * PERMIT it; no execution engine exists in this tree to act on that. Same
+ * statement Q-6's routing carries, for the same reason: the word would
+ * otherwise read as though something happened.
+ */
+export const fallbackStepEnum = pgEnum("fallback_step", [
+  "preferred",
+  "approved_substitute",
+  "established_backup",
+  "vetted_bench",
+  "ask",
+]);
+
+export const fallbackPlan = pgTable("fallback_plan", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  // The repetitive operational choice this plan is for, in the operator's
+  // words; s2. No taxonomy of choices is invented here: naming the kinds
+  // of choice a household makes is the founder's, and the words are what
+  // a person reads on the card.
+  choice: text("choice").notNull(),
+  // What each reachable step is, in words. NULL means the household has
+  // no such option, which is a real answer and different from an empty
+  // string: `ask` is always reachable and needs no text, so it has no
+  // column at all.
+  preferredOption: text("preferred_option"),
+  approvedSubstitute: text("approved_substitute"),
+  establishedBackup: text("established_backup"),
+  vettedBench: text("vetted_bench"),
+  // The Decision Right whose ceiling governs acting on this plan without
+  // asking, named by the operator VERBATIM. The caller names the right,
+  // because mapping a choice to one of the seventeen rights is a taxonomy
+  // (the routing module's standing rule, and Q-12b-1's own column).
+  decisionRightKey: text("decision_right_key"),
+  // Money, integer cents, NULL the honest unknown. An unknown amount is
+  // not below a ceiling, which is what makes most evaluations ask.
+  amountCents: integer("amount_cents"),
+  // WHERE THE LAST EVALUATION LANDED, and NULLABLE WITH NO DEFAULT: a
+  // plan nobody has evaluated has not reached any step, and a default
+  // would make "never evaluated" and "evaluated to preferred" the same
+  // bytes. Whole or absent with its time.
+  reachedStep: fallbackStepEnum("reached_step"),
+  reachedAt: timestamp("reached_at", { withTimezone: true }),
+  reachedWhy: text("reached_why"),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("fallback_plan_household_idx").on(t.householdId, t.reachedStep),
+  // One plan per choice per household. A second plan for the same choice
+  // would be two ladders with no rule for which one runs.
+  uniqueIndex("fallback_plan_one_per_choice").on(t.householdId, t.choice),
+  // The evaluation is whole or absent: a step with no time loses when it
+  // was reached, a time with no step says nothing, and a step with no
+  // reason cannot be checked later.
+  check("fallback_plan_evaluation_is_whole",
+    sql`(${t.reachedStep} IS NULL AND ${t.reachedAt} IS NULL AND ${t.reachedWhy} IS NULL)
+        OR (${t.reachedStep} IS NOT NULL AND ${t.reachedAt} IS NOT NULL AND ${t.reachedWhy} IS NOT NULL)`),
+  // A STEP CANNOT BE REACHED THAT THE PLAN DOES NOT HAVE. `ask` is always
+  // reachable, since it is the floor rather than an option. Written with
+  // IS NOT DISTINCT FROM rather than `=` throughout: `reached_step` is
+  // nullable, and a `=` comparison over a nullable column yields NULL,
+  // which a CHECK passes (G-135, the same day, one table earlier).
+  check("fallback_plan_reached_step_exists",
+    sql`${t.reachedStep} IS NULL
+        OR ${t.reachedStep} IS NOT DISTINCT FROM 'ask'
+        OR (${t.reachedStep} IS NOT DISTINCT FROM 'preferred' AND ${t.preferredOption} IS NOT NULL)
+        OR (${t.reachedStep} IS NOT DISTINCT FROM 'approved_substitute' AND ${t.approvedSubstitute} IS NOT NULL)
+        OR (${t.reachedStep} IS NOT DISTINCT FROM 'established_backup' AND ${t.establishedBackup} IS NOT NULL)
+        OR (${t.reachedStep} IS NOT DISTINCT FROM 'vetted_bench' AND ${t.vettedBench} IS NOT NULL)`),
+  check("fallback_plan_amount_is_not_negative",
+    sql`${t.amountCents} IS NULL OR ${t.amountCents} >= 0`),
+]);

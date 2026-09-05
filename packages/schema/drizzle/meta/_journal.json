@@ -512,6 +512,13 @@
       "when": 1788644644471,
       "tag": "0072_work_requirement_superseded",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1788644971857,
+      "tag": "0073_fallback_plan",
+      "breakpoints": true
     }
   ]
 }

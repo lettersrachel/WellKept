@@ -8644,3 +8644,67 @@ its hash, and production would then see an applied migration as unapplied.**
 So an applied migration file is effectively frozen, for a mechanical reason
 rather than a stylistic one, and the record lives here. Worth knowing before
 anybody tries to improve an old migration's documentation.
+
+### G-137 FOUND AND FIXED BEFORE IT SHIPPED, 5 September 2026: the standard erasure treatment would have failed, and only on a household with two of the thing
+
+**Where:** `apps/web/scripts/erase-household.mjs`, the Q-12b-3 `fallback_plan`
+treatment, written this session and corrected before it was committed.
+
+**The finding.** Blanking free text to a constant marker is the standard
+treatment in this tool; thirty-five other tables carry an `UPDATE ... SET`
+treatment of some kind, counted from the tool by distinct statement on
+5 September 2026 rather than remembered. On `fallback_plan` it
+COLLIDES: `fallback_plan_one_per_choice` is a UNIQUE index on
+`(household_id, choice)`, and `choice` is free text that must be blanked. Set
+every plan of one household to `[erased]` and the second one duplicates the
+first, so the statement raises
+`duplicate key value violates unique constraint "fallback_plan_one_per_choice"`
+and **the whole erasure fails inside its transaction.**
+
+**Why it is worth an entry rather than a comment.** The failure is invisible at
+every scale anyone tests at. A household with ONE fallback plan erases
+perfectly. A fixture with one plan per household erases perfectly. The dry run
+prints a correct plan, which is G-125's exact class: the statement that cannot
+execute is past what a dry run prints and inside a transaction a dry run never
+opens. It fails the first time a real household has two plans, which is the
+first time the feature is being used the way it was designed.
+
+**The fix and the general form.** The marker carries the row id
+(`'[erased]' || ' ' || id::text`), which keeps every erased row distinct.
+**The W-6 precedent generalizes, and this is the generalization worth keeping:
+blank to a MARKER rather than to NULL so the CHECK survives, and where the
+blanked column is part of a UNIQUE key, THE MARKER HAS TO BE PER ROW.** W-6
+was about a whole-or-absent CHECK surviving erasure; this is the same
+reasoning meeting a different constraint kind, and nothing in the tool said so
+until now.
+
+**Two things about how it was caught, because neither was the guard set.**
+
+`erasure-coverage` was green throughout by design: it checks that a table is
+NAMED in the tool, never that the statement works, which its own header says.
+`legal-census`, the archive census and `staff-disclosure` were green for the
+same reason G-135's four censuses were: **a census checks that a table is
+TREATED and never that a TREATMENT IS RIGHT.** That is now the second instance
+in one day of a defect living exactly in the space every census is blind to,
+and the two should be read together.
+
+What caught it was writing the comment. Claiming in the tool's own header that
+the per-row marker was necessary meant proving it, and the proof ran both
+directions in SQL by constraint name before the sentence was allowed to stand.
+**The claim came first and the proof was owed to it**, which is the opposite of
+the usual order and is the reason this is a fixed defect rather than a
+production incident.
+
+**And the statement itself was then exercised rather than reasoned about.** The
+`UPDATE` was EXTRACTED FROM THE FILE by reading the source, parameters
+substituted, and run verbatim against Postgres inside a rolled-back
+transaction against two real plans. Two rows blanked, uniqueness held, and an
+absent option stayed NULL rather than becoming an erased-something. A
+paraphrase of the statement would have proven a different statement, which is
+the class this register keeps filing under a different name.
+
+**Not covered:** the other blanking treatments were NOT swept for the same
+hazard in this session, and the sweep is one query away (any unique index whose
+columns include a blanked free-text column). Named here rather than done,
+because it is outside this row's scope; it is a small session and it should
+happen.

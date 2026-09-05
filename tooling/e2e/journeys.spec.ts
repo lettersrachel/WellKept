@@ -1625,6 +1625,93 @@ test("reconciliation: an expectation is recorded corporate-side, and none of it 
   }
 });
 
+test("fallback plan: the ladder reads the household's own grant, reaches a step, and executes nothing", async ({ context, page }) => {
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  const rightKey = `fb_journey_ceiling_${synId.slice(0, 8)}`;
+  try {
+    await pool.query(
+      `INSERT INTO decision_right (id, household_id, right_key, value_cents, materiality, status, authority)
+       VALUES (gen_random_uuid(), $1, $2, 15000, 'money_legal', 'recommended', 'Q-12b-3 journey')`,
+      [synId, rightKey]);
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+    // EVERY LOCATOR IS SCOPED TO THIS CARD, and the first version was not.
+    // The expectations card one section up carries inputs with the SAME
+    // aria-labels ("Decision right key", "Amount in cents"), so a page-wide
+    // getByLabel resolved to two elements and Playwright refused. That is
+    // the wrong-unit class (G-129) in a locator again, one journey later,
+    // and it failed loudly; the version that silently fills the OTHER
+    // card's input is the one to fear.
+    const card = page.locator(".card").filter({ hasText: "Fallback plans (Q-12b-3, shadow)" });
+    // Hydration first, the same guard the changeset journey needed: a fill
+    // before hydration is reverted by React and the click then submits
+    // something other than what the test typed.
+    await expect(card.getByRole("button", { name: "Record the plan" })).toBeVisible({ timeout: 30_000 });
+
+    // Refusing direction first, at the server wall: a choice too short to
+    // name anything.
+    await card.getByLabel("The decision this plan is for").fill("x");
+    await card.getByRole("button", { name: "Record the plan" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 30_000 });
+    expect(await count("SELECT count(*)::int n FROM fallback_plan WHERE household_id=$1")).toBe(0);
+
+    await page.goto(`/oversight/${synId}`);
+    const card2 = page.locator(".card").filter({ hasText: "Fallback plans (Q-12b-3, shadow)" });
+    await expect(card2.getByRole("button", { name: "Record the plan" })).toBeVisible({ timeout: 30_000 });
+    await card2.getByLabel("The decision this plan is for").fill("who covers the Tuesday visit");
+    await card2.getByLabel("Preferred option").fill("Marta");
+    await card2.getByLabel("Approved substitute").fill("Ana");
+    await card2.getByLabel("Decision right key").fill(rightKey);
+    await card2.getByLabel("Amount in cents").fill("9000");
+    await card2.getByRole("button", { name: "Record the plan" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM fallback_plan WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    // RECORDING DOES NOT EVALUATE. The two acts are separate, so a freshly
+    // recorded plan has read no authority at all.
+    expect(await count("SELECT count(*)::int n FROM fallback_plan WHERE household_id=$1 AND reached_step IS NULL AND reached_at IS NULL")).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='fallback_plan.recorded'")).toBe(1);
+
+    // Clean load before reading the row, the changeset journey's note.
+    await page.goto(`/oversight/${synId}`);
+    const card3 = page.locator(".card").filter({ hasText: "Fallback plans (Q-12b-3, shadow)" });
+    await expect(card3.locator(".prov").filter({ hasText: "not read yet" })).toBeVisible({ timeout: 15_000 });
+
+    await card3.getByRole("button", { name: "Read which step this reaches" }).click();
+    // 9000 is at or below the household's own 15000 ceiling, so the first
+    // option on record is what the grant permits.
+    await expect.poll(() => count("SELECT count(*)::int n FROM fallback_plan WHERE household_id=$1 AND reached_step='preferred'"), { timeout: 20_000 }).toBe(1);
+    // Whole or absent, read from the row rather than from the screen.
+    expect(await count("SELECT count(*)::int n FROM fallback_plan WHERE household_id=$1 AND reached_at IS NOT NULL AND reached_why IS NOT NULL")).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='fallback_plan.evaluated'")).toBe(1);
+
+    await page.goto(`/oversight/${synId}`);
+    await expect(page.locator(".card").filter({ hasText: "Fallback plans (Q-12b-3, shadow)" })
+      .locator(".prov").filter({ hasText: "reaches preferred" })).toBeVisible({ timeout: 15_000 });
+
+    // NOTHING EXECUTED. Reaching a step is a reading of the grant, and the
+    // proof of that is negative and worth making explicitly: no work item,
+    // no attention record, no decision record appeared behind it.
+    expect(await count("SELECT count(*)::int n FROM work_item WHERE household_id=$1 AND created_at > now() - interval '2 minutes'")).toBe(0);
+    expect(await count("SELECT count(*)::int n FROM decision_record WHERE household_id=$1 AND created_at > now() - interval '2 minutes'")).toBe(0);
+
+    // SHADOW, asserted against the EMITTED MARKUP rather than the rendered
+    // text (the RSC boundary rule): a prop passed and discarded still fails
+    // here. The member sees no ladder, no option and no step vocabulary.
+    const clientPage = await context.newPage();
+    await clientPage.goto(`/oversight/${synId}/preview/client`);
+    const html = await clientPage.content();
+    expect(html).not.toContain("who covers the Tuesday visit");
+    expect(html).not.toContain("Marta");
+    expect(html).not.toContain("vetted_bench");
+    expect(html).not.toContain(rightKey);
+    await clientPage.close();
+  } finally {
+    await pool.query("DELETE FROM fallback_plan WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM decision_right WHERE household_id=$1 AND right_key=$2", [synId, rightKey]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});
+
 test("changeset: nothing applies until a person classifies it safe, and the member is never told", async ({ context, page }) => {
   const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
   try {

@@ -51,7 +51,9 @@ export default function PrivacyPage() {
         silence becomes something we notice rather than something you have to chase,
         and, when something about your household changes, a note of the change and of
         which of our own planned work it affects, so the change reaches the plan
-        without you having to repeat it) to run the service
+        without you having to repeat it, and, for a decision where your first
+        choice may not be available, the options you have told us to work down
+        and which one a situation reached) to run the service
         reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product

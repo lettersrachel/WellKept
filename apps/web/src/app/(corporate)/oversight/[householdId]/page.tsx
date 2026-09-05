@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, expectedEvent, changeset, changesetEffect, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, expectedEvent, changeset, changesetEffect, fallbackPlan, EXPECTED_EVENT_PATTERNS, MATERIALITY_VALUES, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,7 +8,7 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment, recordExpectedEvent, recordChangeset, classifyChangeset, applyChangeset } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment, recordExpectedEvent, recordChangeset, classifyChangeset, applyChangeset, recordFallbackPlan, evaluateFallbackPlan } from "@/lib/actions";
 import { requirementCalibration } from "@/lib/estimate-calibration";
 import { displayState, m25, unmetClauses } from "@/lib/commitment-ledger";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
@@ -130,6 +130,9 @@ export default async function Oversight({ params, searchParams }: {
     .orderBy(desc(changeset.detectedAt)).limit(15);
   const changesetEffects = changesets.length === 0 ? [] : await db.select().from(changesetEffect)
     .where(eq(changesetEffect.householdId, householdId));
+  const fallbackPlans = await db.select().from(fallbackPlan)
+    .where(eq(fallbackPlan.householdId, householdId))
+    .orderBy(desc(fallbackPlan.createdAt)).limit(15);
   const expectations = await db.select().from(expectedEvent)
     .where(eq(expectedEvent.householdId, householdId))
     .orderBy(desc(expectedEvent.expectedBy)).limit(25);
@@ -965,10 +968,72 @@ export default async function Oversight({ params, searchParams }: {
           );
         })}
         <div className="prov">
-          Marking a dependent invalidated records that it may now be wrong; RETIRING it
-          would need a tenth work-requirement status, which is a change to a shipped
-          vocabulary and is the founder&apos;s. `recomputed` has no producer: nothing
-          here recomputes work, so claiming it did would be false.
+          Marking a dependent invalidated records that it may now be wrong. Applying the
+          change then moves those dependents to `superseded`, the tenth work-requirement
+          status, ruled by the founder on 5 September 2026: only this path writes it,
+          because the value is a claim about causation and a hand-set one would assert a
+          cause nobody can trace. `recomputed` has no producer: nothing here recomputes
+          work, so claiming it did would be false.
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>Fallback plans (Q-12b-3, shadow)</h2>
+        <div className="note">
+          For a decision this household faces when the first choice is not available, the
+          ladder we work down: their preferred option, a substitute someone approved, an
+          established backup, an option we have vetted that nobody approved for this
+          household in particular, and, when none of those is permitted, asking. Reading a
+          plan does not act on it. NOTHING IN THIS SYSTEM EXECUTES A FALLBACK: a reached
+          step says what the household&apos;s own Decision Rights permit, and no code path
+          anywhere takes it. Shadow, so none of this reaches a member or a briefing.
+        </div>
+        <form action={recordFallbackPlan} className="stack">
+          <input type="hidden" name="householdId" value={householdId} />
+          <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+          <input name="choice" aria-label="The decision this plan is for" placeholder="The decision this plan is for (who covers a visit, who waters the plants)" maxLength={200} />
+          <input name="preferredOption" aria-label="Preferred option" placeholder="Preferred option, if they have one" maxLength={200} />
+          <input name="approvedSubstitute" aria-label="Approved substitute" placeholder="Approved substitute, if one is approved" maxLength={200} />
+          <input name="establishedBackup" aria-label="Established backup" placeholder="Established backup, if one is established" maxLength={200} />
+          <input name="vettedBench" aria-label="Vetted bench option" placeholder="Vetted bench option, if we have one" maxLength={200} />
+          <input name="decisionRightKey" aria-label="Decision right key" placeholder="Which decision right governs this (named, never guessed)" maxLength={120} />
+          <input name="amountCents" aria-label="Amount in cents" placeholder="Amount in cents, if money is involved" inputMode="numeric" />
+          <button type="submit">Record the plan</button>
+        </form>
+        {fallbackPlans.length === 0 && <div className="prov">No fallback plans recorded for this household.</div>}
+        {fallbackPlans.map((f) => (
+          <div key={f.id} className="field">
+            <span className="fname">{f.choice}</span>
+            <span className="fval">
+              {[
+                f.preferredOption ? `preferred: ${f.preferredOption}` : null,
+                f.approvedSubstitute ? `approved substitute: ${f.approvedSubstitute}` : null,
+                f.establishedBackup ? `established backup: ${f.establishedBackup}` : null,
+                f.vettedBench ? `vetted bench: ${f.vettedBench}` : null,
+              ].filter(Boolean).join(" · ") || "no option on any rung"}
+            </span>
+            <div className="prov">
+              {f.decisionRightKey ? `governed by ${f.decisionRightKey}` : "names no decision right, so it can only reach asking"}
+              {f.amountCents === null ? " · amount unknown" : ` · ${f.amountCents} cents`}
+              {" · "}
+              {f.reachedStep
+                ? `reaches ${f.reachedStep.replace(/_/g, " ")} (read ${f.reachedAt?.toISOString().replace("T", " ").slice(0, 16)} UTC)`
+                : "not read yet"}
+            </div>
+            {f.reachedWhy && <div className="prov">{f.reachedWhy}</div>}
+            <form action={evaluateFallbackPlan} className="row" style={{ gap: 6 }}>
+              <input type="hidden" name="householdId" value={householdId} />
+              <input type="hidden" name="returnTo" value={`/oversight/${householdId}`} />
+              <input type="hidden" name="fallbackPlanId" value={f.id} />
+              <button type="submit">Read which step this reaches</button>
+            </form>
+          </div>
+        ))}
+        <div className="prov">
+          The ladder&apos;s order is the specification&apos;s own and nothing here invents
+          it. Whether a household&apos;s ladder should skip a rung it has, and whether an
+          approved substitute should clear a lower bar than a vetted bench option, are
+          both open questions for the founder rather than defaults chosen here.
         </div>
       </div>
 

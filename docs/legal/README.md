@@ -132,6 +132,22 @@ Four documents, one per audience and direction:
   blanked on household erasure and the structure is kept; the
   which-work-is-affected rows are deleted whole.
 
+- **Fallback plans** (added 2026-09-05, migration 0073): for a named
+  decision a household faces when the first choice is not available (who
+  covers a visit, who waters the plants), the ladder we work down: the
+  household's preferred option, a substitute someone approved, an
+  established backup, an option we have vetted but nobody approved for
+  this household in particular, and, when none of those is permitted,
+  asking. Each row carries the four options in our operator's words, the
+  Decision Right the household granted that we read to decide whether a
+  step may be taken without asking, an amount where money is involved,
+  and, once evaluated, which step was reached and why. Corporate-only and
+  in SHADOW: visible to our staff on the household record, reaching no
+  member surface and no field briefing. NOTHING IS EXECUTED FROM IT: a
+  reached step is a statement about what the household's own grant
+  permits, and no part of this system acts on that. Free text is blanked
+  on household erasure and the structure is kept.
+
 - **Commercial record** (added 2026-07-27), how the household found Well
   Kept (referral channel, with an optional note), and the membership
   history as dated events: start, tier change, pause, resume, cancellation,

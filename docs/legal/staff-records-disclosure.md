@@ -16,9 +16,9 @@ status: living
 > member signs.** The software's staff-attribution surface is wider than the
 > numbered items below. Computed from the schema rather than counted by hand,
 > and asserted in CI (`staff-disclosure.test.ts`) so this paragraph cannot go
-> stale. The system carries 46 staff-attributed tables. Of those,
+> stale. The system carries 47 staff-attributed tables. Of those,
 > 19 are covered by the numbered items in this document, and
-> 27 are not yet named here and stand on written engineering reasons in the
+> 28 are not yet named here and stand on written engineering reasons in the
 > guard's allowlist.
 >
 > Most of the unnamed ones record the WRITING of something (who entered a work
