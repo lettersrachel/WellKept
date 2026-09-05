@@ -79,6 +79,7 @@ const FROZEN: Record<string, string> = {
   // authority and is merged into CLAUDE.md's session discipline.
   "docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md": "7ac66655c577d1cd199312e238087f005389f77198b4a45ed5cd89d507d29949",
   "docs/FOUNDER_RULINGS_2026-09-05_Blockers.md": "d751e88db6c7cc1fde00ecdc295812774fd9f48674a302c1ffd81ae119ed56a1",
+  "docs/FOUNDER_RULINGS_2026-09-05_Items5and6.md": "62abd225a44883c8ad3d4c6f11a512f849cd7ee647403aaf21c01f30caef8742",
   // The preparation batch: twelve items that run ALONGSIDE the build
   // queue rather than instead of it. Document-only unless an item says
   // otherwise. Same WK-QA-018 entry and same dating question (G-123).

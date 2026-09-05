@@ -13,10 +13,10 @@ for the reports themselves. Each row points at its deliverable.
 | 2 | Dependency map to E1, with the critical path | **LANDED** | `DEPENDENCY_MAP_TO_E1_2026-09-05.md` |
 | 3 | Seed-evidence instrumentation check | **LANDED** | `SEED_EVIDENCE_INSTRUMENTATION_2026-09-05.md` |
 | 4 | Security-test handoff package | **LANDED**, and it produced the WK-SEC-001 amendment | `SECURITY_HANDOFF_PACKAGE_2026-09-05.md`, `WK-SEC-001_v1_1_AMENDED_SCOPE.md`, G-130 |
-| 5 | WK-APP-002 extraction into the loader's YAML shape | **BLOCKED.** See below | none |
+| 5 | WK-APP-002 extraction into the loader's YAML shape | **BLOCKED, and the founder confirms the block was correct and the instruction was hers in error.** The SHAPE is authorized separately and DELIVERED | `docs/triggers/SHAPE.md`, the validator, the worked example, Q-11z |
 | 6 | Three fixture household workbooks | **LANDED**, and it found a defect by loading its own deliverable | `tooling/seed/fixtures/` (three workbooks plus README), Q-11y |
-| 7 | Empty Household Green workbook | next | |
-| 8 | Decision Rights confirm-or-amend sheet | | |
+| 7 | Empty Household Green workbook | **LANDED**, with the estimated pre-fill clause deliberately NOT done | `tooling/seed/household_green_workbook.json`, `docs/HOUSEHOLD_GREEN_WORKBOOK_2026-09-05.md` |
+| 8 | Decision Rights confirm-or-amend sheet | next | |
 | 9 | Evaluation forms and scenario stubs | | |
 | 10 | Freeze packet item A, laid out | | |
 | 11 | G-register triage | | |
