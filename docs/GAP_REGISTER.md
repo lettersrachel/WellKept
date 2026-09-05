@@ -8472,3 +8472,76 @@ the same knowing-the-rule-is-not-applying-it evidence the section 4 ledger
 carries about carried-forward check results, and it argues the remedy has to be
 procedural rather than attentional: **a report that names a row updates the
 row in the same change, or it is a claim about intention.**
+
+### G-129 ADDENDUM, 5 September 2026: a sixth instance, and it produced ten correct-looking answers at once
+
+**The class arriving in a CONSTRAINT PROOF, which is the one place this
+repository already knew to be careful.** Q-12b-1's first proof run opened a
+transaction, inserted its fixtures, and ran ten cases: seven meant to be
+REFUSED by a named constraint and three meant to be ACCEPTED. A setup INSERT
+failed first, on `event_outbox.occurred_at` being NOT NULL, which ABORTED the
+transaction. Every one of the ten cases then returned
+`ERROR: current transaction is aborted, commands ignored until end of
+transaction block`.
+
+**Ten errors, and seven of them were exactly what a passing refusal looks like
+to anyone reading for the presence of an error.** The unit the check returned
+was "a statement failed"; the unit the question was about was "the constraint
+refused this row". The three ACCEPT cases would have failed loudly, which is
+the only reason this was caught rather than filed as a clean proof; had the
+proof contained refusals alone, it would have reported seven passes and been
+believed. That is the selftest lesson from the deploy gate arriving in a new
+place: **a proof made only of refusals cannot tell a working constraint from a
+broken harness.**
+
+**THE REMEDY IS A RULE, not care, and it is stated as a procedure because the
+founder's own reasoning on this class is that care was already present:**
+
+> **Each refusal case runs in its OWN transaction, and is asserted by
+> CONSTRAINT NAME, never by the presence of an error.**
+
+The rerun does exactly that: one `psql` invocation per case wrapped in its own
+`BEGIN ... ROLLBACK`, with the constraint name extracted from the message and
+printed beside the case. Seven refusals then named seven different
+constraints, which is a stronger statement than "seven errors occurred", and
+it is a statement the aborted-transaction shape cannot produce: an aborted
+transaction has no constraint name to give.
+
+The preconditions rule already said to print the constraints from
+`pg_constraint` before any case runs, and that half was done and passed. **It
+did not help**, because the precondition was true and the harness broke
+afterwards. So the two rules are complementary rather than overlapping: one
+proves the constraint exists, the other proves this case reached it.
+
+### G-133 ADDENDUM 3, 5 September 2026: a second instance, and two makes it structural
+
+**WKT-017.** The founder ruled it earlier the same day, and the verdict was
+recorded on `docs/TASK_INVENTORY_UNCERTAIN_SHEET_2026-09-05.md`, the sheet
+where the question was asked. **The draft catalog's own row still read
+`UNCERTAIN (T-052)`**, and the catalog is the document a build reads from: the
+freeze, the provisional flip and the Inventory loader all key off the draft,
+not off the sheet. Found the next day, while applying the other seven
+verdicts, because applying them meant opening the row.
+
+**Read beside Q-7, which is the same shape one day earlier**, the pattern is
+not a lapse. Both times the ruling LANDED, correctly and in writing, in the
+place where the question had been asked; both times nothing carried it to the
+place where the answer gets used. That is a property of how this repository
+records decisions rather than a failure of attention: **a question is asked in
+one artefact and answered in another, and no mechanism connects the two.**
+Q-7's report lived in a turn report, WKT-017's in a review sheet; neither has
+a link to the row it settles.
+
+**A CHEAP CHECK EXISTS FOR THE DOCUMENT HALF, and it is opened as queue row
+Q-12c** (the standing rule that a guard finding is a row). The two Task
+Inventory documents are machine-comparable: the sheet marks a row RULED and
+states its verdict, and the draft carries that row's `MAPS_TO` cell. A guard
+can assert that no row the sheet marks RULED still reads `UNCERTAIN` in the
+draft. That catches this exact instance and nothing wider.
+
+**What no guard reaches, stated so the row is not mistaken for a fix:** Q-7's
+half. A ruling delivered in conversation and never written into any artefact
+leaves nothing to compare, and the remedy there is procedural rather than
+mechanical: **a report that names a queue row updates that row in the same
+change, or it is a claim about intention** (the reporting convention's own
+wording, pointed at rows instead of at commands).

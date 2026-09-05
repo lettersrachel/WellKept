@@ -265,3 +265,35 @@ test("the disclosure the guard reads is the signable document, not a stub", () =
   assert.ok(disclosure.includes("Acknowledgment"),
     "the disclosure lost its signature block; this guard exists because a person signs it");
 });
+
+/**
+ * G-13's SCOPE, stated in the document counsel reads and asserted here so
+ * it cannot go stale (founder instruction, 5 September 2026: "four tables
+ * and rising is what counsel needs to see").
+ *
+ * THE NUMBER SHE WAS GIVEN WAS THE WRONG UNIT and this assertion is what
+ * corrected it. "The fourth staff-attributed table to ship since G-13
+ * became a hiring precondition" counts arrivals since 5 September; what
+ * the disclosure has to COVER is every staff-attributed table in the
+ * schema, and that is a different and much larger number. Both sentences
+ * are true and only one answers the question.
+ *
+ * The three numbers live in the disclosure as a note to counsel and are
+ * checked against the computed census here, so nobody has to remember to
+ * update them: a new staff-attributed table fails this test until the
+ * note is corrected, which is the only way a count in prose stays true.
+ */
+test("the disclosure's scope note matches the computed census, so counsel reads a live number", () => {
+  const detected = detectStaffSurfaces();
+  const allowlisted = detected.filter((t) => t in ALLOWLIST);
+  const disclosed = detected.filter((t) => !(t in ALLOWLIST));
+  const say = (n: number, what: string) =>
+    assert.ok(disclosure.includes(`${n} ${what}`),
+      `the disclosure's scope note does not say "${n} ${what}". The census computes ` +
+      `${detected.length} staff-attributed tables, ${disclosed.length} named in the text and ` +
+      `${allowlisted.length} awaiting a line. Correct the note in ` +
+      `docs/legal/staff-records-disclosure.md; a count in prose is only true while something checks it.`);
+  say(detected.length, "staff-attributed tables");
+  say(disclosed.length, "are covered by the numbered items");
+  say(allowlisted.length, "are not yet named");
+});
