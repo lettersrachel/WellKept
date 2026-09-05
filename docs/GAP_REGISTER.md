@@ -8246,3 +8246,53 @@ named this morning. Proven in the failing direction three ways with each
 mutation confirmed landed first (a domain removed, a trap removed, an item
 struck from the five-item line), each refusing by name, and green on the
 restored tree.
+
+---
+
+### G-132 CLOSED (the break) and REPORTED (what it exposed), 5 September 2026: the required argument broke CI, and five commits were reported green from a suite that never runs the failing step
+
+**What happened.** The Q-11y ruling made `is_fixture` a required argument on
+`db:seed`. `.github/workflows/ci.yml` calls that loader in BOTH jobs and passes
+no flag, so the loader refused, and **`gates` and `airplane` have both died at
+the seed step on every commit since**. The refusal message is exactly the one
+the ruling asked for; it was simply printed where nobody was reading.
+
+**Five commits red, and the reason nobody noticed is the part worth keeping.**
+Every one of those commits was reported with "suite 11/11 uncached", and every
+one of those claims was TRUE and IRRELEVANT: the local suite is `pnpm test`,
+which never invokes `db:seed`. **CI's failing step is not in the local suite at
+all**, so a green local run carries no information about it. The claim and the
+question were about different things, which is the G-129 class arriving in a
+new place: not a count of the wrong unit, but a PASS from the wrong harness,
+reported as though it settled the question a reviewer would ask.
+
+**It was found by the merge control rather than by the build.**
+`verify-merge.sh` refused PR #300 with `suite completed/failure runs=2`, which
+is the script doing exactly the job the Merging section describes. Branch
+protection would have refused too. **Neither of those is a substitute for
+looking**, and the honest reading is that the controls caught what the author
+did not.
+
+**The fix.** Both CI seed steps state `--fixture`, with the reason in a comment
+beside them, because CI seeds a synthetic household. `DEPLOY.md`'s documented
+production command carried the same latent refusal and is corrected in the same
+change. The flag reaching the loader through `pnpm ... -- --fixture` was
+verified by running it rather than by reading it.
+
+**What the fix exposed, reported and NOT fixed (queue row Q-11o).** The
+household insert is `onConflictDoNothing`, so **on a re-seed the stated flag is
+not applied and the stored value stands**. The local tree is the live instance:
+Fernbrook Demo carries `is_fixture = false` while being a fixture household, and
+a re-seed stating `--fixture` left it false and said nothing. **Not to be fixed
+by overwriting**, because flipping a real household to fixture would erase it
+from every corporate number, which is the second half of the founder's own
+pair. So the required-argument rule is satisfied on INSERT and defeated on
+RE-RUN, and which of the three shapes closes that is a semantics decision about
+re-seeding rather than a defect with one obvious answer.
+
+**The standing lesson, stated so it binds the next session:** a change to a
+COMMAND's interface is a change to every caller of that command, and callers
+live outside the source tree's test surface. Grep the command name across
+`.github/`, `tooling/` and the operator documents, not only across `src`. The
+required-argument pattern's whole claim is that it forces every call site to be
+visited; it can only do that for call sites somebody looks for.

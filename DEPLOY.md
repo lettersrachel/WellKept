@@ -15,9 +15,24 @@ the accounts (owner: founder), then the wiring below is mechanical.
 ```sh
 export DATABASE_URL='postgres://...neon.tech/wellkept?sslmode=require'  # pooled string
 pnpm --filter @wellkept/schema db:migrate
-pnpm --filter @wellkept/schema db:seed     # 258-field template + demo accounts
+pnpm --filter @wellkept/schema db:seed -- --fixture   # 258-field template + demo accounts
 pnpm --filter @wellkept/schema db:demo     # optional: Fernbrook demo content
 ```
+
+`--fixture` is REQUIRED and the loader refuses without it (Q-11y, founder
+ruling 5 September 2026). The seeded template household is synthetic and
+carries demo accounts, so `--fixture` is the true statement; a real household
+is `--real`, and there is no default because `is_fixture` decides whether a
+household is counted in every fleet number, the reconciliation knob, the
+capacity calculation and the covenant figures.
+
+**Known limit, reported not fixed:** the household insert is
+`onConflictDoNothing`, so on a RE-SEED against a database that already holds
+the household, the flag you state is not applied and the existing value stands.
+The safe direction is not to overwrite (flipping a real household to fixture
+would erase it from every corporate number), but a stated argument that is
+silently not applied is the thing the required-argument rule exists to prevent.
+Queue row Q-11o.
 
 Real-household provisioning (until the admin UI exists) is SQL: insert
 `auth_user` (email) + `household_role_assignment` (user, household, role).
