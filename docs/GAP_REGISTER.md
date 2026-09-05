@@ -8296,3 +8296,24 @@ live outside the source tree's test surface. Grep the command name across
 `.github/`, `tooling/` and the operator documents, not only across `src`. The
 required-argument pattern's whole claim is that it forces every call site to be
 visited; it can only do that for call sites somebody looks for.
+
+**EXTENDED BY FOUNDER RULING, 5 September 2026, and both halves are now in
+`CLAUDE.md`.**
+
+**First, the companion rule to the required-argument pattern: MAKING AN
+ARGUMENT REQUIRED IS AN INTERFACE CHANGE, and its callers are ENUMERATED BEFORE
+THE COMMIT**, explicitly including CI workflows, tooling scripts and the
+operator documents. The founder counts three such changes in this repository so
+far. The tree carries many CLIs that refuse a missing input and only some of
+those are this pattern, which is about a value that is a DECISION rather than a
+value that is merely absent; the distinction is why the enumeration is worth
+doing by hand each time rather than being reduced to a grep of `REFUSED:`.
+
+**Second, the reporting convention, adopted as the remedy for the class rather
+than as advice: a green suite is reported with what it COVERS and what it does
+NOT, in the same breath, or CI's state is reported instead.** The founder's own
+sentence for it: **"Suite green, CI not yet run on this head" would have
+surfaced this five commits earlier.** The claim that was made was true and
+answered a different question from the one she was asking, which is the G-129
+family arriving as a PASS FROM THE WRONG HARNESS rather than as a count of the
+wrong unit.

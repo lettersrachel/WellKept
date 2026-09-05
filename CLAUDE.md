@@ -647,6 +647,20 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
     failure. Household Green is the live instance: a real household whose
     workbook goes through the same loader.
 
+  **MAKING AN ARGUMENT REQUIRED IS AN INTERFACE CHANGE, AND ITS CALLERS ARE
+  ENUMERATED BEFORE THE COMMIT** (founder ruling, 5 September 2026, extending
+  G-132). The pattern's whole claim is that it forces every call site to be
+  visited, and **it can only do that for call sites somebody looks for.** The
+  enumeration is explicitly wider than the source tree: **CI workflows, tooling
+  scripts and the operator documents**, because a command's callers live where
+  no test runs. The founder counts three such changes in this repository so
+  far; the tree carries many CLIs that refuse a missing input, and only some of
+  those are this pattern, which is about a value that is a DECISION rather than
+  a value that is merely absent.
+  **The instance:** `is_fixture` became required on `db:seed`, `ci.yml` calls
+  that loader in both jobs and passed no flag, and both CI jobs died at the seed
+  step for five commits while the local suite stayed green (G-132).
+
   **The required argument is what makes both STATABLE rather than DEFAULTED.**
   Neither direction is a wrong value; both are a value nobody chose, and no
   reading of the data afterwards can tell a default from a decision. That is
@@ -763,6 +777,16 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   count honestly, this one is about the count being an answer to the question
   at all. **Say the two units out loud before trusting any number, every time,
   including when you have just finished explaining why.**
+- **A GREEN SUITE IS REPORTED WITH WHAT IT COVERS AND WHAT IT DOES NOT, IN THE
+  SAME BREATH, OR CI'S STATE IS REPORTED INSTEAD** (founder ruling, 5 September
+  2026, as the remedy for the class rather than as advice). "Suite 11/11
+  uncached" was TRUE on five consecutive commits while both CI jobs were failing
+  at a step the local suite does not run, so the claim was true and answered a
+  different question from the one being asked. **"Suite green, CI not yet run on
+  this head" would have surfaced it five commits earlier**, which is the whole
+  cost of the omission. This is the G-129 family arriving as a PASS FROM THE
+  WRONG HARNESS rather than as a count of the wrong unit: say which harness ran,
+  and say what it does not reach.
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**

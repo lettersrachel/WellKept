@@ -70,6 +70,40 @@ const pool = new pg.Pool({
 });
 const db = drizzle(pool);
 
+/**
+ * Q-11o (founder ruling, 5 September 2026): a mismatch is a DECISION FOR A
+ * PERSON, and the person is told what the conflict is.
+ *
+ * The insert below is `onConflictDoNothing`, so on a re-seed the stated flag
+ * would not be applied and the stored value would stand. **That is the right
+ * behaviour and the wrong silence.** It must not overwrite: flipping a real
+ * household to fixture would erase it from every fleet number, the
+ * reconciliation knob, the capacity calculation and every covenant figure,
+ * which is the second half of the pair the required-argument rule rests on.
+ * But an argument the caller is REQUIRED to state, and which the run then
+ * ignores without a word, defeats the rule on every re-run.
+ *
+ * So the loader refuses, naming both values and the household, and changes
+ * nothing. Correcting a wrong stored flag is a deliberate one-row change made
+ * by a person with the reasoning recorded, never a side effect of a seed.
+ */
+const [existing] = await db.select({ isFixture: household.isFixture, name: household.name })
+  .from(household).where(eq(household.id, seed.household.id));
+if (existing && existing.isFixture !== FIXTURE_FLAG) {
+  console.error(
+    `REFUSED: the stored flag and the stated one disagree, and nothing was written.\n` +
+    `  household   ${existing.name} (${seed.household.id})\n` +
+    `  stored      is_fixture = ${existing.isFixture}\n` +
+    `  you stated  ${FIXTURE_FLAG ? "--fixture" : "--real"} (is_fixture = ${FIXTURE_FLAG})\n` +
+    `This loader never overwrites the flag: flipping a real household to fixture\n` +
+    `would remove it from every fleet number, the reconciliation knob, the capacity\n` +
+    `calculation and the covenant figures, and flipping the other way would count a\n` +
+    `synthetic household in all of them. Which value is right is a decision for a\n` +
+    `person. Correct the row deliberately, or re-run stating the value it holds.`,
+  );
+  process.exit(1);
+}
+
 await db.insert(household).values({
   id: seed.household.id, name: seed.household.name, tier: seed.household.tier,
   isFixture: FIXTURE_FLAG,
