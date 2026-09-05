@@ -3,7 +3,7 @@ import assert from "node:assert";
 import {
   archiveTableSet, householdReferencingTables, archivePersonEmail,
   ARCHIVE_EXCLUSIONS, ARCHIVE_PROJECTIONS, ARCHIVE_KNOWN_LOSSES, ARCHIVE_PHOTO_LOSS,
-  ARCHIVE_SCOPES, MEMBER_SCOPE, MEMBER_ROW_FILTERS, PORTABILITY_CATEGORIES,
+  ARCHIVE_SCOPES, MEMBER_SCOPE, MEMBER_ROW_FILTERS, PORTABILITY_CATEGORIES, CORPORATE_ONLY,
   REFERENCED_GLOBAL_TABLES,
 } from "./household-archive.ts";
 
@@ -145,4 +145,45 @@ test("the known losses say that people are pseudonymised", () => {
   const joined = ARCHIVE_KNOWN_LOSSES.join(" ").toLowerCase();
   assert.ok(joined.includes("pseudonymised"),
     "a restore that silently renames every person is a loss a reader must be told about");
+});
+
+/**
+ * Founder ruling, 5 September 2026 (Q-8b acceptance, ruling 1): the
+ * member allow-list is TOTAL over the corporate table set. Every table
+ * carries an explicit decision and a table with no entry FAILS rather
+ * than defaulting quietly to corporate-only, so "considered and left
+ * out" leaves a trace. The erasure-coverage floor applied to a second
+ * question, and the same property: the author must decide, not omit.
+ */
+test("every corporate table carries an explicit member decision, or the guard fails", () => {
+  const corporate = archiveTableSet("corporate").map((t) => t.table);
+  assert.ok(corporate.length >= FLOOR - Object.keys(ARCHIVE_EXCLUSIONS).length,
+    "a broken table set would make this case pass vacuously");
+  const undecided = corporate.filter((t) => !MEMBER_SCOPE[t] && !CORPORATE_ONLY[t]);
+  assert.deepEqual(undecided, [],
+    `table(s) in the corporate archive with no member decision: ${undecided.join(", ")}. ` +
+    "Add the table to MEMBER_SCOPE with the portability phrase that admits it, or to CORPORATE_ONLY " +
+    "with the reason it stays out. Leaving it out has to be written down, which is the whole point.");
+});
+
+test("no table is BOTH in the member scope and corporate-only", () => {
+  const both = Object.keys(MEMBER_SCOPE).filter((t) => CORPORATE_ONLY[t]);
+  assert.deepEqual(both, [], `contradictory decision for: ${both.join(", ")}`);
+});
+
+test("every corporate-only decision carries a substantive reason", () => {
+  for (const [table, reason] of Object.entries(CORPORATE_ONLY)) {
+    assert.ok(reason && reason.trim().length > 40,
+      `${table} is held out of the member scope with no substantive reason`);
+  }
+});
+
+test("a corporate-only entry naming a table that is not in the archive is stale", () => {
+  // The reverse direction. A decision about a table that no longer
+  // exists reads as coverage and is not.
+  const corporate = new Set(archiveTableSet("corporate").map((t) => t.table));
+  for (const t of Object.keys(CORPORATE_ONLY)) {
+    assert.ok(corporate.has(t),
+      `CORPORATE_ONLY names ${t}, which is not in the corporate archive. Either it lost its household column or it is excluded from every scope, and the decision here is stale.`);
+  }
 });
