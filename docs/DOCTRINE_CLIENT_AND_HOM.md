@@ -62,12 +62,25 @@ messages before any decision exists**, and the third is not a decision.
 Nothing counts sends, nothing knows the ceiling, and no mechanism could
 say "something upstream is wrong" because nothing is watching.
 
-**Not fixed here.** Both channels are member-facing, which is never
-pre-authorized, and the ceiling needs a decision this session cannot
-make: whether a per-visit report counts against the ceiling at all, or
-is exempt as the record of a thing that happened rather than a demand
-on attention. Those give different systems. **Queue row Q-11c opens it**
-and the ruling is named as its prerequisite.
+**RULED 5 September 2026 (founder), and the shape of the answer matters
+more than the answer.** A per-visit report is EXEMPT from the ceiling as
+the record of a thing that happened. **The exemption is conditional: a
+report containing any request, question, decision or call to action
+counts.** And the counter is built over every member-reaching channel
+REGARDLESS, so the exemption is a classification of a send rather than
+an absence of measurement.
+
+**That ordering is the whole ruling.** The cheap reading of "reports are
+exempt" is that reports need not be counted, which is how a channel
+disappears from a ledger: nothing measures it, so nothing can later
+re-classify it, and the remedy clause above ("the system should say so
+rather than send") again has nothing to run on. Measuring first and
+classifying second means a report that grows a question one day is
+caught by a rule rather than by somebody remembering this paragraph.
+
+**Still not fixed here.** Both channels are member-facing, which is
+never pre-authorized. **Queue row Q-11c** carries the ruling and its
+both-directions acceptance criteria.
 
 ## 3. The member never sees the machinery
 
@@ -202,7 +215,16 @@ household" about a decision, a standard, or a work item. And **the
 ranked error list does not exist**. So the mechanism is proven at one
 surface and the doctrine covers all of them.
 
-**Queue row Q-11f** opens the general shape, citing this ruling.
+**RULED 5 September 2026 (founder): Q-11f GENERALISES `prompt_outcome`
+to every proposal, with the ranked error list as its consumer**, rather
+than adding a second dissent mechanism beside the one that works. The
+append-only, no-update-path property carries forward as a REQUIREMENT of
+the general shape and not as an inherited detail of the table it grew
+from: **a dissent that can be edited afterwards is a dissent the system
+can be talked out of**, which is the failure this doctrine exists to
+prevent, arriving through the back door.
+
+**Queue row Q-11f** carries the ruling.
 
 ## 4. She sees the full permitted record for her assigned households, standing
 
@@ -239,6 +261,28 @@ reader themselves).
 
 **The other two thirds do not exist.** There is no export-on-leaving,
 and no retention rule for what stays after. Both are named in the
-ruling, so **queue row Q-11h** opens them, and the retention half
-carries a decision the founder must make rather than a build: what
-"only what the household's continuity requires" means row by row.
+ruling, so **queue row Q-11h** opens them.
+
+**THE RETENTION CONFLICT ON `time_entry`, RULED 5 September 2026
+(founder): WK-SOP-017's four-year wage retention WINS.** The clause
+above and WK-SOP-017 pointed in opposite directions on one table: "only
+what the household's continuity requires" would release a wage record
+the moment continuity stopped needing it, and WK-SOP-017 requires four
+years of it. **The reason the obligation wins is not seniority or
+recency: it is that one rule is a legal obligation and the other is a
+promise the company made itself.** A self-imposed promise, however
+good, does not override a statute-backed one, and a company that let it
+would be discharging its own commitment by breaking somebody else's.
+
+So the sentence at the top of this section reads, in full: what is
+retained afterwards is only what the household's continuity requires,
+**except where a retention obligation says otherwise, and on
+`time_entry` it does**. Recorded here rather than only in the queue row
+because this document is where the two rules met, and a reader
+arriving at the continuity clause needs the exception in front of them
+rather than one file away.
+
+**Still the founder's, and Q-11h reports and stops on it:** every table
+OTHER than `time_entry`, where no retention obligation speaks and the
+continuity reading governs alone. The ruling settles the collision, not
+the whole question.

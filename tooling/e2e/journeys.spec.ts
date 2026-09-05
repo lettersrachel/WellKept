@@ -1293,3 +1293,89 @@ test("G-65: a second field assignment forces the picker, a forged selection is i
     await pool.query("DELETE FROM household WHERE id = $1", [hh2]); // assignment cascades
   }
 });
+
+/**
+ * Founder ruling, 5 September 2026 (client-side doctrine, Part One item 3:
+ * the member never sees the machinery). The playbook page rendered
+ * `field_flag` VERBATIM, so a member read `CRITICAL`, `CAUTION` or
+ * `DELIGHT` on their own record. CRITICAL becomes "Needs attention",
+ * CAUTION becomes "Worth knowing", and DELIGHT reaches a member not at
+ * all, because it is the company's word for how it categorises pleasing
+ * them.
+ *
+ * BOTH DIRECTIONS IN ONE JOURNEY, because a page that renders the two new
+ * labels and still leaks the enum somewhere else would pass a
+ * label-only assertion. So: the labels render (accepting), the three raw
+ * words appear NOWHERE in the page body (refusing), and the DELIGHT
+ * field's own VALUE still renders, which is the part a careless fix would
+ * break by hiding the field along with its word.
+ */
+test("client doctrine: the member reads the labels and never the flag vocabulary", async ({ context, page }) => {
+  const hh = randomUUID();
+  const client = randomUUID();
+  const token = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [hh, "SYN-01 flag vocabulary journey"]);
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [client, `syn-flag-${client.slice(0, 8)}@journeys.test`, "SYN-01 member"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'client',false)",
+    [randomUUID(), client, hh]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+    [token, client, new Date(Date.now() + 3600_000)]);
+  // One s1 field per flag the enum carries, so the projection this page
+  // renders contains all three and the refusing assertion has something
+  // to refuse.
+  await pool.query(
+    "INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, flag) VALUES " +
+    "($1,$4,1,'Gas shutoff location','Behind the garage door','s1','CRITICAL'), " +
+    "($2,$4,1,'Recycling day','Thursday','s1','CAUTION'), " +
+    "($3,$4,1,'Favourite flowers','Ranunculus, in the blue jug','s1','DELIGHT')",
+    [randomUUID(), randomUUID(), randomUUID(), hh]);
+
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: token, url: BASE }]);
+    await page.goto("/playbook");
+    await expect(page.getByRole("heading", { name: "What we hold for you" })).toBeVisible({ timeout: 30_000 });
+
+    // Accepting: the two member labels are on the page.
+    await expect(page.getByText("Needs attention").first()).toBeVisible();
+    await expect(page.getByText("Worth knowing").first()).toBeVisible();
+
+    // The DELIGHT field is not hidden; only the word is. Its value renders
+    // like any other, which is what separates "the label is gone" from
+    // "the field is gone".
+    await expect(page.getByText("Ranunculus, in the blue jug")).toBeVisible();
+
+    // Refusing, on the MARKUP rather than the rendered text, because those
+    // are two different claims and only one of them is this page's doing.
+    // The HTML is what the application emitted, so it catches the word
+    // whether it comes back as a label, as a class name, or as a value.
+    const html = await page.content();
+    for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) {
+      expect(html).not.toContain(word);
+    }
+
+    // And on the rendered text, with ONE thing set aside by name: section 1
+    // of the playbook instrument is called "Critical Flags & Household
+    // Summary" (SECTION_NAMES, canonical from WK-PLAY-001, and REQ-011
+    // says the 24 sections are never renamed), and a stylesheet uppercases
+    // it. That is an instrument section title reaching a member, which is
+    // a real finding and a DIFFERENT question from the flag vocabulary:
+    // renaming a canonical section is a library decision, not this
+    // session's. It is set aside here explicitly, in one line, so a
+    // second leak cannot hide behind it, and it is reported to the
+    // founder rather than fixed. Everything else must be clean.
+    const SECTION_1 = "Critical Flags & Household Summary";
+    const body = (await page.locator("body").innerText())
+      .split(SECTION_1.toUpperCase()).join("")
+      .split(SECTION_1).join("");
+    for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) {
+      expect(body).not.toContain(word);
+    }
+  } finally {
+    await pool.query("DELETE FROM auth_session WHERE session_token = $1", [token]);
+    await pool.query("DELETE FROM playbook_field WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM household WHERE id = $1", [hh]); // assignment cascades
+    await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
+  }
+});
