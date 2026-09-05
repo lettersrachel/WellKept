@@ -55,29 +55,52 @@ export function isHandled(i: LedgerClauses): boolean {
   return unmetClauses(i).length === 0;
 }
 
-export type LedgerDisplayState = "needs you" | "handled" | "approaching" | "done or changed";
+export type LedgerDisplayState = "needs you" | "handled" | "unowned" | "in_progress" | "done or changed";
 
 /**
- * The four display states the queue row names, as a TOTAL function over
- * the ledger. Precedence: closed wins, then an unresolved member
- * decision, then the invariant.
+ * The display states, as a TOTAL function over the ledger. Precedence:
+ * closed wins, then an unresolved member decision, then the invariant,
+ * then ownership.
  *
- * **`approaching` MEANS OPEN AND NOT YET HANDLED, and the reading is
- * REPORTED rather than assumed.** The other reading is temporal, "due
- * soon", and it cannot be built without inventing a threshold for how
- * near "soon" is, which is expressly barred. Under the temporal reading
- * the four states are also not total: an item with no owner and no due
- * date would fall through all four. This reading needs no knob and
- * covers every row, so it is the one that keeps existing meanings
- * intact (the standing tiebreak). If the founder wants the temporal
- * reading, it is a nullable `due_at` column plus a founder-set window,
- * and nothing is approaching while the window is unset.
+ * **`in_progress` MEANS OPEN AND NOT YET HANDLED.** It was called
+ * `approaching` for one commit, which is the queue row's own word, and
+ * was RENAMED by founder ruling 5 September 2026 with the reason worth
+ * keeping: **a state named `approaching` will be read as temporal by
+ * every future reader whatever the definition says.** Renaming it now
+ * leaves the temporal state available later under a name that actually
+ * describes it, once a threshold exists to define one. Nothing here is
+ * temporal; no due date is stored and no window knob exists.
+ *
+ * **`unowned` IS THE FIFTH STATE, added by the same ruling**, and the
+ * reason is the invariant's own purpose: an unowned commitment is
+ * precisely what the Handled invariant exists to stop from being
+ * forgotten, so it is made VISIBLE rather than folded into the general
+ * open state. Four states left an open unowned item describable only as
+ * "not handled", which is the ledger holding a row it cannot describe.
+ *
+ * **The precedence call, reported rather than buried:** an item that is
+ * BOTH unowned and awaiting the member reads `needs you`, because that is
+ * the state the queue row already gave that shape and the standing
+ * tiebreak keeps existing meanings intact. Its unownedness is not lost:
+ * `unmetClauses` names the missing owner on every such row, and the
+ * corporate card renders that line, so the fact is on the screen whatever
+ * the state word says.
+ *
+ * **The member vocabulary is still the queue row's four.** `unowned` is
+ * the company's own word for its own failure, and whether a member ever
+ * sees it is a question for the freeze-gated inbox rather than a decision
+ * taken here.
  */
 export function displayState(i: LedgerClauses): LedgerDisplayState {
   if (i.closedAt) return "done or changed";
   if (i.memberDecisionQuestion && !i.memberDecisionResolvedAt) return "needs you";
-  return isHandled(i) ? "handled" : "approaching";
+  if (isHandled(i)) return "handled";
+  return i.accountableOwner ? "in_progress" : "unowned";
 }
+
+/** Every state the function can return. Exported so a caller cannot enumerate a stale list. */
+export const LEDGER_DISPLAY_STATES: LedgerDisplayState[] =
+  ["needs you", "handled", "unowned", "in_progress", "done or changed"];
 
 /**
  * M-25: decisions surfaced per household per week. Counted from

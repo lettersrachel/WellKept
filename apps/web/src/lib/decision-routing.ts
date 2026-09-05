@@ -10,6 +10,13 @@
  * the one that asks, and it is the direction a missing row falls in
  * rather than an exception somebody remembered to write.
  *
+ * PRODUCER: `blocked` HAS NO PRODUCER YET, stated here in the same form
+ * the migration headers use for an inert column (G-85), so its absence is
+ * read as a build fact rather than as a defect. `auto_execute` and
+ * `propose` are both produced by this function today; `blocked` is
+ * declared and unreachable, and it becomes reachable when the founder's
+ * never-decide rules exist as rules rather than as prose.
+ *
  * `blocked` EXISTS IN THE VOCABULARY AND NOTHING PRODUCES IT YET. The
  * never-decide list is prose in the values package
  * (`decisions_that_always_require_member`: "any spend above cap; any new

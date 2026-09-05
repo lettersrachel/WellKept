@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { displayState, isHandled, m25, unmetClauses, HANDLED_CLAUSES } from "./commitment-ledger";
+import { displayState, isHandled, m25, unmetClauses, HANDLED_CLAUSES, LEDGER_DISPLAY_STATES } from "./commitment-ledger";
 
 const open = {
   accountableOwner: null, memberDecisionQuestion: null, memberDecisionResolvedAt: null,
@@ -39,7 +39,7 @@ describe("the Handled invariant, computed", () => {
   });
 });
 
-describe("the four display states are a total function", () => {
+describe("the five display states are a total function", () => {
   test("closed wins over everything, including an unresolved decision", () => {
     expect(displayState({ ...handled, closedAt: new Date() })).toBe("done or changed");
   });
@@ -49,13 +49,33 @@ describe("the four display states are a total function", () => {
   test("the invariant met reads handled", () => {
     expect(displayState(handled)).toBe("handled");
   });
-  test("open and not yet handled reads approaching", () => {
-    expect(displayState(open)).toBe("approaching");
+  test("open, OWNED and not yet handled reads in_progress", () => {
+    expect(displayState({ ...open, accountableOwner: "u1" })).toBe("in_progress");
   });
-  test("every shape lands in one of the four, including the one the temporal reading drops", () => {
-    const states = new Set([open, handled, { ...open, closedAt: new Date() },
-      { ...handled, memberDecisionQuestion: "q" }].map(displayState));
-    expect(states).toEqual(new Set(["approaching", "handled", "done or changed", "needs you"]));
+  test("open and UNOWNED reads unowned, which is the state the ruling added", () => {
+    // The invariant exists to stop an unowned commitment being forgotten,
+    // so the ledger says so rather than calling it generally unfinished.
+    expect(displayState(open)).toBe("unowned");
+  });
+  test("unowned AND awaiting the member reads needs you, and the missing owner is still named", () => {
+    const both = { ...open, memberDecisionQuestion: "which vendor?" };
+    expect(displayState(both)).toBe("needs you");
+    expect(unmetClauses(both)).toContain(HANDLED_CLAUSES[0]);
+  });
+  test("the function is TOTAL: no shape falls through, and every declared state is reachable", () => {
+    const shapes = [
+      open,                                                     // unowned
+      { ...open, accountableOwner: "u1" },                      // in_progress
+      handled,                                                  // handled
+      { ...handled, memberDecisionQuestion: "q" },              // needs you
+      { ...handled, closedAt: new Date() },                     // done or changed
+    ];
+    const seen = shapes.map(displayState);
+    expect(seen.every((s) => LEDGER_DISPLAY_STATES.includes(s))).toBe(true);
+    expect(new Set(seen)).toEqual(new Set(LEDGER_DISPLAY_STATES));
+  });
+  test("nothing is named approaching, so the temporal name stays free for a temporal state", () => {
+    expect(LEDGER_DISPLAY_STATES).not.toContain("approaching");
   });
 });
 

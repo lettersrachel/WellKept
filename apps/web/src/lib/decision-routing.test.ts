@@ -40,6 +40,11 @@ describe("the Decision Rights block as the routing table", () => {
     expect(routeByDecisionRights({ rights: zero, rightKey: "k", amountCents: 1 }).outcome).toBe("propose");
   });
 
+  // The producer note in the module says `blocked` is declared and
+  // unreachable, in the same form a migration header states an inert
+  // column. This test is that note's assertion: if a producer is added
+  // without updating the note, the note stops being true and this test
+  // is where it shows.
   test("NOTHING produces `blocked` yet, and that is a build fact rather than an oversight", () => {
     const outcomes = new Set([
       routeByDecisionRights({ rights: [], rightKey: "x", amountCents: null }).outcome,
