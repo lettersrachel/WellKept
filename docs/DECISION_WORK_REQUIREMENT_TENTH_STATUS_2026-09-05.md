@@ -8,6 +8,27 @@ it is a semantics change to a shipped primitive. Everything below is read from
 the code and the database rather than recalled, and the reads are named so she
 can check any of them.
 
+## RULED 5 September 2026 (founder), on the split above
+
+**A tenth value is added, and it is named `superseded` rather than `retired`.**
+Her reason for the name, which is the part that generalises: **`superseded`
+states WHY rather than only THAT.** The requirement was replaced by a source
+change; it was not stale, and it was not abandoned. `retired` would have been
+true and empty, and a status is read by people reconstructing what happened.
+
+**ON THE OTHER FORK, which the decision document named and she answered: an
+operator may NOT set it by hand. Only the changeset path writes it.** Her
+reason: **the value is a claim about CAUSATION, and a hand-set one would assert
+a cause nobody can trace.** A row reading `superseded` therefore always has a
+changeset behind it, and that is a property of the data rather than a
+convention. If an operator needs to end a requirement for a human reason, that
+is an existing status or a separate ruling, and it is not this one.
+
+**And the event family goes to the 25 September agenda as its own item**
+(`docs/AGENDA_2026-09-25_TWO_KEY.md`), with the divergence stated rather than
+left to be discovered: nine two-key-adopted event words against ten status
+values, deliberate and dated.
+
 ## ANSWERING THE FOUNDER'S QUESTION FIRST: two keys or one, and it is BOTH
 
 She asked, before ruling: was the nine-value lifecycle adopted under two keys,

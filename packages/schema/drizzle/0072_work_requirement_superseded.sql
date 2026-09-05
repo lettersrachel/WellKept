@@ -1,0 +1,37 @@
+-- 0072  work_requirement.status gains a TENTH value: `superseded`
+--
+-- Founder ruling, 5 September 2026, on the decision document
+-- `docs/DECISION_WORK_REQUIREMENT_TENTH_STATUS_2026-09-05.md`.
+--
+-- WHY THE FOUNDER COULD RULE THIS ALONE, which was the question that had
+-- to be answered before the ruling (G-136): the nine existing values ARE
+-- two-key adopted, but as an EVENT FAMILY in WK-DEV-009 v1.1 section 10
+-- (register A573). 0051 translated that family into this CHECK in a
+-- headerless generated file, so the STATUS COLUMN was never two-key. The
+-- event family's own tenth word is a separate item on the 25 September
+-- agenda, and the divergence is dated there rather than discovered later
+-- by whoever builds the family emitter.
+--
+-- THE NAME STATES WHY RATHER THAN ONLY THAT. `superseded`, not `retired`:
+-- the requirement was REPLACED BY A SOURCE CHANGE. It was not stale and
+-- it was not abandoned, and a status is read by people reconstructing
+-- what happened.
+--
+-- ONLY THE CHANGESET PATH WRITES IT, and the reason travels with it: the
+-- value is a CLAIM ABOUT CAUSATION, so a hand-set one would assert a
+-- cause nobody can trace. The enforcement is honestly partial and is
+-- stated rather than blurred: `progressWorkRequirement` has no verb that
+-- reaches this value, so no surface can produce it, and a direct UPDATE
+-- could. Making it structural needs a changeset reference on this table,
+-- which is another migration and a shape nobody has ruled.
+--
+-- READ BEFORE APPLYING. Generated as DROP CONSTRAINT then ADD CONSTRAINT,
+-- which is correct and is what ships: the ADD revalidates every existing
+-- row, and every existing value is one of the nine the new list still
+-- permits, so this WIDENS and cannot refuse. Drizzle runs the file in one
+-- transaction, so the window where the constraint is absent is never
+-- visible to another session. No column is added or altered, so there is
+-- no producer table; the WRITER of the new value is named above.
+
+ALTER TABLE "work_requirement" DROP CONSTRAINT "work_requirement_status_known";--> statement-breakpoint
+ALTER TABLE "work_requirement" ADD CONSTRAINT "work_requirement_status_known" CHECK ("work_requirement"."status" IN ('generated','activated','ready','scheduled','started','completed','verified','reopened','deferred','superseded'));

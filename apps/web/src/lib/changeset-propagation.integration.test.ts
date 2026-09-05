@@ -6,7 +6,7 @@ import {
   household, authUser, taskDefinition, householdTaskProfile, workRequirement,
   changeset, changesetEffect, attentionRecord, decisionRecord, eventOutbox,
 } from "@wellkept/schema";
-import { propagateChangeset, lockedDependents } from "@wellkept/trigger-engine";
+import { propagateChangeset, lockedDependents, supersedeInvalidated } from "@wellkept/trigger-engine";
 import { db } from "./db";
 
 /**
@@ -22,6 +22,7 @@ const FUTURE_REQ = randomUUID();
 const PAST_REQ = randomUUID();
 const DONE_REQ = randomUUID();
 const CS = randomUUID();
+const LATER_CS = randomUUID();
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -107,4 +108,45 @@ test("the lock horizon is quiet while null, and locks only inside the window onc
   assert.deepEqual(lockedDependents({ horizonDays: null, today, dependents: [soon, later, undated] }), []);
   assert.deepEqual(lockedDependents({ horizonDays: 7, today, dependents: [soon, later, undated] }), ["a"]);
   assert.deepEqual(lockedDependents({ horizonDays: 60, today, dependents: [soon, later, undated] }), ["a", "b"]);
+});
+
+test("applying supersedes the open dependents, and ONLY the open ones", async () => {
+  // The founder's 5 September ruling, and the two halves are asserted
+  // separately because they are different claims.
+  const before = await db.select().from(workRequirement).where(eq(workRequirement.id, FUTURE_REQ));
+  assert.equal(before[0]!.status, "scheduled", "precondition: the dependent is still open");
+
+  // Complete the OTHER dependent-shaped row first, so the "only open"
+  // half has something real to be true about rather than being vacuous.
+  await db.update(workRequirement)
+    .set({ status: "completed", completedAt: new Date(), completedBy: U })
+    .where(eq(workRequirement.id, PAST_REQ));
+
+  const { superseded } = await supersedeInvalidated(db as never, { changesetId: CS, householdId: H });
+  assert.equal(superseded, 1);
+
+  const [future] = await db.select().from(workRequirement).where(eq(workRequirement.id, FUTURE_REQ));
+  assert.equal(future!.status, "superseded", "read back from Postgres, not from the return value");
+
+  // Work that was already done is left exactly as it was: rewriting it
+  // would be a machine making a false claim about the past.
+  const [done] = await db.select().from(workRequirement).where(eq(workRequirement.id, DONE_REQ));
+  assert.equal(done!.status, "completed");
+
+  const events = await db.select().from(eventOutbox).where(eq(eventOutbox.householdId, H));
+  assert.equal(events.filter((e) => e.kind === "work_requirement.superseded").length, 1);
+});
+
+test("a superseded requirement is not a dependent of the NEXT change", async () => {
+  await db.insert(changeset).values({
+    id: LATER_CS, householdId: H, sourceKind: "schedule",
+    whatChanged: "soccer moves again", detectedAt: new Date(), recordedBy: U,
+  });
+  const { effects } = await propagateChangeset(db as never, { changesetId: LATER_CS, householdId: H });
+  assert.equal(effects, 0, "nothing open remains: superseded and completed are both out of the set");
+});
+
+test("superseding is idempotent and never re-supersedes", async () => {
+  const again = await supersedeInvalidated(db as never, { changesetId: CS, householdId: H });
+  assert.equal(again.superseded, 0, "the status filter is the guarantee, not the effect row");
 });

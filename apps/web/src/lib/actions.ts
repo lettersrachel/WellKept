@@ -2772,19 +2772,27 @@ export async function applyChangeset(formData: FormData) {
   }
 
   const now = new Date();
+  const { supersedeInvalidated } = await import("@wellkept/trigger-engine");
+  let superseded = 0;
   await db.transaction(async (tx) => {
     await tx.update(changeset).set({ appliedAt: now, appliedBy: principal.userId, updatedAt: now })
       .where(and(eq(changeset.id, changesetId), isNull(changeset.appliedAt)));
+    // The founder's 5 September ruling: applying a changeset supersedes
+    // the open work it invalidated, and this is the ONLY path that writes
+    // that status. In the SAME TRANSACTION as the application, so a
+    // changeset can never read as applied while its dependents still
+    // read as open: the two facts are one act.
+    ({ superseded } = await supersedeInvalidated(tx as never, { changesetId, householdId }));
     await emitOutboxEvent(tx, {
-      householdId, kind: "changeset.applied", payload: { changesetId },
+      householdId, kind: "changeset.applied", payload: { changesetId, superseded },
       provenance: "action:applyChangeset", objectId: changesetId, actor: principal.userId,
       correlationId: changesetId,
     });
     await tx.insert(auditEvent).values({
       id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
-      kind: "changeset", detail: { changesetId, action: "applied" },
+      kind: "changeset", detail: { changesetId, action: "applied", superseded },
     });
   });
   revalidatePath(`/oversight/${householdId}`);
-  recordedTo(returnTo, "change applied");
+  recordedTo(returnTo, `change applied, ${superseded} requirement(s) superseded`);
 }

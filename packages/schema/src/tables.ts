@@ -1665,8 +1665,34 @@ export const workRequirement = pgTable("work_requirement", {
   index("work_requirement_household_idx").on(t.householdId, t.status),
   check("work_requirement_has_timing",
     sql`${t.dueOn} IS NOT NULL OR ${t.contextWindow} IS NOT NULL`),
+  // TEN values since 5 September 2026. The tenth, `superseded`, is the
+  // founder's ruling on the changeset path: the requirement was REPLACED
+  // BY A SOURCE CHANGE, which is why the word states a reason rather than
+  // only a condition. It is not `completed` (nothing was done), not
+  // `deferred` (deferral means later), not `reopened` (that is a person
+  // changing their mind about the work rather than a statement about the
+  // world), and not a deletion (the row is the evidence that we planned
+  // this and why it stopped being right).
+  //
+  // ONLY THE CHANGESET PATH WRITES IT, by the same ruling, and the reason
+  // is worth carrying: THE VALUE IS A CLAIM ABOUT CAUSATION, and a
+  // hand-set one would assert a cause nobody can trace. The service layer
+  // holds this rather than the database, which is stated plainly rather
+  // than blurred: `progressWorkRequirement` has no verb that reaches it,
+  // so the surface cannot produce it, but a direct UPDATE could. Making
+  // it structural would need the changeset id on this table, which is a
+  // second migration and a shape nobody has ruled.
+  //
+  // PROVENANCE OF THE OTHER NINE, recorded here because it is easy to
+  // assume and was wrong (G-136): they come from WK-DEV-009 v1.1 line 74,
+  // which is two-key adopted, but they are listed there as an EVENT
+  // FAMILY in a section about event architecture. 0051 translated them
+  // into this CHECK in a headerless generated file. The status column was
+  // therefore never two-key, which is why the founder could rule the
+  // tenth value alone; the event family's own tenth word is an item on
+  // the 25 September agenda.
   check("work_requirement_status_known",
-    sql`${t.status} IN ('generated','activated','ready','scheduled','started','completed','verified','reopened','deferred')`),
+    sql`${t.status} IN ('generated','activated','ready','scheduled','started','completed','verified','reopened','deferred','superseded')`),
   // Completion is a whole pair carried exactly by the completed states;
   // verification is a whole pair carried exactly by verified, which is
   // therefore always also completed. Both directions structural.

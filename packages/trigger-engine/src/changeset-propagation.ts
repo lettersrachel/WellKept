@@ -33,6 +33,10 @@ type Db = {
   insert: (...args: never[]) => any;
 };
 
+// `superseded` is deliberately NOT here: a requirement a changeset
+// already replaced is not a dependent of the next one. Nine of the ten
+// values are accounted for by name, and `completed`/`verified`/
+// `superseded` are the three that are out.
 const OPEN_STATUSES = ["generated", "activated", "ready", "scheduled", "started", "reopened", "deferred"];
 
 export async function propagateChangeset(
@@ -81,6 +85,60 @@ export async function propagateChangeset(
     });
   }
   return { effects };
+}
+
+/**
+ * Q-12b-2, second half, on the founder's 5 September ruling: the
+ * invalidated dependents of an APPLIED changeset become `superseded`.
+ *
+ * THIS IS THE ONLY WRITER OF THAT VALUE, by the ruling, and the reason is
+ * the value's meaning: it is a CLAIM ABOUT CAUSATION, so a hand-set one
+ * would assert a cause nobody can trace. Reached only from
+ * `applyChangeset`, which the database already refuses unless the
+ * changeset is classified `safe_automatic`, so the chain from a human
+ * classification to a superseded requirement is unbroken and readable.
+ *
+ * IT SUPERSEDES ONLY WHAT IS STILL OPEN. A dependent that was completed
+ * or verified between propagation and application is left exactly as it
+ * is: the work happened, and rewriting that would be a false claim about
+ * the past made by a machine. The status filter is the guarantee, not the
+ * effect row.
+ */
+export async function supersedeInvalidated(
+  db: Db,
+  args: { changesetId: string; householdId: string },
+): Promise<{ superseded: number }> {
+  const effects = await (db as any).select().from(changesetEffect)
+    .where(and(
+      eq(changesetEffect.changesetId, args.changesetId),
+      eq(changesetEffect.householdId, args.householdId),
+      eq(changesetEffect.effect, "invalidated"),
+    ));
+
+  let superseded = 0;
+  for (const e of effects) {
+    if (e.dependentKind !== "work_requirement") continue;
+    const updated = await (db as any).update(workRequirement)
+      .set({ status: "superseded", updatedAt: new Date() })
+      .where(and(
+        eq(workRequirement.id, e.dependentId),
+        eq(workRequirement.householdId, args.householdId),
+        inArray(workRequirement.status, OPEN_STATUSES),
+      ))
+      .returning({ id: workRequirement.id });
+    if (updated.length > 0) {
+      superseded += 1;
+      await emitOutboxEvent(db as any, {
+        householdId: args.householdId,
+        kind: "work_requirement.superseded",
+        payload: { workRequirementId: e.dependentId, changesetId: args.changesetId },
+        provenance: "service:supersedeInvalidated",
+        objectId: e.dependentId,
+        correlationId: args.changesetId,
+      });
+    }
+  }
+  return { superseded };
 }
 
 /**

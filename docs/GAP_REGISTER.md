@@ -8594,3 +8594,53 @@ permitted.** Grep for `check(` over a nullable column and read each for the
 NULL case; the whole-or-absent CHECKs in this tree are safe because they test
 `IS NULL` / `IS NOT NULL` directly rather than comparing values, which is why
 this is the first instance rather than a sweep.
+
+### G-136 FOUND 5 September 2026: a two-key event family became a status column's permitted values in a headerless generated file
+
+**Found by answering the founder's own question** before she ruled the tenth
+`work_requirement` status: was the nine-value lifecycle adopted under two keys,
+or is 0051 a single-founder record. Read from the tree rather than recalled,
+the answer splits, and the split is the finding.
+
+**The nine words ARE two-key adopted.**
+`WK-DEV-009_v1_1_Unified_Ambient_Brief_2026-08-24.md` line 5 reads "Adopted
+under the standing two-key software authorization; register A573", and line 74
+carries the words.
+
+**But line 74 is in section 10, "Data and event architecture", and it lists
+them as an EVENT FAMILY**: "Event families to emit: requirement lifecycle
+(generated, activated, ready, scheduled, started, completed, verified,
+reopened, deferred); visit lifecycle (...); decision lifecycle (...)". Six
+families in a row. **It says nothing about a `status` column.**
+
+**Making those nine words the permitted values of `work_requirement.status` was
+0051's own translation, and 0051 CARRIES NO HEADER AT ALL.** It is a bare
+generated file: `CREATE TABLE`, the CHECKs, the foreign keys, nothing else. It
+predates the per-column producer rule. So nothing records that the translation
+happened, that anyone noticed it was a translation, or that it was ruled.
+
+**This is a live instance of a decision nobody made deliberately**, which is
+why it is filed rather than merely fixed. The nine values have been the
+permitted set of a shipped column for eleven days, treated in three later
+sessions (including this one) as an adopted lifecycle, and the sentence they
+came from is about events. Nothing was wrong with the values; what is missing
+is the act of choosing them for this purpose.
+
+**Two consequences, both dated rather than left implicit:**
+
+- **The status column is the founder's alone**, since it was never two-key.
+  She ruled the tenth value (`superseded`) on that basis the same day.
+- **The event family is the two-key list** and its divergence goes to the 25
+  September agenda as its own item: nine event words against ten status values,
+  deliberate and dated, rather than discovered later by whoever emits the
+  event. The item is `docs/AGENDA_2026-09-25_TWO_KEY.md`.
+
+**WHY THE FINDING IS NOT WRITTEN INTO 0051 ITSELF, checked rather than
+assumed.** Drizzle stores each applied migration's hash in
+`drizzle.__drizzle_migrations`, and that hash is the file's sha256: verified by
+computing `sha256(0000_initial_schema.sql)` and comparing it to the first
+stored row, which matched exactly. **Adding even a comment to 0051 would change
+its hash, and production would then see an applied migration as unapplied.**
+So an applied migration file is effectively frozen, for a mechanical reason
+rather than a stylistic one, and the record lives here. Worth knowing before
+anybody tries to improve an old migration's documentation.

@@ -505,6 +505,13 @@
       "when": 1788643647382,
       "tag": "0071_routing_names_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1788644644471,
+      "tag": "0072_work_requirement_superseded",
+      "breakpoints": true
     }
   ]
 }
