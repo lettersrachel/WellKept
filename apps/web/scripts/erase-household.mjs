@@ -276,6 +276,7 @@ const counts = {
   captures: await count("SELECT count(*) n FROM capture_artifact WHERE household_id=$1"),
   mailOutcomes: await count("SELECT count(*) n FROM mail_outcome WHERE household_id=$1"),
   expectations: await count("SELECT count(*) n FROM expected_event WHERE household_id=$1"),
+  changesets: await count("SELECT count(*) n FROM changeset WHERE household_id=$1"),
   briefSnapshots: await count("SELECT count(*) n FROM visit_brief_snapshot WHERE household_id=$1"),
   taskProfiles: await count("SELECT count(*) n FROM household_task_profile WHERE household_id=$1"),
   workRequirements: await count("SELECT count(*) n FROM work_requirement WHERE household_id=$1"),
@@ -461,6 +462,25 @@ try {
   // event_outbox class. Null-household rows are unreachable by this
   // WHERE clause by construction. The tenth documented DELETE exception.
   await c.query("DELETE FROM mail_outcome WHERE household_id=$1", [householdId]);
+  // changeset_effect (Q-12b-2, 2026-09-05): DELETED, and it goes FIRST
+  // because its composite foreign key points at changeset. Internal
+  // engine bookkeeping about what one change invalidated, the
+  // shadow_log / condition_flag class rather than a business record: the
+  // household was never told any of it and nothing outside depends on
+  // it. The ELEVENTH documented DELETE exception.
+  await c.query("DELETE FROM changeset_effect WHERE household_id=$1", [householdId]);
+  // changeset (Q-12b-2, 2026-09-05): BLANKED AND KEPT, the
+  // expected_event posture. The row records that a household fact
+  // changed and what we did about it, which is a business record of our
+  // own reconciliation; what is erased is the free text (the change in
+  // the operator's words, and the member tradeoff, which quotes the
+  // household's own situation). Classification, timing and application
+  // are structure and stay, so the applies-only-when-safe CHECK survives.
+  await c.query(
+    `UPDATE changeset SET what_changed=$2,
+       member_tradeoff = CASE WHEN member_tradeoff IS NULL THEN NULL ELSE $2 END,
+       updated_at=now() WHERE household_id=$1`,
+    [householdId, E]);
   // expected_event (Q-12b-1, 2026-09-05): BLANKED AND KEPT, not deleted.
   // The row is a business record of what this household was owed and
   // whether it arrived, which is the work_item / task_occurrence class

@@ -11,3 +11,4 @@ export * from "./attention-sweep.ts";
 export * from "./notification-firewall.ts";
 export * from "./prompt-timing.ts";
 export * from "./expected-event-sweep.ts";
+export * from "./changeset-propagation.ts";

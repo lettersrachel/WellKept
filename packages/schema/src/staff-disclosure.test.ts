@@ -111,6 +111,8 @@ const ALLOWLIST: Record<string, string> = {
     "surface shipped after the disclosure was approved and is internal research about the " +
     "household, so it joins the founder line candidates for the next revision (the " +
     "internal-observations item is the natural home)",
+  changeset:
+    "Q-12b-2, 2026-09-05: three staff columns, recorded_by, classified_by and applied_by. The last two are sharper than write provenance and are named as such: classifying a change as safe to act on without asking, and then acting on it, are JUDGMENTS attributable to a person, closer to commitment_ledger_item's accountable owner than to a task_occurrence recorder. FOUNDER LINE CANDIDATE for the counsel review now running rather than for a later revision. The effect rows carry no person at all, deliberately (the time_segment posture), so the propagation itself attributes to nobody",
   expected_event:
     "Q-12b-1, 2026-09-05: recorded_by is write provenance and is the ONLY staff column on " +
     "this table. The sweep that reconciles the row writes no person at all (the time_segment " +

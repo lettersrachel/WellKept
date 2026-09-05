@@ -166,6 +166,8 @@ export const CORPORATE_ONLY: Record<string, string> = {
   // fact ABOUT the household; it is how the company decides what to
   // notice, and the portability line names no category for it.
   anticipation_exclusion: "engine tuning: which objects or topics are suppressed from anticipation, with the corporate approver. A record of the company's own noticing rules, not of the household.",
+  changeset: "Q-12b-2 reconciliation, the same reason as expected_event: the row is the company's own propagation work rather than a fact about the household, and it carries a CLASSIFICATION of whether a change was safe to act on without asking, which is machinery a member archive has no business carrying.",
+  changeset_effect: "Q-12b-2, and it is engine bookkeeping one level below the changeset: which internal work rows one change invalidated, and why. Nothing here is a fact the household stated or would recognise.",
   expected_event: "Q-12b-1 reconciliation, and it stays corporate for a reason worth stating rather than assumed: the row is the company's own watching, not a fact about the household. It also carries a ROUTING outcome computed from the household's decision rights, and putting a candidate route into a member archive would hand the member the machinery, which the client doctrine forbids. SHADOW besides: nothing here surfaces to a member today by construction.",
   trigger_rule: "the company's rule set. Which conditions raise attention is Well Kept's method, and STD-016's change control governs it; a household's copy of the record does not carry the method.",
   prompt_pack_item: "scheduled engine output, and Q-5's stage tag lives here. Spec section 5 makes the stage internal to the point that both client-payload mechanisms forbid the key by name.",

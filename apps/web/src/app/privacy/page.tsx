@@ -48,7 +48,10 @@ export default function PrivacyPage() {
         records from our email provider telling us whether a message we sent you
         arrived, and the things we are expecting on your behalf (a vendor&apos;s
         invoice, a confirmation, a refund) together with whether each arrived, so a
-        silence becomes something we notice rather than something you have to chase) to run the service
+        silence becomes something we notice rather than something you have to chase,
+        and, when something about your household changes, a note of the change and of
+        which of our own planned work it affects, so the change reaches the plan
+        without you having to repeat it) to run the service
         reliably; and account activity (name, email,
         role, sign-in and access logs) to run and secure accounts. We ask clients not to
         provide government IDs, payment card or bank numbers, or health records; the product

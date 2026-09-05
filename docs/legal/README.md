@@ -120,6 +120,18 @@ Four documents, one per audience and direction:
   refusal: the member is never made to check. Free text is blanked on
   household erasure and the structure is kept, the work-record posture.
 
+- **Change propagation** (added 2026-09-05, migration 0070): when a fact
+  about a household changes (an activity moves to a different day, a
+  vendor changes hands), a record of the change in our operator's words,
+  whether we judged it safe to act on without asking, who judged that and
+  who acted, and which pieces of our own planned work the change may have
+  made wrong. Corporate-only and in SHADOW: visible to our staff on the
+  household record, reaching no member surface and no field briefing.
+  Nothing is acted on automatically unless a person has classified it
+  safe, and the database refuses an application otherwise. Free text is
+  blanked on household erasure and the structure is kept; the
+  which-work-is-affected rows are deleted whole.
+
 - **Commercial record** (added 2026-07-27), how the household found Well
   Kept (referral channel, with an optional note), and the membership
   history as dated events: start, tier change, pause, resume, cancellation,

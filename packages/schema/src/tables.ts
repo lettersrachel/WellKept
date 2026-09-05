@@ -2132,3 +2132,111 @@ export const expectedEvent = pgTable("expected_event", {
   check("expected_event_amount_is_not_negative",
     sql`${t.amountCents} IS NULL OR ${t.amountCents} >= 0`),
 ]);
+
+/**
+ * Q-12b-2 (0070): `changeset`, the second half of the reconciliation
+ * layer. A source change invalidates or recomputes dependents; safe
+ * changes apply, review-required changes route (intake
+ * BENCHMARK_ADOPTION section 2, adopted). YEAR-TWO, SHADOW, on the same
+ * terms as `expected_event`: it computes, logs and shows in the
+ * corporate portal, and reaches no member and no HOM briefing.
+ *
+ * WHY THE CLASSIFICATION IS NULLABLE AND OPERATOR-SET IN V1. "Which
+ * changes are safe to apply without asking" is a SAFETY TAXONOMY, and
+ * this repository's standing posture is that a safety taxonomy is the
+ * founder's: the capture router ships with no automatic severity rules,
+ * and the notification firewall shipped five destinations while its
+ * policy produced two. The vocabulary carries both sets so her rules need
+ * no migration; the app writes neither of them by itself. NULL is
+ * therefore the true statement about a change nobody has classified, and
+ * it is what stops anything applying.
+ *
+ * THE EFFECT VOCABULARY IS THE SPEC'S OWN TWO WORDS and no third is
+ * added. "Unchanged" is a tempting third value and it is a different
+ * claim: a dependent that no changeset touched has no effect ROW, which
+ * says the same thing without asserting that somebody looked.
+ */
+export const changesetClassEnum = pgEnum("changeset_class", [
+  "safe_automatic",
+  "review_required",
+]);
+
+export const changesetEffectKindEnum = pgEnum("changeset_effect_kind", [
+  "invalidated",
+  "recomputed",
+]);
+
+export const changeset = pgTable("changeset", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  // What changed. Source kind and id without a foreign key, the
+  // attention_record precedent: the source can be any of several tables
+  // and Postgres has no polymorphic reference, so tenancy here is held by
+  // household_id rather than by the pointer. Named as a weaker guarantee
+  // than the composite FK on the effect rows below, rather than blurred.
+  sourceKind: text("source_kind").notNull(),
+  sourceId: uuid("source_id"),
+  // The change in the operator's words; s2, staff-authored. The spec's
+  // own example is "soccer moves Saturday to Sunday", which is a sentence
+  // and not a diff, and v1 stores the sentence.
+  whatChanged: text("what_changed").notNull(),
+  detectedAt: timestamp("detected_at", { withTimezone: true }).notNull(),
+  // The two sets. NULLABLE, NO DEFAULT: a judgment somebody made, and a
+  // default would make "nobody classified it" and "somebody chose safe"
+  // the same bytes. Whole or absent with its author and time.
+  classification: changesetClassEnum("classification"),
+  classifiedAt: timestamp("classified_at", { withTimezone: true }),
+  classifiedBy: text("classified_by").references(() => authUser.id),
+  // Applying is a separate act from classifying, and only a
+  // safe_automatic changeset may be applied. Whole or absent.
+  appliedAt: timestamp("applied_at", { withTimezone: true }),
+  appliedBy: text("applied_by").references(() => authUser.id),
+  // The tradeoff, where propagation found one. It is IDENTIFIED here and
+  // delivered nowhere: the client side is frozen at the digest and this
+  // row is shadow, so "reaches the member" is not a thing this table can
+  // do. Recording it is what makes the count real when the freeze lifts.
+  memberTradeoff: text("member_tradeoff"),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id),
+}, (t) => [
+  index("changeset_household_idx").on(t.householdId, t.classification),
+  // The composite-FK target for changeset_effect, so an effect can only
+  // ever belong to a changeset in its own household.
+  uniqueIndex("changeset_household_id_key").on(t.householdId, t.id),
+  check("changeset_classification_is_whole",
+    sql`(${t.classification} IS NULL AND ${t.classifiedAt} IS NULL AND ${t.classifiedBy} IS NULL)
+        OR (${t.classification} IS NOT NULL AND ${t.classifiedAt} IS NOT NULL AND ${t.classifiedBy} IS NOT NULL)`),
+  check("changeset_application_is_whole",
+    sql`(${t.appliedAt} IS NULL AND ${t.appliedBy} IS NULL)
+        OR (${t.appliedAt} IS NOT NULL AND ${t.appliedBy} IS NOT NULL)`),
+  // ONLY A SAFE_AUTOMATIC CHANGESET MAY BE APPLIED, and the database is
+  // what says so rather than the service layer. An unclassified change
+  // cannot be applied either, which is the point of leaving NULL alone:
+  // it is not a permissive state.
+  check("changeset_applies_only_when_safe",
+    sql`${t.appliedAt} IS NULL OR ${t.classification} = 'safe_automatic'`),
+]);
+
+export const changesetEffect = pgTable("changeset_effect", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  changesetId: uuid("changeset_id").notNull(),
+  // Which dependent, in the attention_record shape for the same reason.
+  dependentKind: text("dependent_kind").notNull(),
+  dependentId: uuid("dependent_id").notNull(),
+  effect: changesetEffectKindEnum("effect").notNull(),
+  // Why this dependent is affected, in words. Required: an effect row
+  // asserting that a piece of work is invalid, with no reason on it, is
+  // a claim nobody can check later.
+  reason: text("reason").notNull(),
+}, (t) => [
+  // One effect per dependent per changeset. A re-run of propagation
+  // records nothing new rather than minting a second opinion.
+  uniqueIndex("changeset_effect_once_per_dependent")
+    .on(t.changesetId, t.dependentKind, t.dependentId),
+  index("changeset_effect_household_idx").on(t.householdId, t.effect),
+  foreignKey({
+    columns: [t.householdId, t.changesetId],
+    foreignColumns: [changeset.householdId, changeset.id],
+    name: "changeset_effect_same_household_fk",
+  }),
+]);
