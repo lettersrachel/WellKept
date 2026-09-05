@@ -214,6 +214,23 @@ export function assertNoAnticipationRows(payload: unknown, path = "payload"): tr
       || has("actualMinutes", "varianceNote") || has("actual_minutes", "variance_note")) {
       throw new Error(`SEVERE: a task_occurrence row reached a client payload at ${path}`);
     }
+    // Q-6-2: a commitment ledger item is the company's own accountability
+    // record, carrying a named staff owner and the Handled invariant's
+    // clauses. The member decision inbox is Q-6's FREEZE-GATED half, so
+    // no client projection exists at all and any recognizable row is a
+    // violation (the decision_right and paused_decision posture).
+    //
+    // The single-key clause is deliberate and follows Q-5's: every other
+    // signature here is a key PAIR and would walk past a projection that
+    // carried one key alone. `accountableOwner` names a staff member and
+    // `memberDecisionQuestion` is the ask itself, so either one reaching
+    // a member is the violation on its own.
+    if (has("accountableOwner") || has("accountable_owner")
+      || has("memberDecisionQuestion") || has("member_decision_question")
+      || has("externalCompletionOn", "followUpAt") || has("external_completion_on", "follow_up_at")
+      || has("verificationPendingReason") || has("verification_pending_reason")) {
+      throw new Error(`SEVERE: a commitment_ledger_item row reached a client payload at ${path}`);
+    }
     // WL Gate 1: a time segment is derived service-time structure (the
     // D7 wall covers the window a duration computes from); no client
     // projection exists.

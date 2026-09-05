@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { and, eq, gte, desc } from "drizzle-orm";
-import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
+import { visitCommand, triggerRule, timeEntry, costEntry, membershipEvent, shadowLog, workItem, attentionRecord, decisionRecord, captureArtifact, situation, preferenceRule, decisionRight, householdTaskProfile, taskDefinition, workRequirement, estimateSnapshot, taskOccurrence, commitmentLedgerItem, SECTION_NAMES, bindProvisions } from "@wellkept/schema";
 import { filterFields } from "@wellkept/permissions";
 import { provisionsById, standardsSeedReviewed } from "@/lib/standards";
 import { ProvisionList } from "@/app/ProvisionList";
@@ -8,8 +8,9 @@ import { CORPORATE_ROLES } from "@/lib/session";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { getHouseholdAndPrincipalById, getFields, getPendingEdits, getRecentAudit, getOpenDots, getUpcomingPackItems, getGestures, getStrangerTests } from "@/lib/data";
-import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence } from "@/lib/actions";
+import { setStatusTag, reviewEdit, setVaultValue, queueGesture, gestureGate, executeGesture, assignRole, revokeRole, promoteDot, forceSignOut, resetTotp, recordHouseholdConsent, createAnticipationExclusion, endAnticipationExclusion, createIncident, resolveIncident, setPhotoRetentionHold, setPhotoReuseAllowed, createTimeEntry, createCostEntry, setReferralSource, recordMembershipEvent, recordObjectObservation, supersedeObjectObservation, scoreShadowSignal, createWorkItem, progressWorkItem, acknowledgeAttention, resolveAttention, createSituation, bundleAttention, resolveSituation, recordPreferenceRule, retirePreferenceRule, routeDecision, decideDecision, fileCaptureArtifact, configureTaskProfile, createWorkRequirement, progressWorkRequirement, recordEstimate, recordTaskOccurrence, recordCommitment, assignCommitmentOwner, askMemberDecision, resolveMemberDecision, verifyCommitment, closeCommitment } from "@/lib/actions";
 import { requirementCalibration } from "@/lib/estimate-calibration";
+import { displayState, m25, unmetClauses } from "@/lib/commitment-ledger";
 import { getRegistries, getHouseholdMembers, getTotpEnrolled, getVisitPhotos, getExclusions, getIncidents, getObjectObservations } from "@/lib/data";
 import { RegistryCard } from "@/app/RegistryCard";
 import { vaultHasValue } from "@/lib/vault";
@@ -111,6 +112,14 @@ export default async function Oversight({ params, searchParams }: {
     .where(eq(decisionRight.householdId, hh.id))
     .orderBy(decisionRight.rightKey);
   const unconfirmedRights = rights.filter((r) => r.status !== "confirmed").length;
+
+  const ledger = await db.select().from(commitmentLedgerItem)
+    .where(eq(commitmentLedgerItem.householdId, hh.id))
+    .orderBy(desc(commitmentLedgerItem.createdAt)).limit(50);
+  // M-25 for the week just closed, COMPUTED here and stored nowhere.
+  const weekTo = new Date();
+  const weekFrom = new Date(weekTo.getTime() - 7 * 24 * 3600 * 1000);
+  const m25ThisWeek = m25(ledger, weekFrom, weekTo);
 
   const preferences = (await db.select().from(preferenceRule)
     .where(eq(preferenceRule.householdId, hh.id))
@@ -865,6 +874,98 @@ export default async function Oversight({ params, searchParams }: {
           </div>
         ))}
         <div className="prov">Source: {rights[0]?.authority ?? "none loaded"}</div>
+      </div>
+
+      <div className="card">
+        <h2>Commitment ledger (Q-6-2)</h2>
+        <div className="note">
+          What we committed to for this household, and what we have asked them to
+          decide. An item is HANDLED only when an accountable owner exists, no asked
+          decision is unanswered, a follow-up exists where someone outside still owes
+          something, and verification is either satisfied or explicitly pending. That
+          is the Handled invariant, and the database refuses to close an item that
+          does not meet it: activity is never closure. Staff-only; the member decision
+          inbox is the freeze-gated half of this queue row and is not built.
+        </div>
+        <div className="prov">
+          M-25, decisions surfaced to this household in the last 7 days: {m25ThisWeek}.
+          Computed from when each question was asked, never stored. The measure is
+          expected to be low and falling, so it means something read over time.
+        </div>
+        {ledger.length === 0 && <div className="prov">Nothing on the ledger for this household.</div>}
+        {ledger.map((c) => {
+          const unmet = unmetClauses(c);
+          return (
+            <div key={c.id} className="field">
+              <span className="fname">
+                {c.title}
+                <span className="prov" style={{ marginLeft: 8 }}>
+                  {displayState(c)}{c.stage ? ` · ${c.stage}` : ""}
+                  {c.memberDecisionQuestion && !c.memberDecisionResolvedAt ? ` · asked: ${c.memberDecisionQuestion}` : ""}
+                </span>
+              </span>
+              {!c.closedAt && unmet.length > 0 && (
+                <div className="prov">not handled yet: {unmet.join("; ")}</div>
+              )}
+              {c.closedAt && <div className="prov">closed{c.closeNote ? `: ${c.closeNote}` : ""}</div>}
+              {isAdminOrOps && !c.closedAt && (
+                <div className="row" style={{ gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                  {!c.accountableOwner && (
+                    <form action={assignCommitmentOwner} className="row" style={{ gap: 6 }}>
+                      <input type="hidden" name="householdId" value={hh.id} />
+                      <input type="hidden" name="itemId" value={c.id} />
+                      <input type="hidden" name="accountableOwner" value={principal.userId} />
+                      <button className="act subtle">Take ownership</button>
+                    </form>
+                  )}
+                  {!c.memberDecisionQuestion && (
+                    <form action={askMemberDecision} className="row" style={{ gap: 6 }}>
+                      <input type="hidden" name="householdId" value={hh.id} />
+                      <input type="hidden" name="itemId" value={c.id} />
+                      <input name="question" aria-label="What we are asking the household" placeholder="what we are asking them" style={{ marginTop: 0, minWidth: 180 }} />
+                      <button className="act subtle">Record the ask</button>
+                    </form>
+                  )}
+                  {c.memberDecisionQuestion && !c.memberDecisionResolvedAt && (
+                    <form action={resolveMemberDecision} className="row" style={{ gap: 6 }}>
+                      <input type="hidden" name="householdId" value={hh.id} />
+                      <input type="hidden" name="itemId" value={c.id} />
+                      <button className="act subtle">They answered</button>
+                    </form>
+                  )}
+                  {!c.verifiedAt && !c.verificationPendingReason && (
+                    <form action={verifyCommitment} className="row" style={{ gap: 6 }}>
+                      <input type="hidden" name="householdId" value={hh.id} />
+                      <input type="hidden" name="itemId" value={c.id} />
+                      <input type="hidden" name="mode" value="satisfied" />
+                      <button className="act subtle">Verified</button>
+                    </form>
+                  )}
+                  <form action={closeCommitment} className="row" style={{ gap: 6 }}>
+                    <input type="hidden" name="householdId" value={hh.id} />
+                    <input type="hidden" name="itemId" value={c.id} />
+                    <input name="closeNote" aria-label="How it ended" placeholder="how it ended" style={{ marginTop: 0, minWidth: 140 }} />
+                    <button className="act subtle">Close</button>
+                  </form>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {isAdminOrOps && (
+          <form action={recordCommitment} className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+            <input type="hidden" name="householdId" value={hh.id} />
+            <input name="title" aria-label="What we committed to" placeholder="what we committed to" required style={{ flex: 2, marginTop: 0, minWidth: 200 }} />
+            <select name="stage" aria-label="Stage of the decision that produced it" style={{ marginTop: 0 }}>
+              <option value="">no upstream decision</option>
+              <option value="anticipate">anticipate</option>
+              <option value="identify">identify</option>
+              <option value="decide">decide</option>
+              <option value="monitor">monitor</option>
+            </select>
+            <button className="act">Record commitment</button>
+          </form>
+        )}
       </div>
 
       <div className="card">

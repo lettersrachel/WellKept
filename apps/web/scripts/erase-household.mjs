@@ -128,6 +128,20 @@
  *    the whole-or-absent value CHECK survives erasure (the W-6
  *    precedent), and the confirmation pair is untouched so the
  *    confirmation CHECK survives too.
+ *  - commitment_ledger_item (0067, Q-6-2, 2026-09-05): free text
+ *    BLANKED (the title, the member decision question, the external
+ *    completion note, the verification pending reason, the close note),
+ *    the SKELETON and every TIMESTAMP kept - the work_item posture. THAT
+ *    a commitment existed, that a member decision was asked and when,
+ *    and that it was closed under the Handled invariant is the record of
+ *    what we were accountable for and how it ended; what it was ABOUT is
+ *    the household's. Blanking uses markers rather than NULL so all four
+ *    CHECKs survive erasure (the W-6 precedent), and it matters more
+ *    here than anywhere else: nulling member_decision_question on a row
+ *    that carries an asked_at would violate the whole-or-absent
+ *    constraint, and nulling it on a CLOSED row would leave the
+ *    Handled-invariant CHECK asserting a clause about a question that no
+ *    longer exists.
  *  - preference_rule (0057, 2026-08-25): free text BLANKED (rule and
  *    retirement reason to markers; a confidence value, where one ever
  *    exists on a non-explicit row, to a marker too so the
@@ -359,6 +373,11 @@ try {
   // the skeleton (see header). value_text goes to a MARKER rather than
   // NULL so decision_right_value_is_one_shape survives erasure.
   await c.query("UPDATE decision_right SET value_text=CASE WHEN value_text IS NULL THEN NULL ELSE $2 END, note=CASE WHEN note IS NULL THEN NULL ELSE $2 END, authority=$2, updated_at=now() WHERE household_id=$1", [householdId, E]);
+  // commitment_ledger_item: blank the words, keep the skeleton and every
+  // timestamp (see header). Markers rather than NULL throughout, so the
+  // member-decision, verification, close and Handled-invariant CHECKs
+  // all survive erasure.
+  await c.query("UPDATE commitment_ledger_item SET title=$2, member_decision_question=CASE WHEN member_decision_question IS NULL THEN NULL ELSE $2 END, external_completion_on=CASE WHEN external_completion_on IS NULL THEN NULL ELSE $2 END, verification_pending_reason=CASE WHEN verification_pending_reason IS NULL THEN NULL ELSE $2 END, close_note=CASE WHEN close_note IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // preference_rule: blank the words, keep the lifecycle (see header).
   await c.query("UPDATE preference_rule SET rule=$2, confidence=CASE WHEN confidence IS NULL THEN NULL ELSE $2 END, retired_reason=CASE WHEN retired_reason IS NULL THEN NULL ELSE $2 END, updated_at=now() WHERE household_id=$1", [householdId, E]);
   // work_item: blank the words, keep the lifecycle (see header).

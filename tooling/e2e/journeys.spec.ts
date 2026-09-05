@@ -1472,3 +1472,99 @@ test("Q-11v: the corporate client-preview renders what the member actually sees"
     await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
   }
 });
+
+/**
+ * Q-6-2: the Commitment Ledger, with the Handled invariant as the
+ * definition of closed.
+ *
+ * The journey that matters is the REFUSAL: an operator tries to close an
+ * item that is not handled and the system says which clause is unmet.
+ * The database refuses it too (0067's CHECK), so this proves the pair,
+ * and it proves the refusal on the exact control rather than on a
+ * constraint violation nobody would read.
+ */
+test("commitment ledger: closing refuses until the Handled invariant is met, then the four clauses let it through", async ({ context, page }) => {
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+
+    // Refusing direction first: three characters is not a commitment.
+    await page.getByLabel("What we committed to").fill("hm");
+    await page.getByRole("button", { name: "Record commitment" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+
+    const title = "Replace the water heater anode before the winter service";
+    await page.getByLabel("What we committed to").fill(title);
+    await page.getByRole("button", { name: "Record commitment" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='commitment_ledger_item.recorded'")).toBe(1);
+    // A fresh item is APPROACHING and the page names both unmet clauses.
+    await expect(page.getByText("not handled yet: an accountable owner exists; verification is satisfied or explicitly pending")).toBeVisible({ timeout: 15_000 });
+
+    // THE INVARIANT REFUSES A CLOSE. Two clauses are unmet, and the
+    // action says so before the CHECK has to.
+    await page.getByLabel("How it ended").fill("done");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL")).toBe(0);
+
+    // Clause 1: an accountable owner.
+    await page.getByRole("button", { name: "Take ownership" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND accountable_owner IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    // ADR-006: the audit row carries a TOKEN for the owner, never an address.
+    const { rows: [ownerAudit] } = await pool.query(
+      "SELECT detail FROM audit_event WHERE household_id=$1 AND detail->>'action'='owner_assigned'", [synId]);
+    expect(ownerAudit.detail.subjectToken).toBeTruthy();
+    expect(JSON.stringify(ownerAudit.detail)).not.toContain("@");
+
+    // Clause 2: an asked member decision blocks the close until answered,
+    // and M-25 counts the ASK. Nothing is delivered to a member: the
+    // inbox is the freeze-gated half and this records the ask only.
+    await page.getByLabel("What we are asking the household").fill("Which of the two vendors would you prefer?");
+    await page.getByRole("button", { name: "Record the ask" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND member_decision_asked_at IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    await expect(page.getByText("M-25, decisions surfaced to this household in the last 7 days: 1.")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByLabel("How it ended").fill("done");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 15_000 });
+    expect(await count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL")).toBe(0);
+
+    await page.getByRole("button", { name: "They answered" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND member_decision_resolved_at IS NOT NULL AND member_decision_resolved_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+
+    // Clause 4: verification. Clause 3 is satisfied by construction here,
+    // since nothing external is pending on this item.
+    await page.getByRole("button", { name: "Verified" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND verified_at IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    // The word "handled" appears in this card's own explanatory note, so
+    // asserting it would pass on the prose rather than on the item (the
+    // wrong-unit class). The item's state is asserted by the DISAPPEARANCE
+    // of its unmet-clause line, which only the invariant can cause.
+    await expect.poll(async () => await page.getByText("not handled yet").count(), { timeout: 20_000 }).toBe(0);
+
+    // Now the close lands, and the confirmation names it.
+    await page.getByLabel("How it ended").fill("anode replaced and photographed");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM commitment_ledger_item WHERE household_id=$1 AND closed_at IS NOT NULL AND closed_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='commitment_ledger_item.closed'")).toBe(1);
+    await expect(page.getByText("closed: anode replaced and photographed")).toBeVisible({ timeout: 15_000 });
+
+    // The member never sees any of this: no client projection exists.
+    // Asserted against the EMITTED MARKUP rather than the rendered text,
+    // per the RSC boundary rule, so a prop that is passed and discarded
+    // would still fail here.
+    const clientPage = await context.newPage();
+    await clientPage.goto(`/oversight/${synId}/preview/client`);
+    const html = await clientPage.content();
+    expect(html).not.toContain("accountableOwner");
+    expect(html).not.toContain("Which of the two vendors");
+    await clientPage.close();
+  } finally {
+    await pool.query("DELETE FROM commitment_ledger_item WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_subject_token WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});

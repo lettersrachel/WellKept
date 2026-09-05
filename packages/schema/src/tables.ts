@@ -1854,3 +1854,81 @@ export const decisionRight = pgTable("decision_right", {
   check("decision_right_confirmation_is_whole",
     sql`(${t.status} = 'confirmed' AND ${t.confirmedAt} IS NOT NULL AND ${t.confirmedBy} IS NOT NULL) OR (${t.status} = 'recommended' AND ${t.confirmedAt} IS NULL AND ${t.confirmedBy} IS NULL)`),
 ]);
+
+// Q-6-2 (0067): the Commitment Ledger. One row is one commitment the
+// household's record has made or is being asked to make.
+//
+// THE HANDLED INVARIANT IS STRUCTURAL HERE, not a rendering rule. Its
+// four clauses (CLAUDE.md, adopted law) are columns, and the CHECK
+// below refuses a CLOSE while any of them is unmet, so "closed" cannot
+// mean anything other than the invariant. `handled` itself is COMPUTED
+// from those columns and never stored, for the reason time_segment's
+// duration is computed: a stored answer and its inputs drift, and the
+// drift is silent.
+//
+// Activity is never closure. There is deliberately no column for
+// "vendor contacted" or "email sent": those are events, and the outbox
+// already carries them.
+export const commitmentLedgerItem = pgTable("commitment_ledger_item", {
+  ...stamps,
+  householdId: uuid("household_id").notNull().references(() => household.id),
+  // What was committed, in the company's words. s2, staff-authored.
+  title: text("title").notNull(),
+  // The stage of the DECISION that produced this item, per the 4
+  // September ruling answering 0065's open producer question. NULL when
+  // the item was HOM-captured or corporate-authored with no upstream
+  // decision, which is a true statement rather than a missing value.
+  stage: pipelineStageEnum("stage"),
+  // Clause 1: an accountable owner exists. NULL is the honest "nobody
+  // owns this yet", and it is exactly what stops an item being closed.
+  accountableOwner: text("accountable_owner").references(() => authUser.id),
+  // Clause 2: no required member decision is unresolved. The question is
+  // the ASK, in plain words; asked_at is when it was put to the
+  // household and is what M-25 counts.
+  memberDecisionQuestion: text("member_decision_question"),
+  memberDecisionAskedAt: timestamp("member_decision_asked_at", { withTimezone: true }),
+  memberDecisionResolvedAt: timestamp("member_decision_resolved_at", { withTimezone: true }),
+  memberDecisionResolvedBy: text("member_decision_resolved_by").references(() => authUser.id),
+  // Clause 3: a follow-up or watch exists where external completion is
+  // pending. What is outstanding is recorded IN WORDS rather than as a
+  // boolean, because a boolean asserting "something external is pending"
+  // is a claim with no content, and NULL then says plainly that nothing
+  // is waiting on anyone outside.
+  externalCompletionOn: text("external_completion_on"),
+  followUpAt: timestamp("follow_up_at", { withTimezone: true }),
+  // Clause 4: verification is satisfied OR explicitly pending. Two
+  // columns rather than a status enum, so "explicitly pending" has to
+  // carry its reason and cannot be a word somebody selected.
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  verificationPendingReason: text("verification_pending_reason"),
+  // Lifecycle. Closing is the act the invariant governs.
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  closedBy: text("closed_by").references(() => authUser.id),
+  closeNote: text("close_note"),
+  recordedBy: text("recorded_by").notNull().references(() => authUser.id), // write provenance
+}, (t) => [
+  index("commitment_ledger_item_household_idx").on(t.householdId, t.closedAt),
+  index("commitment_ledger_item_asked_idx").on(t.householdId, t.memberDecisionAskedAt),
+  // A member decision is whole or absent: a resolution with no question
+  // is nonsense, and a half-resolution loses who answered.
+  check("commitment_ledger_item_member_decision_is_whole",
+    sql`(${t.memberDecisionQuestion} IS NULL AND ${t.memberDecisionAskedAt} IS NULL AND ${t.memberDecisionResolvedAt} IS NULL AND ${t.memberDecisionResolvedBy} IS NULL)
+        OR (${t.memberDecisionQuestion} IS NOT NULL AND ${t.memberDecisionAskedAt} IS NOT NULL
+            AND ((${t.memberDecisionResolvedAt} IS NULL AND ${t.memberDecisionResolvedBy} IS NULL)
+              OR (${t.memberDecisionResolvedAt} IS NOT NULL AND ${t.memberDecisionResolvedBy} IS NOT NULL)))`),
+  // Verification cannot be satisfied AND explicitly pending at once.
+  check("commitment_ledger_item_verification_is_one_shape",
+    sql`NOT (${t.verifiedAt} IS NOT NULL AND ${t.verificationPendingReason} IS NOT NULL)`),
+  // Closing is whole: when, by whom, together.
+  check("commitment_ledger_item_close_is_whole",
+    sql`(${t.closedAt} IS NULL AND ${t.closedBy} IS NULL) OR (${t.closedAt} IS NOT NULL AND ${t.closedBy} IS NOT NULL)`),
+  // THE HANDLED INVARIANT, as the definition of closed. All four
+  // clauses, in the adopted wording's own order.
+  check("commitment_ledger_item_closed_only_when_handled",
+    sql`${t.closedAt} IS NULL OR (
+          ${t.accountableOwner} IS NOT NULL
+      AND (${t.memberDecisionQuestion} IS NULL OR ${t.memberDecisionResolvedAt} IS NOT NULL)
+      AND (${t.externalCompletionOn} IS NULL OR ${t.followUpAt} IS NOT NULL)
+      AND (${t.verifiedAt} IS NOT NULL OR ${t.verificationPendingReason} IS NOT NULL)
+    )`),
+]);

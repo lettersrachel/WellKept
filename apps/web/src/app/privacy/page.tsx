@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         automatically from visit events, and costs incurred in serving it; a receipt
         photo, where one is captured, is stored and retained exactly like a visit photo);
         your membership record (how you found us, and your membership history);
-        operational records (follow-up work we track on your household&apos;s behalf and the planned instances of your standing tasks with our internal working estimates for planning them and a record of how each actually went, items
+        operational records (the commitments we track for your household with the person here who is accountable for each, any question we have put to you and whether it has been answered, and the check we make before calling one finished, follow-up work we track on your household&apos;s behalf and the planned instances of your standing tasks with our internal working estimates for planning them and a record of how each actually went, items
         our system surfaces to our staff for attention and the situations our staff
         bundle related items into, choices we route internally for a
         decision, notes a staff member captures in their own words for filing, the

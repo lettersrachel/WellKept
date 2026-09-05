@@ -203,6 +203,8 @@ export const CORPORATE_ONLY: Record<string, string> = {
   work_requirement: "planned recurring instances, the forecasting unit, and the parent of the estimate and occurrence rows that D7 holds. Out with them so the member scope does not carry a skeleton whose content is absent.",
   household_task_profile: "how a reusable task manifests here, with s2 how-they-want-it-done notes and the company's cadence in words. Durations are absent by construction; the s2 notes are the reason.",
 
+  commitment_ledger_item: "the Commitment Ledger (0067): what the company committed to, who is accountable for it, what was asked of the household and how it closed under the Handled invariant. CORPORATE-ONLY BY THE FREEZE, not by a judgment that the household should not know: the member decision inbox is Q-6's freeze-gated half and waits for the 25 September two-key decision, so the export cannot ship the record of member-facing asks ahead of the surface that makes them (the decision_right posture, one row over). A member scope for it is a candidate the moment the freeze lifts, and it carries a staff accountable_owner, which is its own question then.",
+
   // Delivery and event plumbing. The portability line names audit
   // metadata, which is audit_event; none of these is that.
   event_outbox: "the internal event bus. Envelope plumbing, and its provenance answers a different question from audit metadata.",

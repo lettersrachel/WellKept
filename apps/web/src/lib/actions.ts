@@ -2334,3 +2334,235 @@ export async function recordTaskOccurrence(formData: FormData) {
   revalidatePath(`/oversight/${householdId}`);
   recordedTo(returnTo, outcome === "exception" ? "occurrence recorded with its exception" : "occurrence recorded as expected");
 }
+
+/**
+ * Q-6-2: the Commitment Ledger's seven corporate acts.
+ *
+ * FREEZE POSTURE: every one of these is corporate-side. Asking a member
+ * decision RECORDS the ask; delivering it to a member is Q-6's
+ * freeze-gated half and is not built. Resolving records the answer as
+ * relayed by whoever spoke to the household, because the member's own
+ * path does not exist yet and pretending otherwise would put words in
+ * their mouth.
+ *
+ * The Handled invariant is enforced by the DATABASE (the 0067 CHECK).
+ * `closeCommitment` re-asserts it in the action so the operator gets a
+ * refusal that names the unmet clause rather than a constraint
+ * violation, which is the payload-guard posture: the wall is the
+ * database and the message is the app's.
+ */
+const LEDGER_ROLES = ["corporate_admin", "corporate_ops"];
+
+/**
+ * The gate is INLINE in all seven actions rather than in a shared helper,
+ * deliberately. `action-permissions.test.ts` reads each exported action
+ * for a call to a sanctioned gate, and it refused these when the call sat
+ * one hop away inside a helper. Teaching the guard to follow a helper
+ * would widen what counts as gated for every action in the file, which is
+ * not a change to make in passing to get a build through; seven repeated
+ * lines cost less than a guard that reasons about indirection. Its red
+ * run is recorded in the session log.
+ */
+
+async function ledgerItemOr404(householdId: string, itemId: string, returnTo: string) {
+  const { commitmentLedgerItem } = await import("@wellkept/schema");
+  if (!/^[0-9a-f-]{36}$/i.test(itemId)) refuseTo(returnTo, "bad-input");
+  const [row] = await db.select().from(commitmentLedgerItem).where(eq(commitmentLedgerItem.id, itemId));
+  if (!row || row.householdId !== householdId) refuseTo(returnTo, "missing");
+  return row;
+}
+
+/** One write path for the ledger's updates: the event and the audit row travel with every change. */
+async function writeLedgerChange(args: {
+  householdId: string; itemId: string; principal: { userId: string; role: string };
+  patch: Record<string, unknown>; action: string; kind: string; detail?: Record<string, unknown>;
+}) {
+  const { commitmentLedgerItem } = await import("@wellkept/schema");
+  await db.transaction(async (tx) => {
+    await tx.update(commitmentLedgerItem)
+      .set({ ...args.patch, updatedAt: new Date() })
+      .where(eq(commitmentLedgerItem.id, args.itemId));
+    await emitOutboxEvent(tx, {
+      householdId: args.householdId, kind: args.kind,
+      payload: { commitmentLedgerItemId: args.itemId },
+      provenance: `action:${args.action}`, objectId: args.itemId,
+      actor: args.principal.userId, correlationId: args.itemId,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId: args.householdId, actorUser: args.principal.userId,
+      actorRole: args.principal.role, kind: "commitment_ledger_item",
+      detail: { commitmentLedgerItemId: args.itemId, action: args.action, ...(args.detail ?? {}) },
+    });
+  });
+  revalidatePath(`/oversight/${args.householdId}`);
+}
+
+export async function recordCommitment(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const title = String(formData.get("title") ?? "").trim().slice(0, 300);
+  if (title.length < 4) refuseTo(returnTo, "bad-input");
+  const stageRaw = String(formData.get("stage") ?? "").trim();
+  // NULL is the true statement for an item with no upstream decision,
+  // per the 4 September ruling. An unknown word is refused rather than
+  // silently dropped to null, which would look identical to the ruling's
+  // honest NULL.
+  if (stageRaw !== "" && !["anticipate", "identify", "decide", "monitor"].includes(stageRaw)) refuseTo(returnTo, "bad-input");
+  const { commitmentLedgerItem } = await import("@wellkept/schema");
+  const id = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(commitmentLedgerItem).values({
+      id, householdId, title, stage: stageRaw === "" ? null : (stageRaw as "anticipate"),
+      recordedBy: principal.userId,
+    });
+    await emitOutboxEvent(tx, {
+      householdId, kind: "commitment_ledger_item.recorded",
+      payload: { commitmentLedgerItemId: id }, provenance: "action:recordCommitment",
+      objectId: id, actor: principal.userId, correlationId: id,
+    });
+    await tx.insert(auditEvent).values({
+      id: randomUUID(), householdId, actorUser: principal.userId, actorRole: principal.role,
+      kind: "commitment_ledger_item", detail: { commitmentLedgerItemId: id, action: "recorded" },
+    });
+  });
+  revalidatePath(`/oversight/${householdId}`);
+  recordedTo(returnTo, "commitment recorded");
+}
+
+export async function assignCommitmentOwner(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  await ledgerItemOr404(householdId, itemId, returnTo);
+  const ownerId = String(formData.get("accountableOwner") ?? "").trim();
+  if (!ownerId) refuseTo(returnTo, "bad-input");
+  // The owner must hold a role on THIS household. An accountable owner
+  // who cannot see the household is not accountable for it, and the
+  // check is against the assignment table rather than against a list of
+  // roles, because who may own a commitment is not a role question.
+  const { householdRoleAssignment } = await import("@wellkept/schema");
+  const [assignment] = await db.select().from(householdRoleAssignment)
+    .where(and(eq(householdRoleAssignment.householdId, householdId), eq(householdRoleAssignment.userId, ownerId)));
+  if (!assignment) refuseTo(returnTo, "gate-unmet");
+  // ADR-006: the audit detail carries a TOKEN for a subject who is not
+  // the acting user, never an address or a name.
+  const subjectToken = await mintAuditSubjectToken(householdId, "person_ref", ownerId);
+  await writeLedgerChange({
+    householdId, itemId, principal, patch: { accountableOwner: ownerId },
+    action: "owner_assigned", kind: "commitment_ledger_item.owner_assigned",
+    detail: { subjectToken },
+  });
+  recordedTo(returnTo, "accountable owner assigned");
+}
+
+export async function askMemberDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  const row = await ledgerItemOr404(householdId, itemId, returnTo);
+  if (row.memberDecisionQuestion) refuseTo(returnTo, "gate-unmet"); // one ask per item; a second question is a second item
+  const question = String(formData.get("question") ?? "").trim().slice(0, 500);
+  if (question.length < 4) refuseTo(returnTo, "bad-input");
+  await writeLedgerChange({
+    householdId, itemId, principal,
+    patch: { memberDecisionQuestion: question, memberDecisionAskedAt: new Date() },
+    action: "member_decision_asked", kind: "commitment_ledger_item.member_decision_asked",
+  });
+  recordedTo(returnTo, "member decision recorded as asked");
+}
+
+export async function resolveMemberDecision(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  const row = await ledgerItemOr404(householdId, itemId, returnTo);
+  if (!row.memberDecisionQuestion) refuseTo(returnTo, "gate-unmet"); // nothing was asked
+  if (row.memberDecisionResolvedAt) refuseTo(returnTo, "gate-unmet"); // already answered
+  await writeLedgerChange({
+    householdId, itemId, principal,
+    patch: { memberDecisionResolvedAt: new Date(), memberDecisionResolvedBy: principal.userId },
+    action: "member_decision_resolved", kind: "commitment_ledger_item.member_decision_resolved",
+  });
+  recordedTo(returnTo, "member decision recorded as answered");
+}
+
+export async function setCommitmentFollowUp(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  await ledgerItemOr404(householdId, itemId, returnTo);
+  const on = String(formData.get("externalCompletionOn") ?? "").trim().slice(0, 300);
+  const at = String(formData.get("followUpAt") ?? "").trim();
+  if (on.length < 4) refuseTo(returnTo, "bad-input");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(at)) refuseTo(returnTo, "bad-input");
+  await writeLedgerChange({
+    householdId, itemId, principal,
+    patch: { externalCompletionOn: on, followUpAt: new Date(`${at}T00:00:00Z`) },
+    action: "follow_up_set", kind: "commitment_ledger_item.follow_up_set",
+  });
+  recordedTo(returnTo, "follow-up recorded");
+}
+
+export async function verifyCommitment(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  await ledgerItemOr404(householdId, itemId, returnTo);
+  const mode = String(formData.get("mode") ?? "");
+  if (!["satisfied", "explicitly_pending"].includes(mode)) refuseTo(returnTo, "bad-input");
+  const reason = String(formData.get("pendingReason") ?? "").trim().slice(0, 300);
+  // Whole or absent, both directions, matching the CHECK: satisfied
+  // carries no reason and pending is nothing without one.
+  if (mode === "explicitly_pending" && reason.length < 4) refuseTo(returnTo, "gate-unmet");
+  if (mode === "satisfied" && reason.length > 0) refuseTo(returnTo, "bad-input");
+  await writeLedgerChange({
+    householdId, itemId, principal,
+    patch: mode === "satisfied"
+      ? { verifiedAt: new Date(), verificationPendingReason: null }
+      : { verifiedAt: null, verificationPendingReason: reason },
+    action: mode === "satisfied" ? "verified" : "verification_pending",
+    kind: "commitment_ledger_item.verification_recorded",
+  });
+  recordedTo(returnTo, mode === "satisfied" ? "verification recorded as satisfied" : "verification recorded as pending");
+}
+
+export async function closeCommitment(formData: FormData) {
+  const householdId = String(formData.get("householdId") ?? "");
+  const returnTo = resolveReturnTo(String(formData.get("returnTo") ?? ""), householdId);
+  if (!householdId) refuseTo(returnTo, "bad-input");
+  const principal = await getPrincipal(householdId);
+  if (!principal || !LEDGER_ROLES.includes(principal.role)) refuseTo(returnTo, "forbidden");
+  const itemId = String(formData.get("itemId") ?? "");
+  const row = await ledgerItemOr404(householdId, itemId, returnTo);
+  if (row.closedAt) refuseTo(returnTo, "gate-unmet");
+  const { unmetClauses } = await import("./commitment-ledger");
+  // The database refuses this too. The action checks first so the
+  // operator is told WHICH clause is unmet rather than meeting a
+  // constraint violation, and so the refusal is visible on the banner.
+  if (unmetClauses(row).length > 0) refuseTo(returnTo, "gate-unmet");
+  const note = String(formData.get("closeNote") ?? "").trim().slice(0, 500) || null;
+  await writeLedgerChange({
+    householdId, itemId, principal,
+    patch: { closedAt: new Date(), closedBy: principal.userId, closeNote: note },
+    action: "closed", kind: "commitment_ledger_item.closed",
+  });
+  recordedTo(returnTo, "commitment closed");
+}
