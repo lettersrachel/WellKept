@@ -7558,3 +7558,91 @@ separately.
 migration and a semantics decision; removing the word from the spec is
 an edit to a stamped document. Neither is an engineering call, and the
 four-value column is not blocked on the answer.
+
+---
+
+### G-122 OPEN, 4 September 2026: Q-8b cited REQ-017, which is a different deliverable, and REQ-017's two PDFs are undelivered and unqueued
+
+**Filed at the START of Q-8b by founder instruction, rather than at the
+end**, because the whole risk is that the row looks closed for something
+it never touched, and a finding filed after the row closes arrives after
+the moment it could have helped.
+
+**The two texts, both in the repository.** The Q-8b queue row cited
+`REQ-017; intake BENCHMARK_ADOPTION §2 (portability)`. REQ-017 reads, at
+`docs/WK-DEV-001_Requirements.md:52`:
+
+> REQ-017 (P1) Export: render a household's S1 view to branded PDF (the
+> client Playbook artifact) and a full S1+S2 internal PDF for coverage
+> binders.
+
+The portability line, at `docs/intake/2026-09-03-build-package/BENCHMARK_ADOPTION.md:18`:
+
+> Portability: provider-independent export of canonical household
+> structure, document and media manifest, vendor, asset, work and outcome
+> history, preferences and standing rules, access history and audit
+> metadata. Launch tier (Q-8b). Maple's shutdown is the reason.
+
+**Those are two deliverables, not one.** A branded PDF for a member to
+read is not a machine-readable archive that restores a household through
+an importer. They share the word "export" and nothing else: different
+output, different audience, different acceptance. The portability line
+matches the standing authorization's Q-8b paragraph word for word, so
+the row's real authority was always the second citation.
+
+**Where the citation came from, which matters for whether it recurs.**
+It is in the FROZEN intake copy at
+`docs/intake/2026-09-03-build-package/BUILD_QUEUE.md:19`, so the
+mis-citation originated in the package and was carried into the re-cut
+queue verbatim, exactly as intake is supposed to carry things. The
+frozen copy is not edited; the live row is corrected and says why.
+
+**The live consequence, which is the reason this is an entry rather than
+a note.** Q-8b will close. REQ-017 will still be undelivered, and a
+later reader auditing requirements against the queue finds REQ-017
+named on a closed row and concludes it shipped. **This is the G-108
+shape pointed the other way**: G-108 was a row whose acceptance
+criterion could not be located, so nobody could close it; this is a row
+whose citation names a requirement it does not deliver, so it closes
+something that never happened.
+
+**REQ-017 IS UNQUEUED AND UNBUILT, checked rather than assumed.** Zero
+PDF references in `apps` or `packages` (no renderer, no library, no
+route). REQ-017 is cited in exactly three places in the tree: the
+requirement itself, the Q-8b row, and the frozen intake queue. No queue
+row covers it. Q-7's mention of a PDF is a forwarded flyer entering the
+capture pipeline, an input rather than an output, and is unrelated.
+
+**A note for whoever queues it**, because it is the part that is not
+obvious: **REQ-017 needs a dependency decision before it needs a
+session.** The stack is pinned and "do not introduce dependencies" is
+standing law with one sanctioned exception to date. Nothing in the tree
+renders a PDF, so the row cannot be scoped without first deciding
+whether a PDF library enters the stack, or whether the artifact is
+produced some other way (browser print-to-PDF of a dedicated page is the
+obvious dependency-free candidate and has its own trade-offs). That is a
+founder decision of the same class as the axe exception, and it belongs
+in the row rather than being met by whoever picks the row up.
+
+**RULED AND QUEUED the same day (founder, 4 September 2026): Q-11p**, at
+the back of the launch tier, unscheduled. **The dependency question is
+answered in the row so it can be sized: browser print-to-PDF of a
+dedicated print route, not a PDF library.** The reasoning lives there
+rather than here because that is where the next person meets it: no
+dependency against a pinned stack; the house style stays in ONE place,
+since the artifact renders the same record the portals already render;
+and a PDF library would put document layout in the critical path of
+every future style change. The cost is named as fidelity control plus a
+print-specific stylesheet, a design task rather than an engineering
+risk, and the decision is reversible if fidelity proves inadequate. The
+candidate this entry floated is therefore the one that was chosen, with
+its trade-offs stated rather than left as "has its own".
+
+**Two clauses of that row close this entry's live consequence.** The row
+states that Q-8b's archive does NOT satisfy REQ-017, so the requirement
+cannot read as closed when the export lands, which is the whole reason
+this entry was filed at the start rather than at the end. And the
+internal coverage-binder scope must respect the vault rule: **no S3
+value renders, and its absence is VISIBLE rather than silent**, so a
+binder reader can tell a secured value exists and was withheld instead
+of reading a gap as no-such-value.

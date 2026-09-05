@@ -19,6 +19,8 @@
     "db:dump": "node src/dump-seed.ts",
     "db:rewrap-kek": "node src/rewrap-kek.ts",
     "db:tasks": "node src/seed-tasks.ts",
+    "db:export-household": "node src/export-household.ts",
+    "db:import-household": "node src/import-household.ts",
     "db:decision-rights": "node src/load-decision-rights.ts",
     "db:capacity": "node src/set-capacity.ts",
     "db:grant": "node src/grant-corporate.ts",

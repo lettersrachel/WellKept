@@ -604,6 +604,24 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   own citation discipline the thing that hid three stale clauses in one
   day. Read a citation as an instruction to go and check, never as
   evidence that someone already did.
+- **A comment block may hold a DECISION, not only a description, so read
+  the header before reporting an assertion as a defect.** Same shape as
+  the citation rule above, pointed at code instead of documents: an
+  assertion tells you what a guard computes and says nothing about
+  whether that was chosen. **The instance:** Q-6-1 found that removing
+  the executable `UPDATE decision_right ...` left `erasure-coverage`
+  green, and reported it as a hole the guard did not know it had. The
+  guard's own header, two screens above the line being read, already
+  said "a comment naming the table counts exactly as much as a query
+  does (the floor is being NAMED, the treatment decision, not a
+  particular SQL shape)", and even recorded the same proof shape the
+  session had just used. The behaviour was real and the framing was
+  wrong, which is the expensive half: it turned a settled decision into
+  an apparent defect, and a founder ruling was made on that premise
+  before the correction landed. The cost is asymmetric and that is why
+  this is a rule. Reading a header you did not need costs a minute;
+  reporting a decision as a defect spends someone else's judgment on a
+  question that was already answered.
 - **A document clause asserting the state of an EXTERNAL system must be
   re-read whenever a register addendum changes that state.** A Vercel
   setting, a deploy hook, a third-party project, branch protection: none
