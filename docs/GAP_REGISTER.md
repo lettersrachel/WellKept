@@ -7646,3 +7646,34 @@ internal coverage-binder scope must respect the vault rule: **no S3
 value renders, and its absence is VISIBLE rather than silent**, so a
 binder reader can tell a secured value exists and was withheld instead
 of reading a gap as no-such-value.
+
+### G-123 OPEN and minor, 5 September 2026: a frozen ruling's own date precedes the report it answers
+
+`docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md` is titled and dated
+**4 September 2026** and instructs that it be registered under WK-QA-018
+"with the day's other entries", which places it beside the Part C review
+of the same date. Its rulings B and C answer freeze-packet items that
+were written on **5 September**, in
+`docs/FREEZE_DECISION_PACKET_2026-09-25.md`, which did not exist on the
+4th.
+
+**Not reconciled, per the standing rule.** The document is a founder
+record and records keep their own wording and their own dating; the file
+is frozen verbatim under the founder's date and its manifest comment
+points here. The most likely explanation is that the rulings were made
+across a sitting that spans the boundary, or that the WK-QA-018 grouping
+is by session rather than by clock, and neither is checkable from this
+repository.
+
+**Why it is filed at all rather than shrugged off.** The dating is how a
+later reader orders cause and effect. Someone reading the register in
+order will see a ruling resolving a conflict before the document that
+raised the conflict exists, and will reasonably conclude that one of the
+two files was backdated or that a third document is missing. One line
+here is cheaper than that reconstruction. **It is not a defect in either
+document and changes nothing about the rulings, which are applied in
+full.**
+
+**Founder-side to settle, in one sentence:** whether the intended date is
+4 or 5 September. If 5, the fix is a reviewed hash update on the frozen
+file and a rename; if 4, this entry is the explanation and nothing moves.

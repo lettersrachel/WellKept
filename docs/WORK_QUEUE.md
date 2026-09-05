@@ -3722,7 +3722,18 @@ and not lost, not proposing a build order.
 5. Chores (Upstash budget alert, Vercel project rename, DMARC, and the
    `tsbuildinfo` untrack), the pilot protocol's friction-log brackets, the two
    LAUNCH signatures with §2.4 after the restore drill.
-6. **Consider putting one training household on a non-Concierge tier.** If
+6. **Founding-member prepayment, SHAPE ONLY** (founder ruling E, 4 September
+   2026, `docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md`). Prepaid
+   membership is offered as FOUNDING TERMS rather than as a discount scheme:
+   six or twelve months paid at signing, at a modest discount, capped at the
+   first ten households. **Nothing in the software changes for this today**,
+   and it is recorded so the billing shape is known before a member agreement
+   is drafted. Two pieces are expressly NOT ruled and are not to be inferred:
+   the mid-term refund clause the member agreement needs, and the revenue
+   recognition treatment, which is Kelly's. Amounts and rates never enter
+   source control (ADR-004 and the standing figures rule), so if this ever
+   reaches software it arrives as configuration.
+7. **Consider putting one training household on a non-Concierge tier.** If
    every training household runs the same tier, training ends with no evidence
    about tier differentiation, and the tiers are load-bearing in the revenue
    model. A recruiting decision, not a build.

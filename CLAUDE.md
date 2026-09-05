@@ -494,6 +494,40 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
 - **Stop and ask rather than choosing a threshold, taxonomy, or default.** A
   blank is a fine deliverable. A plausible default looks like a decision
   somebody made.
+- **Standing authority, so the run does not stall** (founder rulings Part
+  Two, 4 September 2026, `docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md`).
+  These are pre-authorized and REPORTED rather than asked:
+  - **The standing tiebreak.** When a decision is genuinely close on
+    merit, and it is not two-key, not member-facing, and not a semantics
+    change to a shipped primitive, take the option that keeps existing
+    meanings intact, open a row for the alternative, and report the call.
+    **A close call is a report, not a question.**
+  - **Migration splits.** An item that turns out to need more than one
+    migration splits into consecutive sessions on your own judgment,
+    stated in the plan. One migration per session still holds.
+  - **Queue-row corrections.** When a census contradicts a queue row,
+    correct the row and record both the correction and the evidence. The
+    original claim stays visible as wrong rather than being deleted.
+  - **Guard findings are rows, not questions.** When a red proof surfaces
+    a weak or mis-scoped guard, open a queue row with both-directions
+    acceptance criteria and continue. Bring it up only if fixing it would
+    change a shipped behaviour or touch a two-key adoption.
+  - **Deploy authority for shadow and server-only work.** You may run
+    `tooling/deploy.sh` yourself, after preflight, when ALL THREE hold:
+    the merge carries no member-facing change; every pending migration is
+    additive; and preflight reports exactly what the plan predicted.
+    Report the transcript. Founder approval stays required for anything
+    member-facing, anything non-additive, and any deploy where preflight
+    reports something unexpected, **including a surprising pending
+    count**.
+  - **Missing specs do not stop the run.** When an item's spec is not in
+    the repository, open the blocked row with the intake condition named
+    and proceed to the next unblocked item.
+- **Never pre-authorized, and these cost a round trip every time**
+  (same ruling): anything member-facing; anything that widens an
+  allowlist, adds a guard excusal, or lowers a guard's floor; anything
+  touching a two-key adoption. They are named as a set because they are
+  exactly where a fast default goes wrong quietly.
 - Read-only sessions are read-only. Report findings; do not fix.
 - Quote evidence: file and function, for every claim. "Unverifiable" is a valid
   finding. Do not infer.

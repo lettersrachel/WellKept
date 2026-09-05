@@ -42,6 +42,7 @@ of it:**
 | `preference_rule` | preferences and standing rules |
 | `household_role_assignment` | access history |
 | `audit_event` | audit metadata |
+| `visit_photo`, **manifest only, never bytes** | document and media manifest |
 
 **Everything in the corporate archive now carries an explicit member
 decision** (founder ruling, 5 September 2026). Every other table is
@@ -52,12 +53,13 @@ tomorrow cannot join it by silence.
 
 ---
 
-## Three rulings the 25 September session is asked for
+## What this session is asked for: one ruling, with two closed beside it
 
-Four of the portability line's nine named categories are empty in the
-member scope. Three rulings close all four, and each is framed so it can
-be answered in a sentence. **Every one of them is reversible in one line
-of a written list; none needs a migration.**
+Four of the portability line's nine named categories were empty in the
+member scope when this was written. **Two of the three rulings were made
+on 4 September and are closed below**; one remains for this session, and
+it is framed so it can be answered in a sentence. It is reversible in
+one line of a written list and needs no migration.
 
 ### Ruling A. Do a visit's HOURS reach a member archive, and in what shape?
 
@@ -92,53 +94,34 @@ rather than interpreted, because D7's text is about client surfaces and
 a session reading it later should not have to reconstruct whether an
 export counted.
 
-### Ruling B. Does the media manifest ship to a member?
+### Items B and C are CLOSED and off the agenda (founder rulings, 4 September 2026)
 
-**Why it is open.** Two standing sentences point opposite ways at the
-same artifact. The portability line names "document and media manifest"
-as something a provider-independent export contains.
-`legal/README.md` says photos "are shown only to assigned staff and
-management" and "never appear on the client's view".
+Both were raised here on 5 September and both were answered without
+this session, so they leave rather than sit on an agenda they no longer
+need. The reasons are kept because an item that vanishes reads as an
+item that was forgotten.
 
-**The distinction that may or may not matter:** the manifest is not a
-photo. It is one row per photo carrying the identity, the visit, the
-size and a content hash, with the bytes replaced by that hash. So a
-member would learn that photos exist and which ones, and would not
-receive an image. Whether an export is "the client's view" is the
-question, and it cannot be settled in engineering.
+**B, the media manifest: RULED IN, and it is built.** The conflict was
+between the portability line naming a document and media manifest and
+`legal/README.md` saying photos never appear on the client's view. It is
+resolved by the distinction the exporter already implemented: a manifest
+of `content_sha256` and metadata is not an image. `visit_photo` is now in
+the member scope as a manifest, and **image bytes are admitted to no
+archive at any scope**, enforced on the way out by the projection and on
+the way in by the restore not writing photo rows at all. Both directions
+are asserted, including that a projection cannot be made scope-conditional.
+`legal/README.md` carries the settling sentence, so the conflict is closed
+in the document that created it rather than only in the export code.
 
-**Held meanwhile on the stricter reading:** `visit_photo` is out of the
-member scope today.
+**C, vendor history: NOT A FREEZE QUESTION.** If the portability line
+means vendor engagements rather than registry entries, nothing in the
+schema holds it, so there was nothing to rule about scope. It is a queue
+row now (Q-8v). The founder's own reading of why it looked like one is
+worth keeping, because the shape recurs: it was a build gap wearing the
+costume of a disclosure decision.
 
-**The shapes:** **(a)** the manifest ships and `legal/README.md` gains a
-sentence distinguishing the view from an export; **(b)** it does not
-ship and the portability line's media category is recorded as
-deliberately unmet for member archives; **(c)** it ships only when a
-member asks for photos specifically, which is a second control and a
-larger build than either.
-
-### Ruling C. Is vendor history satisfied by registry entries?
-
-**Why it is open.** The portability line names "vendor history". No
-vendor table exists: a vendor is a `registry_entry` kind, and
-`registry_entry` is already in the member scope. So the category may
-already be satisfied under a different name, or it may be a real gap
-that nobody has noticed because the word does not appear.
-
-**What is being asked.** Whether "the vendors on the household's
-registry, with their entries' own history" is what the portability line
-means, or whether vendor history means the record of vendor
-ENGAGEMENTS: who came, when, for what, at what outcome. The second does
-not exist anywhere in the schema today, and if that is the meaning then
-the gap is a build item rather than an export question.
-
-**The shapes:** **(a)** registry entries satisfy it and the category is
-closed; **(b)** vendor engagement history is a real absence, in which
-case it belongs on the queue and NOT in this packet, since it stops
-being about the freeze.
-
-**This is the one of the three that may not be a freeze question at
-all**, and it is here because it was found while scoping the export.
+**Ruling A stands and is the only export question left for 25
+September.**
 
 ---
 

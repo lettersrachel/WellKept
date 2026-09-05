@@ -69,6 +69,15 @@ const FROZEN: Record<string, string> = {
   "docs/FOUNDER_RULINGS_2026-09-03_PR282_Q0b.md": "3553b742a532987e50b6dfc507ef74a7ff694b7868ad72ae3b017788ba5dc7d0",
   // Part C (4 September): the founder's review of Q-0b, same WK-QA-018 entry.
   "docs/FOUNDER_RULINGS_2026-09-04_PartC_Q0b_Review.md": "1a9d9e4e59b2b4fb65b9558839b46061956b5b662ca0d36d0ebb48e5d8d1e02f",
+  // The no-dependency rulings, A through E, same WK-QA-018 entry. Its own
+  // title dates it 4 September and it answers a report written on the 5th;
+  // the founder's dating is kept as she wrote it and the discrepancy is
+  // reported rather than reconciled (G-123).
+  "docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md": "adfee7cef7ab5c99b627479b543158ba42fc1f8d312b32b78bd36364399673aa",
+  // "Unblocking the run", same WK-QA-018 entry and same dating question
+  // (G-123). Part One settles six carried questions; Part Two is standing
+  // authority and is merged into CLAUDE.md's session discipline.
+  "docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md": "7ac66655c577d1cd199312e238087f005389f77198b4a45ed5cd89d507d29949",
   // The 4 September founder values package (document-only intake, the
   // Q-0b shape): received bytes frozen verbatim; .md hashes are
   // frontmatter-stripped, .csv/.yaml hashes are whole-file (no

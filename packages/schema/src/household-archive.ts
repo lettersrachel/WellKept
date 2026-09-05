@@ -133,6 +133,10 @@ export const MEMBER_SCOPE: Record<string, { category: PortabilityCategory; why: 
     category: "access history",
     why: "who held what role on this household and when, which is the phrase verbatim. Safe to carry because the people table is pseudonymised: a member learns that access existed and its shape, not who held it.",
   },
+  visit_photo: {
+    category: "document and media manifest",
+    why: "RULED into member scope (founder ruling B, docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md), on the distinction the exporter already implements: a manifest of content_sha256 and metadata is not an image. IMAGE BYTES ARE NEVER ADMITTED TO ANY ARCHIVE AT ANY SCOPE, which the projection enforces on the way out and the restore enforces by not writing photo rows at all. legal/README.md carries the settling sentence.",
+  },
   audit_event: {
     category: "audit metadata",
     why: "the append-only trail, which is the phrase verbatim. Subjects are ADR-006 TOKENS and audit_subject_token is excluded from every scope, so the trail says what happened without naming staff.",
@@ -184,7 +188,7 @@ export const CORPORATE_ONLY: Record<string, string> = {
   work_item: "internal work tracking, staff-only by default (s2) by its own design.",
   decision_record: "one routed corporate choice with its authority rule and decider. Its own comment records that the client audience is deliberately absent until the freeze lifts.",
   gesture: "staff gestures captured at the household level. Interaction telemetry about the software, not a household fact.",
-  client_edit: "the member's proposed edits WITH the internal review disposition and full diff. The nearest candidate for admission of anything on this list, and out today because the portability line names no category for a review queue and the row is half internal.",
+  client_edit: "RULED corporate-only (founder ruling A, docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md). Half the row is the member's own words and half is an internal review disposition, and a row carrying both would ship a staff judgment about the member's edit under the guise of returning their own text. The member half becomes its own build: a projection of the member-authored text alone, asserted in the shape the exporter already uses rather than hand-listed. Queue row Q-8c.",
 
   // Duration-carrying tables. D7 (register A564) bars a duration from a
   // client surface, and these carry one either as a column or inside a
@@ -212,8 +216,6 @@ export const CORPORATE_ONLY: Record<string, string> = {
   // Named by the founder, freeze-gated on its own account.
   decision_right: "what the household wants decided on its behalf, named by the founder's ruling. Its member-facing surface is itself freeze-gated (Q-6-1), so the export cannot ship it ahead of the surface.",
 
-  // Held on the stricter reading of a live conflict.
-  visit_photo: "the media manifest. The portability line NAMES a document and media manifest and legal/README.md says photos never appear on the client's view, and the two point opposite ways at the same artifact. The stricter reading holds while it is unresolved; see the freeze packet's second ruling.",
 };
 
 /**

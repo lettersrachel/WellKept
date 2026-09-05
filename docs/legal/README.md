@@ -59,6 +59,13 @@ Four documents, one per audience and direction:
   staff and management (second factor required on every view), and never
   appear on the client's view. No retention period is set yet, counsel
   should set one (see the photo-lifecycle item in LAUNCH.md §3).
+  **Settled 4 September 2026 (founder ruling B,
+  `docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md`), because the
+  portability line and the sentence above pointed opposite ways at the
+  same artifact: photographs are never rendered to a client surface; a
+  manifest that records that a photograph exists, with its hash and
+  metadata and no bytes, is not a rendering and is part of the
+  household's portable record.**
 - **"Dots"**, verbatim observations a house manager logs; never shown to the
   client.
 - **Incident & complaint records** (added 2026-07-25; extended 2026-07-27);

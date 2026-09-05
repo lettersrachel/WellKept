@@ -187,3 +187,24 @@ test("a corporate-only entry naming a table that is not in the archive is stale"
       `CORPORATE_ONLY names ${t}, which is not in the corporate archive. Either it lost its household column or it is excluded from every scope, and the decision here is stale.`);
   }
 });
+
+/**
+ * Founder ruling B (docs/FOUNDER_RULINGS_2026-09-04_NoDependency.md): the
+ * media MANIFEST ships in member scope and image bytes never do, at any
+ * scope. The manifest is admitted above; this is the other half, and it
+ * is asserted rather than left to the projection's good behaviour,
+ * because the projection is the only thing standing between a member
+ * archive and every photo of the inside of a house.
+ */
+test("a projected table is projected in EVERY scope, so bytes cannot reach an archive", () => {
+  for (const scope of ARCHIVE_SCOPES) {
+    for (const t of archiveTableSet(scope)) {
+      assert.equal(t.projected, Boolean(ARCHIVE_PROJECTIONS[t.table]),
+        `${t.table} carries a different projection in scope ${scope} than the projection list says. A scope-conditional projection is how bytes would reach a member archive.`);
+    }
+  }
+  // And the manifest is actually in the member scope, so this case does
+  // not pass by the table being absent.
+  assert.ok(archiveTableSet("member").some((t) => t.table === "visit_photo" && t.projected),
+    "visit_photo must be in the member scope AND projected (founder ruling B)");
+});
