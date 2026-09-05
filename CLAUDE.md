@@ -74,6 +74,21 @@ premise found here.
   close.
 - **Never load real household data into fixtures or tests.** Fernbrook DEMO and
   the Smoke Test Fixture only.
+- **A GRANT MADE IN ONE DOMAIN NEVER GOVERNS ANOTHER, WHATEVER THE
+  MECHANISM** (founder ruling, 5 September 2026, promoted from a
+  row-level note to a standing rule). A household's Decision Right is
+  permission for the thing it names, and reusing it to authorize a
+  different kind of act is creating authority nobody granted, however
+  reasonable the mapping looks in code. **The instance it was ruled on:**
+  a spending ceiling could not be read as permission to apply a schedule
+  or scope change of the same materiality, which is why the changeset
+  classifier's candidate 3 was rejected. **The same reasoning already
+  settled a smaller question and is worth reading beside it:** where
+  several rights share a materiality, a candidate auto-executes only if
+  EVERY one of them permits it, because below-the-highest-ceiling would
+  let a wide grant in one area widen another. The rule binds mechanisms,
+  not just this mechanism: a ceiling, a consent, a standing approval and
+  a mode promotion are each permission for their own domain.
 - **Certification and training stay INTERNAL, and if they ever go
   external they go BESIDE the staff application, never inside it**
   (founder ruling, 5 September 2026, on
@@ -902,6 +917,27 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   matches once and refuses when ambiguous, and use absolute paths in
   proof scripts, because a working directory is state and state that
   survives between commands is state that will eventually be wrong.
+- **A PREDICATE OVER A NULLABLE COLUMN HAS THREE OUTCOMES AND A CHECK TREATS
+  THE THIRD AS A PASS** (founder ruling, 5 September 2026, from G-135). So a
+  constraint guarding an OPTIONAL column tests `IS NULL` directly, or uses
+  `IS NOT DISTINCT FROM`, rather than comparing values. **The instance:**
+  `changeset_applies_only_when_safe` read
+  `applied_at IS NULL OR classification = 'safe_automatic'`; on a NULL
+  classification that is `false OR NULL`, which is NULL, and the constraint
+  accepted a changeset applied while unclassified, which is exactly the row it
+  exists to refuse.
+  **Two things about how it survived, and they are the reason this is a rule
+  rather than a bug report.** The false claim ("NULL is not permissive here,
+  and the database says so") stood in FOUR places at once, in `tables.ts`, the
+  migration header, a commit message and a session log, each reading as a
+  settled statement about a constraint that was in the file and applied to a
+  database. And **every census stayed green throughout, because a census checks
+  that a TABLE IS TREATED and never that a PREDICATE IS RIGHT**: erasure, legal,
+  archive and staff-disclosure all passed on a constraint that did the opposite
+  of what it said. Nothing in the guard set can catch this class; only a proof
+  case in the refusing direction can. The whole-or-absent CHECKs already in this
+  tree are safe because they test `IS NULL` and `IS NOT NULL` directly rather
+  than comparing values, which is why G-135 is a first instance and not a sweep.
 - **A cast from `timestamptz` to `date` pins UTC explicitly, or it writes
   the timezone bug into the data.** `installed_at::date` uses the SESSION
   TimeZone, not UTC: the same row reads `2018-10-01` from a UTC session

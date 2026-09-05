@@ -9,6 +9,34 @@ would permit). Nothing here is implemented, and the shipped code deliberately
 has no automatic classifier: `changeset.classification` is nullable with no
 default and only a person sets it.
 
+## RULED 5 September 2026 (founder): CANDIDATE 1
+
+**Nothing is automatic. A person classifies each change. Revisit when there is
+traffic.** The shipped behaviour is the ruled behaviour, so no code changes.
+
+**Her reasoning, recorded because it is the part that generalises, and because
+the obvious future argument runs the other way.** The two costs are not
+symmetric and **the asymmetry does not improve with volume**:
+
+- The cost of candidate 1 is **a few minutes a week** of somebody classifying.
+- The cost of a wrong automatic class is **a change applied to a household
+  nobody chose**.
+- And **at volume nobody reviews what the machine did.** The argument that
+  automation becomes necessary as changes multiply is exactly the argument
+  under which the second cost stops being caught, because the review that would
+  catch it is the thing volume removes.
+
+So "we will automate this once there is enough of it" is not a plan that gets
+safer with scale; it is the same trade with the safeguard removed. Revisiting
+is permitted when there is traffic to look at, and the revisit is about
+evidence rather than about volume.
+
+**Candidate 3 is not merely rejected here; its rejection is now a standing
+rule** in `CLAUDE.md`: a grant made in one domain never governs another,
+whatever the mechanism. That covers ceilings, consents, standing approvals and
+mode promotions alike, so the next mechanism that looks like a convenient
+source of permission meets it before it is built.
+
 ## What is already decided by the code, so the decision is narrower than it looks
 
 Three things are settled and are not what is being asked:
