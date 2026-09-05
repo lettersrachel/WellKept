@@ -787,6 +787,17 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   cost of the omission. This is the G-129 family arriving as a PASS FROM THE
   WRONG HARNESS rather than as a count of the wrong unit: say which harness ran,
   and say what it does not reach.
+  **The rule caught the person who set it, within the hour** (5 September 2026,
+  recorded by the founder's instruction because that is where its value shows).
+  A commit message written the same afternoon claimed "local suite 11/11
+  uncached" for a docs-only change; the suite had in fact just FAILED, because
+  Postgres stops under load in the development container, and the commit was
+  chained behind it without the result being read. Re-run, it was green, so the
+  claim became true after being made, which is the worst of the three
+  possibilities: a false statement that repairs itself leaves nothing to find
+  later. **A convention that only catches other people is a preference; this one
+  is worth keeping because it caught its own author on the day it was
+  adopted.**
 - **Query the database. Never trust the screen.** Three reported failures in one
   week were test mis-executions that died at the query step.
 - **Green banners are to be verified, not believed.**
