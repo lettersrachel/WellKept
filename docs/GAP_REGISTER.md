@@ -8356,3 +8356,68 @@ existing text rather than invented, which is what keeps it a consistency check
 and not a new vocabulary. The honest limit belongs on the row: it reads PROSE,
 so it catches the stated contradiction and not an unstated one, and a row can
 still be wrong in ways no same-row comparison can see.
+
+### G-133 ADDENDUM, 5 September 2026: the guard built, and what it found that the entry did not predict
+
+**Built as Q-11q** (`packages/schema/src/queue-row-consistency.test.ts`). Three
+things it found on its first run, none of them the thing it was written for.
+
+**1. Two rows were MIS-SPLIT, and one of them made my own census read the
+wrong cell.** The parse asserts six cells per row, and two rows had seven.
+Q-8b carried an unescaped `|` inside the code span `--scope corporate|member`,
+which markdown tables do not allow. Q-16 was worse and it was mine: the 5
+September item 9 note had been inserted as a spurious extra CELL rather than
+appended to the Standing cell, so every column after it shifted by one. **A
+cell-indexed read of that row returned the note as its status and never saw the
+real status**, which is why the pre-run prediction written into the session log
+listed Q-16 as contradicting itself. It does not: its Standing cell says
+`Gated in part on the WK-TRN-009 document existing`. **The prediction was wrong
+for exactly the reason the guard exists**, and the guard's own parse assertion
+is what corrected it. Both rows fixed.
+
+**2. Three rows genuinely contradicted themselves**, corrected under the
+standing queue-row authority with the original claim left visible: Q-7
+(`PARTLY.` beside an absent A129), Q-12 (`NEW` beside an absent Inference
+Cascade Spec), Q-14 (`PARTLY.` beside two absent specs). **Q-7 is the one worth
+naming: this row was REPORTED blocked on 5 September when it came up in queue
+order, and the report never reached the row.** That is the G-133 shape
+committed by the session that filed G-133, hours later, which is the same
+knowing-the-rule-is-not-applying-it pattern the section 4 ledger already
+carries. Q-14 gained something as well: `WK Task Stacking & Errand
+Optimization` is summarised in one line inside the adopted Workload Forecasting
+brief, which sizes that half of the row without unblocking it.
+
+**3. The absence vocabulary caught itself on the first run.** `not in the
+repository` occurs four times in the file and never in a Spec cell, so it was
+dead vocabulary that would have made the guard read wider than it reaches. The
+in-use assertion refused it; both spellings are now one pattern.
+
+### G-134 FOUND AND FIXED, 5 September 2026: the guard manifest's CLAUDE.md coupling was a second hand-written list
+
+**CLAUDE.md says its guard table "is asserted against the guard manifest
+(guards-manifest.test.ts): a guard added or moved without a row here fails CI,
+so the table cannot silently go stale."** That was FALSE, and it was found by
+testing it rather than by reading it: the new guard was added to the manifest's
+file list, its CLAUDE.md row was deleted, and the manifest stayed GREEN.
+
+**The cause is the class this repository already names.** The table check
+carried its OWN literal array of twenty-one names, hand-maintained beside the
+file list it was supposed to be derived from. Adding a guard to one list did
+not require adding it to the other, so the coupling held only as long as
+somebody remembered it. **A hand-maintained second list, inside the guard whose
+entire job is to stop guards becoming memories.**
+
+**Fixed by derivation**, which is the standing remedy for a count or a list
+that can be computed: the file list is hoisted to `GUARD_FILES` and the table
+check maps it to basenames, with a small `NON_FILE_GUARDS` list carrying the
+two entries that are not files and the reason each is there (this file does not
+list itself; the `sizes` CHECK is a database constraint). Proven both
+directions on the real tree: red naming `queue-row-consistency.test.ts` with
+the row deleted and the deletion confirmed landed first, green with it
+restored.
+
+**What it means for the month behind it:** every guard added since the second
+list was written could have reached the manifest without reaching the table.
+None did, checked by deriving the names and finding the table already complete,
+so the drift never happened. That is the same standing as branch protection's
+missing month: nothing broke, and nothing would have said so.

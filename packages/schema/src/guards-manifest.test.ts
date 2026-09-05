@@ -24,8 +24,18 @@ import path from "node:path";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "../../..");
 
-test("the guard files exist where the manifest says they are", () => {
-  const files = [
+/**
+ * The manifest's one list of guard files. Hoisted to module scope
+ * 5 September 2026 (G-134) because the CLAUDE.md table check below used
+ * to carry a SECOND, hand-written list of names, so adding a guard here
+ * did not require a row there. CLAUDE.md claimed the table "is asserted
+ * against the guard manifest" and it was not: the coupling was one more
+ * hand-maintained list inside the guard whose job is to stop guards
+ * becoming memories. Proven by deleting a fresh table row and watching
+ * this file stay green. Now the table check DERIVES its names from this
+ * array.
+ */
+const GUARD_FILES = [
     "packages/schema/src/erasure-coverage.test.ts",
     "packages/schema/src/client-copy.test.ts",
     // the payload-guard suite (client responses never carry staff rows)
@@ -70,8 +80,21 @@ test("the guard files exist where the manifest says they are", () => {
     // Q-4: the judgment-free schema census (Ruling 2 s5 patterns) and
     // the two-household refusal; the pattern list is founder-editable.
     "packages/schema/src/judgment-free.test.ts",
-  ];
-  for (const f of files) {
+    // Q-11q (G-133): a queue row read against itself. Where a Spec cell
+    // names an input as absent, the Standing cell must say what the row
+    // does about it.
+    "packages/schema/src/queue-row-consistency.test.ts",
+];
+
+/**
+ * Guards that are not files, so they cannot come from GUARD_FILES and are
+ * named here with their reason. `guards-manifest.test.ts` is this file,
+ * which does not list itself; the `sizes` CHECK is a database constraint.
+ */
+const NON_FILE_GUARDS = ["guards-manifest.test.ts", "`sizes` CHECK"];
+
+test("the guard files exist where the manifest says they are", () => {
+  for (const f of GUARD_FILES) {
     assert.ok(existsSync(path.join(root, f)), `guard file missing: ${f}`);
   }
 });
@@ -126,17 +149,12 @@ test("CLAUDE.md's guard table matches the manifest (founder item 5)", () => {
   // master-doc failure; the stale copy would be the one that loads into
   // every session. Each guard the manifest knows must have a row.
   const claudeMd = readFileSync(path.join(root, "CLAUDE.md"), "utf8");
-  for (const named of [
-    "permissions.test.ts", "erasure-coverage.test.ts", "client-copy.test.ts",
-    "child-data-kinds.test.ts", "guards-manifest.test.ts", "`sizes` CHECK",
-    "frozen-records.test.ts", "seed-binding.test.ts", "staff-disclosure.test.ts",
-    "refusal-visibility.test.ts", "provisional-markers.test.ts",
-    "decline-class-exclusion.test.ts", "client-duration.test.ts",
-    "telemetry-discipline.test.ts", "legal-census.test.ts",
-    "success-visibility.test.ts", "client-payload-shape.test.ts",
-    "field-attributes.test.ts", "action-permissions.test.ts",
-    "brand-config.test.ts", "judgment-free.test.ts",
-  ]) {
-    assert.ok(claudeMd.includes(named), `CLAUDE.md guard table missing a row for ${named}`);
+  // DERIVED from GUARD_FILES, never re-listed (G-134). The old version
+  // carried its own copy of the names, so a guard could join the manifest
+  // and never reach the table, which is the drift this test is named for.
+  const named = [...GUARD_FILES.map((f) => path.basename(f)), ...NON_FILE_GUARDS];
+  assert.ok(named.length >= 20, `only ${named.length} guard names derived; the list is broken`);
+  for (const n of named) {
+    assert.ok(claudeMd.includes(n), `CLAUDE.md guard table missing a row for ${n}`);
   }
 });
