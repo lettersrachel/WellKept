@@ -94,6 +94,22 @@ rather than interpreted, because D7's text is about client surfaces and
 a session reading it later should not have to reconstruct whether an
 export counted.
 
+**LAID OUT IN FULL, 5 September 2026 (preparation batch item 10):
+`docs/FREEZE_PACKET_ITEM_A_LAID_OUT_2026-09-05.md`.** The three shapes
+above are unchanged; that page adds what the batch item asked for, the
+EXACT language that would have to be amended under each, FROM and TO
+with file and line in the G-105 form, so shape (c) is a reading rather
+than a discussion. It also carries one finding that holds under ALL
+THREE and should be known before the ruling: **the D7 guard does not
+walk the export.** `client-duration.test.ts` walks the `(client)` route
+group and three named copy builders; `household-archive.ts` and
+`export-household.ts` are in neither set, so today's holding-out is
+enforced by the archive's own written list and shape (b)'s key-drop
+would be enforced by review alone. And one asymmetry nobody decided:
+`visit_photo` is in the member scope by founder ruling B, so the archive
+can carry the manifest of a photograph taken during a visit while
+carrying nothing about the visit.
+
 ### Items B and C are CLOSED and off the agenda (founder rulings, 4 September 2026)
 
 Both were raised here on 5 September and both were answered without
