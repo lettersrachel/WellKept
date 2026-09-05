@@ -7623,3 +7623,26 @@ produced some other way (browser print-to-PDF of a dedicated page is the
 obvious dependency-free candidate and has its own trade-offs). That is a
 founder decision of the same class as the axe exception, and it belongs
 in the row rather than being met by whoever picks the row up.
+
+**RULED AND QUEUED the same day (founder, 4 September 2026): Q-11p**, at
+the back of the launch tier, unscheduled. **The dependency question is
+answered in the row so it can be sized: browser print-to-PDF of a
+dedicated print route, not a PDF library.** The reasoning lives there
+rather than here because that is where the next person meets it: no
+dependency against a pinned stack; the house style stays in ONE place,
+since the artifact renders the same record the portals already render;
+and a PDF library would put document layout in the critical path of
+every future style change. The cost is named as fidelity control plus a
+print-specific stylesheet, a design task rather than an engineering
+risk, and the decision is reversible if fidelity proves inadequate. The
+candidate this entry floated is therefore the one that was chosen, with
+its trade-offs stated rather than left as "has its own".
+
+**Two clauses of that row close this entry's live consequence.** The row
+states that Q-8b's archive does NOT satisfy REQ-017, so the requirement
+cannot read as closed when the export lands, which is the whole reason
+this entry was filed at the start rather than at the end. And the
+internal coverage-binder scope must respect the vault rule: **no S3
+value renders, and its absence is VISIBLE rather than silent**, so a
+binder reader can tell a secured value exists and was withheld instead
+of reading a gap as no-such-value.
