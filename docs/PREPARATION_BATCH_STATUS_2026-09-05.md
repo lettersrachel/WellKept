@@ -16,8 +16,8 @@ for the reports themselves. Each row points at its deliverable.
 | 5 | WK-APP-002 extraction into the loader's YAML shape | **BLOCKED, and the founder confirms the block was correct and the instruction was hers in error.** The SHAPE is authorized separately and DELIVERED | `docs/triggers/SHAPE.md`, the validator, the worked example, Q-11z |
 | 6 | Three fixture household workbooks | **LANDED**, and it found a defect by loading its own deliverable | `tooling/seed/fixtures/` (three workbooks plus README), Q-11y |
 | 7 | Empty Household Green workbook | **LANDED**, with the estimated pre-fill clause deliberately NOT done | `tooling/seed/household_green_workbook.json`, `docs/HOUSEHOLD_GREEN_WORKBOOK_2026-09-05.md` |
-| 8 | Decision Rights confirm-or-amend sheet | next | |
-| 9 | Evaluation forms and scenario stubs | | |
+| 8 | Decision Rights confirm-or-amend sheet | **LANDED**, generated rather than transcribed | `docs/DECISION_RIGHTS_REVIEW_SHEET.md`, `tooling/review/decision-rights-sheet.mjs` |
+| 9 | Evaluation forms and scenario stubs | next | |
 | 10 | Freeze packet item A, laid out | | |
 | 11 | G-register triage | | |
 | 12 | Two queue rows to open | **LANDED** | Q-11t (Foundation Reset, blocked on WK-SVC-004), Q-11v (staff-side member view, since CLOSED) |

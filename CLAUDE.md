@@ -630,6 +630,27 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   The rule is narrow in the same way its data twin is: a default that
   expresses an invariant every caller satisfies by construction is fine.
   This is about parameters whose value is a judgment someone made.
+
+  **THE CLEAREST ARGUMENT FOR THE PATTERN IN THIS TREE IS A PAIR, and it is
+  recorded as a pair rather than as two findings** (founder, 5 September 2026),
+  because either half alone reads as a one-off and the two together are the
+  whole case. `household.is_fixture` is `NOT NULL DEFAULT false`, and `db:seed`
+  never set it:
+  - **A fixture household loaded as real is COUNTED in every corporate
+    number**: fleet roll-ups, the reconciliation knob, the capacity
+    calculation, every covenant figure. Found by loading the three fixture
+    workbooks rather than trusting them (Q-11y); all three landed
+    `is_fixture = false` and would have looked entirely plausible while being
+    wrong.
+  - **A real household loaded as a fixture VANISHES from all of them.** The
+    same column, the same absent statement, the opposite and equally silent
+    failure. Household Green is the live instance: a real household whose
+    workbook goes through the same loader.
+
+  **The required argument is what makes both STATABLE rather than DEFAULTED.**
+  Neither direction is a wrong value; both are a value nobody chose, and no
+  reading of the data afterwards can tell a default from a decision. That is
+  the pattern's whole claim, and here it costs one word at the call site.
 - **Generated migration SQL is READ before it is applied.** `drizzle-kit`
   emitted 0058's two composite foreign keys BEFORE the unique index they
   reference; Postgres refused with "there is no unique constraint
