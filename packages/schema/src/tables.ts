@@ -2191,10 +2191,14 @@ export const changeset = pgTable("changeset", {
   // safe_automatic changeset may be applied. Whole or absent.
   appliedAt: timestamp("applied_at", { withTimezone: true }),
   appliedBy: text("applied_by").references(() => authUser.id),
-  // The tradeoff, where propagation found one. It is IDENTIFIED here and
-  // delivered nowhere: the client side is frozen at the digest and this
-  // row is shadow, so "reaches the member" is not a thing this table can
-  // do. Recording it is what makes the count real when the freeze lifts.
+  // The tradeoff. NO PRODUCER YET, and the correction is worth keeping:
+  // this column was first documented as "written by propagateChangeset
+  // where propagation finds one", which was a future-tense claim of the
+  // exact 0058 shape. Telling a GENUINE tradeoff from an ordinary
+  // invalidation needs the dependency graph this tree does not hold, so
+  // nothing writes it. The column ships so the count is real when the
+  // freeze lifts; delivery is barred meanwhile by the freeze and by
+  // shadow, and would be a member surface either way.
   memberTradeoff: text("member_tradeoff"),
   recordedBy: text("recorded_by").notNull().references(() => authUser.id),
 }, (t) => [
@@ -2212,8 +2216,18 @@ export const changeset = pgTable("changeset", {
   // what says so rather than the service layer. An unclassified change
   // cannot be applied either, which is the point of leaving NULL alone:
   // it is not a permissive state.
+  //
+  // `IS NOT DISTINCT FROM`, NOT `=`, AND THE FIRST VERSION USED `=` AND
+  // WAS WRONG. Under three-valued logic `NULL = 'safe_automatic'` is
+  // NULL, so the whole expression became `false OR NULL`, which is NULL,
+  // and a CHECK PASSES on NULL. The constraint therefore accepted exactly
+  // the row it was written to refuse: applied while unclassified. The
+  // claim that NULL is not permissive was written into this file, the
+  // migration header, a commit message and a session log before a proof
+  // case caught it, which is the whole argument for proving a constraint
+  // in its REFUSING direction rather than reading it.
   check("changeset_applies_only_when_safe",
-    sql`${t.appliedAt} IS NULL OR ${t.classification} = 'safe_automatic'`),
+    sql`${t.appliedAt} IS NULL OR ${t.classification} IS NOT DISTINCT FROM 'safe_automatic'`),
 ]);
 
 export const changesetEffect = pgTable("changeset_effect", {

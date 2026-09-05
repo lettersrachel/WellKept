@@ -1,5 +1,5 @@
 {
-  "id": "adee86c9-bec2-4dcc-9448-866af2974bcc",
+  "id": "383a1109-4709-4e39-aaad-731429f1882b",
   "prevId": "7c540dfa-aaa1-44b3-904f-f2e1301c8f1d",
   "version": "7",
   "dialect": "postgresql",
@@ -1353,7 +1353,7 @@
         },
         "changeset_applies_only_when_safe": {
           "name": "changeset_applies_only_when_safe",
-          "value": "\"changeset\".\"applied_at\" IS NULL OR \"changeset\".\"classification\" = 'safe_automatic'"
+          "value": "\"changeset\".\"applied_at\" IS NULL OR \"changeset\".\"classification\" IS NOT DISTINCT FROM 'safe_automatic'"
         }
       },
       "isRLSEnabled": false

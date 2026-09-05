@@ -1624,3 +1624,83 @@ test("reconciliation: an expectation is recorded corporate-side, and none of it 
     await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
   }
 });
+
+test("changeset: nothing applies until a person classifies it safe, and the member is never told", async ({ context, page }) => {
+  const count = async (sql: string) => (await pool.query(sql, [synId])).rows[0].n as number;
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${synId}`);
+
+    // Wait for the form to be interactive before touching it. Alone this
+    // test passed; in the full run it failed at the first assertion,
+    // because a fill before hydration is reverted by React and the click
+    // then submits something other than what the test typed. That is the
+    // same shape the company-time journey hit (G-111's forged-category
+    // case), so it is guarded here rather than papered over with a longer
+    // timeout.
+    await expect(page.getByRole("button", { name: "Record the change" })).toBeVisible({ timeout: 30_000 });
+
+    // Refusing direction first, at the server wall.
+    await page.getByLabel("What kind of thing changed").fill("s");
+    await page.getByLabel("What changed").fill("soccer moves Saturday to Sunday");
+    await page.getByRole("button", { name: "Record the change" }).click();
+    await expect(page.getByText("Action refused.")).toBeVisible({ timeout: 30_000 });
+    expect(await count("SELECT count(*)::int n FROM changeset WHERE household_id=$1")).toBe(0);
+
+    await page.getByLabel("What kind of thing changed").fill("schedule");
+    await page.getByLabel("What changed").fill("soccer moves Saturday to Sunday");
+    await page.getByRole("button", { name: "Record the change" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM changeset WHERE household_id=$1"), { timeout: 20_000 }).toBe(1);
+    expect(await count("SELECT count(*)::int n FROM event_outbox WHERE household_id=$1 AND kind='changeset.recorded'")).toBe(1);
+
+    // Re-load before reading the row, rather than relying on the
+    // post-action re-render. Alone this test passed; in the full suite it
+    // failed here twice, on a fresh dev server as well as a warm one,
+    // with Next's dev overlay showing a client-side "network error" and
+    // NOTHING in the server log. The write is already proven by the poll
+    // above, so what this assertion needs is a page, not that particular
+    // render. The underlying race is REPORTED rather than papered over:
+    // it is order-dependent, reproduces only after the other journeys
+    // have run, and is not understood.
+    await page.goto(`/oversight/${synId}`);
+
+    // Unclassified is the shipped state and it says so on the row.
+    const row = page.locator(".prov").filter({ hasText: "not classified yet, so nothing can be applied" });
+    await expect(row).toBeVisible({ timeout: 15_000 });
+    // No Apply control exists while unclassified: the surface does not
+    // offer the act, and the database refuses it besides.
+    //
+    // SCOPED TO THIS CARD, and the first version was not. The drill-in
+    // carries three buttons named "Apply" (two on the client-edit and
+    // gesture surfaces), so a page-wide count answers a different
+    // question from the one being asked, which is the wrong-unit class
+    // (G-129) arriving in a Playwright locator. It failed loudly here;
+    // the version of this that passes vacuously is the one to fear.
+    const card = page.locator(".card").filter({ hasText: "Source changes (Q-12b-2, shadow)" });
+    expect(await card.getByRole("button", { name: "Apply" }).count()).toBe(0);
+
+    // Classify it review_required: still no Apply.
+    await page.getByLabel("Classification").selectOption("review_required");
+    await page.getByRole("button", { name: "Classify" }).click();
+    await expect.poll(() => count("SELECT count(*)::int n FROM changeset WHERE household_id=$1 AND classification='review_required' AND classified_by IS NOT NULL"), { timeout: 20_000 }).toBe(1);
+    await page.goto(`/oversight/${synId}`);
+    expect(await page.locator(".card").filter({ hasText: "Source changes (Q-12b-2, shadow)" })
+      .getByRole("button", { name: "Apply" }).count()).toBe(0);
+    expect(await count("SELECT count(*)::int n FROM changeset WHERE household_id=$1 AND applied_at IS NOT NULL")).toBe(0);
+
+    // The member sees none of it. Asserted against the EMITTED MARKUP
+    // rather than the rendered text, per the RSC boundary rule.
+    const clientPage = await context.newPage();
+    await clientPage.goto(`/oversight/${synId}/preview/client`);
+    const html = await clientPage.content();
+    expect(html).not.toContain("soccer moves Saturday to Sunday");
+    expect(html).not.toContain("review_required");
+    expect(html).not.toContain("invalidated");
+    await clientPage.close();
+  } finally {
+    await pool.query("DELETE FROM changeset_effect WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM changeset WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM event_outbox WHERE household_id=$1", [synId]);
+    await pool.query("DELETE FROM audit_event WHERE household_id=$1", [synId]);
+  }
+});

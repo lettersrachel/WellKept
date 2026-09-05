@@ -8,9 +8,23 @@
 -- unique index `changeset_household_id_key` that the FK references, which
 -- is the exact ordering Postgres refuses with "there is no unique
 -- constraint matching given keys for referenced table". THE INDEX IS
--- MOVED ABOVE THE FK BY HAND. Do not regenerate this file without
--- re-applying the move: the generator orders statements by its own model
--- of the diff, not by what Postgres requires at apply time.
+-- MOVED ABOVE THE FK BY HAND, twice now: this file was regenerated after
+-- the CHECK correction below and the generator re-emitted the wrong
+-- order, which is what makes it the generator's normal behaviour rather
+-- than an occasional slip. Do not regenerate without re-applying the move.
+--
+-- AND THE FIRST VERSION OF `changeset_applies_only_when_safe` WAS WRONG,
+-- recorded here because the header itself carried the false claim. It
+-- read `applied_at IS NULL OR classification = 'safe_automatic'`, and
+-- under three-valued logic `NULL = 'safe_automatic'` is NULL, so the
+-- expression became `false OR NULL`, which is NULL, and A CHECK PASSES ON
+-- NULL. The constraint accepted exactly the row it exists to refuse: a
+-- changeset applied while unclassified. "NULL is not permissive here, and
+-- the database says so" was written into this header, into tables.ts,
+-- into a commit message and into a session log before a REFUSING-direction
+-- proof case caught it. `IS NOT DISTINCT FROM` is the fix, and the local
+-- migration was rolled back and regenerated rather than patched forward,
+-- since it had reached no branch and no deployment.
 --
 -- Otherwise purely additive: two CREATE TYPE, two CREATE TABLE, six FKs,
 -- four indexes. No DROP, no ALTER COLUMN, no RENAME, nothing made NOT
@@ -30,20 +44,21 @@
 --   changeset.classified_by       written by classifyChangeset
 --   changeset.applied_at          written by applyChangeset
 --   changeset.applied_by          written by applyChangeset
---   changeset.member_tradeoff     written by propagateChangeset where propagation finds one.
---                                 IDENTIFIED AND DELIVERED NOWHERE: the client side is frozen
---                                 at the digest and this row is shadow, so "reaches the member"
---                                 is not something this table can do today.
+--   changeset.member_tradeoff     NO PRODUCER YET. Propagation identifies no tradeoff today:
+--                                 telling a genuine tradeoff from an ordinary invalidation
+--                                 needs the dependency graph that does not exist. The column
+--                                 ships so the count is real when the freeze lifts, and
+--                                 delivery is barred meanwhile by the freeze and by shadow.
 --   changeset.recorded_by         written by recordChangeset (write provenance)
 --   changeset_effect.*            written by propagateChangeset; the effect rows carry no person
 --                                 at all, the time_segment posture
 --
--- WHAT IS DELIBERATELY NOT BUILT, so no reader mistakes absence for an
--- oversight: an AUTOMATIC classifier (which changes are safe is a safety
--- taxonomy and therefore the founder's, the capture-router precedent);
--- retiring a stale work_requirement (that CHECK carries nine states and
--- `retired` is not one, so adding it is a semantics change to a shipped
--- primitive and needs her word); and delivery of the member tradeoff.
+-- WHAT IS DELIBERATELY NOT BUILT: an AUTOMATIC classifier (a safety
+-- taxonomy, and therefore the founder's; the candidates are laid out in
+-- docs/DECISION_CHANGESET_CLASSIFIER_2026-09-05.md); retiring a stale
+-- work_requirement (that CHECK carries nine states and `retired` is not
+-- one, so adding it is a semantics change to a shipped primitive); and
+-- delivery of the member tradeoff.
 
 CREATE TYPE "public"."changeset_class" AS ENUM('safe_automatic', 'review_required');
 --> statement-breakpoint
@@ -69,7 +84,7 @@ CREATE TABLE "changeset" (
         OR ("changeset"."classification" IS NOT NULL AND "changeset"."classified_at" IS NOT NULL AND "changeset"."classified_by" IS NOT NULL)),
 	CONSTRAINT "changeset_application_is_whole" CHECK (("changeset"."applied_at" IS NULL AND "changeset"."applied_by" IS NULL)
         OR ("changeset"."applied_at" IS NOT NULL AND "changeset"."applied_by" IS NOT NULL)),
-	CONSTRAINT "changeset_applies_only_when_safe" CHECK ("changeset"."applied_at" IS NULL OR "changeset"."classification" = 'safe_automatic')
+	CONSTRAINT "changeset_applies_only_when_safe" CHECK ("changeset"."applied_at" IS NULL OR "changeset"."classification" IS NOT DISTINCT FROM 'safe_automatic')
 );
 --> statement-breakpoint
 CREATE TABLE "changeset_effect" (

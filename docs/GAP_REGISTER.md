@@ -8545,3 +8545,52 @@ leaves nothing to compare, and the remedy there is procedural rather than
 mechanical: **a report that names a queue row updates that row in the same
 change, or it is a claim about intention** (the reporting convention's own
 wording, pointed at rows instead of at commands).
+
+### G-135 FOUND AND FIXED, 5 September 2026: a CHECK that passed on NULL and accepted the one row it was written to refuse
+
+**`changeset_applies_only_when_safe`, as first written:**
+
+```sql
+applied_at IS NULL OR classification = 'safe_automatic'
+```
+
+**On a row with `classification` NULL, `NULL = 'safe_automatic'` evaluates to
+NULL, so the whole expression is `false OR NULL`, which is NULL, and a CHECK
+CONSTRAINT PASSES ON NULL.** The constraint therefore accepted a changeset
+applied while unclassified, which is precisely the row it exists to refuse. Two
+of the three values a comparison can return were handled and the third was
+invisible.
+
+**The reason this belongs in the register rather than in a commit message is
+where the false claim had already reached.** "NULL is not permissive here, and
+the database says so" was written into `tables.ts`, into the migration header,
+into a commit message and into a session log, in four places, hours before
+anything tested it. Every one of those reads as a settled statement about a
+constraint that was in the file, applied to a database, and green in CI. **The
+guards could not catch it**, because the constraint EXISTED and was correctly
+named; the erasure, legal, archive and staff-disclosure censuses all passed,
+since they check that a table is treated rather than that a predicate is right.
+
+**Only a proof case in the REFUSING direction could find it**, and one did:
+"applied while unclassified", written as case 5 of ten precisely because the
+header claimed NULL was not permissive and the claim deserved a test. That is
+the both-directions rule paying for itself on the same day the transaction
+abort (G-129's sixth instance) proved a refusal-only proof cannot tell a
+working constraint from a broken harness. **The two findings are complementary
+and arrived within an hour of each other: one says a refusal proof needs
+accepting cases, the other says a documented refusal needs a refusing case.**
+
+**The fix is `IS NOT DISTINCT FROM`**, which is NULL-safe and returns true or
+false and never NULL. The local migration was rolled back and REGENERATED
+rather than patched forward, because it had reached no branch and no
+deployment, which is the 0065 amendment pattern: the cheap moment to fix a
+migration is before it leaves the machine.
+
+**The general form, which is what makes this worth keeping:** in SQL, a
+predicate over a NULLABLE column has three outcomes and a CHECK treats the
+third as a pass. **Any CHECK written to constrain a nullable column must say
+what happens when the column is NULL, explicitly, or NULL is silently
+permitted.** Grep for `check(` over a nullable column and read each for the
+NULL case; the whole-or-absent CHECKs in this tree are safe because they test
+`IS NULL` / `IS NOT NULL` directly rather than comparing values, which is why
+this is the first instance rather than a sweep.
