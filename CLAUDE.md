@@ -221,6 +221,20 @@ and the Q-0b session log records "already stated".
   lands 25 September 2026. The design arc stays closed (A133); a feature
   enters a higher tier only if a milestone test would fail without it.
 
+  **Amended 5 September 2026 (founder addition): a shadow-mode feature
+  is turned ON for the test households THE DAY IT SHIPS, so data
+  accumulates from now rather than from E2.** This promotes nothing and
+  does not touch the freeze: shadow still means computes, logs, visible
+  in the corporate portal, surfacing to no member and altering no HOM
+  briefing. It changes WHEN accumulation starts, which is what makes the
+  E2 promotion delta measurable against a baseline instead of against
+  nothing. Two things it needs and does not have, both reported on queue
+  row Q-11s: **no shadow-enablement mechanism exists in this tree**
+  (`shadow_log` is the anticipation engine's own output, and
+  `app_setting` holds no such switch), and **which three test households
+  is the founder's to name**, since the tree holds six and the intake's
+  F-1, F-2 and F-3 do not exist yet.
+
 - **Quiet hours.** No client-facing notification between 21:00 and 07:00
   household time. Replies to inbound member messages are exempt
   (REQ-079). Applies to every member-reaching channel the moment one
