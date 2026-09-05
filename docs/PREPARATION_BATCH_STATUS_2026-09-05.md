@@ -19,7 +19,7 @@ for the reports themselves. Each row points at its deliverable.
 | 8 | Decision Rights confirm-or-amend sheet | **LANDED**, generated rather than transcribed | `docs/DECISION_RIGHTS_REVIEW_SHEET.md`, `tooling/review/decision-rights-sheet.mjs` |
 | 9 | Evaluation forms and scenario stubs | **FORMS LANDED. THE SCENARIO BANK IS PARTLY BLOCKED**: WK-TRN-007, which defines the categories A to G, is not in the tree, so five of the seven categories would have to be invented | `docs/EVALUATION_FORMS_REVIEW_SHEET.md`, `docs/SCENARIO_STUB_BANK.md`, `tooling/review/training-forms.mjs`, G-131 |
 | 10 | Freeze packet item A, laid out | **LANDED**, and it found that the D7 guard does not walk the export under any of the three shapes | `docs/FREEZE_PACKET_ITEM_A_LAID_OUT_2026-09-05.md`, linked from the freeze packet's Ruling A |
-| 11 | G-register triage | next | |
+| 11 | G-register triage | **LANDED**: 131 entries (not 122), 17 blocks-E1, 44 defer, 70 stale. **The gate nobody had looked at is G-13**, the staff disclosure, which gates HIRING rather than a build | `docs/G_REGISTER_TRIAGE.md`, `tooling/review/g-register-triage.mjs` |
 | 12 | Two queue rows to open | **LANDED** | Q-11t (Foundation Reset, blocked on WK-SVC-004), Q-11v (staff-side member view, since CLOSED) |
 
 ---
