@@ -29,7 +29,24 @@ premise found here.
   `updated_at` on the one table of twenty-five that has no such column), after
   the plan had printed. **Every dry run ever performed printed a correct plan
   the statement could not carry out**, which is exactly the class a dry run
-  cannot catch.
+  cannot catch. **A THIRD exception, same day, same conditions, extended to
+  reach the two branches an archive-seeded database cannot**: seeded outside an
+  archive under a THROWAWAY KEK generated in-process (never `WK_KMS_KEY`), so
+  the vault crypto-shred and the photo purge could be exercised on a real
+  sealed value and real image bytes. Its findings are in the same document and
+  one of them changes what "erased" may be claimed to mean.
+- **A REHEARSAL THAT STOPS SHORT OF THE IRREVERSIBLE STEP IS NOT A REHEARSAL OF
+  IT** (founder ruling, 5 September 2026). A dry run, a `--preflight`, a plan
+  printed before a commit: each proves everything up to the line it declines to
+  cross, and nothing at all about that line. **G-125 is the instance.** The
+  erasure tool's failure lived PAST what a dry run prints and INSIDE a
+  transaction a dry run never opens, so the rehearsal was not merely
+  insufficient, it was structurally incapable: no number of dry runs, however
+  careful, could reach the statement that failed. Read beside the
+  prove-it-both-directions rule, which this sharpens: the accepting direction
+  of an irreversible operation cannot be proven by anything that does not
+  perform it. Where the real thing cannot be run, say so and name what is
+  therefore unproven, rather than letting the rehearsal's pass stand in for it.
 - **Never echo `DATABASE_URL`, `WK_KMS_KEY`, `AUTH_SECRET`, or the contents of
   `.neon-connection`.** Refer to them by name.
 - **Never build per-person analytics.** No performance scoring, productivity

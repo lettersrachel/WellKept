@@ -1378,3 +1378,97 @@ test("client doctrine: the member reads the labels and never the flag vocabulary
     await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
   }
 });
+
+/**
+ * Q-11v, the fidelity check (founder instruction, 5 September 2026: close it
+ * before the COO begins testing).
+ *
+ * The corporate "preview as client" exists to show what a member sees. On
+ * 5 September the member flag labels landed on the real client page and the
+ * preview kept rendering the raw enum for a few hours, so the surface whose
+ * only purpose is to show the member's view was showing something else.
+ * Nothing leaked, since the preview is corporate-only. It is worse in a
+ * quieter way: **a section 4 check reads that preview to confirm the client
+ * projection, so a divergence turns a passing check into one that has stopped
+ * checking its own subject.**
+ *
+ * So this asserts THE TWO SURFACES AGAINST EACH OTHER rather than each against
+ * a fixture. A fixture-based assertion on each page would have passed happily
+ * on the day they disagreed, because each was internally consistent; only
+ * comparing them catches it. The comparison is the member-visible pairing of a
+ * field's title with the tag it carries, which is exactly where the drift was.
+ */
+test("Q-11v: the corporate client-preview renders what the member actually sees", async ({ context, page }) => {
+  const hh = randomUUID();
+  const client = randomUUID();
+  const clientTok = randomUUID() + randomUUID();
+  await pool.query("INSERT INTO household (id, name, tier, is_fixture) VALUES ($1,$2,'concierge',true)",
+    [hh, "SYN-01 preview fidelity"]);
+  await pool.query("INSERT INTO auth_user (id, email, name) VALUES ($1,$2,$3)",
+    [client, `syn-fid-${client.slice(0, 8)}@journeys.test`, "SYN-01 fidelity member"]);
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'client',false)",
+    [randomUUID(), client, hh]);
+  // The corporate seat that opens the preview. The master view is the CEO's,
+  // so this is corporate_admin by requirement, not by convenience.
+  await pool.query("INSERT INTO household_role_assignment (id, user_id, household_id, role, nda_approved) VALUES ($1,$2,$3,'corporate_admin',true)",
+    [randomUUID(), rachelId, hh]);
+  await pool.query("INSERT INTO auth_session (session_token, user_id, expires) VALUES ($1,$2,$3)",
+    [clientTok, client, new Date(Date.now() + 3600_000)]);
+  // One field per member-visible flag, plus a DELIGHT field, which must be
+  // absent from the tagged set on BOTH surfaces rather than present on one.
+  await pool.query(
+    "INSERT INTO playbook_field (id, household_id, section, name, value, sensitivity, flag) VALUES " +
+    "($1,$4,1,'Gas shutoff location','Behind the garage door','s1','CRITICAL'), " +
+    "($2,$4,1,'Recycling day','Thursday','s1','CAUTION'), " +
+    "($3,$4,1,'Favourite flowers','Ranunculus, in the blue jug','s1','DELIGHT')",
+    [randomUUID(), randomUUID(), randomUUID(), hh]);
+
+  // The member-visible pairing of field title to tag, read the same way from
+  // whichever surface is loaded. Sorted, so ORDER is not asserted: the two
+  // pages lay fields out differently by design and that is not a fidelity
+  // question.
+  const taggedPairs = async () =>
+    (await page.locator(".field").evaluateAll((els) =>
+      els
+        .map((el) => {
+          const tag = el.querySelector(".tag");
+          if (!tag) return null;
+          const name = el.querySelector(".fname");
+          const title = (name?.textContent ?? "").replace(tag.textContent ?? "", "").trim();
+          return `${title} => ${(tag.textContent ?? "").trim()}`;
+        })
+        .filter((x): x is string => x !== null),
+    )).sort();
+
+  try {
+    await context.addCookies([{ name: "authjs.session-token", value: clientTok, url: BASE }]);
+    await page.goto("/playbook");
+    await expect(page.getByRole("heading", { name: "What we hold for you" })).toBeVisible({ timeout: 30_000 });
+    const asMember = await taggedPairs();
+
+    await context.clearCookies();
+    await context.addCookies([{ name: "authjs.session-token", value: rachelToken, url: BASE }]);
+    await page.goto(`/oversight/${hh}/preview/client`);
+    await expect(page.getByRole("heading", { name: "Your Playbook" })).toBeVisible({ timeout: 30_000 });
+    const asPreview = await taggedPairs();
+
+    // The detection must not be vacuous: a comparison of two empty sets is
+    // equality and proves nothing at all, which is how a fidelity check
+    // silently stops checking. Assert the input is non-trivial FIRST.
+    expect(asMember.length).toBe(2); // CRITICAL and CAUTION; DELIGHT carries no tag
+    expect(asMember).toEqual(asPreview);
+    expect(asMember.join(" ")).toContain("Needs attention");
+    expect(asMember.join(" ")).toContain("Worth knowing");
+    // And the withheld one is withheld on both, not merely on the real page.
+    expect(asPreview.join(" ")).not.toContain("Ranunculus");
+    for (const s of [asMember.join(" "), asPreview.join(" ")]) {
+      for (const word of ["CRITICAL", "CAUTION", "DELIGHT"]) expect(s).not.toContain(word);
+    }
+  } finally {
+    await pool.query("DELETE FROM auth_session WHERE session_token = $1", [clientTok]);
+    await pool.query("DELETE FROM playbook_field WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM visit_brief_snapshot WHERE household_id = $1", [hh]);
+    await pool.query("DELETE FROM household WHERE id = $1", [hh]);
+    await pool.query("DELETE FROM auth_user WHERE id = $1", [client]);
+  }
+});

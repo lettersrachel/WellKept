@@ -128,6 +128,25 @@ anything. Nine items, ordered by how surprised a reasonable member would be.
    naming anybody**, which is ADR-006 working as intended and is not the same as
    deletion.
 
+   **And the STATED POSTURE, promoted here from an internal treatment note
+   because a member is entitled to it in the same words we use:** an erased
+   household's record discloses **which questions were asked, and not the
+   answers**. The field row survives, tombstoned and empty, still carrying its
+   name. So a record erased today still says a field called `medication`
+   existed, or `Alarm and entry codes`, with nothing behind either. That is the
+   skeleton-kept treatment working as documented, and it is a real residual
+   disclosure with a narrow and specific shape. Demonstrated rather than
+   asserted: it is what the 5 September erasure run left behind, recorded in
+   `DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 4.
+
+   **The same section carries the storage-layer qualification, which belongs
+   beside this one** (G-128): erasure is complete and immediate at the
+   application layer and in the logical database, and the underlying bytes
+   persist in the table's storage until the relation is rewritten, with the
+   backup retention window the wider term. **"Deleted" is true of what anyone
+   can reach and is not yet true of the disk**, and a member asking the plain
+   question deserves the plain answer rather than the flattering half of it.
+
 6. **The company can read a secured value.** The vault is not zero-knowledge and
    has never claimed to be. What it guarantees is that every read leaves a row
    the member can be shown, and that a read cannot happen without one.

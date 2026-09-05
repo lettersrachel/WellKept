@@ -7839,3 +7839,57 @@ it was reported-not-fixed. The exclusion is **removed** rather than
 grandfathered, and the assertion is now unconditional. **The cheap moment to
 remove an exclusion is the moment the thing it excused stops existing**, and an
 exclusion that outlives its reason is how an allowlist grows.
+
+---
+
+### G-128 REPORTED, 5 September 2026: erasure is complete logically and the bytes stay on disk until the relation is rewritten
+
+**Found by** the third authorized `--commit` exception, which extended the
+second so the vault crypto-shred and photo purge could be exercised on a real
+sealed value and real image bytes, seeded outside an archive under a throwaway
+KEK generated in-process. Full run in
+`docs/DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 4b.
+
+**What passed, and it is most of it.** The shred deletes the ciphertext and its
+wrapped data key together, since `key_ref` sits on the same row, so a decrypt
+that SUCCEEDED before the run had nothing to operate on after it. The photo
+purge clears the bytes and keeps a tombstone carrying the byte count. A
+`pg_dump` of the erased database, searched for the plaintext, a phrase inside
+it, and the base64 JPEG magic prefix, returned **zero on all three**.
+
+**What did not.** The instruction asked for bytes gone from STORAGE and not only
+from the table, which is a question about the disk.
+
+| Stage | Marker in the heap file |
+|---|---|
+| seeded, after CHECKPOINT | present (the control) |
+| after the erasure committed | **still present** |
+| after a plain `VACUUM` | **still present** |
+| after `VACUUM FULL` | gone, old file removed |
+
+**The control came first**, because a heap search that can never find anything
+reports zero for the wrong reason. And the vault was tested SEPARATELY from the
+photo, because DELETE and UPDATE are different paths: both its ciphertext and
+its wrapped key survived the shred in the heap and both went with `VACUUM FULL`.
+
+**Why this is a report and not a fix.** It is not a new exposure class: the
+tool's own output already footnotes that inside the Neon PITR window a restore
+reconstitutes shredded values (G-04), and PITR is a far wider door than a dead
+tuple. What is new is that the same holds for the live heap, which nothing had
+said. And the remedy is a decision rather than an obvious change: forcing
+`VACUUM FULL` on erasure takes an exclusive lock and rewrites a table, which on
+a shared production database is an availability decision, and it would still
+leave the PITR term untouched.
+
+**Two questions raised and left with the founder and counsel**, deliberately
+without a queue row, since opening one would imply the answer is a build:
+whether the retention floor is stated to members as what it is (complete at the
+application layer immediately, at the storage layer within the backup retention
+window), and whether the crypto-shred should keep the unqualified word
+"unrecoverable" anywhere it currently appears.
+
+**The general lesson, which is why this is a register entry and not only a
+document section: "cleared" and "gone" are different claims, and every layer
+below the one you tested answers the second one differently.** The application
+layer was clean, the logical database was clean, and the storage layer was not,
+and all three were true at the same moment.

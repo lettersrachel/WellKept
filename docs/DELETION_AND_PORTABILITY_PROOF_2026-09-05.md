@@ -325,6 +325,151 @@ than by the drop command's own report. The three archive files were deleted. The
 development database was re-read afterwards and still holds its six households.
 **No production system was touched and none is reachable from this session.**
 
+## 4b. The vault shred and the photo purge, under the THIRD exception
+
+**Authorized the same day**, after section 4 reported both branches unreachable
+from an archive-seeded database: same conditions, plus permission to seed
+outside an archive so a real sealed value and real image bytes exist to destroy,
+**under a throwaway KEK rather than `WK_KMS_KEY`**.
+
+**The KEK was generated inside the proof process with `randomBytes(32)`, used
+only there, and never written to a file, an environment variable or this
+document.** `WK_KMS_KEY` was not read and is not required by any step below. A
+key that protects nothing real is the only kind that belongs in a proof.
+
+### What was seeded, and why in that shape
+
+- An `s3` playbook field whose `value` is EMPTY, which is the vault's contract:
+  the plaintext never lands on `playbook_field`. Asserted as a precondition
+  rather than assumed.
+- A `vault_item` holding a real AES-256-GCM sealed box of a known secret, with
+  the household data key wrapped by the throwaway KEK, written through the same
+  `sealValue` the application uses.
+- A `visit_photo` carrying a real minimal JPEG: correct magic bytes, a random
+  256-byte body so a search for it is decisive, and its sha256 recorded.
+
+### Before, with a real decrypt rather than a claim about one
+
+```
+[before] vault_item rows: 1
+[before] DECRYPT SUCCEEDED, plaintext matches seeded value: true
+[before] visit_photo rows: 1
+[before]   data length=360 bytes_col=270 purged_at=NULL sha256=2f19df59...
+```
+
+**The decrypt is the point.** A ciphertext that was never readable proves
+nothing when it stops being readable.
+
+### After the commit run
+
+```
+[after] vault_item rows: 0
+[after] DECRYPT IMPOSSIBLE: no ciphertext and no wrapped key remain to decrypt.
+[after] visit_photo rows: 1
+[after]   data length=0 bytes_col=270 purged_at=set sha256=(no bytes)
+```
+
+**The photo row survives as a tombstone with its byte COUNT and no bytes**,
+which is the documented treatment: the record that a photo existed outlives the
+photo.
+
+**And the shred is a true shred rather than a deletion of ciphertext**, because
+`key_ref` holds the household's wrapped data key on the same row. Deleting the
+row removes the ciphertext AND the only wrapped copy of the key that opens it.
+
+### The whole-database search
+
+`pg_dump` of the erased database, searched for the plaintext, for a distinctive
+phrase inside it, and for the base64 JPEG magic prefix:
+
+```
+plaintext "ALARM 4417" anywhere in the logical database: 0
+"side door code" anywhere:                               0
+base64 JPEG magic "/9j/" anywhere:                       0
+```
+
+**Zero on all three.** Nothing survived into another column, another table, an
+audit row, an event payload or a jsonb blob.
+
+---
+
+### THE FINDING: "cleared" and "gone from storage" are not the same, and this run separates them
+
+The founder's instruction asked for the bytes to be **gone from storage, not
+only from the table**. Taken literally, that is a question about the disk, and
+the answer is not the comfortable one.
+
+**The check was tested against a control first**, because a heap-file search
+that can never find anything reports zero for the wrong reason. A photo row was
+planted carrying a recognizable marker, and after a `CHECKPOINT` the marker was
+findable in `visit_photo`'s heap file. The detection is real.
+
+Then the erasure was run against it:
+
+| Stage | Marker in the heap file on disk |
+|---|---|
+| seeded, after CHECKPOINT | **present** (the control: the check can find things) |
+| **after the erasure committed** | **STILL PRESENT** |
+| after a plain `VACUUM` | **STILL PRESENT** |
+| after `VACUUM FULL` (relation rewritten) | **gone**, old file removed |
+
+**The same test on the vault, run separately because DELETE and UPDATE are
+different paths and inferring across them is exactly what this repository's
+rules forbid**: a `vault_item` was planted with recognizable ciphertext and
+wrapped key. After the shred committed, **both were still in the heap file**.
+After `VACUUM FULL`, both gone, and `pg_dump` clean throughout.
+
+**What this means, stated carefully.**
+
+- **Logically, erasure is complete and immediate.** No query, no export, no
+  restore of the logical database, and no application path can reach the value.
+  Every claim in section 4 stands.
+- **Physically, the bytes persist in the table's heap until the page is reused
+  or the relation is rewritten**, and a plain `VACUUM` does not clear them: it
+  marks space reusable without zeroing it.
+- **For the vault this weakens the word "unrecoverable" in a specific way.**
+  The ciphertext and its wrapped data key live in the SAME deleted tuple, so
+  they survive together or not at all. Anyone with raw disk access AND the KEK,
+  before that page is overwritten, could read the value the shred was meant to
+  destroy.
+- **This is not a new class of exposure**, and that is the honest framing: the
+  tool's own output already carries the footnote that inside the Neon PITR
+  window a restore can reconstitute shredded values (G-04), and PITR is a much
+  wider door than a dead tuple. **What is new is that the same is true of the
+  live heap**, which nothing had said.
+
+**Nothing is changed in the tool on the strength of this**, and the reason is
+that the remedy is a decision rather than an obvious fix. Forcing `VACUUM FULL`
+on erasure takes an exclusive lock and rewrites a table, which on a shared
+production database is an availability decision, not a cleanup. And it would
+still not touch the PITR window, which is the larger term. **So this is
+reported, with the two questions it raises named**: whether the retention floor
+should be stated to members as what it is (deletion is complete at the
+application layer immediately, and at the storage layer within the backup
+retention window), and whether the vault's crypto-shred should say
+"unrecoverable" without that qualification anywhere it currently does.
+
+**A queue row is deliberately NOT opened for this**, because both questions are
+the founder's and counsel's rather than engineering's, and opening a row would
+imply the answer is a build.
+
+### Standing after this run
+
+| Claim | Standing |
+|---|---|
+| The crypto-shred deletes the vault row, ciphertext and wrapped key together | **PROVEN** |
+| A shredded value cannot be decrypted afterwards, with the KEK in hand | **PROVEN**: the decrypt succeeded before and had nothing to operate on after |
+| The photo purge clears the bytes and keeps the tombstone with its byte count | **PROVEN** |
+| Neither value survives anywhere in the logical database | **PROVEN** by a whole-database search on three distinct strings |
+| **Neither value survives on disk** | **FALSE as stated, and now measured.** Both persist in the heap until the relation is rewritten; a plain VACUUM is not enough |
+
+### Teardown
+
+The database was dropped and its absence confirmed by querying `pg_database`.
+The proof script was removed from the tree. The throwaway KEK existed only in
+that process and is gone with it; it protected one synthetic secret in one
+database that no longer exists.
+
 ## 5. Why this matters commercially, since the instruction raised it
 
 Maple's shutdown made portability a live question in this category, and the
