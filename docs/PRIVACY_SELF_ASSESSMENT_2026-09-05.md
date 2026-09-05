@@ -139,13 +139,35 @@ anything. Nine items, ordered by how surprised a reasonable member would be.
    asserted: it is what the 5 September erasure run left behind, recorded in
    `DELETION_AND_PORTABILITY_PROOF_2026-09-05.md` section 4.
 
-   **The same section carries the storage-layer qualification, which belongs
-   beside this one** (G-128): erasure is complete and immediate at the
-   application layer and in the logical database, and the underlying bytes
-   persist in the table's storage until the relation is rewritten, with the
-   backup retention window the wider term. **"Deleted" is true of what anyone
-   can reach and is not yet true of the disk**, and a member asking the plain
-   question deserves the plain answer rather than the flattering half of it.
+   **THE RETENTION FLOOR, STATED TO MEMBERS AS WHAT IT IS** (founder ruling,
+   5 September 2026, on G-128; the substance is ruled and counsel reviews the
+   wording). Deletion is **complete and immediate at the application layer and
+   in the logical database**: the moment it runs, nothing the company holds can
+   reach the information, on any screen or in any export. **For a bounded
+   period afterwards the database backups still contain it**, because that is
+   what a backup is, and the underlying bytes also persist in the table's own
+   storage until the relation is rewritten. Recovery from a backup is a
+   deliberate, controlled and logged act rather than something that happens in
+   the course of ordinary work.
+
+   **So "deleted" is true of everything anyone can reach, and is not yet true
+   of the disk or the backups.** That sentence is now in the member-facing
+   privacy notice in both copies, rather than living only in an engineering
+   record, because a member asking the plain question deserves the plain answer
+   rather than the flattering half of it.
+
+   **The word "unrecoverable" is retired** wherever it stood unqualified. What
+   the crypto-shred does is destroy the ciphertext and the only key that opens
+   it, together, on the same row. What it does not do is reach the backups.
+   Both halves are now said in the erasure tool's own output and header.
+
+   **One blank, and it is deliberate.** The exact window depends on the
+   database plan and is not a fact this repository holds, so
+   `BACKUP_RETENTION_WINDOW` is null in `@wellkept/config` and the notice
+   renders the true paragraph while OMITTING the clause that names the window.
+   **A plausible number there would read exactly like a verified one**, and it
+   would be a claim to members about how long their deleted information exists.
+   The sentence is incomplete rather than wrong until the founder supplies it.
 
 6. **The company can read a secured value.** The vault is not zero-knowledge and
    has never claimed to be. What it guarantees is that every read leaves a row

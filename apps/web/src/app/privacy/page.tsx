@@ -3,7 +3,7 @@
  * support page). Content follows docs/legal/privacy-notice.md; the pilot
  * banner stays until counsel signs off (their open items live in that doc).
  */
-import { BRAND } from "@wellkept/config";
+import { BRAND, BACKUP_RETENTION_WINDOW } from "@wellkept/config";
 
 export const metadata = { title: `Privacy · ${BRAND.companyName}` };
 
@@ -87,6 +87,19 @@ export default function PrivacyPage() {
         free-text notes those retained records carry are removed along with everything
         else personal to your household. To ask about retention or
         request deletion, contact us at the address above.
+      </div>
+      <div className="fval" style={{ marginTop: 10 }}>
+        When we delete, it is immediate in the system and not yet immediate in our backups.
+        The moment we act on a deletion request, nothing we hold can reach the information:
+        it is gone from the record, from every screen, and from anything we could export.
+        For a limited period afterwards our database backups still contain it, because that
+        is what a backup is. Reaching into one is a deliberate, controlled and logged act,
+        not something that happens in the course of ordinary work.
+        {BACKUP_RETENTION_WINDOW
+          ? ` After ${BACKUP_RETENTION_WINDOW} the information is no longer in the backups either.`
+          : null}{" "}
+        We would rather tell you this than say &quot;deleted&quot; and mean something
+        narrower than you would.
       </div>
 
       <h2 style={{ marginTop: 18 }}>Your rights</h2>

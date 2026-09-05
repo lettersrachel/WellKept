@@ -7893,3 +7893,32 @@ document section: "cleared" and "gone" are different claims, and every layer
 below the one you tested answers the second one differently.** The application
 layer was clean, the logical database was clean, and the storage layer was not,
 and all three were true at the same moment.
+
+**G-128 ADDENDUM, 5 September 2026: the founder's ruling, and what changed in
+the wording.** No `VACUUM FULL` on erasure, for the reasons the entry gives.
+The unqualified word **"unrecoverable" is removed wherever it appeared** and
+replaced with what is true: the shred destroys the ciphertext and the only key
+that opens it, and recovery would require a point-in-time restore of the
+database, which is a controlled and audited act within a bounded retention
+window. Applied in `erase-household.mjs`'s header, its printed dry-run line and
+its final warning; the only occurrence of the word that survives there is the
+sentence explaining why it is not used.
+
+**And the retention floor is now stated to MEMBERS**, in both copies of the
+privacy notice, not only in engineering records: deletion is complete and
+immediate in the system, the backups carry it for a bounded period afterwards,
+and reaching into one is a deliberate and logged act. Counsel reviews the
+phrasing; the substance is ruled.
+
+**One blank, deliberate and structural.** The window's length depends on the
+database plan and is not a fact this repository holds, so
+`BACKUP_RETENTION_WINDOW` is null in `@wellkept/config` and the notice renders
+the true paragraph while omitting the clause that names the window. **A
+plausible number there would read exactly like a verified one**, and it would
+be a claim to members about how long their deleted information exists, which is
+the worst place in the system for a guess. Nothing false ships and nothing
+placeholder-shaped ships; the sentence is incomplete rather than wrong.
+
+**Considered and deliberately NOT changed:** `docs/SECURITY.md`'s "KEK loss =
+vault data unrecoverable". That is a true statement about losing the key, not a
+claim about erasure, and weakening it would be the opposite error.

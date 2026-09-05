@@ -7,13 +7,20 @@
  * shows exactly what will happen; --commit does it).
  *
  * What it does, per table:
- *  - vault_item: rows DELETED - removing ciphertext + wrapped keys is a
- *    crypto-shred; the secrets are unrecoverable... in the LIVE database.
- *    Inside Neon's point-in-time-recovery window a restore branch can
- *    reconstitute deleted rows while the KEK is still live, so for that
- *    window erasure is a strong revocation of access, not destruction -
- *    the history-retention setting is the true floor on erasure latency
- *    (gap register G-04; counsel writes the notice knowing this).
+ *  - vault_item: rows DELETED. The shred destroys the ciphertext AND the
+ *    only key that opens it: key_ref carries the household's wrapped data
+ *    key on the same row, so both go together or neither does.
+ *
+ *    THE WORD "UNRECOVERABLE" IS DELIBERATELY NOT USED HERE (founder
+ *    ruling, 5 September 2026, on G-128). What is true is narrower and is
+ *    what this says instead: recovery would require a point-in-time
+ *    restore of the database, which is a controlled and audited act
+ *    within a bounded retention window. The history-retention setting is
+ *    therefore the true floor on erasure latency (G-04), and G-128 added
+ *    that the same holds one layer down, in the table's own storage,
+ *    until the relation is rewritten. An unqualified "unrecoverable"
+ *    would be a claim this system cannot keep, and counsel writes the
+ *    member-facing notice from the qualified form.
  *  - visit_photo: image bytes cleared + purged_at stamped (tombstone rows
  *    remain). Retention holds are HONOURED by default - a hold exists
  *    precisely because the photo substantiates an open incident or
@@ -280,8 +287,8 @@ const counts = {
 
 console.log(`\n${COMMIT ? "ERASING" : "DRY RUN (no changes)"} - household "${hh.name}" (${hh.id})\n`);
 if (openIncidents > 0) console.log(`  !! ${openIncidents} OPEN incident(s) - proceeding on --despite-open-incidents\n`);
-console.log(`  vault items to CRYPTO-SHRED (rows deleted, unrecoverable*): ${counts.vault}`);
-console.log(`     *inside the Neon PITR window a restore can reconstitute them (G-04) - retention is the erasure-latency floor`);
+console.log(`  vault items to CRYPTO-SHRED (ciphertext and its key deleted together): ${counts.vault}`);
+console.log(`     recovery would need a point-in-time restore, a controlled and audited act inside the retention window (G-04, G-128)`);
 console.log(`  photos to purge (bytes cleared, tombstones remain):        ${counts.photos}`);
 console.log(`  photos under retention hold: ${counts.heldPhotos}${counts.heldPhotos > 0 ? (OVERRIDE_HOLDS ? " - WILL BE PURGED (--override-holds)" : " - HONOURED, kept (pass --override-holds only if counsel directs)") : ""}`);
 console.log(`  playbook fields to clear + tombstone:                      ${counts.fields}`);
@@ -308,7 +315,7 @@ console.log(`  audit events: ${SCRUB_AUDIT ? "detail payloads WILL be scrubbed (
 console.log(`  role assignments to delete (sessions revoked):             ${counts.roles}`);
 
 if (!COMMIT) {
-  console.log("\nRe-run with --commit to execute. This is not reversible - the vault shred cannot be undone.\n");
+  console.log("\nRe-run with --commit to execute. The vault shred cannot be undone from inside this system; recovery would need a point-in-time restore.\n");
   await c.end();
   process.exit(0);
 }

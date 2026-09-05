@@ -224,6 +224,20 @@ built it.
   access from a known relationship (per-identity auth, the one-role
   index, revocation audited).
 
+  **The stopwatch item is a SETTLED CONFLICT as of 5 September 2026, not a
+  standing tension.** ExecutionActual's seven per-visit time segments are
+  **STRUCK, not deferred** (founder ruling,
+  `FOUNDER_RULINGS_2026-09-05_Blockers.md` decision 3). Section 29 wins; the
+  stated reason is the never-measured doctrine rather than cost, and E2
+  carries the weaker visit-minutes-per-household metric instead. **Struck
+  rather than deferred so nobody reopens it later while looking for a better
+  metric**, and the standing instruction that travels with it: **FLAG ANY
+  FUTURE QUEUE ROW THAT WOULD REINTRODUCE PER-TASK TIMING**, rather than
+  sizing it. It does not touch `time_segment`, whose nine-kind taxonomy
+  already makes manual per-segment timing unrepresentable by construction:
+  what is struck is a spec's demand for seven captured actuals, not the
+  schema that refuses to capture them.
+
   **Ten add something this file did not say**, and are adopted as
   written: no generic AI chat box as the primary service interface; no
   generic "Well Kept Verified" badge without an exact definition; no

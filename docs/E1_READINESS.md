@@ -16,6 +16,28 @@ whether it is still true.
 
 ---
 
+## UNVERIFIED AGAINST SOURCE (founder ruling, 5 September 2026)
+
+**Every E1 condition on this page is marked unverified against source, and the
+mark is the whole point of it.** Two of the four documents that DEFINE the gate
+(the v7.0 model and WK-FIN-012) have never been seen by this repository, so
+this page is making claims about a gate whose sources it cannot read.
+
+**What that does and does not invalidate.** Each condition's STATE is a
+verified claim about the tree or a founder-side fact, and those stand. What is
+unverified is that these are THE conditions, that they are stated correctly,
+and that the list is complete. **A reader can trust every row and still be
+wrong about E1**, which is exactly the failure mode a confident-looking page
+produces.
+
+**The founder is intaking both documents this week.** Until they land, **no
+document should state what E1 requires without this qualifier attached**, this
+page included. When they land, every row below is re-derived from source rather
+than confirmed against it: confirming a list against its source finds errors of
+commission and never errors of omission, and omission is the risk here.
+
+---
+
 ## Read this first: two of the four named sources are NOT in this repository
 
 The item names the conditions as scattered across "the v7.0 model,

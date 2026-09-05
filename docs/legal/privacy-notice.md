@@ -59,9 +59,22 @@ log, incident and complaint records, records of the time our staff spent
 serving your household and the costs of doing so, your membership history,
 and the general category of how you found us. When we act on a deletion
 request, the free-text notes those retained records carry are removed along
-with everything else personal to your household. ⟨State your
-concrete retention period and your erasure process; reconcile the tombstone
-model with any legal right to deletion; this needs counsel.⟩
+with everything else personal to your household.
+
+**When we delete, it is immediate in the system and not yet immediate in our
+backups.** The moment we act on a deletion request, nothing we hold can reach
+the information: it is gone from the record, from every screen, and from
+anything we could export. For a limited period afterwards our database backups
+still contain it, because that is what a backup is. Reaching into one is a
+deliberate, controlled and logged act, not something that happens in the course
+of ordinary work, and after ⟨STATE THE BACKUP RETENTION WINDOW; it depends on
+the database plan and is not a figure this repository holds⟩ the information is
+no longer in the backups either. We would rather tell you this than say
+"deleted" and mean something narrower than you would.
+
+⟨Counsel: reconcile the tombstone model with any legal right to deletion, and
+confirm the wording above. The substance is ruled (founder, 5 September 2026,
+on gap register G-128) and the phrasing is yours.⟩
 
 ## Your rights
 
