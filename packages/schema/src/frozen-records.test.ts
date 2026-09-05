@@ -82,6 +82,10 @@ const FROZEN: Record<string, string> = {
   // queue rather than instead of it. Document-only unless an item says
   // otherwise. Same WK-QA-018 entry and same dating question (G-123).
   "docs/PREPARATION_BATCH_2026-09-04.md": "fcd612e41be398e37951489bc5256725d19928eced213dfb7abf2506ced39adb",
+  // The comprehensive instruction: client and HOM doctrine, the security
+  // self-audit, proactive assurance, corporate capabilities, queue rows and
+  // the shadow-now ruling. Same WK-QA-018 entry, same dating question (G-123).
+  "docs/COMPREHENSIVE_INSTRUCTION_2026-09-04.md": "f87ba197f9745c7583d224a501b06eb62596b555caa7c415495414636880a7bc",
   // The 4 September founder values package (document-only intake, the
   // Q-0b shape): received bytes frozen verbatim; .md hashes are
   // frontmatter-stripped, .csv/.yaml hashes are whole-file (no
