@@ -83,6 +83,9 @@ const FROZEN: Record<string, string> = {
   // Item 9: the anchor-1 ruling (the scale starts at 1), the two forms staying
   // unfused, and the three-absent-documents pattern. Same WK-QA-018 entry.
   "docs/FOUNDER_RULINGS_2026-09-05_Item9.md": "f094d8bc542169a28de8ca5deccf0b9436fb2063398f261a20b23655c46d4104",
+  // G-53 (the four-value vault reveal outcome vocabulary, closed), G-13
+  // reclassified as a hiring precondition, and the return to the queue.
+  "docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md": "fca701cf0b61fb473c0ab4da8289369b36594376e868f20b6fba8a4895a53a70",
   // The preparation batch: twelve items that run ALONGSIDE the build
   // queue rather than instead of it. Document-only unless an item says
   // otherwise. Same WK-QA-018 entry and same dating question (G-123).

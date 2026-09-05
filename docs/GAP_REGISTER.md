@@ -270,6 +270,41 @@ learns it exists.
 **Disposition.** A short staff-facing paragraph, either inside the
 confidentiality acknowledgment or beside it. Cheap now, awkward later.
 
+**RECORDED 5 September 2026 (founder instruction): G-13 is a HIRING
+PRECONDITION, not a document.** It is on the founder's list today for counsel
+review and on the 25 September agenda in that form.
+
+**The reframing is the content**, and it is the same shape as the WK-TRN-009
+ruling: a document to chase gets fitted around the build, and a precondition
+gets met before the thing it precedes. Nobody is hired into a system that
+records their every action until they have been told what it records.
+
+**Nothing in CI can enforce it**, which is why it is written here rather than
+left to a guard. `staff-disclosure.test.ts` computes the staff-attributed
+surface set and demands each one be NAMED in the disclosure or excused in
+writing, which is a completeness check on a document's CONTENTS. It cannot see
+whether that document has been reviewed by counsel, or whether any person has
+acknowledged it. **The gate is reached by the FOUNDING COHORT rather than by a
+queue row**, so no build session will ever arrive at it, and the merge rule it
+governs (no capture surface attributing data to a named HOM ships before the
+disclosure is approved and acknowledged) has already been passed twice:
+`time_entry` and `object_observation` both exist under it.
+
+**The disclosure is owed against surfaces that SHIPPED, not surfaces being
+planned** (the ruling's own sentence, recorded plainly because it changes what
+kind of debt this is). `time_entry` and `object_observation` are live tables
+attributing data to a named HOM. This is not a gate standing in front of future
+work; it is a rule two shipped surfaces are already past.
+
+**Why it sat since August, in the founder's words:** nothing in CI can enforce
+it AND it is reached by the founding cohort rather than by a queue row. That
+combination is also why it would otherwise be discovered in the week offers are
+being made.
+
+**Surfaced by** the 5 September gap-register triage (preparation batch item
+11), which the batch item had guessed would find exactly one such gate. Frozen
+ruling: `docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
+
 ### G-14. The Apple review account conflicts with staff clause 3
 
 The listing kit's review notes plan to hand a reviewer a working staff account
@@ -1310,6 +1345,48 @@ the candidate reasons are no-vault-item and decrypt-failed.
 
 Until the fix lands, any audit export answering "who viewed this" must
 be read as "who was authorized to view this and attempted it".
+
+**RULED 5 September 2026 (founder). The outcome vocabulary is four closed
+values, and G-53 is unblocked for build.**
+
+| Value | Meaning |
+|---|---|
+| `delivered` | decrypted and returned |
+| `denied` | refused on authorization, before any decryption was attempted |
+| `not_found` | no vault item exists for the reference |
+| `failed` | decryption was attempted and was unsuccessful |
+
+**Four rather than the minimum two, in the founder's own reasoning**, which is
+the part worth keeping because it is what makes the vocabulary the right size
+rather than a matter of taste: **"who viewed this" is asked by counsel and by
+members**, and the honest answer has to separate someone who SAW a value from
+someone who tried and got nothing, and separate an AUTHORIZATION refusal from a
+BROKEN record. **Collapsing `not_found` into `failed` would hide a
+data-integrity problem inside an access log**, where nobody reading it is
+looking for one, and **collapsing `denied` into either would make a REFUSAL
+look like an ERROR, which is the opposite of what the trail is for.**
+
+**The reason belongs in the code beside the enum** (the ruling says so
+explicitly), not only here: an implementer reading four values without the
+question they answer will eventually simplify them to two.
+
+**THE VOCABULARY IS CLOSED. A fifth outcome is a REPORT, never an addition**,
+and the reason travels with the rule: a vocabulary that grows silently makes
+old rows mean something different from new ones, so every historical answer to
+"who viewed this" changes meaning without anybody editing a row. Same posture
+as the capture router's severity rules and the estimate hierarchy: the values
+are the founder's, and an implementer meeting a fifth case reports it.
+
+**What stays true until it is built**, unchanged from the entry above: any
+audit export answering "who viewed this" must be read as "who was authorized to
+view this and attempted it". **The audit invariant is untouched by this
+ruling**: the row is written BEFORE the decrypt and the outcome is a SECOND
+write, so a failed second write leaves the conservative attempt row standing
+and the trail keeps assuming they saw it.
+
+**Queue row Q-11l**, placed in queue order under the standing authorization
+rather than built ahead of it. Frozen ruling:
+`docs/FOUNDER_RULINGS_2026-09-05_G53_G13.md`.
 
 ### G-54. A KEK rotation locks out every enrolled staff user, backup codes included, because the TOTP decrypt throws before the fallback is reached
 
