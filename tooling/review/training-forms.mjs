@@ -20,6 +20,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const RUBRIC = "docs/intake/2026-09-04-founder-values/rubric_anchors.csv";
+const ANCHOR1 = "docs/FOUNDER_RULINGS_2026-09-05_Item9.md";
 const MODES = "docs/intake/2026-09-03-build-package/SPEC_MODE_LOGIC.md";
 const FIXTURES = "docs/intake/2026-09-03-build-package/FIXTURES.md";
 const OUT_FORMS = "docs/EVALUATION_FORMS_REVIEW_SHEET.md";
@@ -55,6 +56,17 @@ const domains = rubricRows.map(([domain, tier, ...anchors]) => ({ domain, tier, 
 const byTier = {};
 for (const d of domains) (byTier[d.tier] ||= []).push(d);
 const ANCHOR_SCORES = ANCHOR_COLS.map((c) => Number(c.match(/anchor_(\d)/)[1]));
+
+/* Anchor 1 is a founder ruling of 5 September 2026 rather than a column in the
+ * CSV, because the CSV is a frozen intake file and a ruling is applied beside a
+ * frozen source, never by editing it. It is PARSED from the ruling document for
+ * the same reason every other list here is parsed: a restated sentence is a
+ * second copy that drifts from the first. */
+const anchor1Line = readFileSync(ANCHOR1, "utf8").split("\n")
+  .find((l) => l.startsWith("anchor_1 (all domains):"));
+if (!anchor1Line) refuse(`${ANCHOR1} no longer carries the anchor_1 line the scale starts from`);
+const ANCHOR_1 = anchor1Line.split(":").slice(1).join(":").trim();
+if (ANCHOR_SCORES[0] !== 2) refuse(`the CSV's lowest anchor is ${ANCHOR_SCORES[0]}, and the ruling adds 1 beneath a 2`);
 
 /* ---------- source 2: the five-item scenario form ---------- */
 const modeText = readFileSync(MODES, "utf8");
@@ -129,7 +141,7 @@ with different units**, and only one of them is called the evaluation form:
 They are not the same form and neither supersedes the other. **Both are
 rendered below rather than fused**, because fusing them would decide the join
 (which scenario exercises which domain) and that decision is the COO's. The
-join is the first blank at the bottom of this page.
+join is the first of the blanks listed at the bottom of this page.
 
 Reported rather than reconciled, because it changes what a builder builds:
 **Q-17's acceptance criterion says "captured against the five-item evaluation
@@ -143,9 +155,19 @@ and not the other builds the wrong instrument.
 One row per domain. The evaluator marks a score and cites the evidence; the
 anchors are the source's own words and are not to be paraphrased on the form.
 
-**Scale.** The source carries anchors for ${ANCHOR_SCORES.join(", ")} and **no anchor for 1**.
-Either the scale starts at ${ANCHOR_SCORES[0]} or a 1 exists unanchored. COO to say which; the
-form below prints the anchors that exist and nothing else.
+**Scale: 1 to ${ANCHOR_SCORES.at(-1)}.** The generated sheet first reported that the CSV carried
+anchors for ${ANCHOR_SCORES.join(", ")} and none for 1. **Ruled 5 September 2026: the scale starts at
+1, and 1 means the domain was not demonstrated at all.** The founder recorded
+that the gap was in her draft rather than in an upstream source, so nobody goes
+looking for a better copy that has it; \`rubric_anchors.csv\` is her authorship,
+and \`${ANCHOR1}\` carries the added anchor because a
+ruling is applied beside a frozen intake file, never by editing one.
+
+**Why 1 and 2 are both needed**, in the ruling's own terms: a 2 says the person
+did the thing badly, a 1 says the thing did not happen, and those call for
+different responses from a trainer. The anchor was ADDED rather than the scale
+renumbered, so nothing already scored changes meaning and 2 to ${ANCHOR_SCORES.at(-1)} keep their
+words.
 
 **Threshold, from SPEC_MODE_LOGIC section 2, verbatim:**
 > ${promotionLine.replace(/^- /, "")}
@@ -157,6 +179,7 @@ for (const tier of tierOrder) {
   forms += `\n### ${human(tier).replace(/^./, (c) => c.toUpperCase())} domains (${byTier[tier].length})\n`;
   for (const d of byTier[tier]) {
     forms += `\n#### ${d.domain}\n\n| Score | Anchor |\n|---|---|\n`;
+    forms += `| 1 | ${ANCHOR_1} |\n`;
     d.anchors.forEach((a, i) => { forms += `| ${ANCHOR_SCORES[i]} | ${a} |\n`; });
     forms += `\n| Score | Evidence (visit, scenario, or observation) | Evaluator | Date |\n|---|---|---|---|\n| ${blank} | ${blank} | ${blank} | ${blank} |\n`;
   }
@@ -211,15 +234,14 @@ somebody made.
 2. **What each of Form B's ${FORM_ITEMS.length} items is scored ON.** The source gives the item
    names and the three verdicts and no per-item scale. Numeric like Form A,
    met/not-met, or narrative only.
-3. **Whether score 1 exists** on Form A, per the scale note above.
-4. **Which failure modes matter**, item 9's own words: the fifth item is called
+3. **Which failure modes matter**, item 9's own words: the fifth item is called
    "failure modes" and no list of them exists anywhere in the tree.
-5. **What else carries no partial credit.** Category C is named. Category G
+4. **What else carries no partial credit.** Category C is named. Category G
    (boundaries, fraud, restricted access, welfare) is not named either way, and
    three of Form A's four high-consequence domains are about exactly that.
-6. **Who may evaluate.** Form A cites the HOM I threshold and no evaluator
+5. **Who may evaluate.** Form A cites the HOM I threshold and no evaluator
    qualification; Q-16's credential row would be the natural home.
-7. **Retake accounting.** Whether a repeat re-scores the same record or writes
+6. **Retake accounting.** Whether a repeat re-scores the same record or writes
    a second one. Q-16 says the cohort record is append-only, which argues for
    a second record, but the form is not the cohort record and the sources do
    not say.
@@ -271,9 +293,13 @@ definitions, which is a taxonomy, and choosing a taxonomy is barred. So this
 sheet fills every slot the tree can source and leaves the category column
 blank on every one of them.
 
-This is the third training document cited and absent, after WK-TRN-009
-(G-110, now a founder writing task) and the WK-QA-000 five-dimension review
-(G-108). Register entry: G-131.
+**This is a pattern rather than a third incident** (founder ruling, 5 September
+2026). WK-TRN-009 (G-110), the WK-QA-000 five-dimension review (G-108) and now
+WK-TRN-007 are all cited and all absent: **the certification program's sources
+are largely unwritten and exist in the COO's practice.** That makes writing them
+the founding-cohort critical path rather than a documentation chore, and it goes
+on the 25 September agenda in that form. **None of them is to be drafted here.**
+Register entry: G-131.
 
 ## The arithmetic, reported not reconciled
 

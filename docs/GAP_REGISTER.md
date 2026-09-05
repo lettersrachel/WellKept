@@ -8089,13 +8089,24 @@ visible), lists seven candidates against six integration slots without picking
 which one to drop, and leaves all twelve procedure slots empty with the three
 candidate sources named.
 
-**This is the third training document cited and absent**, after WK-TRN-009
-(G-110, since reclassified as a founder writing task on the 25 September agenda)
-and WK-QA-000's "five-dimension review" (G-108). The remedy is the same one the
-founder ruled for WK-TRN-009 and is recorded that way rather than as a document
-to chase: **it is the COO's program being written down, so it is a writing task
-with an owner and a date, not a retrieval.** Q-17 cannot complete its scenario
-bank without it.
+**AMENDED the same day by founder ruling: three absent training documents is a
+PATTERN, not three incidents, and it is stated that way here because the two
+framings have different remedies.** WK-TRN-009 (G-110), WK-QA-000's
+"five-dimension review" (G-108) and now WK-TRN-007 are all cited by number and
+all absent. Read as three incidents they are three documents to chase. Read as
+one pattern they are the same fact: **the certification program's sources are
+largely unwritten and exist in the COO's practice.**
+
+**So writing them is the founding-cohort CRITICAL PATH, not a documentation
+chore**, and it goes on the 25 September agenda in that form. That reframing is
+the whole point of the ruling: a chore gets fitted around the build, and a
+critical path gets scheduled ahead of it. Q-16 and Q-17 both wait on it, and no
+amount of engineering closes either row without it.
+
+**None of them is to be drafted here** (founder instruction, explicit). A
+drafted curriculum would read as the program to whoever found it next, which is
+the same objection that stopped the WKT ids being fabricated and the Household
+Green workbook being pre-filled.
 
 **The second half, and it is the one that would have cost a build.** Item 9 says
 "the evaluation form" and the sources define TWO instruments with different
@@ -8111,16 +8122,33 @@ units:
 evaluation form"**, so a builder reading the queue row builds Form B and a
 builder reading item 9 builds Form A, and each would be satisfied that they had
 built the evaluation form. Both are rendered in
-`docs/EVALUATION_FORMS_REVIEW_SHEET.md`, separately and unfused, because fusing
-them decides the join (which scenario exercises which domain) and that judgment
-is the COO's. It is the first of seven blanks listed on that page.
+`docs/EVALUATION_FORMS_REVIEW_SHEET.md`, separately and unfused (founder ruling,
+confirmed the same day), because fusing them decides the join (which scenario
+exercises which domain) and that judgment is the COO's. It is the first of the
+blanks listed on that page. **Q-17's row now carries the collision on its face**,
+by the same ruling: the next reader is to see WHY both instruments exist rather
+than assume the newer sentence supersedes the older one.
 
 **Three smaller things the generation surfaced**, each reported rather than
 resolved:
 
-- **The rubric has no anchor for 1.** Anchors run 2 to 5. Either the scale
-  starts at 2 or a 1 exists unanchored, and a form printed with a 1 nobody
-  defined would collect scores nobody could read.
+- **The rubric had no anchor for 1.** Anchors ran 2 to 5, so either the scale
+  started at 2 or a 1 existed unanchored, and a form printed with a 1 nobody
+  defined would collect scores nobody could read. **RULED the same day and
+  CLOSED: the scale starts at 1, and 1 means the domain was not demonstrated at
+  all, whether refused, absent or not attempted.** The founder's reason is why
+  the blank was worth raising rather than defaulting: **a 2 says the person did
+  the thing badly and a 1 says the thing did not happen**, which are different
+  findings calling for different responses, and a rubric that can only record
+  the first would have quietly converted every refusal and every no-show into a
+  performance score. The anchor was ADDED and the scale NOT renumbered, so
+  nothing already scored changes meaning. **The founder recorded that the gap
+  was in her own draft rather than in an upstream source**, which is worth
+  keeping: without that line the next reader spends an afternoon looking for a
+  better copy of `rubric_anchors.csv` that has the column. The anchor lives in
+  `docs/FOUNDER_RULINGS_2026-09-05_Item9.md`, because a ruling is applied beside
+  a frozen intake file and never by editing one, and the generator PARSES it
+  from there rather than restating it.
 - **The bank arithmetic does not close.** FIXTURES states 30 as 12 procedure,
   12 deviation and 6 integration, then gives eleven AI abuse and reconciliation
   scenarios and calls them the "same bank". Thirty leaves no room for eleven

@@ -28,9 +28,13 @@ definitions, which is a taxonomy, and choosing a taxonomy is barred. So this
 sheet fills every slot the tree can source and leaves the category column
 blank on every one of them.
 
-This is the third training document cited and absent, after WK-TRN-009
-(G-110, now a founder writing task) and the WK-QA-000 five-dimension review
-(G-108). Register entry: G-131.
+**This is a pattern rather than a third incident** (founder ruling, 5 September
+2026). WK-TRN-009 (G-110), the WK-QA-000 five-dimension review (G-108) and now
+WK-TRN-007 are all cited and all absent: **the certification program's sources
+are largely unwritten and exist in the COO's practice.** That makes writing them
+the founding-cohort critical path rather than a documentation chore, and it goes
+on the 25 September agenda in that form. **None of them is to be drafted here.**
+Register entry: G-131.
 
 ## The arithmetic, reported not reconciled
 

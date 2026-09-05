@@ -80,6 +80,9 @@ const FROZEN: Record<string, string> = {
   "docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md": "7ac66655c577d1cd199312e238087f005389f77198b4a45ed5cd89d507d29949",
   "docs/FOUNDER_RULINGS_2026-09-05_Blockers.md": "d751e88db6c7cc1fde00ecdc295812774fd9f48674a302c1ffd81ae119ed56a1",
   "docs/FOUNDER_RULINGS_2026-09-05_Items5and6.md": "62abd225a44883c8ad3d4c6f11a512f849cd7ee647403aaf21c01f30caef8742",
+  // Item 9: the anchor-1 ruling (the scale starts at 1), the two forms staying
+  // unfused, and the three-absent-documents pattern. Same WK-QA-018 entry.
+  "docs/FOUNDER_RULINGS_2026-09-05_Item9.md": "f094d8bc542169a28de8ca5deccf0b9436fb2063398f261a20b23655c46d4104",
   // The preparation batch: twelve items that run ALONGSIDE the build
   // queue rather than instead of it. Document-only unless an item says
   // otherwise. Same WK-QA-018 entry and same dating question (G-123).

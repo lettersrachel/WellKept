@@ -24,7 +24,7 @@ with different units**, and only one of them is called the evaluation form:
 They are not the same form and neither supersedes the other. **Both are
 rendered below rather than fused**, because fusing them would decide the join
 (which scenario exercises which domain) and that decision is the COO's. The
-join is the first blank at the bottom of this page.
+join is the first of the blanks listed at the bottom of this page.
 
 Reported rather than reconciled, because it changes what a builder builds:
 **Q-17's acceptance criterion says "captured against the five-item evaluation
@@ -38,9 +38,19 @@ and not the other builds the wrong instrument.
 One row per domain. The evaluator marks a score and cites the evidence; the
 anchors are the source's own words and are not to be paraphrased on the form.
 
-**Scale.** The source carries anchors for 2, 3, 4, 5 and **no anchor for 1**.
-Either the scale starts at 2 or a 1 exists unanchored. COO to say which; the
-form below prints the anchors that exist and nothing else.
+**Scale: 1 to 5.** The generated sheet first reported that the CSV carried
+anchors for 2, 3, 4, 5 and none for 1. **Ruled 5 September 2026: the scale starts at
+1, and 1 means the domain was not demonstrated at all.** The founder recorded
+that the gap was in her draft rather than in an upstream source, so nobody goes
+looking for a better copy that has it; `rubric_anchors.csv` is her authorship,
+and `docs/FOUNDER_RULINGS_2026-09-05_Item9.md` carries the added anchor because a
+ruling is applied beside a frozen intake file, never by editing one.
+
+**Why 1 and 2 are both needed**, in the ruling's own terms: a 2 says the person
+did the thing badly, a 1 says the thing did not happen, and those call for
+different responses from a trainer. The anchor was ADDED rather than the scale
+renumbered, so nothing already scored changes meaning and 2 to 5 keep their
+words.
 
 **Threshold, from SPEC_MODE_LOGIC section 2, verbatim:**
 > Promotion Guided to Normal: certification in the matching domain at HOM I threshold (rubric 3+, or 4+ for high-consequence domains), plus three observed visits on that household with no correction on that class. Recorded with provenance, dated, and signed by trainer and second observer (two keys).
@@ -53,6 +63,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Executes the step without identifying who has authority or what depends on it |
 | 3 | Identifies context and authority correctly with prompting; understands downstream consequences when asked |
 | 4 | Identifies context authority and consequences unprompted; translates accurately; closes the loop |
@@ -66,6 +77,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Accepts scope creep or a gift; discusses other households; over-familiar or servile |
 | 3 | Holds the Boundary Card scripts when tested; escalates a probe |
 | 4 | Holds boundaries warmly and without friction; names the staffing wall naturally |
@@ -79,6 +91,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Brings problems without options or brings options without a recommendation |
 | 3 | Presents two options and a recommendation with cost and consequence |
 | 4 | Frames the decision in the member's terms; three-sentence report is exact |
@@ -92,6 +105,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Skips a step in the emergency sequence or proceeds past a hazard |
 | 3 | Executes the emergency sequence in order; stops work on hazard |
 | 4 | Executes automatically under stress; documents accurately same day |
@@ -107,6 +121,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Cannot describe what a vendor did or should have done |
 | 3 | Describes the work and checks it against the standard |
 | 4 | Catches substandard work; knows lead times and seasonal windows |
@@ -120,6 +135,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Cannot locate shutoffs or explain a system |
 | 3 | Locates shutoffs; explains each major system at owner level |
 | 4 | Reads condition and age; predicts service needs |
@@ -133,6 +149,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Photographs a never-photograph item or discusses the household outside it |
 | 3 | Follows photo and data rules; handles keys per protocol |
 | 4 | Notices and corrects a privacy exposure in the record |
@@ -146,6 +163,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Records after the fact or from memory; skips required close steps |
 | 3 | Records in the app during the visit; close flow complete |
 | 4 | Record is usable by a backup HOM without a call |
@@ -161,6 +179,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Cannot find the right provider or office |
 | 3 | Navigates common services with the standard |
 | 4 | Knows the local landscape and its exceptions |
@@ -174,6 +193,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Loses sequence or dependencies in a multi-week task |
 | 3 | Runs a small project to plan with dependencies tracked |
 | 4 | Runs a transition (move renovation new school) with prepared decisions |
@@ -187,6 +207,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Applies own norms to the household |
 | 3 | Follows the household's observances and preferences as recorded |
 | 4 | Adapts tone and practice across households without prompting |
@@ -200,6 +221,7 @@ form below prints the anchors that exist and nothing else.
 
 | Score | Anchor |
 |---|---|
+| 1 | Not demonstrated at all: refused, absent, or not attempted. |
 | 2 | Does for a member what the member wants to do |
 | 3 | Follows recorded autonomy preferences |
 | 4 | Notices changing needs and raises them as observations |
@@ -261,15 +283,14 @@ somebody made.
 2. **What each of Form B's 5 items is scored ON.** The source gives the item
    names and the three verdicts and no per-item scale. Numeric like Form A,
    met/not-met, or narrative only.
-3. **Whether score 1 exists** on Form A, per the scale note above.
-4. **Which failure modes matter**, item 9's own words: the fifth item is called
+3. **Which failure modes matter**, item 9's own words: the fifth item is called
    "failure modes" and no list of them exists anywhere in the tree.
-5. **What else carries no partial credit.** Category C is named. Category G
+4. **What else carries no partial credit.** Category C is named. Category G
    (boundaries, fraud, restricted access, welfare) is not named either way, and
    three of Form A's four high-consequence domains are about exactly that.
-6. **Who may evaluate.** Form A cites the HOM I threshold and no evaluator
+5. **Who may evaluate.** Form A cites the HOM I threshold and no evaluator
    qualification; Q-16's credential row would be the natural home.
-7. **Retake accounting.** Whether a repeat re-scores the same record or writes
+6. **Retake accounting.** Whether a repeat re-scores the same record or writes
    a second one. Q-16 says the cohort record is append-only, which argues for
    a second record, but the form is not the cohort record and the sources do
    not say.
