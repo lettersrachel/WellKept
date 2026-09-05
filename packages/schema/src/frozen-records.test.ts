@@ -78,6 +78,10 @@ const FROZEN: Record<string, string> = {
   // (G-123). Part One settles six carried questions; Part Two is standing
   // authority and is merged into CLAUDE.md's session discipline.
   "docs/FOUNDER_RULINGS_2026-09-04_Unblocking.md": "7ac66655c577d1cd199312e238087f005389f77198b4a45ed5cd89d507d29949",
+  // The preparation batch: twelve items that run ALONGSIDE the build
+  // queue rather than instead of it. Document-only unless an item says
+  // otherwise. Same WK-QA-018 entry and same dating question (G-123).
+  "docs/PREPARATION_BATCH_2026-09-04.md": "fcd612e41be398e37951489bc5256725d19928eced213dfb7abf2506ced39adb",
   // The 4 September founder values package (document-only intake, the
   // Q-0b shape): received bytes frozen verbatim; .md hashes are
   // frontmatter-stripped, .csv/.yaml hashes are whole-file (no
