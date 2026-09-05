@@ -12,7 +12,7 @@
  *
  * PRODUCER: `blocked` HAS NO PRODUCER YET, stated here in the same form
  * the migration headers use for an inert column (G-85), so its absence is
- * read as a build fact rather than as a defect. `auto_execute` and
+ * read as a build fact rather than as a defect. `permitted_without_asking` and
  * `propose` are both produced by this function today; `blocked` is
  * declared and unreachable, and it becomes reachable when the founder's
  * never-decide rules exist as rules rather than as prose.
@@ -40,7 +40,7 @@
  * `rightKey` verbatim rather than guessing it from a title.
  */
 
-export type RouteOutcome = "auto_execute" | "propose" | "blocked";
+export type RouteOutcome = "permitted_without_asking" | "propose" | "blocked";
 
 export type RoutingRight = {
   rightKey: string;
@@ -78,7 +78,7 @@ export function routeByDecisionRights(args: {
 
   // 4. The one path that acts without asking.
   if (args.amountCents <= right.valueCents) {
-    return { outcome: "auto_execute", why: `at or below the household's ceiling for ${right.rightKey}` };
+    return { outcome: "permitted_without_asking", why: `at or below the household's ceiling for ${right.rightKey}` };
   }
   return { outcome: "propose", why: `above the household's ceiling for ${right.rightKey}` };
 }
@@ -95,7 +95,7 @@ export function routeByDecisionRights(args: {
  * ONE COMPOSITION CALL IS MINE, reported under the standing tiebreak
  * rather than asked: where SEVERAL rights share a materiality, a
  * candidate auto-executes only if EVERY one of them would permit it.
- * That keeps `auto_execute`'s existing meaning (at or below the
+ * That keeps `permitted_without_asking`'s existing meaning (at or below the
  * household's ceiling) intact under each applicable ceiling, rather than
  * minting a new meaning such as "below the highest ceiling". Picking one
  * right instead would need a precedence rule nobody has ruled.
@@ -127,10 +127,10 @@ export function routeCandidateByMateriality(args: {
   const results = applicable.map((r) =>
     routeByDecisionRights({ rights: [r], rightKey: r.rightKey, amountCents: args.amountCents }),
   );
-  const blocking = results.find((r) => r.outcome !== "auto_execute");
+  const blocking = results.find((r) => r.outcome !== "permitted_without_asking");
   if (blocking) return blocking;
   return {
-    outcome: "auto_execute",
+    outcome: "permitted_without_asking",
     why: `at or below every ${args.materiality} ceiling on record (${applicable.length} right(s) checked)`,
   };
 }

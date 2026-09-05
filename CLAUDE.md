@@ -868,6 +868,18 @@ record; do not compute a paycheck, build a scheduler, or issue an invoice.
   garbage body) and each returned the value the gate keys on. Where the
   real input cannot be reached from the machine you are on, say so and
   name where it can, rather than letting the fixture stand in for it.
+- **WHERE A FUNCTION READS A TABLE, AT LEAST ONE PROOF READS THE TABLE**
+  (founder ruling, 5 September 2026). Not every proof, and not integration
+  tests for their own sake: ONE, so the connection itself is exercised. **The
+  instance:** `routeByDecisionRights` shipped with seven unit tests, all green
+  for a week, and every one of them passed an ARRAY THE TEST BUILT. Not one
+  read a `decision_right` row. The tests were green and UNATTACHED: they proved
+  the arithmetic of a ceiling and said nothing about whether the function could
+  find a household's rights at all. **A function, a table and a test can each
+  be correct while nothing connects them**, and a green suite reads identically
+  either way. This is the narrower, checkable form of the real-inputs rule
+  below: that one says a sentinel proves the logic and not the input, and this
+  one says which single test to write.
 - **Proving a guard red and green tests its logic, not its inputs.** A guard
   that takes an argument can be defeated by the argument while passing every
   case written for it; the sha gate ran as a no-op when handed

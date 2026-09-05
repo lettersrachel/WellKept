@@ -94,7 +94,7 @@ test("DIRECTION 3, at or below a real ceiling permits acting, and NOTHING is sta
   const r = await routePromptItem(db as never, {
     householdId: H, promptPackItemId: item, rightKey: "routine_supply_spend", amountCents: 15000,
   });
-  assert.equal(r.outcome, "auto_execute", "the boundary is inclusive");
+  assert.equal(r.outcome, "permitted_without_asking", "the boundary is inclusive");
   assert.equal(r.stamped, null);
 
   // The stage is UNCHANGED, and that is the reported gap rather than an
@@ -120,5 +120,5 @@ test("every routing decision is logged, whichever way it went", async () => {
   const routed = events.filter((e) => e.kind === "prompt_pack_item.routed");
   assert.equal(routed.length, 4, "one event per direction, including the one that acted without asking");
   const outcomes = routed.map((e) => (e.payload as { outcome: string }).outcome).sort();
-  assert.deepEqual(outcomes, ["auto_execute", "propose", "propose", "propose"]);
+  assert.deepEqual(outcomes, ["permitted_without_asking", "propose", "propose", "propose"]);
 });

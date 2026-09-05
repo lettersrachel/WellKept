@@ -2053,7 +2053,18 @@ export const candidateRoutingEnum = pgEnum("candidate_routing", [
   // `decision-routing.ts` as RouteOutcome. Named here so a candidate's
   // computed route is a stored value with the same three meanings, never
   // a fourth vocabulary that happens to use the same words.
-  "auto_execute",
+  //
+  // RENAMED from `auto_execute` on 5 September 2026 (founder instruction)
+  // AT THE POINT A COUNTER READS IT, which is here: this is the column a
+  // metrics query groups by. The old name said an act happened and no act
+  // happens: NOTHING IN THIS TREE EXECUTES ANYTHING. The value states
+  // that the household's Decision Rights PERMIT acting without asking, so
+  // a count of it is a count of PERMISSIONS GRANTED and never of work
+  // done. **A leverage claim built on the old name would have measured
+  // the wrong thing**, which is the wrong-unit class this week has been
+  // full of, caught before a single row carried the value rather than
+  // after a number was quoted from it.
+  "permitted_without_asking",
   "propose",
   "blocked",
 ]);

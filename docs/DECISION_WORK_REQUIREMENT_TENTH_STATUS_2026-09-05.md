@@ -8,6 +8,46 @@ it is a semantics change to a shipped primitive. Everything below is read from
 the code and the database rather than recalled, and the reads are named so she
 can check any of them.
 
+## ANSWERING THE FOUNDER'S QUESTION FIRST: two keys or one, and it is BOTH
+
+She asked, before ruling: was the nine-value lifecycle adopted under two keys,
+or is 0051 a single-founder record. **Read from the tree rather than answered
+from memory, and the answer splits.**
+
+**The nine WORDS are two-key adopted.** They appear in
+`WK-DEV-009_v1_1_Unified_Ambient_Brief_2026-08-24.md` line 74, and that
+document's own line 5 reads "Adopted under the standing two-key software
+authorization; register A573".
+
+**But they are adopted as an EVENT FAMILY, not as a status column.** The exact
+sentence, in section 10 "Data and event architecture [D]", is: "Event families
+to emit: requirement lifecycle (generated, activated, ready, scheduled,
+started, completed, verified, reopened, deferred); visit lifecycle (...);
+decision lifecycle (...)". It is a list of events the system emits, sitting
+beside five other event families. **It says nothing about a `status` column.**
+
+**Making those nine words the permitted values of `work_requirement.status` was
+0051's own translation**, and 0051 carries NO HEADER AT ALL: it predates the
+per-column producer rule and is a bare generated file, so nothing records that
+the translation was ruled, or noticed. That is a single-founder-era build
+decision, not a two-key adoption.
+
+**What that means for the ruling, stated as a fork rather than a
+recommendation:**
+
+- **A tenth STATUS value alone is hers**, because the status column was never
+  two-key. Nothing at the 25 September session has authority over a column that
+  session never adopted.
+- **A tenth LIFECYCLE EVENT is the two-key list**, and belongs at the 25
+  September session, because that list is what A573 adopted.
+- **And the two are currently the same nine words**, which is why the question
+  felt like one question. Adding a status without its event would put the
+  column and the adopted event family out of step for the first time, and that
+  divergence is itself a thing to decide rather than a side effect. **The
+  cheapest honest option may be to rule the status now and note the event
+  family for the September agenda**, so the divergence is deliberate and dated
+  rather than discovered later by whoever emits the event.
+
 ## The nine statuses that exist, read from `pg_constraint` rather than from the source
 
 ```
@@ -18,7 +58,9 @@ CHECK (status = ANY (ARRAY[
 
 **0051 recorded these as the full WK-DEV-009 section 10 requirement lifecycle**,
 adopted so that Gate 3's generator arrives without a migration. They are not a
-convenience list somebody grew; they were adopted as a set.
+convenience list somebody grew; they were adopted as a set. **Corrected by the
+provenance check above: adopted as an EVENT set, and turned into status values
+by 0051 without a record.**
 
 **What each means today, and which are actually reachable.** The service
 exercises a subset deliberately (0051's own note: "the v1 service exercises the

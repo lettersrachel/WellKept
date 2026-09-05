@@ -26,8 +26,8 @@ describe("the Decision Rights block as the routing table", () => {
   });
 
   test("at or below the ceiling auto-executes, and the boundary is INCLUSIVE", () => {
-    expect(routeByDecisionRights({ rights, rightKey: "spend_without_asking_per_item_usd", amountCents: 14999 }).outcome).toBe("auto_execute");
-    expect(routeByDecisionRights({ rights, rightKey: "spend_without_asking_per_item_usd", amountCents: 15000 }).outcome).toBe("auto_execute");
+    expect(routeByDecisionRights({ rights, rightKey: "spend_without_asking_per_item_usd", amountCents: 14999 }).outcome).toBe("permitted_without_asking");
+    expect(routeByDecisionRights({ rights, rightKey: "spend_without_asking_per_item_usd", amountCents: 15000 }).outcome).toBe("permitted_without_asking");
   });
 
   test("one cent above the ceiling proposes", () => {
@@ -36,7 +36,7 @@ describe("the Decision Rights block as the routing table", () => {
 
   test("a ceiling of ZERO means ask about everything, and zero is not the unknown", () => {
     const zero: RoutingRight[] = [{ rightKey: "k", valueCents: 0, valueText: null }];
-    expect(routeByDecisionRights({ rights: zero, rightKey: "k", amountCents: 0 }).outcome).toBe("auto_execute");
+    expect(routeByDecisionRights({ rights: zero, rightKey: "k", amountCents: 0 }).outcome).toBe("permitted_without_asking");
     expect(routeByDecisionRights({ rights: zero, rightKey: "k", amountCents: 1 }).outcome).toBe("propose");
   });
 

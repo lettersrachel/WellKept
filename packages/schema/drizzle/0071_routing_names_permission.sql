@@ -1,0 +1,33 @@
+-- 0071  candidate_routing: `auto_execute` becomes `permitted_without_asking`
+--
+-- Founder instruction, 5 September 2026: name the value in a way that
+-- cannot be miscounted, at the point a counter would read it.
+--
+-- WHY. The value states that the household's Decision Rights PERMIT
+-- acting without asking. NOTHING IN THIS TREE EXECUTES ANYTHING: there is
+-- no execution engine, so no act follows the outcome. A count of the old
+-- name is therefore a count of PERMISSIONS GRANTED and never of work
+-- done, and **a leverage claim built on that number would have measured
+-- the wrong thing**, which is the wrong-unit class of the past week. This
+-- column is where a metrics query lands, so the distinction is put here
+-- rather than only in a comment.
+--
+-- READ BEFORE APPLYING, and the generated version was REPLACED BY HAND.
+-- drizzle-kit emitted: cast the column to text, DROP TYPE, CREATE TYPE
+-- with the new label, cast back. That plan is correct only because no row
+-- carries the old value today; against a database with rows the final
+-- cast would refuse (fail-closed, but a failed deploy mid-migration), and
+-- it rewrites the whole column for a change that touches no data.
+-- Postgres has a data-preserving statement for exactly this, and it is
+-- the one used here. Do not regenerate this file.
+--
+-- PRECONDITION, read rather than assumed: production carries ZERO rows in
+-- `expected_event` (the founder's post-deploy verification of 0069 the
+-- same day), and the local database likewise. So this rename is a naming
+-- change with no data behind it, taken at the cheap moment. Renaming a
+-- value that rows already carry would additionally split the event
+-- history, since already-emitted outbox payloads keep the old word in
+-- their jsonb; none exist.
+--
+-- NO COLUMN IS ADDED OR ALTERED, so there is no producer table.
+ALTER TYPE "public"."candidate_routing" RENAME VALUE 'auto_execute' TO 'permitted_without_asking';

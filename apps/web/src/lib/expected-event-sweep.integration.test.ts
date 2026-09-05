@@ -84,7 +84,7 @@ test("a passed window with no match opens missing_expected with a routed candida
   // from decision_right.materiality, which is data on record.
   const [money] = await db.select().from(expectedEvent).where(eq(expectedEvent.id, PAST_MONEY));
   assert.equal(money!.reconciliationStatus, "missing_expected");
-  assert.equal(money!.candidateRouting, "auto_execute");
+  assert.equal(money!.candidateRouting, "permitted_without_asking");
   assert.match(money!.candidateRoutingWhy!, /at or below every money_legal ceiling/);
 
   // Still inside its window: untouched, and NULL is the true statement.

@@ -40,7 +40,7 @@ type Db = {
 };
 
 export type PromptRouting = {
-  outcome: "auto_execute" | "propose" | "blocked";
+  outcome: "permitted_without_asking" | "propose" | "blocked";
   why: string;
   stamped: "decide" | null;
 };
