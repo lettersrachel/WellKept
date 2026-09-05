@@ -8059,3 +8059,85 @@ built.
 repository mirror first, the established pattern when an amendment is authored
 here, and the founder transfers it into the controlled copy. The `.docx` remains
 v1.0 until she does, and **no assessor is engaged against v1.0.**
+
+---
+
+### G-131 REPORTED, 5 September 2026: the scenario bank's category source has never been written, and "the evaluation form" names two different instruments
+
+Preparation batch item 9 asks for two things: the twelve rubric domains turned
+into the evaluation form's shape, and thirty scenario stubs drawn from the
+WK-TRN-007 categories A to G. **The first is buildable and built. The second is
+blocked on a document that does not exist**, and the two halves together
+surfaced a naming collision that would have been paid for at build time.
+
+**WK-TRN-007 is not in this repository**, checked four ways rather than by one
+search that could not see (the G-106 lesson, and the G-129 remedy applied on
+purpose): no filename in the tree matches; `git grep` finds the identifier in
+exactly two tracked files, `docs/PREPARATION_BATCH_2026-09-04.md` and
+`docs/intake/2026-09-03-build-package/FIXTURES.md`, both of which CITE it; and a
+scan inside every XML part of all ten `docs/library/*.docx` returns nothing,
+which is exactly where the last supposedly-absent document turned out to be.
+
+**Of the seven categories, the tree names two.** C, "allergen, medical, safety",
+named only in passing because it carries no partial credit, and G, "boundaries,
+fraud, restricted access, welfare". **A, B, D, E and F are cited by letter and
+defined nowhere.** Drafting stubs indexed to them means inventing five category
+definitions, which is a taxonomy, so it was not done. `docs/SCENARIO_STUB_BANK.md`
+fills every slot the tree can source (the twelve deliberate traps into the
+twelve deviation slots, offered as a proposal with its one line of reasoning
+visible), lists seven candidates against six integration slots without picking
+which one to drop, and leaves all twelve procedure slots empty with the three
+candidate sources named.
+
+**This is the third training document cited and absent**, after WK-TRN-009
+(G-110, since reclassified as a founder writing task on the 25 September agenda)
+and WK-QA-000's "five-dimension review" (G-108). The remedy is the same one the
+founder ruled for WK-TRN-009 and is recorded that way rather than as a document
+to chase: **it is the COO's program being written down, so it is a writing task
+with an owner and a date, not a retrieval.** Q-17 cannot complete its scenario
+bank without it.
+
+**The second half, and it is the one that would have cost a build.** Item 9 says
+"the evaluation form" and the sources define TWO instruments with different
+units:
+
+| | Form A | Form B |
+|---|---|---|
+| Unit | one HOM, one domain, standing | one scenario run |
+| Source | `rubric_anchors.csv`, twelve domains, anchors 2 to 5 | SPEC_MODE_LOGIC section 4, five items |
+| Output | a score per domain | pass / repeat / module review |
+
+**Q-17's own acceptance criterion says "captured against the five-item
+evaluation form"**, so a builder reading the queue row builds Form B and a
+builder reading item 9 builds Form A, and each would be satisfied that they had
+built the evaluation form. Both are rendered in
+`docs/EVALUATION_FORMS_REVIEW_SHEET.md`, separately and unfused, because fusing
+them decides the join (which scenario exercises which domain) and that judgment
+is the COO's. It is the first of seven blanks listed on that page.
+
+**Three smaller things the generation surfaced**, each reported rather than
+resolved:
+
+- **The rubric has no anchor for 1.** Anchors run 2 to 5. Either the scale
+  starts at 2 or a 1 exists unanchored, and a form printed with a 1 nobody
+  defined would collect scores nobody could read.
+- **The bank arithmetic does not close.** FIXTURES states 30 as 12 procedure,
+  12 deviation and 6 integration, then gives eleven AI abuse and reconciliation
+  scenarios and calls them the "same bank". Thirty leaves no room for eleven
+  more. They are appended as A-01 to A-11 rather than folded into either
+  reading.
+- **Two of the twelve traps are near neighbours** (a vendor asking to change
+  payment details, and a payment-change request). Both are printed as separate
+  slots. Merging them here would have hidden the question of whether the source
+  lists one scenario twice.
+
+**Method note, and it is the reason this entry can be trusted.** Both sheets are
+GENERATED from the frozen sources, and every list is counted from its source and
+asserted against the count the source states in words: twelve domains, five form
+items, three verdicts, twelve traps, eleven abuse scenarios, thirty slots
+emitted. A parse that silently returned eleven traps would otherwise have
+produced a confident sheet about a question it never asked, which is the class
+named this morning. Proven in the failing direction three ways with each
+mutation confirmed landed first (a domain removed, a trap removed, an item
+struck from the five-item line), each refusing by name, and green on the
+restored tree.

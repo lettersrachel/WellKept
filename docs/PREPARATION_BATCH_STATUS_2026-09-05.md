@@ -17,8 +17,8 @@ for the reports themselves. Each row points at its deliverable.
 | 6 | Three fixture household workbooks | **LANDED**, and it found a defect by loading its own deliverable | `tooling/seed/fixtures/` (three workbooks plus README), Q-11y |
 | 7 | Empty Household Green workbook | **LANDED**, with the estimated pre-fill clause deliberately NOT done | `tooling/seed/household_green_workbook.json`, `docs/HOUSEHOLD_GREEN_WORKBOOK_2026-09-05.md` |
 | 8 | Decision Rights confirm-or-amend sheet | **LANDED**, generated rather than transcribed | `docs/DECISION_RIGHTS_REVIEW_SHEET.md`, `tooling/review/decision-rights-sheet.mjs` |
-| 9 | Evaluation forms and scenario stubs | next | |
-| 10 | Freeze packet item A, laid out | | |
+| 9 | Evaluation forms and scenario stubs | **FORMS LANDED. THE SCENARIO BANK IS PARTLY BLOCKED**: WK-TRN-007, which defines the categories A to G, is not in the tree, so five of the seven categories would have to be invented | `docs/EVALUATION_FORMS_REVIEW_SHEET.md`, `docs/SCENARIO_STUB_BANK.md`, `tooling/review/training-forms.mjs`, G-131 |
+| 10 | Freeze packet item A, laid out | next | |
 | 11 | G-register triage | | |
 | 12 | Two queue rows to open | **LANDED** | Q-11t (Foundation Reset, blocked on WK-SVC-004), Q-11v (staff-side member view, since CLOSED) |
 
